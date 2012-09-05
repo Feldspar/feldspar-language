@@ -1,0 +1,145 @@
+name:           feldspar-language
+version:        0.6.0.1
+synopsis:       A functional embedded language for DSP and parallelism
+description:    Feldspar (Functional Embedded Language for DSP and PARallelism)
+                is an embedded DSL for describing digital signal processing
+                algorithms. This package contains the language front-end and an
+                interpreter.
+category:       Language
+copyright:      Copyright (c) 2009-2011, ERICSSON AB
+author:         Functional programming group at Chalmers University of Technology
+maintainer:     Emil Axelsson <emax@chalmers.se>
+license:        BSD3
+license-file:   LICENSE
+stability:      experimental
+homepage:       http://feldspar.inf.elte.hu/feldspar/
+build-type:     Simple
+cabal-version:  >= 1.6
+tested-with:    GHC==7.0.4, GHC==7.4.1
+
+library
+  exposed-modules:
+    Feldspar.Prelude
+    Feldspar.Lattice
+    Feldspar.Range
+    Feldspar.Algorithm.CRC
+    Feldspar.Algorithm.FFT
+    Feldspar.Core.Types
+    Feldspar.Core.Interpretation
+    Feldspar.Core.Constructs.Array
+    Feldspar.Core.Constructs.Binding
+    Feldspar.Core.Constructs.Bits
+    Feldspar.Core.Constructs.Complex
+    Feldspar.Core.Constructs.Condition
+    Feldspar.Core.Constructs.ConditionM
+    Feldspar.Core.Constructs.Conversion
+    Feldspar.Core.Constructs.Eq
+    Feldspar.Core.Constructs.Error
+    Feldspar.Core.Constructs.Floating
+    Feldspar.Core.Constructs.Fractional
+    Feldspar.Core.Constructs.Future
+    Feldspar.Core.Constructs.Integral
+    Feldspar.Core.Constructs.Literal
+    Feldspar.Core.Constructs.Logic
+    Feldspar.Core.Constructs.Loop
+    Feldspar.Core.Constructs.Mutable
+    Feldspar.Core.Constructs.MutableArray
+    Feldspar.Core.Constructs.MutableReference
+    Feldspar.Core.Constructs.MutableToPure
+    Feldspar.Core.Constructs.NoInline
+    Feldspar.Core.Constructs.Par
+    Feldspar.Core.Constructs.Num
+    Feldspar.Core.Constructs.Ord
+    Feldspar.Core.Constructs.SizeProp
+    Feldspar.Core.Constructs.SourceInfo
+    Feldspar.Core.Constructs.Trace
+    Feldspar.Core.Constructs.Tuple
+    Feldspar.Core.Constructs.FFI
+    Feldspar.Core.Constructs.Save
+    Feldspar.Core.Constructs
+    Feldspar.Core.Frontend.Array
+    Feldspar.Core.Frontend.Binding
+    Feldspar.Core.Frontend.Bits
+    Feldspar.Core.Frontend.Complex
+    Feldspar.Core.Frontend.Condition
+    Feldspar.Core.Frontend.ConditionM
+    Feldspar.Core.Frontend.Conversion
+    Feldspar.Core.Frontend.Eq
+    Feldspar.Core.Frontend.Error
+    Feldspar.Core.Frontend.Floating
+    Feldspar.Core.Frontend.Fractional
+    Feldspar.Core.Frontend.Future
+    Feldspar.Core.Frontend.Integral
+    Feldspar.Core.Frontend.Literal
+    Feldspar.Core.Frontend.Logic
+    Feldspar.Core.Frontend.Loop
+    Feldspar.Core.Frontend.Mutable
+    Feldspar.Core.Frontend.MutableArray
+    Feldspar.Core.Frontend.MutableReference
+    Feldspar.Core.Frontend.MutableToPure
+    Feldspar.Core.Frontend.NoInline
+    Feldspar.Core.Frontend.Par
+    Feldspar.Core.Frontend.Num
+    Feldspar.Core.Frontend.Ord
+    Feldspar.Core.Frontend.Select
+    Feldspar.Core.Frontend.SizeProp
+    Feldspar.Core.Frontend.SourceInfo
+    Feldspar.Core.Frontend.Trace
+    Feldspar.Core.Frontend.Tuple
+    Feldspar.Core.Frontend.FFI
+    Feldspar.Core.Frontend.Save
+    Feldspar.Core.Frontend
+    Feldspar.Core.Collection
+    Feldspar.Core
+    Feldspar.BitVector
+    Feldspar.FixedPoint
+    Feldspar.Future
+    Feldspar.Matrix
+    Feldspar.Option
+    Feldspar.Repa
+    Feldspar.Stream
+    Feldspar.Vector.Internal
+    Feldspar.Vector
+    Feldspar.Vector.Push
+    Feldspar.Wrap
+    Feldspar.Par
+    Feldspar
+
+  build-depends:
+    array,
+    base >= 4 && < 4.6,
+    containers,
+    data-hash < 0.3,
+    data-lens == 2.10.*,
+    monad-par,
+    mtl,
+    QuickCheck >= 2.4 && < 3,
+    patch-combinators == 0.1.*,
+    random,
+    syntactic == 0.9.*,
+    tagged == 0.4.*,
+    tuple == 0.2.*,
+    type-level >= 0.2.4,
+    monad-par >= 0.1 && < 0.2,
+    QuickAnnotate >= 0.5
+
+  extensions:
+    DeriveDataTypeable
+    EmptyDataDecls
+    FlexibleInstances
+    FlexibleContexts
+    FunctionalDependencies
+    GADTs
+    GeneralizedNewtypeDeriving
+    MultiParamTypeClasses
+    PatternGuards
+    Rank2Types
+    ScopedTypeVariables
+    StandaloneDeriving
+    TypeFamilies
+    TypeOperators
+    TypeSynonymInstances
+    ViewPatterns
+
+  ghc-options: -fcontext-stack=100
+
