@@ -50,7 +50,7 @@ instance Wrap (Data a) (Data a) where
     wrap = id
 
 instance (Wrap t u) => Wrap (Data a -> t) (Data a -> u) where
-    wrap f = \x -> wrap $ f x
+    wrap f = wrap . f
 
 -- | Extended 'Data' to be used in wrappers
 data Data' s a =

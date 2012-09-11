@@ -183,8 +183,8 @@ evalReverseBits b = revLoop b 0 (0 `asTypeOf` b)
   where
     bSz = bitSize b
     revLoop b i n | i >= bSz    = n
-    revLoop b i n | testBit b i = revLoop b (i+1) (setBit n (bSz - i - 1))
-    revLoop b i n | otherwise   = revLoop b (i+1) n
+                  | testBit b i = revLoop b (i+1) (setBit n (bSz - i - 1))
+                  | otherwise   = revLoop b (i+1) n
 
 evalBitScan :: Bits b => b -> WordN
 evalBitScan b =
@@ -193,15 +193,15 @@ evalBitScan b =
    else scanLoop b False (bitSize b - 1) 0
   where
     scanLoop b bit i n | i Prelude.< 0              = n
-    scanLoop b bit i n | testBit b i Prelude./= bit = n
-    scanLoop b bit i n | otherwise                  = scanLoop b bit (i-1) (n+1)
+                       | testBit b i Prelude./= bit = n
+                       | otherwise                  = scanLoop b bit (i-1) (n+1)
 
 evalBitCount :: Bits b => b -> WordN
 evalBitCount b = loop b (bitSize b - 1) 0
   where
     loop b i n | i Prelude.< 0 = n
-    loop b i n | testBit b i   = loop b (i-1) (n+1)
-    loop b i n | otherwise     = loop b (i-1) n
+               | testBit b i   = loop b (i-1) (n+1)
+               | otherwise     = loop b (i-1) n
 
 instance ExprEq   BITS where exprEq = exprEqSem; exprHash = exprHashSem
 instance Render   BITS where renderPart = renderPartSem

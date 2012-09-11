@@ -198,7 +198,7 @@ instance
 
 -- shouldn't be used for negative numbers
 isPowerOfTwo :: Bits a => a -> Bool
-isPowerOfTwo x = x .&. (x - 1) == 0 && not (x == 0)
+isPowerOfTwo x = x .&. (x - 1) == 0 && (x /= 0)
 
 log2 :: (BoundedInt a, Integral b) => a -> b
 log2 v | v <= 1 = 0

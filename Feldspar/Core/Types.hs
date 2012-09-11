@@ -32,14 +32,13 @@ module Feldspar.Core.Types where
 
 
 
-import Control.Monad
 import Data.Array.IO
 import Data.Bits
 import Data.Complex
 import Data.Int
 import Data.IORef
 import Data.List
-import Data.Typeable (Typeable, gcast)
+import Data.Typeable (Typeable, Typeable1)
 import Data.Word
 import Test.QuickCheck
 import qualified Control.Monad.Par as MonadPar
@@ -47,8 +46,6 @@ import qualified Control.Monad.Par as MonadPar
 import Data.Patch
 
 import Data.Proxy
-
-import Data.Typeable (Typeable1)
 
 import Language.Syntactic
 
@@ -520,7 +517,7 @@ typeEq (FValType t1) (FValType t2) = do
 typeEq _ _ = Nothing
 
 showTup :: [String] -> String
-showTup as =  "(" ++ concat (intersperse "," as) ++ ")"
+showTup as =  "(" ++ intercalate "," as ++ ")"
 
 type family TargetType n a
 type instance TargetType n ()              = ()

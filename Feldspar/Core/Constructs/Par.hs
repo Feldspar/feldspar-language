@@ -167,7 +167,7 @@ instance (MONAD Par :<: dom, OptimizeSuper dom) => Optimize (MONAD Par) dom
     constructFeatOpt Then (ma :* (Sym (Decor info ret) :$ u) :* Nil)
         | Just Return <- prjMonad monadProxy ret
         , Just TypeEq <- typeEq (infoType $ getInfo ma) (ParType UnitType)
-        , Just TypeEq <- typeEq (infoType $ info)       (ParType UnitType)
+        , Just TypeEq <- typeEq (infoType info)         (ParType UnitType)
         , Just ()     <- viewLiteral u
         = return ma
 

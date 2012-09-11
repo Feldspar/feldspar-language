@@ -65,7 +65,7 @@ thawMatrix = map thawVector . thawVector
 -- of rows (outer vector), and the second argument is the number of columns
 -- (inner vector).
 thawMatrix' :: Type a => Length -> Length -> Data [[a]] -> Matrix a
-thawMatrix' y x = map (thawVector' x) . (thawVector' y)
+thawMatrix' y x = map (thawVector' x) . thawVector' y
 
 unfreezeMatrix :: Type a => Data [[a]] -> Matrix a
 unfreezeMatrix = thawMatrix

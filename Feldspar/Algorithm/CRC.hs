@@ -36,7 +36,7 @@ import Feldspar.Vector
 tstBit w b = w .&. (1 .<<. b) /= 0
 
 makeCrcTable :: (Bits a) => Data a -> Vector1 a
-makeCrcTable poly = indexed 256 $ \i -> forLoop 8 ((i2n i) .<<. (sz - 8)) step
+makeCrcTable poly = indexed 256 $ \i -> forLoop 8 (i2n i .<<. (sz - 8)) step
   where
     sz       = bitSize poly
     step _ r = let r' = r .<<. 1 in condition (tstBit r (sz-1)) (r' `xor` poly) r'
@@ -53,7 +53,7 @@ crcNormal table init xs = fold step init xs
 -- needs reflected tables
 crcReflected :: (Bits a)
              => Vector1 a -> Data a -> Vector1 Word8 -> Data a
-crcReflected table init xs = fold step init xs
+crcReflected table = fold step
   where
     step crc a = (table ! i2n ((crc `xor` i2n a) .&. 0xFF)) `xor` (crc .>>. 8)
 

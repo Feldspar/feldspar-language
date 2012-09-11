@@ -117,10 +117,10 @@ fixDiv' f1@(Fix e1 m1) f2@(Fix e2 m2) = Fix e m
 
 fixRecip' :: forall a . (Integral a, Bits a, Prelude.Real a, Size a ~ Range a)
              => Fix a -> Fix a
-fixRecip' f@(Fix e m) = Fix (e + (value $ wordLength (T :: T a) - 1)) (div sh m)
+fixRecip' f@(Fix e m) = Fix (e + value (wordLength (T :: T a) - 1)) (div sh m)
    where
      sh  :: Data a
-     sh  = (1::Data a) .<<. (value $ fromInteger $ toInteger $ wordLength (T :: T a) - 1)
+     sh  = (1::Data a) .<<. value (fromInteger $ toInteger $ wordLength (T :: T a) - 1)
 
 fixfromRational :: forall a . (Integral a, Size a ~ Range a) =>
                    Prelude.Rational -> Fix a
@@ -129,11 +129,11 @@ fixfromRational inp = Fix exponent mantissa
       inpAsFloat :: Float
       inpAsFloat =  fromRational inp
       intPart :: Float
-      intPart =  fromRational $ toRational $ (Prelude.floor inpAsFloat)
+      intPart =  fromRational $ toRational $ Prelude.floor inpAsFloat
       intPartWidth :: IntN
       intPartWidth =  Prelude.ceiling $ Prelude.logBase 2 intPart
       fracPartWith :: IntN
-      fracPartWith =  (wordLength (T :: T a)) - intPartWidth - 2
+      fracPartWith =  wordLength (T :: T a) - intPartWidth - 2
       mantissa = value $ Prelude.floor $ inpAsFloat * 2.0 Prelude.** fromRational (toRational fracPartWith)
       exponent = negate $ value fracPartWith
 
@@ -154,11 +154,11 @@ freezeFix' e f = mantissa $ fix (value e) f
 
 -- | Converts a pair of exponent and mantissa to an abstract real number
 unfreezeFix :: (Type a) => (Data IntN, Data a) -> Fix a
-unfreezeFix (e,m) = Fix e m
+unfreezeFix = uncurry Fix
 
 -- | Converts a fixed point integer with given exponent to an abstract real number
 unfreezeFix' :: IntN -> Data a -> Fix a
-unfreezeFix' e m = Fix (value e) m
+unfreezeFix' e = Fix (value e)
 
 -- This function cannot be implemented now as we don't have access to range
 -- information while building the tree anymore.
@@ -181,7 +181,7 @@ setSignificantBits sb x = resizeData r x
     r =  Range 0 sb
 -}
 wordLength :: forall a . (Integral a, Prelude.Real a) => T a -> IntN
-wordLength x = (Prelude.ceiling $ Prelude.logBase 2 $ fromRational $ toRational (maxBound :: a)) + 1
+wordLength _ = Prelude.ceiling ( Prelude.logBase 2 $ fromRational $ toRational (maxBound :: a)) + 1
 
 wordLength' :: forall a . (Integral a, Prelude.Real a) => a -> IntN
 wordLength' x = swl

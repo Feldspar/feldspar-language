@@ -119,46 +119,46 @@ instance Sharable (Select TypeCtx)
   where
     sharable _ = False
 
-sel1Size :: (Sel1' a ~ b) => TypeRep a -> (Size a -> Size b)
-sel1Size (Tup2Type _ _)           = sel1
-sel1Size (Tup3Type _ _ _)         = sel1
-sel1Size (Tup4Type _ _ _ _)       = sel1
-sel1Size (Tup5Type _ _ _ _ _)     = sel1
-sel1Size (Tup6Type _ _ _ _ _ _)   = sel1
-sel1Size (Tup7Type _ _ _ _ _ _ _) = sel1
+sel1Size :: (Sel1' a ~ b) = > TypeRep a -> Size a -> Size b
+sel1Size Tup2Type{} = sel1
+sel1Size Tup3Type{} = sel1
+sel1Size Tup4Type{} = sel1
+sel1Size Tup5Type{} = sel1
+sel1Size Tup6Type{} = sel1
+sel1Size Tup7Type{} = sel1
 
 sel2Size :: (Sel2' a ~ b) => TypeRep a -> (Size a -> Size b)
-sel2Size (Tup2Type _ _)           = sel2
-sel2Size (Tup3Type _ _ _)         = sel2
-sel2Size (Tup4Type _ _ _ _)       = sel2
-sel2Size (Tup5Type _ _ _ _ _)     = sel2
-sel2Size (Tup6Type _ _ _ _ _ _)   = sel2
-sel2Size (Tup7Type _ _ _ _ _ _ _) = sel2
+sel2Size Tup2Type{} = sel2
+sel2Size Tup3Type{} = sel2
+sel2Size Tup4Type{} = sel2
+sel2Size Tup5Type{} = sel2
+sel2Size Tup6Type{} = sel2
+sel2Size Tup7Type{} = sel2
 
 sel3Size :: (Sel3' a ~ b) => TypeRep a -> (Size a -> Size b)
-sel3Size (Tup3Type _ _ _)         = sel3
-sel3Size (Tup4Type _ _ _ _)       = sel3
-sel3Size (Tup5Type _ _ _ _ _)     = sel3
-sel3Size (Tup6Type _ _ _ _ _ _)   = sel3
-sel3Size (Tup7Type _ _ _ _ _ _ _) = sel3
+sel3Size Tup3Type{} = sel3
+sel3Size Tup4Type{} = sel3
+sel3Size Tup5Type{} = sel3
+sel3Size Tup6Type{} = sel3
+sel3Size Tup7Type{} = sel3
 
 sel4Size :: (Sel4' a ~ b) => TypeRep a -> (Size a -> Size b)
-sel4Size (Tup4Type _ _ _ _)       = sel4
-sel4Size (Tup5Type _ _ _ _ _)     = sel4
-sel4Size (Tup6Type _ _ _ _ _ _)   = sel4
-sel4Size (Tup7Type _ _ _ _ _ _ _) = sel4
+sel4Size Tup4Type{} = sel4
+sel4Size Tup5Type{} = sel4
+sel4Size Tup6Type{} = sel4
+sel4Size Tup7Type{} = sel4
 
 sel5Size :: (Sel5' a ~ b) => TypeRep a -> (Size a -> Size b)
-sel5Size (Tup5Type _ _ _ _ _)     = sel5
-sel5Size (Tup6Type _ _ _ _ _ _)   = sel5
-sel5Size (Tup7Type _ _ _ _ _ _ _) = sel5
+sel5Size Tup5Type{} = sel5
+sel5Size Tup6Type{} = sel5
+sel5Size Tup7Type{} = sel5
 
 sel6Size :: (Sel6' a ~ b) => TypeRep a -> (Size a -> Size b)
-sel6Size (Tup6Type _ _ _ _ _ _)   = sel6
-sel6Size (Tup7Type _ _ _ _ _ _ _) = sel6
+sel6Size Tup6Type{} = sel6
+sel6Size Tup7Type{} = sel6
 
 sel7Size :: (Sel7' a ~ b) => TypeRep a -> (Size a -> Size b)
-sel7Size (Tup7Type _ _ _ _ _ _ _) = sel7
+sel7Size Tup7Type{} = sel7
 
 instance SizeProp (Select TypeCtx)
   where

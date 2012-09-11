@@ -128,11 +128,11 @@ lensedFixedPoint aLens bLens f a
 -- result contain (i.e has a lens to) a common lattice
 lensedIndexedFixedPoint :: Lattice lat =>
     Lens a lat -> Lens b lat -> (Int -> a -> b) -> (a -> (b,Int))
-lensedIndexedFixedPoint aLens bLens f a = go 0 f a
+lensedIndexedFixedPoint aLens bLens f = go 0
   where
-    go i f a
+    go i a
         | aLat == bLat = ((bLens ^= aLat) b, i)
-        | otherwise    = go (i+1) f a'
+        | otherwise    = go (i+1) a'
       where
         aLat = a ^! aLens
         b    = f i a
@@ -169,12 +169,12 @@ cutOffAt n f i a | i >= n    = universal
 -- the right type).
 boundedLensedFixedPoint :: Lattice lat =>
     Int -> Lens a lat -> Lens b lat -> (a -> b) -> (a -> (b,Int))
-boundedLensedFixedPoint n aLens bLens f a = go 0 f a
+boundedLensedFixedPoint n aLens bLens f = go 0
   where
-    go i f a
+    go i a
         | aLat == bLat = ((bLens ^= aLat) b, i)
         | i >= n-1     = ((bLens ^= universal) b, i)
-        | otherwise    = go (i+1) f a'
+        | otherwise    = go (i+1) a'
       where
         aLat = a ^! aLens
         b    = f a

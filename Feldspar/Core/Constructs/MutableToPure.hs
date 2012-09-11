@@ -34,12 +34,12 @@ module Feldspar.Core.Constructs.MutableToPure
     ) where
 
 import qualified Control.Exception as C
-import Data.Array.MArray (freeze)
 import Data.Array.IArray
 #if __GLASGOW_HASKELL__>=704
+import Data.Array.MArray (freeze)
 import Data.Array.Unsafe (unsafeFreeze)
 #else
-import Data.Array.MArray (unsafeFreeze)
+import Data.Array.MArray (freeze, unsafeFreeze)
 #endif
 import System.IO.Unsafe
 

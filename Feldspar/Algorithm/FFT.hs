@@ -36,7 +36,6 @@ import qualified Prelude as P
 
 import Feldspar
 import Feldspar.Vector
-import Feldspar.Prelude
 
 -- | Radix-2 Decimation-In-Frequeny Fast Fourier Transformation of the given complex vector
 --   The given vector must be power-of-two sized, (for example 2, 4, 8, 16, 32, etc.)
@@ -63,7 +62,7 @@ fftCore n = composeOn stage (reverse (0...n))
             k2   = 1 .<<. k
 
 ifftCore :: Data Index -> Vector1 (Complex Float) -> Vector1 (Complex Float)
-ifftCore n = map (/ (complex (i2f (2^(n+1))) 0)) . composeOn stage (reverse (0...n))
+ifftCore n = map (/ complex (i2f (2^(n+1))) 0) . composeOn stage (reverse (0...n))
   where
     stage k (Indexed l ixf Empty) = indexed l ixf'
       where

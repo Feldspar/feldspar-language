@@ -93,13 +93,13 @@ instance (Unit a) => Syntax (BitVector a)
 -- * Operations
 
 length :: forall w . (Unit w) => BitVector w -> Data Length
-length bv = Prelude.foldl (+) 0 $ Prelude.map segmentLen $ segments bv
+length bv = Prelude.sum $ Prelude.map segmentLen $ segments bv
   where
     segmentLen s = numUnits s * w
     w = value $ width (T :: T w)
 
 numOfUnits :: (Unit w) => BitVector w -> Data Length
-numOfUnits bv = Prelude.foldl (+) 0 $ Prelude.map numUnits $ segments bv
+numOfUnits bv = Prelude.sum $ Prelude.map numUnits $ segments bv
 
 freezeBitVector :: forall w . (Unit w) => BitVector w -> Data [w]
 freezeBitVector bv = freezeSegments $ segments bv
@@ -245,7 +245,7 @@ drop len end bv = dropSegments len $ segments bv
         bv' = addBits (w - n) (elements s (numUnits s - 1) `shiftLU` n) ss
     addBits n bs [] = BitVector [Segment 1 $ const $ bs .|. (end `shiftRU` n)]
     addBits n bs (s:ss) = numUnits s > 0 ?
-        ( BitVector $ s':(segments bv')
+        ( BitVector $ s' : segments bv'
         , addBits n bs ss
         )
       where
@@ -276,7 +276,7 @@ zipWith f bv bw = boolFun2 f result
     result f' = Prelude.foldl (++) (BitVector [])
         [ zipSegments f' s z | s <- segIdxs bv, z <- segIdxs bw ]
     segIdxs bvec = Prelude.zip (segments bvec) $
-        Prelude.map (\ss -> Prelude.foldl (+) 0 $ Prelude.map numUnits ss) $
+        Prelude.map (Prelude.sum . Prelude.map numUnits) $
         inits $ segments bvec
     zipSegments f' (s,sStart) (z,zStart) = BitVector
         [ Segment
@@ -297,7 +297,7 @@ head :: (Unit w, Size w ~ Range w) => BitVector w -> Data Bool
 head = (!0)
 
 tail :: forall w. (Unit w, Size w ~ Range w) => Data Bool -> BitVector w -> BitVector w
-tail b bv = drop 1 (b2i b `shiftLU` (w - 1)) bv
+tail b = drop 1 (b2i b `shiftLU` (w - 1))
   where
     w = value $ width (T :: T w)
 
@@ -367,7 +367,7 @@ boolFun2 f c =
 -- * Wrapping for bitvectors
 
 instance (Unit w) => Wrap (BitVector w) (Data [w]) where
-    wrap v = freezeBitVector v
+    wrap = freezeBitVector
 
 instance (Wrap t u, Unit w, TL.Nat s) => Wrap (BitVector w -> t) (Data' s [w] -> u) where
     wrap f = \(Data' d) -> wrap $ f $ unfreezeBitVector $ setLength s' d where

@@ -26,7 +26,7 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# OPTIONS_GHC -cpp              #-}
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | Bounded integer ranges
@@ -50,7 +50,6 @@ import Data.Typeable
 import System.Random -- Should maybe be exported from QuickCheck
 import Test.QuickCheck hiding ((.&.))
 import qualified Test.QuickCheck as QC
-import Text.Printf
 
 import Feldspar.Lattice
 
@@ -423,8 +422,8 @@ rangeExpUnsigned m@(Range l1 u1) e@(Range l2 u2)
     | toInteger u1 ^ toInteger u2 > toInteger (maxBound `asTypeOf` l1) = universal
     | 0 `inRange` m && 0 `inRange` e = range 0 (max b1 b2)
     | otherwise = range b1 b2
-  where b1 = (l1 ^ l2)
-        b2 = (u1 ^ u2)
+  where b1 = l1 ^ l2
+        b2 = u1 ^ u2
 
 -- | Sigend case for 'rangeExp'
 rangeExpSigned :: BoundedInt a => Range a -> Range a -> Range a
@@ -617,8 +616,8 @@ rangeLessAbs d r
     | r == singletonRange minBound
         = lowerBound d /= minBound
     | lowerBound r == minBound
-        = d `rangeLess` (abs (range (succ (lowerBound r)) (upperBound r)))
-    | otherwise = d `rangeLess` (abs r)
+        = d `rangeLess` abs (range (succ (lowerBound r)) (upperBound r))
+    | otherwise = d `rangeLess` abs r
 
 -- | Similar to 'rangeLessAbs' but replaces the expression
 --   @abs d \`rangeLess\` abs r@ instead.
@@ -895,7 +894,7 @@ rangePropSafety1 t op rop ran =
 prop_propagation2
     :: (Show t, BoundedInt t, Random t) => t -> (forall a . Num a => a -> a -> a)
     -> Range t -> Range t -> Property
-prop_propagation2 t op r1 r2 = rangePropagationSafety t op op r1 r2
+prop_propagation2 t op = rangePropagationSafety t op op
 
 prop_rangeByRange1 t ra rb =
     forAll (fromRange ra) $ \a ->
@@ -923,7 +922,7 @@ prop_mulU t = rangePropagationSafety t (*) rangeMulUnsigned
 prop_subSat t = rangePropagationSafety t subSat rangeSubSat
 
 prop_isNegative t r =
-    not (isEmpty r) && not (r == Range minBound minBound) ==>
+    not (isEmpty r) && (r /= Range minBound minBound) ==>
         isNegative r ==> not (isNegative $ negate r)
   where _ = rangeTy r t
 
@@ -942,7 +941,7 @@ prop_shiftLU t1 t2
 
 prop_shiftRU t1 t2
     = rangePropagationSafetyPre2 t1 t2 fixShiftR rangeShiftRU (\_ _ -> True)
-  where fixShiftR a b = correctShiftRU a b
+  where fixShiftR = correctShiftRU
 
 prop_rangeMax1 t r1 = rangeMax r1 r1 == (r1 `rangeTy` t)
 
@@ -974,8 +973,7 @@ prop_rangeMax6 t v1 v2 =
     max v1 v2 `inRange` rangeMax (singletonRange v1) (singletonRange v2)
   where _ = v1 `asTypeOf` t
 
-prop_rangeMax7 a r1 r2 =
-    rangePropagationSafety a max rangeMax r1 r2
+prop_rangeMax7 a = rangePropagationSafety a max rangeMax
 
 prop_rangeMin1 t r1 = rangeMin r1 r1 == (r1 `rangeTy` t)
 
@@ -1007,8 +1005,7 @@ prop_rangeMin6 t v1 v2 =
     min v1 v2 `inRange` rangeMin (singletonRange v1) (singletonRange v2)
   where _ = v1 `asTypeOf` t
 
-prop_rangeMin7 t r1 r2 =
-    rangePropagationSafety t min rangeMin r1 r2
+prop_rangeMin7 t = rangePropagationSafety t min rangeMin
 
 prop_rangeMod1 t v1 v2 =
     v2 /= 0 ==>
