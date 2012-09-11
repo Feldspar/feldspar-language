@@ -119,7 +119,7 @@ instance Sharable (Select TypeCtx)
   where
     sharable _ = False
 
-sel1Size :: (Sel1' a ~ b) = > TypeRep a -> Size a -> Size b
+sel1Size :: (Sel1' a ~ b) => TypeRep a -> Size a -> Size b
 sel1Size Tup2Type{} = sel1
 sel1Size Tup3Type{} = sel1
 sel1Size Tup4Type{} = sel1
