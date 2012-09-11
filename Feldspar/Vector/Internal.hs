@@ -105,7 +105,7 @@ segments (Indexed l ixf cont) = Indexed l ixf Empty : segments cont
 
 length :: Vector a -> Data Length
 length Empty = 0
-length vec   = Prelude.foldr (+) 0 $ Prelude.map segmentLength $ segments vec
+length vec   = Prelude.sum $ Prelude.map segmentLength $ segments vec
 
 -- | Converts a segmented vector to a vector with a single segment.
 mergeSegments :: Syntax a => Vector a -> Vector a
@@ -120,7 +120,7 @@ mergeSegments vec = Indexed (length vec) (ixFun (segments vec)) Empty
 
 -- | Converts a non-nested vector to a core vector.
 freezeVector :: Type a => Vector (Data a) -> Data [a]
-freezeVector vec = help True vec
+freezeVector = help True
   where
     help _   Empty                 = value []
     help opt (Indexed l ixf cont)  = parallel l ixf `append` help False cont
@@ -202,10 +202,10 @@ init :: Vector a -> Vector a
 init vec = take (length vec - 1) vec
 
 tails :: Vector a -> Vector (Vector a)
-tails vec = indexed (length vec + 1) (\n -> drop n vec)
+tails vec = indexed (length vec + 1) (`drop` vec)
 
 inits :: Vector a -> Vector (Vector a)
-inits vec = indexed (length vec + 1) (\n -> take n vec)
+inits vec = indexed (length vec + 1) (`take` vec)
 
 inits1 :: Vector a -> Vector (Vector a)
 inits1 = tail . inits
@@ -329,7 +329,7 @@ instance (Arbitrary (Internal a), Syntax a) => Arbitrary (Vector a)
     arbitrary = fmap value arbitrary
 
 instance (Type a) => Wrap (Vector (Data a)) (Data [a]) where
-    wrap v = freezeVector v
+    wrap = freezeVector
 
 instance (Wrap t u, Type a, TL.Nat s) => Wrap (DVector a -> t) (Data' s [a] -> u) where
     wrap f = \(Data' d) -> wrap $ f $ thawVector $ setLength s' d where

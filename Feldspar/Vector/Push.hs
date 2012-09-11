@@ -151,7 +151,7 @@ chunk :: (Pushy arr1, Pushy arr2, Syntax b)
       -> V.Vector a
       -> PushVector b
 chunk c f g v = Push loop (noc * c)
-             ++ (toPush $ g (V.drop (noc * c) v))
+             ++ toPush (g (V.drop (noc * c) v))
   where loop func = forM noc (\i ->
                       do let (Push g _) = toPush $ f (V.take c (V.drop (c*i) v))
 		         g (\j a -> func (c*i + j) a)

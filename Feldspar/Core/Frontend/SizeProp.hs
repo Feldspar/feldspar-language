@@ -67,11 +67,11 @@ cap sz = sizeProp (const sz) (Data $ desugar ())
 
 -- | @notAbove a b@: A guarantee that @b <= a@ holds
 notAbove :: (Type a, Bounded a, Size a ~ Range a) => Data a -> SizeCap a
-notAbove = sizeProp (\r -> Range minBound (upperBound r))
+notAbove = sizeProp (Range minBound . upperBound)
 
 -- | @notBelow a b@: A guarantee that @b >= a@ holds
 notBelow :: (Type a, Bounded a, Size a ~ Range a) => Data a -> SizeCap a
-notBelow = sizeProp (\r -> Range (lowerBound r) maxBound)
+notBelow = sizeProp (flip Range maxBound . lowerBound)
 
 -- | @between l u a@: A guarantee that @l <= a <= u@ holds
 between :: (Type a, Bounded a, Size a ~ Range a) =>
