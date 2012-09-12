@@ -60,6 +60,6 @@ module Feldspar.Vector
 
 
 
-import Feldspar  -- For Haddock
+import Feldspar()  -- For Haddock
 import Feldspar.Vector.Internal hiding (freezeVector)
 

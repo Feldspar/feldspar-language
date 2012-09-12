@@ -35,7 +35,6 @@ module Feldspar.Core.Constructs.Num
 
 
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
 import Language.Syntactic.Constructs.Binding
 
 import Feldspar.Range
@@ -204,10 +203,10 @@ instance (NUM :<: dom, OptimizeSuper dom) => Optimize NUM dom
 
     -- Cases to make sure literals end up to the right:
     constructFeatOpt Add (a :* b :* Nil)
-        | Just a' <- viewLiteral a = constructFeatUnOpt Add (b :* a :* Nil)
+        | Just _ <- viewLiteral a = constructFeatUnOpt Add (b :* a :* Nil)
 
     constructFeatOpt Mul (a :* b :* Nil)
-        | Just a' <- viewLiteral a = constructFeatUnOpt Mul (b :* a :* Nil)
+        | Just _ <- viewLiteral a = constructFeatUnOpt Mul (b :* a :* Nil)
 
     constructFeatOpt a args = constructFeatUnOpt a args
 

@@ -75,7 +75,7 @@ instance (Decor SourceInfo1 (Identity TypeCtx) :<: dom, Optimize dom dom) =>
     optimizeFeat (Decor (SourceInfo1 src) Id) (a :* Nil) =
         localSource src $ optimizeM a
 
-    constructFeatOpt (Decor (SourceInfo1 src) Id) (a :* Nil) = return a
+    constructFeatOpt (Decor (SourceInfo1 _) Id) (a :* Nil) = return a
 
     constructFeatUnOpt = constructFeatUnOptDefault
 

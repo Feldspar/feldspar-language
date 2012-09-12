@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -32,16 +32,11 @@ module Feldspar.Core.Constructs.Bits
     ( BITS (..)
     ) where
 
-
-
-import Data.Hash
-
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
 import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Literal
 
 import Feldspar.Range
-import Feldspar.Lattice
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Logic
@@ -182,9 +177,9 @@ evalReverseBits :: Bits b => b -> b
 evalReverseBits b = revLoop b 0 (0 `asTypeOf` b)
   where
     bSz = bitSize b
-    revLoop b i n | i >= bSz    = n
-                  | testBit b i = revLoop b (i+1) (setBit n (bSz - i - 1))
-                  | otherwise   = revLoop b (i+1) n
+    revLoop x i n | i >= bSz    = n
+                  | testBit x i = revLoop x (i+1) (setBit n (bSz - i - 1))
+                  | otherwise   = revLoop x (i+1) n
 
 evalBitScan :: Bits b => b -> WordN
 evalBitScan b =
@@ -192,16 +187,16 @@ evalBitScan b =
    then scanLoop b (testBit b (bitSize b - 1)) (bitSize b - 2) 0
    else scanLoop b False (bitSize b - 1) 0
   where
-    scanLoop b bit i n | i Prelude.< 0              = n
-                       | testBit b i Prelude./= bit = n
-                       | otherwise                  = scanLoop b bit (i-1) (n+1)
+    scanLoop x t i n | i Prelude.< 0            = n
+                     | testBit x i Prelude./= t = n
+                     | otherwise                = scanLoop x t (i-1) (n+1)
 
 evalBitCount :: Bits b => b -> WordN
 evalBitCount b = loop b (bitSize b - 1) 0
   where
-    loop b i n | i Prelude.< 0 = n
-               | testBit b i   = loop b (i-1) (n+1)
-               | otherwise     = loop b (i-1) n
+    loop x i n | i Prelude.< 0 = n
+               | testBit x i   = loop x (i-1) (n+1)
+               | otherwise     = loop x (i-1) n
 
 instance ExprEq   BITS where exprEq = exprEqSem; exprHash = exprHashSem
 instance Render   BITS where renderPart = renderPartSem
@@ -284,6 +279,13 @@ instance ( BITS  :<: dom
 isAllOnes :: Bits a => a -> Bool
 isAllOnes x = x Prelude.== complement 0
 
+optZero :: ( Eq b, Num b
+           , Literal TypeCtx :<: dom
+           , Optimize feature dom
+           )
+        => feature (a :-> (b :-> Full a))
+        -> Args (AST (Decor Info dom)) (a :-> (b :-> Full a))
+        -> Opt (AST (Decor Info dom) (Full a))
 optZero f (a :* b :* Nil)
     | Just 0 <- viewLiteral b = return a
     | otherwise               = constructFeatUnOpt f (a :* b :* Nil)

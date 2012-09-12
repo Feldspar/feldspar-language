@@ -35,7 +35,6 @@ module Feldspar.Core.Constructs.Logic
 
 
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
 import Language.Syntactic.Constructs.Binding
 
 import Feldspar.Core.Types
@@ -106,8 +105,8 @@ instance ( Logic :<: dom
         | Just False <- viewLiteral b = return a
         | a `alphaEq` b               = return a
 
-    constructFeatOpt Not ((not :$ a) :* Nil)
-        | Just (_,Not) <- prjDecor not = return a
+    constructFeatOpt Not ((op :$ a) :* Nil)
+        | Just (_,Not) <- prjDecor op = return a
 
     constructFeatOpt Not ((op :$ a :$ b) :* Nil)
         | Just (_,Equal)    <- prjDecor op = constructFeat NotEqual (a :* b :* Nil)

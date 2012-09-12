@@ -32,7 +32,6 @@ module Feldspar.Core.Constructs.Complex
 where
 
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
 import Language.Syntactic.Constructs.Binding
 
 import Data.Complex
@@ -123,11 +122,11 @@ instance (COMPLEX :<: dom, OptimizeSuper dom) => Optimize COMPLEX dom
         , alphaEq a b
         = return a
 
-    constructFeatOpt Magnitude ((mkp :$ m :$ p) :* Nil)
+    constructFeatOpt Magnitude ((mkp :$ m :$ _) :* Nil)
         | Just (_,MkPolar) <- prjDecor mkp
         = return m
 
-    constructFeatOpt Phase ((mkp :$ m :$ p) :* Nil)
+    constructFeatOpt Phase ((mkp :$ _ :$ p) :* Nil)
         | Just (_,MkPolar) <- prjDecor mkp
         = return p
 

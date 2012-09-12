@@ -31,8 +31,6 @@
 module Feldspar.Core.Constructs.Future where
 
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
-
 
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation

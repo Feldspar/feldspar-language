@@ -493,7 +493,7 @@ rangeAnd = handleSign rangeAndUnsignedCheap (\_ _ -> universal)
 
 -- | Cheap and inaccurate range propagation for '.&.' on unsigned numbers.
 rangeAndUnsignedCheap :: BoundedInt a => Range a -> Range a -> Range a
-rangeAndUnsignedCheap (Range l1 u1) (Range l2 u2) = range 0 (min u1 u2)
+rangeAndUnsignedCheap (Range _ u1) (Range _ u2) = range 0 (min u1 u2)
 -- Code from Hacker's Delight.
 
 -- | Propagating range information through 'xor'.
@@ -502,7 +502,7 @@ rangeXor = handleSign rangeXorUnsigned  (\_ _ -> universal)
 
 -- | Unsigned case for 'rangeXor'.
 rangeXorUnsigned :: BoundedInt a => Range a -> Range a -> Range a
-rangeXorUnsigned (Range l1 u1) (Range l2 u2) = range 0 (maxPlus u1 u2)
+rangeXorUnsigned (Range _ u1) (Range _ u2) = range 0 (maxPlus u1 u2)
 -- Code from Hacker's Delight.
 
 -- | Propagating range information through 'shiftLU'.
@@ -511,7 +511,9 @@ rangeShiftLU = handleSign rangeShiftLUUnsigned (\_ _ -> universal)
 -- TODO: improve accuracy
 
 -- | Unsigned case for 'rangeShiftLU'.
-rangeShiftLUUnsigned (Range l1 u1) (Range l2 u2)
+rangeShiftLUUnsigned :: (Bounded a, Bits a, Integral a, Integral b)
+                     => Range a -> Range b -> Range a
+rangeShiftLUUnsigned (Range _ u1) (Range _ u2)
     | toInteger (bits u1) + fromIntegral u2 > toInteger (bitSize u1) = universal
 rangeShiftLUUnsigned (Range l1 u1) (Range l2 u2)
     = range (shiftL l1 (fromIntegral l2)) (shiftL u1 (fromIntegral u2))
@@ -522,13 +524,15 @@ rangeShiftRU = handleSign rangeShiftRUUnsigned (\_ _ -> universal)
 -- TODO: improve accuracy
 
 -- | Unsigned case for 'rangeShiftRU'.
+rangeShiftRUUnsigned :: (Bits a, Ord a, Bounded b, Integral b, Bits b)
+                     => Range a -> Range b -> Range a
 rangeShiftRUUnsigned (Range l1 u1) (Range l2 u2)
     = range (correctShiftRU l1 u2) (correctShiftRU u1 l2)
 
 -- | This is a replacement fror Haskell's shiftR. If we carelessly use
 --   Haskell's variant then we will get left shifts for very large shift values.
 correctShiftRU :: (Bits a, BoundedInt b) => a -> b -> a
-correctShiftRU a i | i > fromIntegral (maxBound :: Int) = 0
+correctShiftRU _ i | i > fromIntegral (maxBound :: Int) = 0
 correctShiftRU a i = shiftR a (fromIntegral i)
 
 rangeComplement :: (Bits a, BoundedInt a) => Range a -> Range a
@@ -571,7 +575,7 @@ rangeMod d r
     where
       isNeg = (`isSubRangeOf` negs)
       negs  = negativeRange \/ 0
-rangeMod d (Range l u) = Range (succ l) (pred u)
+rangeMod _ (Range l u) = Range (succ l) (pred u)
 
 -- | Propagates range information through 'rem'.
 -- Note that we assume Haskell semantics for 'rem'.
@@ -586,10 +590,11 @@ rangeRem d r
     where
       isNeg = (`isSubRangeOf` negs)
       negs  = negativeRange \/ 0
-rangeRem d r@(Range l u)
+rangeRem _ (Range l u)
     | abs l >= abs u || l == minBound = range (succ $ negate $ abs l) (predAbs l)
     | otherwise      = range (succ $ negate $ abs u) (predAbs u)
 
+predAbs :: (Bounded a, Eq a, Num a, Enum a) => a -> a
 predAbs l | l == minBound = abs (succ l)
           | otherwise     = pred (abs l)
 
@@ -597,7 +602,7 @@ rangeDiv :: BoundedInt a => Range a -> Range a -> Range a
 rangeDiv = handleSign rangeDivU (\_ _ -> universal)
 
 rangeDivU :: BoundedInt a => Range a -> Range a -> Range a
-rangeDivU (Range l1 u1) (Range l2 u2) | l2 == 0 || u2 == 0 = universal
+rangeDivU (Range _  _ ) (Range l2 u2) | l2 == 0 || u2 == 0 = universal
 rangeDivU (Range l1 u1) (Range l2 u2) = Range (l1 `quot` u2) (u1 `quot`l2)
 
 -- | Propagates range information through 'quot'.
@@ -606,12 +611,14 @@ rangeQuot = handleSign rangeQuotU (\_ _ -> universal)
 
 -- | Unsigned case for 'rangeQuot'.
 rangeQuotU :: BoundedInt a => Range a -> Range a -> Range a
-rangeQuotU (Range l1 u1) (Range l2 u2) | l2 == 0 || u2 == 0 = universal
+rangeQuotU (Range _  _ ) (Range l2 u2) | l2 == 0 || u2 == 0 = universal
 rangeQuotU (Range l1 u1) (Range l2 u2) = Range (l1 `quot` u2) (u1 `quot` l2)
 
 -- | Writing @d \`rangeLess\` abs r@ doesn't mean what you think it does because
 -- 'r' may contain minBound which doesn't have a positive representation.
 -- Instead, this function should be used.
+rangeLessAbs :: (Bounded a, Integral a, Bits a)
+             => Range a -> Range a -> Bool
 rangeLessAbs d r
     | r == singletonRange minBound
         = lowerBound d /= minBound
@@ -621,6 +628,8 @@ rangeLessAbs d r
 
 -- | Similar to 'rangeLessAbs' but replaces the expression
 --   @abs d \`rangeLess\` abs r@ instead.
+absRangeLessAbs :: (Bounded a, Integral a, Bits a)
+                => Range a -> Range a -> Bool
 absRangeLessAbs d r
     | lowerBound d == minBound = False
     | otherwise = abs d `rangeLessAbs` r
@@ -639,7 +648,7 @@ liftR :: (BoundedInt b, BoundedInt c, BoundedInt d) =>
 liftR r = (r,r,r)
 
 binopR :: (BoundedInt a, BoundedInt b, BoundedInt c) =>
-          (forall a. BoundedInt a => Range a -> Range a -> Range a) ->
+          (forall d. BoundedInt d => Range d -> Range d -> Range d) ->
           (Range a, Range b, Range c) ->
           (Range a, Range b, Range c) ->
           (Range a, Range b, Range c)
@@ -648,7 +657,7 @@ binopR bop (a1,b1,c1) (a2,b2,c2)
 
 
 mapR :: (BoundedInt a, BoundedInt b, BoundedInt c) =>
-        (forall a . BoundedInt a => Range a -> Range a) ->
+        (forall d . BoundedInt d => Range d -> Range d) ->
         (Range a, Range b, Range c) ->
         (Range a, Range b, Range c)
 mapR f (a,b,c) = (f a, f b, f c)
@@ -722,7 +731,7 @@ fromRange r
     | otherwise = choose (lowerBound r, upperBound r)
 
 rangeTy :: Range t -> t -> Range t
-rangeTy r t = r
+rangeTy r _ = r
 
 -- | Applies a (monadic) function to all the types we are interested in testing
 -- with for Feldspar.
@@ -842,7 +851,7 @@ prop_rangeLessEq t r1 r2 =
 
 prop_propagation1 :: (Show t, BoundedInt t, Random t) =>
                      t -> (forall a . Num a => a -> a) -> Range t -> Property
-prop_propagation1 t op r =
+prop_propagation1 _ op r =
     not (isEmpty r) ==>
     forAll (fromRange r) $ \x ->
     op x `inRange` op r
@@ -861,7 +870,7 @@ rangePropagationSafetyPre :: (Show t, Random t, BoundedInt t, BoundedInt a) =>
     (t -> t -> a) -> (Range t -> Range t -> Range a) ->
     (t -> t -> Bool) ->
     Range t -> Range t -> Property
-rangePropagationSafetyPre t op rop pre r1 r2 =
+rangePropagationSafetyPre _ op rop pre r1 r2 =
     not (isEmpty r1) && not (isEmpty r2) ==>
     forAll (fromRange r1) $ \v1 ->
     forAll (fromRange r2) $ \v2 ->
@@ -874,7 +883,7 @@ rangePropagationSafetyPre2 ::
     (t -> t2 -> a) -> (Range t -> Range t2 -> Range a) ->
     (t -> t2 -> Bool) ->
     Range t -> Range t2 -> Property
-rangePropagationSafetyPre2 t1 t2 op rop pre r1 r2 =
+rangePropagationSafetyPre2 _ _ op rop pre r1 r2 =
     not (isEmpty r1) && not (isEmpty r2) ==>
     forAll (fromRange r1) $ \v1 ->
     forAll (fromRange r2) $ \v2 ->

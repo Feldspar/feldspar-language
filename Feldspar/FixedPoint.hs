@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -36,12 +36,9 @@ where
 
 import qualified Prelude
 import Feldspar hiding (sugar,desugar)
-import Feldspar.Core.Constructs
 import Feldspar.Vector
 
 import Language.Syntactic
-
-import Data.Ratio
 
 -- | Abstract real number type with exponent and mantissa
 data Fix a =
@@ -77,65 +74,60 @@ instance
     fromRational = fixfromRational
 
 fixAddition :: (Integral a, Bits a, Prelude.Real a, Size a ~ Range a) => Fix a -> Fix a -> Fix a
-fixAddition f1@(Fix e1 m1) f2@(Fix e2 m2) = Fix e m
+fixAddition f1@(Fix e1 _) f2@(Fix e2 _) = Fix e m
    where
-     e    =  max e1 e2
-     m    =  mantissa (fix e f1) + mantissa (fix e f2)
+     e = max e1 e2
+     m = mantissa (fix e f1) + mantissa (fix e f2)
 
 fixMultiplication :: (Integral a, Bits a, Prelude.Real a) => Fix a -> Fix a -> Fix a
-fixMultiplication f1@(Fix e1 m1) f2@(Fix e2 m2) = Fix e m
+fixMultiplication (Fix e1 m1) (Fix e2 m2) = Fix e m
    where
-     e  =  e1 + e2
-     m    =  m1 * m2
+     e =  e1 + e2
+     m =  m1 * m2
 
 fixNegate :: (Integral a, Bits a, Prelude.Real a) => Fix a -> Fix a
-fixNegate f1@(Fix e1 m1)  = Fix e1 m
+fixNegate (Fix e1 m1)  = Fix e1 m
    where
      m = negate m1
 
 fixAbsolute :: (Integral a, Bits a, Prelude.Real a) => Fix a -> Fix a
-fixAbsolute f1@(Fix e1 m1)  = Fix e1 m
+fixAbsolute (Fix e1 m1)  = Fix e1 m
    where
      m = abs m1
 
 fixSignum :: (Integral a, Bits a, Prelude.Real a) => Fix a -> Fix a
-fixSignum f1@(Fix e1 m1)  = Fix 0 m
+fixSignum (Fix _ m1)  = Fix 0 m
    where
      m = signum m1
 
-fixFromInteger :: (Integral a, Bits a, Prelude.Real a) =>  Integer -> Fix a
-fixFromInteger i  = Fix 0 m
-   where
-     m = fromInteger i
-
 fixDiv' :: (Integral a, Bits a, Prelude.Real a, Size a ~ Range a)
            => Fix a -> Fix a -> Fix a
-fixDiv' f1@(Fix e1 m1) f2@(Fix e2 m2) = Fix e m
+fixDiv' (Fix e1 m1) (Fix e2 m2) = Fix e m
    where
-     e = e1-e2
-     m  = div m1 m2
+     e = e1 - e2
+     m = div m1 m2
 
 fixRecip' :: forall a . (Integral a, Bits a, Prelude.Real a, Size a ~ Range a)
              => Fix a -> Fix a
-fixRecip' f@(Fix e m) = Fix (e + value (wordLength (T :: T a) - 1)) (div sh m)
+fixRecip' (Fix e m) = Fix (e + value (wordLength (T :: T a) - 1)) (div sh m)
    where
      sh  :: Data a
      sh  = (1::Data a) .<<. value (fromInteger $ toInteger $ wordLength (T :: T a) - 1)
 
 fixfromRational :: forall a . (Integral a, Size a ~ Range a) =>
                    Prelude.Rational -> Fix a
-fixfromRational inp = Fix exponent mantissa
+fixfromRational inp = Fix e m
    where
       inpAsFloat :: Float
-      inpAsFloat =  fromRational inp
+      inpAsFloat = fromRational inp
       intPart :: Float
-      intPart =  fromRational $ toRational $ Prelude.floor inpAsFloat
+      intPart = fromRational $ toRational $ Prelude.floor inpAsFloat
       intPartWidth :: IntN
       intPartWidth =  Prelude.ceiling $ Prelude.logBase 2 intPart
       fracPartWith :: IntN
       fracPartWith =  wordLength (T :: T a) - intPartWidth - 2
-      mantissa = value $ Prelude.floor $ inpAsFloat * 2.0 Prelude.** fromRational (toRational fracPartWith)
-      exponent = negate $ value fracPartWith
+      m = value $ Prelude.floor $ inpAsFloat * 2.0 Prelude.** fromRational (toRational fracPartWith)
+      e = negate $ value fracPartWith
 
 instance (Type a) => Syntactic (Fix a) FeldDomainAll where
   type Internal (Fix a) = (IntN, a)
@@ -182,16 +174,6 @@ setSignificantBits sb x = resizeData r x
 -}
 wordLength :: forall a . (Integral a, Prelude.Real a) => T a -> IntN
 wordLength _ = Prelude.ceiling ( Prelude.logBase 2 $ fromRational $ toRational (maxBound :: a)) + 1
-
-wordLength' :: forall a . (Integral a, Prelude.Real a) => a -> IntN
-wordLength' x = swl
-   where
-    b   :: a
-    wl  :: IntN
-    swl :: IntN
-    b   = maxBound::a
-    wl  = Prelude.ceiling $ Prelude.logBase 2 $ fromRational $ toRational b
-    swl = wl + 1
 
 -- | Operations to get and set exponent
 class (Splittable t) => Fixable t where

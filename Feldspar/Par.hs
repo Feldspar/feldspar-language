@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,7 +13,7 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 -- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
@@ -39,12 +39,13 @@ module Feldspar.Par
   , pval
   , parMap
   , parMapM
+  , divConq
   )
 where
 
 import Language.Syntactic
 
-import Feldspar.Core.Constructs (Syntax(..))
+import Feldspar.Core.Constructs (Syntax())
 import Feldspar.Core.Constructs.Par
 import Feldspar.Core.Frontend.Par
 
@@ -72,20 +73,17 @@ spawn p = do
     fork (p >>= put r)
     return r
 
+pval :: Syntax a => a -> P (IVar a)
 pval a = spawn (return a)
 
+parMap :: Syntax b => (a -> b) -> [a] -> P [b]
 parMap f xs = mapM (pval . f) xs >>= mapM get
 
+parMapM :: Syntax b => (a -> P b) -> [a] -> P [b]
 parMapM f xs = mapM (spawn . f) xs >>= mapM get
 
-{-
-divConq :: (prob -> Bool)   -- indivisible?
-        -> (prob -> [prob]) -- split into subproblems
-        -> ([sol] -> [sol]) -- join solutions
-        -> (prob -> sol)    -- solve a (sub)problem
-        -> (prob -> sol)
--}
-divConq indiv split join f prob = go prob
+divConq :: Syntax b => (a -> Bool) -> (a -> [a]) -> ([b] -> b) -> (a -> b) -> a -> P b
+divConq indiv split join f = go
   where
     go prob | indiv prob = return (f prob)
             | otherwise  = do

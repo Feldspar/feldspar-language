@@ -35,7 +35,6 @@ module Feldspar.Core.Constructs.Fractional
 
 
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
 import Language.Syntactic.Constructs.Binding
 
 import Feldspar.Core.Types
@@ -81,12 +80,12 @@ instance (FRACTIONAL :<: dom, NUM :<: dom, OptimizeSuper dom) => Optimize FRACTI
         | Just 1 <- viewLiteral b = return a
         | alphaEq a b = return $ literalDecor 1
 
-    constructFeatOpt df@DivFrac ((op :$ a :$ b) :* c :* Nil)
+    constructFeatOpt DivFrac ((op :$ a :$ b) :* c :* Nil)
         | Just (_,Mul) <- prjDecor op
         , alphaEq b c
         = return a
 
-    constructFeatOpt df@DivFrac ((op :$ a :$ b) :* c :* Nil)
+    constructFeatOpt DivFrac ((op :$ a :$ b) :* c :* Nil)
         | Just (_,Mul) <- prjDecor op
         , alphaEq a c
         = return b

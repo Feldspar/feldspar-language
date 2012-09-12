@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -16,7 +16,7 @@
 -- 
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -113,17 +113,16 @@ mergeSegments vec = Indexed (length vec) (ixFun (segments vec)) Empty
     -- Note: Important to use `Indexed` instead of `indexed` since we need to
     --       guarantee that the result has a single segment.
   where
-    ixFun [] = \i -> err "indexing in empty vector"
+    ixFun []                     = const $ err "indexing in empty vector"
+    ixFun (Empty : vs)           = ixFun vs
     ixFun (Indexed l ixf _ : vs) = case vs of
       [] -> ixf
       _  -> \i -> (i<l) ? (ixf i, ixFun vs (i-l))
 
 -- | Converts a non-nested vector to a core vector.
 freezeVector :: Type a => Vector (Data a) -> Data [a]
-freezeVector = help True
-  where
-    help _   Empty                 = value []
-    help opt (Indexed l ixf cont)  = parallel l ixf `append` help False cont
+freezeVector Empty                = value []
+freezeVector (Indexed l ixf cont) = parallel l ixf `append` freezeVector cont
 
 -- | Converts a non-nested core array to a vector.
 thawVector :: Type a => Data [a] -> Vector (Data a)
@@ -337,7 +336,7 @@ instance (Wrap t u, Type a, TL.Nat s) => Wrap (DVector a -> t) (Data' s [a] -> u
 
 instance Annotatable a => Annotatable (Vector a)
   where
-    annotate info Empty = Empty
+    annotate _    Empty                  = Empty
     annotate info (Indexed len ixf cont) = Indexed
         (annotate (info Prelude.++ " (vector length)") len)
         (annotate (info Prelude.++ " (vector element)") . ixf)

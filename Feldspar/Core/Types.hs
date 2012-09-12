@@ -278,7 +278,7 @@ instance Show (IV a)
 
 instance Eq (IV a)
   where
-    a == b = False
+    _ == _ = False
 
 instance MonadType Par
   where
@@ -372,9 +372,9 @@ data TypeEq a b
 defaultSize :: TypeRep a -> Size a
 defaultSize UnitType = universal
 defaultSize BoolType = universal
-defaultSize (IntType s n) = universal
+defaultSize (IntType _ _) = universal
 defaultSize FloatType = universal
-defaultSize (ComplexType t) = universal
+defaultSize (ComplexType _) = universal
 defaultSize (ArrayType t) = universal :> defaultSize t
 --defaultSize (TargetArrType n t) = universal :> defaultSize t -- TODO
 defaultSize (Tup2Type ta tb) =  ( defaultSize ta
@@ -410,7 +410,7 @@ defaultSize (Tup7Type ta tb tc td te tf tg) = ( defaultSize ta
                                               , defaultSize tf
                                               , defaultSize tg
                                               )
-defaultSize (FunType ta tb) = defaultSize tb
+defaultSize (FunType _ tb) = defaultSize tb
 defaultSize (MutType ta) = defaultSize ta
 defaultSize (RefType ta) = defaultSize ta
 defaultSize (MArrType ta) = universal :> defaultSize ta
@@ -572,7 +572,7 @@ instance (Type a, RealFloat a) => Type (Complex a)
   where
     typeRep             = ComplexType typeRep
     sizeOf _            = AnySize
-    toTarget n (r :+ i) = error "TODO" -- toTarget n r :+ toTarget n i
+    toTarget _ (_ :+ _) = error "TODO" -- toTarget n r :+ toTarget n i
 
 instance Type a => Type [a]
   where

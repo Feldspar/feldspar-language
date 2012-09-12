@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -31,10 +31,7 @@
 module Feldspar.BitVector where
 
 import qualified Prelude
-import qualified Data.TypeLevel
-import Data.Int
 import Data.Word
-import Data.Typeable
 import Data.List (inits)
 import qualified Data.TypeLevel as TL
 
@@ -145,15 +142,15 @@ instance (Unit w, Size w ~ Range w) => Indexed (BitVector w)
   where
     bv ! i = help 0 (segments bv)
       where
-        help accum [] = false
+        help _      [] = false
             -- XXX Should be an error here...
-        help accum [s] = bit s accum i
+        help accum [s] = ixf s accum i
         help accum (s:ss) = i < accum + numUnits s * w ?
-            ( bit s accum i
+            ( ixf s accum i
             , help (accum + numUnits s * w) ss
             )
         w = value $ width (T :: T w)
-        bit s accum i = testBit (elements s ((i - accum) `div` w)) (w - 1 - ((i - accum) `mod` w))
+        ixf s accum ix = testBit (elements s ((ix - accum) `div` w)) (w - 1 - ((ix - accum) `mod` w))
 
 fromBits :: forall w . (Unit w) => [Bool] -> BitVector w
 fromBits bs = unfreezeBitVector $ value xs
@@ -175,16 +172,16 @@ indexed l ixf = fromVector $ Vec.indexed l ixf
 
 map :: (Unit w, Size w ~ Range w) =>
     (Data Bool -> Data Bool) -> BitVector w -> BitVector w
-map f bv = boolFun1 f result
+map f bv = boolFun1 f res
   where
-    result f' = BitVector $
+    res f' = BitVector $
         Prelude.map (\s -> s{elements = f' . elements s}) $ segments bv
 
 takeUnits :: forall w . (Unit w) =>
     Data Length -> BitVector w -> BitVector w
 takeUnits len bv = help len [] $ segments bv
   where
-    help n acc [] = BitVector acc
+    help _ acc [] = BitVector acc
     help n acc (s:ss) = n < numUnits s ?
         ( BitVector (acc Prelude.++ [s{numUnits = n}])
         , help (n - numUnits s) (acc Prelude.++ [s]) ss
@@ -194,7 +191,7 @@ dropUnits :: forall w . (Unit w) =>
     Data Length -> BitVector w -> BitVector w
 dropUnits len bv = help len $ segments bv
   where
-    help n [] = BitVector []
+    help _ [] = BitVector []
     help n (s:ss) = n < numUnits s ?
         ( BitVector $ s':ss
         , help (n - numUnits s) ss
@@ -214,7 +211,7 @@ drop :: forall w . (Unit w, Size w ~ Range w) =>
 drop len end bv = dropSegments len $ segments bv
   where
     w = value $ width (T :: T w)
-    dropSegments n [] = BitVector []
+    dropSegments _ [] = BitVector []
     dropSegments n (s:ss) = n < sLen ?
         ( dropUnits n s ss
         , dropSegments (n - sLen) ss
@@ -229,7 +226,7 @@ drop len end bv = dropSegments len $ segments bv
             }
         wordsToDrop = n `div` w
         bitsToDrop = n `mod` w
-    dropBits n [] = BitVector []
+    dropBits _ [] = BitVector []
     dropBits n (s:ss) = n > 0 ?
         ( BitVector $ s' : segments bv'
         , BitVector (s:ss)
@@ -257,7 +254,7 @@ drop len end bv = dropSegments len $ segments bv
 
 fold :: forall w a. (Syntax a, Unit w, Size w ~ Range w) =>
     (a -> Data Bool -> a) -> a -> BitVector w -> a
-fold f ini (BitVector []) = ini
+fold _ ini (BitVector []) = ini
 fold f ini (BitVector (s:ss)) = fold f (forLoop (numUnits s) ini f') $ BitVector ss
   where
     f' :: Data Index -> a -> a
@@ -271,9 +268,9 @@ zipWith :: forall w. (Unit w, Size w ~ Range w) =>
     -> BitVector w
     -> BitVector w
     -> BitVector w
-zipWith f bv bw = boolFun2 f result
+zipWith f bv bw = boolFun2 f res
   where
-    result f' = Prelude.foldl (++) (BitVector [])
+    res f' = Prelude.foldl (++) (BitVector [])
         [ zipSegments f' s z | s <- segIdxs bv, z <- segIdxs bw ]
     segIdxs bvec = Prelude.zip (segments bvec) $
         Prelude.map (Prelude.sum . Prelude.map numUnits) $
@@ -321,44 +318,44 @@ boolFun2 f c =
     ( f true false ?
       ( f false true ?
         ( f false false ?
-          ( c $ \a b -> complement 0
-          , c $ \a b -> a .|. b
+          ( c $ \_ _ -> complement 0
+          , c $ (.|.)
           )
         , f false false ?
-          ( c $ \a b -> a .|. complement b
-          , c $ \a _ -> a
+          ( c $ \x y -> x .|. complement y
+          , c $ \x _ -> x
           )
         )
       , f false true ?
         ( f false false ?
-          ( c $ \a b -> complement a .|. b
-          , c $ \a b -> b
+          ( c $ \x y -> complement x .|. y
+          , c $ \_ y -> y
           )
         , f false false ?
-          ( c $ \a b -> complement (a `xor` b)
-          , c $ \a b -> a .&. b
+          ( c $ \x y -> complement (x `xor` y)
+          , c $ (.&.)
           )
         )
       )
     , f true false ?
       ( f false true ?
         ( f false false ?
-          ( c $ \a b -> complement (a .&. b)
-          , c $ \a b -> a `xor` b
+          ( c $ \x y -> complement (x .&. y)
+          , c $ \x y -> x `xor` y
           )
         , f false false ?
-          ( c $ \a b -> complement b
-          , c $ \a b -> a .&. complement b
+          ( c $ \_ y -> complement y
+          , c $ \x y -> x .&. complement y
           )
         )
       , f false true ?
         ( f false false ?
-          ( c $ \a b -> complement a
-          , c $ \a b -> complement a .&. b
+          ( c $ \x _ -> complement x
+          , c $ \x y -> complement x .&. y
           )
         , f false false ?
-          ( c $ \a b -> complement (a .|. b)
-          , c $ \a b -> 0
+          ( c $ \x y -> complement (x .|. y)
+          , c $ \_ _ -> 0
           )
         )
       )

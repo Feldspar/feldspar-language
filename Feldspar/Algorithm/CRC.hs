@@ -33,20 +33,22 @@ import qualified Prelude
 import Feldspar
 import Feldspar.Vector
 
+tstBit :: Bits a => Data a -> Data Index -> Data Bool
 tstBit w b = w .&. (1 .<<. b) /= 0
 
 makeCrcTable :: (Bits a) => Data a -> Vector1 a
-makeCrcTable poly = indexed 256 $ \i -> forLoop 8 (i2n i .<<. (sz - 8)) step
+makeCrcTable polynomial = indexed 256 $ \i -> forLoop 8 (i2n i .<<. (sz - 8)) step
   where
-    sz       = bitSize poly
-    step _ r = let r' = r .<<. 1 in condition (tstBit r (sz-1)) (r' `xor` poly) r'
+    sz       = bitSize polynomial
+    step _ r = let r' = r .<<. 1
+               in condition (tstBit r (sz-1)) (r' `xor` polynomial) r'
 
 -- | Calculate the normal form CRC using a table
 crcNormal :: (Bits a)
           => Vector1 a -> Data a -> Vector1 Word8 -> Data a
-crcNormal table init xs = fold step init xs
+crcNormal table initial xs = fold step initial xs
   where
-    sz         = bitSize init
+    sz         = bitSize initial
     step crc a = (table ! i2n ((i2n (crc .>>. (sz - 8)) .&. 0xFF) `xor` a)) `xor` (crc .<<. 8)
 
 -- | Calculate the reflected form CRC using a table
@@ -72,6 +74,7 @@ data CRC a = CRC { name       :: String
                  , xorOut     :: a
                  }
 
+crc16 :: CRC (Data Word16)
 crc16 = CRC "CRC-16" 16 0x8005 0x0000 True True 0x0000
 
 -- | Reflect the bottom b bits of value t

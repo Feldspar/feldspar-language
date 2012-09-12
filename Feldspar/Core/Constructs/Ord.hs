@@ -35,7 +35,6 @@ module Feldspar.Core.Constructs.Ord
 
 
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
 import Language.Syntactic.Constructs.Binding
 
 import Feldspar.Range

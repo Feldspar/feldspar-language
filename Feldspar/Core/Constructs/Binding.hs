@@ -107,11 +107,11 @@ optimizeFunctionFix opt info (lam :$ body)
         env <- ask
 
         let aLens :: Lens (Info a) (Size a)
-            aLens = lens infoSize (\sz info -> info {infoSize = sz})
+            aLens = lens infoSize (\sz inf -> inf {infoSize = sz})
 
         let bLens :: Lens (ASTF (Decor Info dom) a) (Size a)
             bLens = lens (infoSize . getInfo)
-                (\sz a -> updateDecor (\info -> info {infoSize = sz}) a)
+                (\sz a -> updateDecor (\inf -> inf {infoSize = sz}) a)
 
         let body' = fst $ boundedLensedFixedPoint 1 aLens bLens
                 (optimizeFunBody opt env v body)

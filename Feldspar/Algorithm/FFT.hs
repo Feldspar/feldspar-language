@@ -97,5 +97,6 @@ oneBits n = complement (allOnes .<<. n)
 allOnes :: (Bits a) => Data a
 allOnes = complement 0
 
+lsbs :: Bits a => Data Index -> Data a -> Data a
 lsbs k i = i .&. oneBits k
 

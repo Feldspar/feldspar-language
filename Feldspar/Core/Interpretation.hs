@@ -67,16 +67,14 @@ module Feldspar.Core.Interpretation
 
 
 import Control.Monad.Reader
-import Control.Monad.Writer
 import Data.Map as Map
--- import Data.Set as Set
 import Data.Typeable (Typeable)
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Decoration
 import Language.Syntactic.Constructs.Literal
 import Language.Syntactic.Constructs.Binding
-import qualified Language.Syntactic.Constructs.Binding.Optimize as Synt  -- For Haddock
+import qualified Language.Syntactic.Constructs.Binding.Optimize as Synt () -- For Haddock
 
 import Feldspar.Lattice
 import Feldspar.Core.Types

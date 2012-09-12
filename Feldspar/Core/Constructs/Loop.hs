@@ -34,7 +34,6 @@ where
 import Control.Monad (forM_, when)
 
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
 import Language.Syntactic.Constructs.Binding
 
 import Feldspar.Range
@@ -93,11 +92,11 @@ instance Semantic Loop
   where
     semantics ForLoop = Sem "forLoop" forLoop
       where
-        forLoop 0 init _    = init
-        forLoop l init body = foldl (flip body) init [0..l-1]
+        forLoop 0 initial _    = initial
+        forLoop l initial body = foldl (flip body) initial [0..l-1]
     semantics WhileLoop = Sem "whileLoop" whileLoop
       where
-        whileLoop init cond body = go init
+        whileLoop initial cond body = go initial
           where
             go st | cond st   = go $ body st
                   | otherwise = st
@@ -167,9 +166,9 @@ instance ( Variable TypeCtx :<: dom
          )
       => Optimize Loop dom
   where
-    optimizeFeat ForLoop (len :* init :* step :* Nil) = do
+    optimizeFeat ForLoop (len :* initial :* step :* Nil) = do
         len'  <- optimizeM len
-        init' <- optimizeM init
+        init' <- optimizeM initial
         let szI     = infoSize (getInfo len')
             ixRange = Range 0 (upperBound szI-1)
         step' <- optimizeFunction
@@ -183,29 +182,28 @@ instance ( Variable TypeCtx :<: dom
             step
         constructFeat ForLoop (len' :* init' :* step' :* Nil)
 
-    optimizeFeat WhileLoop (init :* cond :* body :* Nil) = do
-        init' <- optimizeM init
-        let info = getInfo init'
+    optimizeFeat WhileLoop (initial :* cond :* body :* Nil) = do
+        init' <- optimizeM initial
         body' <- optimizeFunction optimizeM (mkInfoTy typeRep) body
         -- body' <- optimizeFunctionFix optimizeM info body
         -- TODO See comment above
 
+        let info  = getInfo init'
         let info' = info { infoSize = infoSize (getInfo body') }
         cond' <- optimizeFunction optimizeM info' cond
         constructFeat WhileLoop (init' :* cond' :* body' :* Nil)
 
-    constructFeatOpt ForLoop (len :* init :* step :* Nil)
-        | Just 0 <- viewLiteral len = return init
+    constructFeatOpt ForLoop (len :* initial :* step :* Nil)
+        | Just 0 <- viewLiteral len = return initial
         | Just 1 <- viewLiteral len = do
-          let len' = stripDecor len -- TODO strip since betaReduce can't handle decorations
-              init' = stripDecor init
+          let init' = stripDecor initial
               step' = stripDecor step
           optimizeM $ betaReduce typeCtx init' $ betaReduce typeCtx (appSymCtx typeCtx $ Literal 0) step'
         -- TODO add an optional unroll limit?
 
       -- ForLoop len init (const id) ==> init
-    constructFeatOpt ForLoop (len :* init :* step :* Nil)
-        | alphaEq step' (fun `asTypeOf` step') = optimizeM $ stripDecor init
+    constructFeatOpt ForLoop (_ :* initial :* step :* Nil)
+        | alphaEq step' (fun `asTypeOf` step') = optimizeM $ stripDecor initial
       where
         step' = stripDecor step
         fun = appSymCtx typeCtx (Lambda 0) $ appSymCtx typeCtx (Lambda 1) $ appSymCtx typeCtx (Variable 1)

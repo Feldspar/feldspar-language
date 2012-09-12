@@ -152,14 +152,14 @@ chunk :: (Pushy arr1, Pushy arr2, Syntax b)
       -> PushVector b
 chunk c f g v = Push loop (noc * c)
              ++ toPush (g (V.drop (noc * c) v))
-  where loop func = forM noc (\i ->
-                      do let (Push g _) = toPush $ f (V.take c (V.drop (c*i) v))
-		         g (\j a -> func (c*i + j) a)
-                    )
-        l = length v
+  where l = length v
         noc = l `div` c
+        loop func = forM noc $ \i ->
+                      do let (Push k _) = toPush $ f (V.take c (V.drop (c*i) v))
+                         k (\j a -> func (c*i + j) a)
 
 -- | The empty push vector.
+empty :: PushVector a
 empty = Push (const (return ())) 0
 
 -- | Flattens a pull vector containing push vectors into an unnested push vector

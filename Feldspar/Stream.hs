@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -48,20 +48,19 @@ module Feldspar.Stream
     ,splitAt
     ,cycle
     ,streamAsVector, streamAsVectorSize
-    ,recurrenceO, recurrenceI, recurrenceIO
+    ,recurrenceO, recurrenceI, recurrenceIO, recurrenceIIO
+    ,slidingAvg
     ,iir,fir
     )
     where
 
 import qualified Prelude as P
 
-import Control.Arrow
-
 import Feldspar
 import Feldspar.Vector.Internal
          (Vector, Vector1
          ,freezeVector,thawVector,indexed
-         ,sum,length,replicate,reverse,scalarProd)
+         ,sum,length,replicate,scalarProd)
 
 -- | Infinite streams.
 data Stream a where
@@ -104,19 +103,20 @@ mapNth f n k (Stream next init) = Stream newNext newInit
 --   the elements of 'str'
 maps :: (Syntax a) =>
         [a -> a] -> Stream a -> Stream a
-maps fs (Stream next init) = Stream newNext newInit
+maps fs (Stream next initial) = Stream newNext newInit
   where
     newInit = do
       r  <- newRef (0 :: Data Index)
-      st <- init
+      st <- initial
       return (r,st)
+
     newNext (r,st) = do
       a <- next st
       i <- getRef r
       setRef r ((i+1) `mod` P.fromIntegral (P.length fs))
       return $
-        (P.foldr (\ (k,f) r ->
-                            i==(P.fromIntegral k)?(f a,r)))
+        (P.foldr (\ (k,f) x ->
+                            i==(P.fromIntegral k)?(f a,x)))
          a (P.zip [1..] fs)
 
 -- | 'intersperse a str' inserts an 'a' between each element of the stream
@@ -177,9 +177,9 @@ scan f a (Stream next init) = Stream newNext newInit
     newInit = do st <- init
                  r  <- newRef a
                  return (st,r)
-    newNext (st,r) = do a   <- next st
+    newNext (st,r) = do x   <- next st
                         acc <- getRef r
-                        setRef r (f acc a)
+                        setRef r (f acc x)
                         return acc
 
 
@@ -211,9 +211,9 @@ mapAccum f acc (Stream next init)
       r  <- newRef acc
       return (st,r)
     newNext (st,r) = do
-      acc <- getRef r
-      a   <- next st
-      let (acc',b) = f acc a
+      x <- getRef r
+      a <- next st
+      let (acc',b) = f x a
       setRef r acc'
       return b
 
@@ -225,9 +225,9 @@ iterate :: Syntax a => (a -> a) -> a -> Stream a
 iterate f a = Stream next init
   where
     init = newRef a
-    next r = do a <- getRef r
-                setRef r (f a)
-                return a
+    next r = do x <- getRef r
+                setRef r (f x)
+                return x
 
 -- | Repeat an element indefinitely.
 --
@@ -390,7 +390,7 @@ recurrenceI :: (Type a, Type b) =>
                (Vector1 a -> Data b) ->
                Stream (Data b)
 recurrenceI ii stream mkExpr
-    = recurrenceIO ii stream (value []) (\i o -> mkExpr i)
+    = recurrenceIO ii stream (value []) (\i _ -> mkExpr i)
 
 -- | 'recurrenceIO' is a combination of 'recurrenceO' and 'recurrenceI'. It
 --   has an input stream and the recurrence equation may refer both to
@@ -417,11 +417,11 @@ recurrenceIO ii (Stream nxt int) io mkExpr
       setRef r (ix + 1)
       a <- nxt st
       when (lenI /= 0) $ setArr ibuf (ix `rem` lenI) a
-      b <- withArray ibuf (\ibuf ->
-             withArray obuf (\obuf ->
+      b <- withArray ibuf (\ib ->
+             withArray obuf (\ob ->
                return $ mkExpr
-                          (indexed lenI (\i -> getIx ibuf ((i + ix) `rem` lenI)))
-                          (indexed lenO (\i -> getIx obuf ((i + ix - 1) `rem` lenO)))
+                          (indexed lenI (\i -> getIx ib ((i + ix) `rem` lenI)))
+                          (indexed lenO (\i -> getIx ob ((i + ix - 1) `rem` lenO)))
                             ))
       ifM (lenO /= 0)
         (do o <- getArr obuf (ix `rem` lenO)
@@ -456,12 +456,12 @@ recurrenceIIO i1 (Stream next1 init1) i2 (Stream next2 init2) io mkExpr
       b <- next2 st2
       when (len1 /= 0) $ setArr ibuf1 (ix `rem` len1) a
       when (len2 /= 0) $ setArr ibuf2 (ix `rem` len2) b
-      out <- withArray ibuf1 (\ibuf1 ->
-               withArray ibuf2 (\ibuf2 ->
-                 withArray obuf (\obuf ->
-                   return $ mkExpr (indexed len1 (\i -> getIx ibuf1 ((i + ix) `rem` len1)))
-                                   (indexed len2 (\i -> getIx ibuf2 ((i + ix) `rem` len2)))
-                                   (indexed lenO (\i -> getIx obuf  ((i + ix) `rem` lenO)))
+      out <- withArray ibuf1 (\ib1 ->
+               withArray ibuf2 (\ib2 ->
+                 withArray obuf (\ob ->
+                   return $ mkExpr (indexed len1 (\i -> getIx ib1 ((i + ix) `rem` len1)))
+                                   (indexed len2 (\i -> getIx ib2 ((i + ix) `rem` len2)))
+                                   (indexed lenO (\i -> getIx ob  ((i + ix) `rem` lenO)))
                                 )))
       ifM (lenO /= 0)
           (do o <- getArr obuf (ix `rem` lenO)
@@ -476,18 +476,17 @@ slidingAvg n str = recurrenceI (replicate n 0) str
 -- | A fir filter on streams
 fir :: Vector1 Float ->
        Stream (Data Float) -> Stream (Data Float)
-fir b input =
-    recurrenceI (replicate (length b) 0) input
-                (\input -> scalarProd b input)
+fir b inp =
+    recurrenceI (replicate (length b) 0) inp
+                (scalarProd b)
 
 -- | An iir filter on streams
 iir :: Data Float -> Vector1 Float -> Vector1 Float ->
        Stream (Data Float) -> Stream (Data Float)
-iir a0 a b input =
-    recurrenceIO (replicate (length b) 0) input
+iir a0 a b inp =
+    recurrenceIO (replicate (length b) 0) inp
                  (replicate (length a) 0)
-      (\input output -> 1 / a0 *
-                        ( scalarProd b input
-                        - scalarProd a output)
+      (\i o -> 1 / a0 * ( scalarProd b i
+                        - scalarProd a o)
       )
 

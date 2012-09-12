@@ -31,14 +31,11 @@
 module Feldspar.Core.Constructs.Array
 where
 
-import Control.Monad
 import Data.List
 import Data.Map (notMember)
 
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
 import Language.Syntactic.Constructs.Binding
-import Language.Syntactic.Constructs.Literal
 
 import Feldspar.Range
 import Feldspar.Lattice
@@ -134,27 +131,27 @@ instance SizeProp Array
   where
     sizeProp Parallel (WrapFull len :* WrapFull ixf :* Nil) =
         infoSize len :> infoSize ixf
-    sizeProp Sequential (WrapFull len :* init :* WrapFull step :* Nil) =
+    sizeProp Sequential (WrapFull len :* _ :* WrapFull step :* Nil) =
         infoSize len :> fst (infoSize step)
     sizeProp Append (WrapFull arra :* WrapFull arrb :* Nil) =
         (alen + blen) :> (aelem \/ belem)
       where
         alen :> aelem = infoSize arra
         blen :> belem = infoSize arrb
-    sizeProp GetIx (WrapFull arr :* ix :* Nil) = elem
+    sizeProp GetIx (WrapFull arr :* _ :* Nil) = el
       where
-        _ :> elem = infoSize arr
-    sizeProp SetIx (WrapFull arr :* ix :* WrapFull e :* Nil) =
-        len :> (elem \/ infoSize e)
+        _ :> el = infoSize arr
+    sizeProp SetIx (WrapFull arr :* _ :* WrapFull e :* Nil) =
+        len :> (el \/ infoSize e)
       where
-        len :> elem = infoSize arr
+        len :> el = infoSize arr
     sizeProp GetLength (WrapFull arr :* Nil) = len
       where
         len :> _ = infoSize arr
     sizeProp SetLength (WrapFull len :* WrapFull arr :* Nil) =
-        infoSize len :> elem
+        infoSize len :> el
       where
-        _ :> elem = infoSize arr
+        _ :> el = infoSize arr
 
 
 
@@ -173,9 +170,9 @@ instance
         ixf' <- optimizeFunction optimizeM (mkInfo ixRange) ixf
         constructFeat Parallel (len' :* ixf' :* Nil)
 
-    optimizeFeat Sequential (len :* init :* step :* Nil) = do
+    optimizeFeat Sequential (len :* inital :* step :* Nil) = do
         len'  <- optimizeM len
-        init' <- optimizeM init
+        init' <- optimizeM inital
         let szI     = infoSize (getInfo len')
             ixRange = rangeByRange 0 (szI-1)
         step' <- optimizeFunction
@@ -188,7 +185,7 @@ instance
 
     optimizeFeat a args = optimizeFeatDefault a args
 
-    constructFeatOpt Parallel (len :* ixf :* Nil)
+    constructFeatOpt Parallel (len :* _ :* Nil)
         | Just 0 <- viewLiteral len
         = return $ literalDecor []
       -- TODO Optimize when length is one. This requires a way to create an
@@ -203,7 +200,7 @@ instance
         , v1 `notMember` infoVars (getInfo arr2)
         = constructFeat SetLength (len :* arr2 :* Nil)
 
-    constructFeatOpt Sequential (len :* init :* ixf :* Nil)
+    constructFeatOpt Sequential (len :* _ :* _ :* Nil)
         | Just 0 <- viewLiteral len
         = return $ literalDecor []
       -- TODO Optimize when length is one. This requires a way to create an
@@ -219,7 +216,7 @@ instance
         = optimizeM $ betaReduce typeCtx (stripDecor ix) (stripDecor ixf)
           -- TODO should not need to drop the decorations
 
-    constructFeatOpt GetIx ((op :$ len :$ arr) :* ix :* Nil)
+    constructFeatOpt GetIx ((op :$ _ :$ arr) :* ix :* Nil)
         | Just (_, SetLength) <- prjDecor op
         = constructFeat GetIx (arr :* ix :* Nil)
 
@@ -245,7 +242,7 @@ instance
         , isSingleton len
         = return $ literalDecor $ lowerBound len
 
-    constructFeatOpt SetLength (len :* arr :* Nil)
+    constructFeatOpt SetLength (len :* _ :* Nil)
         | Just 0 <- viewLiteral len = return $ literalDecor []
 
     constructFeatOpt SetLength ((getLength :$ arr') :* arr :* Nil)

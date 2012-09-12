@@ -32,9 +32,7 @@ module Feldspar.Core.Constructs.Eq
 where
 
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
 import Language.Syntactic.Constructs.Binding
-import Language.Syntactic.Constructs.Literal
 
 import Feldspar.Range
 import Feldspar.Core.Types

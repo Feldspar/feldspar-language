@@ -31,17 +31,13 @@
 
 module Feldspar.Core.Frontend.SizeProp where
 
-
-
 import Language.Syntactic
 
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.SizeProp
-import Feldspar.Core.Frontend.Literal
-
-
+import Feldspar.Core.Frontend.Literal ()
 
 -- | An identity function affecting the abstract size information used during
 -- optimization. The application of a 'SizeCap' is a /guarantee/ (by the caller)

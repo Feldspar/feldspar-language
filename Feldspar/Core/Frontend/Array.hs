@@ -35,7 +35,7 @@ import Feldspar.Core.Types
 import Feldspar.Core.Collection
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Array
-import Feldspar.Core.Frontend.Tuple
+import Feldspar.Core.Frontend.Tuple ()
 
 import Language.Syntactic
 

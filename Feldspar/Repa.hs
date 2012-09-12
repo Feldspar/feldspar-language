@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -254,7 +254,7 @@ unit a = Vector Z (const a)
 -- | Extract the diagonal of a two dimensional vector
 diagonal :: Vector DIM2 a -> Vector DIM1 a
 diagonal vec = backpermute (Z :. width) (\ (_ :. x) -> Z :. x :. x) vec
-  where _ :. height :. width = extent vec
+  where Z :. _ :. width = extent vec
 
 -- | Change the shape of a vector.
 backpermute :: (Shape sh, Shape sh') =>
@@ -337,18 +337,17 @@ stencil vec
 
 laplace :: Data Length -> DVector DIM2 Float -> DVector DIM2 Float
 laplace steps vec = toVector (extent vec) $
-                    forLoop steps (fromVector vec) (\ix ->
-                       fromVector . stencil . toVector (extent vec)
-                    )
+                    forLoop steps (fromVector vec) $
+                        const $ fromVector . stencil . toVector (extent vec)
 
 
 -- Matrix Multiplication
 
 transpose2D :: Vector DIM2 e -> Vector DIM2 e
 transpose2D vec
-  = backpermute new_extent swap vec
-  where swap (Z :. i :. j) = Z :. j :. i
-        new_extent         = swap (extent vec)
+  = backpermute new_extent swp vec
+  where swp (Z :. i :. j) = Z :. j :. i
+        new_extent        = swp (extent vec)
 
 -- | Matrix multiplication
 mmMult :: (Type e, Numeric e) =>
@@ -357,11 +356,10 @@ mmMult :: (Type e, Numeric e) =>
 mmMult vA vB
   = sum (zipWith (*) vaRepl vbRepl)
   where
-    tmp = transpose2D vB
     vaRepl = replicate (Z :. All   :. colsB :. All) vA
     vbRepl = replicate (Z :. rowsA :. All   :. All) vB
-    (Z :. colsA :. rowsA) = extent vA
-    (Z :. colsB :. rowsB) = extent vB
+    (Z :. _     :. rowsA) = extent vA
+    (Z :. colsB :. _    ) = extent vB
 
 -- One dimensional vectors, meant to help transitioning from 
 -- the old vector library

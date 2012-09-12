@@ -33,8 +33,6 @@ module Feldspar.Core.Constructs.Tuple
     ) where
 
 
-import Data.Maybe
-import Data.Typeable (gcast)
 import Data.Tuple.Select
 
 import Language.Syntactic
@@ -50,11 +48,11 @@ instance Sharable (Tuple TypeCtx)
 
 instance SizeProp (Tuple TypeCtx)
   where
-    sizeProp tup@Tup2 (a :* b :* Nil)
+    sizeProp Tup2 (a :* b :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         = (infoSize ia, infoSize ib)
-    sizeProp tup@Tup3 (a :* b :* c :* Nil)
+    sizeProp Tup3 (a :* b :* c :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         , WrapFull ic <- c
@@ -62,7 +60,7 @@ instance SizeProp (Tuple TypeCtx)
           , infoSize ib
           , infoSize ic
           )
-    sizeProp tup@Tup4 (a :* b :* c :* d :* Nil)
+    sizeProp Tup4 (a :* b :* c :* d :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         , WrapFull ic <- c
@@ -72,7 +70,7 @@ instance SizeProp (Tuple TypeCtx)
           , infoSize ic
           , infoSize id
           )
-    sizeProp tup@Tup5 (a :* b :* c :* d :* e :* Nil)
+    sizeProp Tup5 (a :* b :* c :* d :* e :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         , WrapFull ic <- c
@@ -84,7 +82,7 @@ instance SizeProp (Tuple TypeCtx)
           , infoSize id
           , infoSize ie
           )
-    sizeProp tup@Tup6 (a :* b :* c :* d :* e :* g :* Nil)
+    sizeProp Tup6 (a :* b :* c :* d :* e :* g :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         , WrapFull ic <- c
@@ -98,7 +96,7 @@ instance SizeProp (Tuple TypeCtx)
           , infoSize ie
           , infoSize ig
           )
-    sizeProp tup@Tup7 (a :* b :* c :* d :* e :* g :* h :* Nil)
+    sizeProp Tup7 (a :* b :* c :* d :* e :* g :* h :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         , WrapFull ic <- c
@@ -162,19 +160,19 @@ sel7Size Tup7Type{} = sel7
 
 instance SizeProp (Select TypeCtx)
   where
-    sizeProp sel@Sel1 (WrapFull ia :* Nil) =
+    sizeProp Sel1 (WrapFull ia :* Nil) =
         sel1Size (infoType ia) (infoSize ia)
-    sizeProp sel@Sel2 (WrapFull ia :* Nil) =
+    sizeProp Sel2 (WrapFull ia :* Nil) =
         sel2Size (infoType ia) (infoSize ia)
-    sizeProp sel@Sel3 (WrapFull ia :* Nil) =
+    sizeProp Sel3 (WrapFull ia :* Nil) =
         sel3Size (infoType ia) (infoSize ia)
-    sizeProp sel@Sel4 (WrapFull ia :* Nil) =
+    sizeProp Sel4 (WrapFull ia :* Nil) =
         sel4Size (infoType ia) (infoSize ia)
-    sizeProp sel@Sel5 (WrapFull ia :* Nil) =
+    sizeProp Sel5 (WrapFull ia :* Nil) =
         sel5Size (infoType ia) (infoSize ia)
-    sizeProp sel@Sel6 (WrapFull ia :* Nil) =
+    sizeProp Sel6 (WrapFull ia :* Nil) =
         sel6Size (infoType ia) (infoSize ia)
-    sizeProp sel@Sel7 (WrapFull ia :* Nil) =
+    sizeProp Sel7 (WrapFull ia :* Nil) =
         sel7Size (infoType ia) (infoSize ia)
 
 -- | Compute a witness that a symbol and an expression have the same result type

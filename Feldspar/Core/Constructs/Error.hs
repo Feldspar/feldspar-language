@@ -33,10 +33,8 @@ module Feldspar.Core.Constructs.Error where
 
 
 import Language.Syntactic
-import Language.Syntactic.Interpretation.Semantics
 import Language.Syntactic.Constructs.Binding
 
-import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 
