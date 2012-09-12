@@ -52,27 +52,14 @@ data Mutable a
   where
     Run :: Type a => Mutable (Mut a :-> Full a)
 
-instance WitnessCons Mutable
-  where
-    witnessCons Run = ConsWit
-
-instance WitnessSat Mutable
-  where
-    type SatContext Mutable = TypeCtx
-    witnessSat Run = SatWit
-
-instance MaybeWitnessSat TypeCtx Mutable
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
 instance Semantic Mutable
   where
     semantics Run = Sem "runMutable" unsafePerformIO
 
-instance ExprEq   Mutable where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   Mutable where renderPart = renderPartSem
+instance Equality Mutable where equal = equalDefault; exprHash = exprHashDefault
+instance Render   Mutable where renderArgs = renderArgsDefault
 instance ToTree   Mutable
-instance Eval     Mutable where evaluate = evaluateSem
+instance Eval     Mutable where evaluate = evaluateDefault
 instance EvalBind Mutable where evalBindSym = evalBindSymDefault
 instance Sharable Mutable
   -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
@@ -84,6 +71,7 @@ instance AlphaEq dom dom dom env => AlphaEq Mutable Mutable dom env
 instance Sharable (MONAD Mut)
   -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
 
+{-
 instance SizeProp (MONAD Mut)
   where
     sizeProp Return (WrapFull a :* Nil)      = infoSize a
@@ -164,4 +152,5 @@ instance (MONAD Mut :<: dom, OptimizeSuper dom) => Optimize (MONAD Mut) dom
 instance (Mutable :<: dom, Optimize dom dom) => Optimize Mutable dom
   where
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

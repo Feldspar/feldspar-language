@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -32,15 +32,11 @@ module Feldspar.Core.Constructs.Floating
     ( FLOATING (..)
     ) where
 
-
-
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
 
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
-
-
 
 data FLOATING a
   where
@@ -63,53 +59,6 @@ data FLOATING a
     Atanh   :: (Type a, Floating a) => FLOATING (a :-> Full a)
     Acosh   :: (Type a, Floating a) => FLOATING (a :-> Full a)
 
-instance WitnessCons FLOATING
-  where
-    witnessCons Pi      = ConsWit
-    witnessCons Exp     = ConsWit
-    witnessCons Sqrt    = ConsWit
-    witnessCons Log     = ConsWit
-    witnessCons Pow     = ConsWit
-    witnessCons LogBase = ConsWit
-    witnessCons Sin     = ConsWit
-    witnessCons Tan     = ConsWit
-    witnessCons Cos     = ConsWit
-    witnessCons Asin    = ConsWit
-    witnessCons Atan    = ConsWit
-    witnessCons Acos    = ConsWit
-    witnessCons Sinh    = ConsWit
-    witnessCons Tanh    = ConsWit
-    witnessCons Cosh    = ConsWit
-    witnessCons Asinh   = ConsWit
-    witnessCons Atanh   = ConsWit
-    witnessCons Acosh   = ConsWit
-
-instance WitnessSat FLOATING
-  where
-    type SatContext FLOATING = TypeCtx
-    witnessSat Pi      = SatWit
-    witnessSat Exp     = SatWit
-    witnessSat Sqrt    = SatWit
-    witnessSat Log     = SatWit
-    witnessSat Pow     = SatWit
-    witnessSat LogBase = SatWit
-    witnessSat Sin     = SatWit
-    witnessSat Tan     = SatWit
-    witnessSat Cos     = SatWit
-    witnessSat Asin    = SatWit
-    witnessSat Atan    = SatWit
-    witnessSat Acos    = SatWit
-    witnessSat Sinh    = SatWit
-    witnessSat Tanh    = SatWit
-    witnessSat Cosh    = SatWit
-    witnessSat Asinh   = SatWit
-    witnessSat Atanh   = SatWit
-    witnessSat Acosh   = SatWit
-
-instance MaybeWitnessSat TypeCtx FLOATING
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
 instance Semantic FLOATING
   where
     semantics Pi      = Sem "pi"      Prelude.pi
@@ -131,19 +80,21 @@ instance Semantic FLOATING
     semantics Atanh   = Sem "atanh"   Prelude.atanh
     semantics Acosh   = Sem "acosh"   Prelude.acosh
 
-instance ExprEq   FLOATING where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   FLOATING where renderPart = renderPartSem
+instance Equality FLOATING where equal = equalDefault; exprHash = exprHashDefault
+instance Render   FLOATING where renderArgs = renderArgsDefault
 instance ToTree   FLOATING
-instance Eval     FLOATING where evaluate = evaluateSem
+instance Eval     FLOATING where evaluate = evaluateDefault
 instance EvalBind FLOATING where evalBindSym = evalBindSymDefault
-instance SizeProp FLOATING where sizeProp = sizePropDefault
+--instance SizeProp FLOATING where sizeProp = sizePropDefault
 instance Sharable FLOATING
 
 instance AlphaEq dom dom dom env => AlphaEq FLOATING FLOATING dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance (FLOATING :<: dom, Optimize dom dom) => Optimize FLOATING dom
   where
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

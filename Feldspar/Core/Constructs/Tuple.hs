@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -32,7 +32,6 @@ module Feldspar.Core.Constructs.Tuple
     ( module Language.Syntactic.Constructs.Tuple
     ) where
 
-
 import Data.Tuple.Select
 
 import Language.Syntactic
@@ -42,10 +41,9 @@ import Language.Syntactic.Constructs.Tuple
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 
+instance Sharable Tuple
 
-
-instance Sharable (Tuple TypeCtx)
-
+{-
 instance SizeProp (Tuple TypeCtx)
   where
     sizeProp Tup2 (a :* b :* Nil)
@@ -112,8 +110,9 @@ instance SizeProp (Tuple TypeCtx)
           , infoSize ig
           , infoSize ih
           )
+-}
 
-instance Sharable (Select TypeCtx)
+instance Sharable Select
   where
     sharable _ = False
 
@@ -158,6 +157,7 @@ sel6Size Tup7Type{} = sel6
 sel7Size :: (Sel7' a ~ b) => TypeRep a -> (Size a -> Size b)
 sel7Size Tup7Type{} = sel7
 
+{-
 instance SizeProp (Select TypeCtx)
   where
     sizeProp Sel1 (WrapFull ia :* Nil) =
@@ -174,12 +174,14 @@ instance SizeProp (Select TypeCtx)
         sel6Size (infoType ia) (infoSize ia)
     sizeProp Sel7 (WrapFull ia :* Nil) =
         sel7Size (infoType ia) (infoSize ia)
+-}
 
 -- | Compute a witness that a symbol and an expression have the same result type
 tupEq :: Type (DenResult a) =>
     sym a -> ASTF (Decor Info dom) b -> Maybe (TypeEq (DenResult a) b)
 tupEq _ b = typeEq typeRep (infoType $ getInfo b)
 
+{-
 instance
     ( Tuple TypeCtx :<: dom
     , Select TypeCtx :<: dom
@@ -321,4 +323,5 @@ instance
     constructFeatOpt feat args = constructFeatUnOpt feat args
 
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

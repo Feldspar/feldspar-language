@@ -116,7 +116,7 @@ library
     QuickCheck >= 2.4 && < 3,
     patch-combinators == 0.1.*,
     random,
-    syntactic == 0.9.*,
+    syntactic == 1.0.*,
     tagged == 0.4.*,
     tuple == 0.2.*,
     type-level >= 0.2.4,

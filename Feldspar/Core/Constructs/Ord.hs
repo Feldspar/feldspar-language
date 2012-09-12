@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -52,29 +52,6 @@ data ORD a
     Min :: (Type a, Ord a, Ord (Size a)) => ORD (a :-> a :-> Full a)
     Max :: (Type a, Ord a, Ord (Size a)) => ORD (a :-> a :-> Full a)
 
-instance WitnessCons ORD
-  where
-    witnessCons LTH  = ConsWit
-    witnessCons GTH = ConsWit
-    witnessCons LTE = ConsWit
-    witnessCons GTE = ConsWit
-    witnessCons Min = ConsWit
-    witnessCons Max = ConsWit
-
-instance WitnessSat ORD
-  where
-    type SatContext ORD = TypeCtx
-    witnessSat LTH  = SatWit
-    witnessSat GTH = SatWit
-    witnessSat LTE = SatWit
-    witnessSat GTE = SatWit
-    witnessSat Min = SatWit
-    witnessSat Max = SatWit
-
-instance MaybeWitnessSat TypeCtx ORD
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
 instance Semantic ORD
   where
     semantics LTH = Sem "(<)"  (<)
@@ -84,10 +61,10 @@ instance Semantic ORD
     semantics Min = Sem "min"  min
     semantics Max = Sem "max"  max
 
-instance ExprEq   ORD where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   ORD where renderPart = renderPartSem
+instance Equality ORD where equal = equalDefault; exprHash = exprHashDefault
+instance Render   ORD where renderArgs = renderArgsDefault
 instance ToTree   ORD
-instance Eval     ORD where evaluate = evaluateSem
+instance Eval     ORD where evaluate = evaluateDefault
 instance EvalBind ORD where evalBindSym = evalBindSymDefault
 instance Sharable ORD
 
@@ -95,6 +72,7 @@ instance AlphaEq dom dom dom env => AlphaEq ORD ORD dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp ORD
   where
     sizeProp Min (WrapFull a :* WrapFull b :* Nil) = min (infoSize a) (infoSize b)
@@ -102,10 +80,8 @@ instance SizeProp ORD
     sizeProp a args = sizePropDefault a args
 
 
-
 instance
     ( ORD :<: dom
-    , MaybeWitnessSat TypeCtx dom
     , OptimizeSuper dom
     ) =>
       Optimize ORD dom
@@ -201,4 +177,4 @@ instance
     constructFeatOpt a args = constructFeatUnOpt a args
 
     constructFeatUnOpt = constructFeatUnOptDefault
-
+-}

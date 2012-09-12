@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -30,8 +30,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Feldspar.Core.Constructs where
-
-
 
 import Data.Typeable
 
@@ -71,20 +69,19 @@ import Feldspar.Core.Constructs.SourceInfo
 import Feldspar.Core.Constructs.Trace
 import Feldspar.Core.Constructs.Tuple
 
-
 --------------------------------------------------------------------------------
 -- * Domain
 --------------------------------------------------------------------------------
 
-type FeldSymbols
-    =   Decor SourceInfo1 (Identity TypeCtx)
-    :+: Condition TypeCtx
+type FeldDomain
+    =   Decor SourceInfo1 Identity
+    :+: Condition
     :+: ConditionM Mut
     :+: FFI
-    :+: Let TypeCtx TypeCtx
-    :+: Literal TypeCtx
-    :+: Select TypeCtx
-    :+: Tuple TypeCtx
+    :+: Let
+    :+: Literal
+    :+: Select
+    :+: Tuple
     :+: Array
     :+: BITS
     :+: COMPLEX
@@ -112,46 +109,56 @@ type FeldSymbols
     :+: Save
     :+: Trace
 
-newtype FeldDomain a = FeldDomain (FeldSymbols a)
+--newtype FeldDomain a = FeldDomain (FeldSymbols a)
 
-deriving instance (sym :<: FeldSymbols) => sym :<: FeldDomain
 
-deriving instance WitnessCons FeldDomain
-deriving instance MaybeWitnessSat TypeCtx FeldDomain
+--deriving instance (sym :<: FeldSymbols) => sym :<: FeldDomain
+--deriving instance (Project sym FeldSymbols) => Project sym FeldDomain
 
-deriving instance ExprEq   FeldDomain
-deriving instance Render   FeldDomain
-deriving instance ToTree   FeldDomain
-deriving instance Eval     FeldDomain
-deriving instance EvalBind FeldDomain
+----instance (InjectC sym FeldSymbols a) => InjectC sym FeldDomain a
+----    where
+----      injC = injC . FeldDomain
 
-instance VarEqEnv env => AlphaEq
-    FeldDomain
-    FeldDomain
-    (Lambda TypeCtx :+: (Variable TypeCtx :+: FeldDomain))
-    env
-  where
-    alphaEqSym (FeldDomain a) aArgs (FeldDomain b) bArgs =
-        alphaEqSym a aArgs b bArgs
+----instance Constrained FeldDomain
+--    where
+--        type Sat FeldDomain = Sat FeldSymbols
+--        exprDict (FeldDomain a) = exprDict a
 
-instance AlphaEq
-    FeldDomain
-    FeldDomain
-    (Decor Info (Lambda TypeCtx :+: (Variable TypeCtx :+: FeldDomain)))
-    [(VarId, VarId)]
-  where
-    alphaEqSym (FeldDomain a) aArgs (FeldDomain b) bArgs =
-        alphaEqSym a aArgs b bArgs
+--deriving instance Equality FeldDomain
+--deriving instance Render   FeldDomain
+--deriving instance ToTree   FeldDomain
+--deriving instance Eval     FeldDomain
+--deriving instance EvalBind FeldDomain
 
-deriving instance Sharable FeldDomain
+--instance VarEqEnv env => AlphaEq
+--    FeldDomain
+--    FeldDomain
+--    ((Lambda :+: (Variable :+: ((FeldDomain :|| Eq) :| Show))) :|| Typeable)
+--    env
+--  where
+--    alphaEqSym (FeldDomain a) aArgs (FeldDomain b) bArgs =
+--        alphaEqSym a aArgs b bArgs
 
+--instance AlphaEq
+--    FeldDomain
+--    FeldDomain
+--    ((Lambda :+: (Variable :+: ((FeldDomain :|| Eq) :| Show))) :|| Typeable)
+--    [(VarId, VarId)]
+--  where
+--    alphaEqSym (FeldDomain a) aArgs (FeldDomain b) bArgs =
+--        alphaEqSym a aArgs b bArgs
+
+--deriving instance Sharable FeldDomain
+
+{-
 instance Optimize FeldDomain (Lambda TypeCtx :+: (Variable TypeCtx :+: FeldDomain))
   where
     optimizeFeat       (FeldDomain a) = optimizeFeat       a
     constructFeatOpt   (FeldDomain a) = constructFeatOpt   a
     constructFeatUnOpt (FeldDomain a) = constructFeatUnOpt a
+-}
 
-type FeldDomainAll = HODomain TypeCtx FeldDomain
+type FeldDomainAll = HODomain (FeldDomain :|| Type) Typeable
 
 
 

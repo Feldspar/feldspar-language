@@ -64,31 +64,13 @@ instance Semantic ParFeature
     semantics ParFork   = Sem "fork" CMP.fork
     semantics ParYield  = Sem "yield" CMP.yield
 
-instance ExprEq   ParFeature where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   ParFeature where renderPart = renderPartSem
+instance Equality ParFeature where equal = equalDefault; exprHash = exprHashDefault
+instance Render   ParFeature where renderArgs = renderArgsDefault
 instance ToTree   ParFeature
-instance Eval     ParFeature where evaluate = evaluateSem
+instance Eval     ParFeature where evaluate = evaluateDefault
 instance EvalBind ParFeature where evalBindSym = evalBindSymDefault
 instance Sharable ParFeature
   -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
-
-instance WitnessCons ParFeature
-  where
-    witnessCons ParRun   = ConsWit
-    witnessCons ParNew   = ConsWit
-    witnessCons ParGet   = ConsWit
-    witnessCons ParPut   = ConsWit
-    witnessCons ParFork  = ConsWit
-    witnessCons ParYield = ConsWit
-
-instance WitnessSat ParFeature
-  where
-    type SatContext ParFeature = TypeCtx
-    witnessSat ParRun = SatWit
-
-instance MaybeWitnessSat ctx ParFeature
-  where
-    maybeWitnessSat _ _ = Nothing
 
 instance AlphaEq dom dom dom env => AlphaEq ParFeature ParFeature dom env
   where
@@ -97,6 +79,7 @@ instance AlphaEq dom dom dom env => AlphaEq ParFeature ParFeature dom env
 instance Sharable (MONAD Par)
   -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
 
+{-
 instance SizeProp ParFeature
   where
     sizeProp ParRun   (WrapFull a :* Nil) = infoSize a
@@ -191,4 +174,5 @@ instance (MONAD Par :<: dom, OptimizeSuper dom) => Optimize (MONAD Par) dom
 
     constructFeatUnOpt When args =
         constructFeatUnOptDefaultTyp voidTypeRep When args
+-}
 

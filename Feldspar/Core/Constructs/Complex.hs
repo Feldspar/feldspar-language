@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -50,33 +50,6 @@ data COMPLEX a
     Phase     :: (Type a, RealFloat a) => COMPLEX (Complex a :-> Full a)
     Cis       :: (Type a, RealFloat a) => COMPLEX (a :-> Full (Complex a))
 
-instance WitnessCons COMPLEX
-  where
-    witnessCons MkComplex = ConsWit
-    witnessCons RealPart  = ConsWit
-    witnessCons ImagPart  = ConsWit
-    witnessCons Conjugate = ConsWit
-    witnessCons MkPolar   = ConsWit
-    witnessCons Magnitude = ConsWit
-    witnessCons Phase     = ConsWit
-    witnessCons Cis       = ConsWit
-
-instance WitnessSat COMPLEX
-  where
-    type SatContext COMPLEX = TypeCtx
-    witnessSat MkComplex = SatWit
-    witnessSat RealPart  = SatWit
-    witnessSat ImagPart  = SatWit
-    witnessSat Conjugate = SatWit
-    witnessSat MkPolar   = SatWit
-    witnessSat Magnitude = SatWit
-    witnessSat Phase     = SatWit
-    witnessSat Cis       = SatWit
-
-instance MaybeWitnessSat TypeCtx COMPLEX
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
 instance Semantic COMPLEX
   where
     semantics MkComplex = Sem "complex"   (:+)
@@ -88,18 +61,19 @@ instance Semantic COMPLEX
     semantics Phase     = Sem "phase"     phase
     semantics Cis       = Sem "cis"       cis
 
-instance ExprEq   COMPLEX where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   COMPLEX where renderPart = renderPartSem
+instance Equality COMPLEX where equal = equalDefault; exprHash = exprHashDefault
+instance Render   COMPLEX where renderArgs = renderArgsDefault
 instance ToTree   COMPLEX
-instance Eval     COMPLEX where evaluate = evaluateSem
+instance Eval     COMPLEX where evaluate = evaluateDefault
 instance EvalBind COMPLEX where evalBindSym = evalBindSymDefault
 instance Sharable COMPLEX
-instance SizeProp COMPLEX where sizeProp = sizePropDefault
+--instance SizeProp COMPLEX where sizeProp = sizePropDefault
 
 instance AlphaEq dom dom dom env => AlphaEq COMPLEX COMPLEX dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance (COMPLEX :<: dom, OptimizeSuper dom) => Optimize COMPLEX dom
   where
     constructFeatOpt MkComplex ((rp :$ a) :* (ip :$ b) :* Nil)
@@ -137,4 +111,5 @@ instance (COMPLEX :<: dom, OptimizeSuper dom) => Optimize COMPLEX dom
     constructFeatOpt sym args = constructFeatUnOpt sym args
 
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

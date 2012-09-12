@@ -45,24 +45,16 @@ data ConditionM m a
                   ConditionM m (Bool :-> m a :-> m a :-> Full (m a))
     -- TODO Can't we just use `Condition` instead?
 
-instance WitnessCons (ConditionM m)
-  where
-    witnessCons ConditionM = ConsWit
-
-instance MaybeWitnessSat TypeCtx (ConditionM m)
-  where
-    maybeWitnessSat _ _ = Nothing
-
 instance Semantic (ConditionM m)
   where
     semantics ConditionM = Sem "if" ifM
       where
         ifM cond e t = if cond then e else t
 
-instance ExprEq   (ConditionM m) where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   (ConditionM m) where renderPart = renderPartSem
+instance Equality (ConditionM m) where equal = equalDefault; exprHash = exprHashDefault
+instance Render   (ConditionM m) where renderArgs = renderArgsDefault
 instance ToTree   (ConditionM m)
-instance Eval     (ConditionM m) where evaluate = evaluateSem
+instance Eval     (ConditionM m) where evaluate = evaluateDefault
 instance EvalBind (ConditionM m) where evalBindSym = evalBindSymDefault
 instance Sharable (ConditionM m)
   -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
@@ -72,6 +64,7 @@ instance AlphaEq dom dom dom env =>
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance LatticeSize1 m => SizeProp (ConditionM m)
   where
     sizeProp ConditionM (_ :* WrapFull t :* WrapFull f :* Nil) =
@@ -104,4 +97,5 @@ instance ( ConditionM m :<: dom
       --      example
       --
       --        condition (x<10) (min x 20) x  ==>  x
+-}
 

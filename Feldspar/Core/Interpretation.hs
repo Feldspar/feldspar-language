@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -55,13 +55,13 @@ module Feldspar.Core.Interpretation
     , localSource
     , Opt
     , Optimize (..)
-    , OptimizeSuper
-    , constructFeat
+--    , OptimizeSuper
+--    , constructFeat
     , optimizeM
     , optimize
-    , constructFeatUnOptDefaultTyp
-    , constructFeatUnOptDefault
-    , optimizeFeatDefault
+--    , constructFeatUnOptDefaultTyp
+--    , constructFeatUnOptDefault
+--    , optimizeFeatDefault
     ) where
 
 
@@ -74,7 +74,7 @@ import Language.Syntactic
 import Language.Syntactic.Constructs.Decoration
 import Language.Syntactic.Constructs.Literal
 import Language.Syntactic.Constructs.Binding
-import qualified Language.Syntactic.Constructs.Binding.Optimize as Synt () -- For Haddock
+import Language.Syntactic.Constructs.Binding.Optimize
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
@@ -123,10 +123,9 @@ class SizeProp feature
     sizeProp :: feature a -> Args (WrapFull Info) a -> Size (DenResult a)
 
 -- | Convenient default implementation of 'sizeProp'
-sizePropDefault :: (WitnessSat feature, SatContext feature ~ TypeCtx) =>
-    feature a -> Args (WrapFull Info) a -> Size (DenResult a)
-sizePropDefault a _
-    | TypeWit <- fromSatWit $ witnessSat a = universal
+sizePropDefault :: (Type a, Lattice (Size (DenResult a)))
+                => feature a -> Args (WrapFull Info) a -> Size (DenResult a)
+sizePropDefault a _ = universal
 
 
 
@@ -220,19 +219,19 @@ localSource :: SourceInfo -> Opt a -> Opt a
 localSource src = local $ \env -> env {sourceEnv = src}
 
 -- | It the expression is a literal, its value is returned, otherwise 'Nothing'
-viewLiteral :: (Literal TypeCtx :<: dom) => ASTF (Decor info dom) a -> Maybe a
-viewLiteral (prjDecorCtx typeCtx -> Just (_,Literal a)) = Just a
+viewLiteral :: (Literal :<: dom) => ASTF (Decor info dom) a -> Maybe a
+viewLiteral (prjDecor -> Just (_,Literal a)) = Just a
 viewLiteral _ = Nothing
 
 -- | Construct a 'Literal' decorated with 'Info'
-literalDecorSrc :: (Type a, Literal TypeCtx :<: dom) =>
+literalDecorSrc :: (Type a, Literal :<: dom) =>
     SourceInfo -> a -> ASTF (Decor Info dom) a
 literalDecorSrc src a = injDecor
     ((mkInfo (sizeOf a)) {infoSource = src})
-    (Literal a `withContext` typeCtx)
+    (Literal a)
 
 -- | Construct a 'Literal' decorated with 'Info'
-literalDecor :: (Type a, Literal TypeCtx :<: dom) =>
+literalDecor :: (Type a, Literal :<: dom) =>
     a -> ASTF (Decor Info dom) a
 literalDecor = literalDecorSrc ""
   -- Note: This function could get the 'SourceInfo' from the environment and
@@ -241,10 +240,9 @@ literalDecor = literalDecorSrc ""
 
 -- | Replaces an expression with a literal if the type permits, otherwise
 -- returns the expression unchanged.
-constFold :: (MaybeWitnessSat TypeCtx dom, Literal TypeCtx :<: dom) =>
+constFold :: (Type a, Literal :<: dom) =>
     SourceInfo -> ASTF (Decor Info dom) a -> a -> ASTF (Decor Info dom) a
 constFold src expr a
-    | Just TypeWit <- fromSatWit `fmap` maybeWitnessSat typeCtx expr
     = literalDecorSrc src a
 constFold _ expr _ = expr
 
@@ -252,7 +250,7 @@ constFold _ expr _ = expr
 type Opt = Reader Env
 
 
-
+{-
 -- | Basic optimization of a feature
 --
 -- This optimization is similar to 'Synt.Optimize', but it also performs size
@@ -263,7 +261,7 @@ class Optimize feature dom
   where
     -- | Top-down and bottom-up optimization of a feature
     optimizeFeat
-        :: (WitnessCons feature, OptimizeSuper dom)
+        :: (OptimizeSuper dom)
         => feature a
         -> Args (AST dom) a
         -> Opt (ASTF (Decor Info dom) (DenResult a))
@@ -311,9 +309,7 @@ class Optimize feature dom
 --   * Replace all references to `OptimizeSuper dom` with `Optimize dom dom`
 --   * Remove `OptimizeSuper`
 class
-    ( WitnessCons dom
-    , MaybeWitnessSat TypeCtx dom
-    , AlphaEq dom dom dom [(VarId, VarId)]
+    ( AlphaEq dom dom dom [(VarId, VarId)]
     , AlphaEq dom dom (Decor Info dom) [(VarId, VarId)]
     , EvalBind dom
     , Literal TypeCtx :<: dom
@@ -324,9 +320,7 @@ class
       OptimizeSuper dom
 
 instance
-    ( WitnessCons dom
-    , MaybeWitnessSat TypeCtx dom
-    , AlphaEq dom dom dom [(VarId, VarId)]
+    ( AlphaEq dom dom dom [(VarId, VarId)]
     , AlphaEq dom dom (Decor Info dom) [(VarId, VarId)]
     , EvalBind dom
     , Literal TypeCtx :<: dom
@@ -368,8 +362,6 @@ constructFeat a args = do
 instance
     ( Optimize sub1 dom
     , Optimize sub2 dom
-    , WitnessCons sub1
-    , WitnessCons sub2
     ) =>
       Optimize (sub1 :+: sub2) dom
   where
@@ -382,6 +374,7 @@ instance
     constructFeatUnOpt (InjL a) = constructFeatUnOpt a
     constructFeatUnOpt (InjR a) = constructFeatUnOpt a
 
+{-
 -- | Optimization of an expression
 --
 -- In addition to running 'optimizeFeat', this function performs constant
@@ -403,12 +396,12 @@ optimizeM a = do
 -- the result.
 optimize :: OptimizeSuper dom => ASTF dom a -> ASTF (Decor Info dom) a
 optimize = flip runReader initEnv . optimizeM
+-}
 
 -- | Convenient default implementation of 'constructFeatUnOpt'. Uses 'sizeProp'
 -- to propagate size.
 constructFeatUnOptDefaultTyp
     :: ( feature :<: dom
-       , WitnessCons feature
        , SizeProp feature
        , Show (Size (DenResult a))
        )
@@ -417,7 +410,6 @@ constructFeatUnOptDefaultTyp
     -> Args (AST (Decor Info dom)) a
     -> Opt (ASTF (Decor Info dom) (DenResult a))
 constructFeatUnOptDefaultTyp typ feat args
-    | ConsWit <- witnessCons feat
     = do
         src <- asks sourceEnv
         let sz   = sizeProp feat $ mapArgs (WrapFull . getInfo) args
@@ -427,29 +419,22 @@ constructFeatUnOptDefaultTyp typ feat args
 -- | Like 'constructFeatUnOptDefaultTyp' but without an explicit 'TypeRep'
 constructFeatUnOptDefault
     :: ( feature :<: dom
-       , WitnessCons feature
-       , WitnessSat feature
-       , SatContext feature ~ TypeCtx
        , SizeProp feature
        )
     => feature a
     -> Args (AST (Decor Info dom)) a
     -> Opt (ASTF (Decor Info dom) (DenResult a))
 constructFeatUnOptDefault feat
-    | ConsWit <- witnessCons feat
-    , TypeWit <- fromSatWit $ witnessSat feat
     = constructFeatUnOptDefaultTyp typeRep feat
 
 -- | Convenient default implementation of 'optimizeFeat'
 optimizeFeatDefault
-    :: ( WitnessCons feature
-       , Optimize feature dom
+    :: ( Optimize feature dom
        , OptimizeSuper dom
        )
     => feature a
     -> Args (AST dom) a
     -> Opt (ASTF (Decor Info dom) (DenResult a))
 optimizeFeatDefault feat args
-    | ConsWit <- witnessCons feat
     = constructFeat feat =<< mapArgsM optimizeM args
-
+-}

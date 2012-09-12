@@ -345,7 +345,7 @@ rangeAddSigned (Range l1 u1) (Range l2 u2)
     t = u1 + u2
     u = l1 .&. l2 .&. complement s .&.
         complement (u1 .&. u2 .&. complement t)
-    v = ((xor l1 l2) .|. complement (xor l1 s)) .&.
+    v = (xor l1 l2 .|. complement (xor l1 s)) .&.
         (complement u1 .&. complement u2 .&. t)
 -- Code from Hacker's Delight
 
@@ -681,7 +681,7 @@ instance (BoundedInt a, BoundedInt b, BoundedInt c) =>
   negate        = mapR negate
 
 
-
+{-
 --------------------------------------------------------------------------------
 -- * Testing
 --------------------------------------------------------------------------------
@@ -1045,4 +1045,5 @@ prop_rangeQuot1 t =
 -- | Precondition for division like operators.
 --   Avoids division by zero and arithmetic overflow.
 divPre v1 v2 = v2 /= 0 && not (v1 == minBound && v2 == (-1))
+-}
 

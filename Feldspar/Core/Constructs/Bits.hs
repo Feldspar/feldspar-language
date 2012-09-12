@@ -73,71 +73,6 @@ data BITS a
 
     IsSigned      :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => BITS (a :-> Full Bool)
 
-
-instance WitnessCons BITS
-  where
-    witnessCons BAnd          = ConsWit
-    witnessCons BOr           = ConsWit
-    witnessCons BXor          = ConsWit
-    witnessCons Complement    = ConsWit
-
-    witnessCons Bit           = ConsWit
-    witnessCons SetBit        = ConsWit
-    witnessCons ClearBit      = ConsWit
-    witnessCons ComplementBit = ConsWit
-    witnessCons TestBit       = ConsWit
-
-    witnessCons ShiftLU       = ConsWit
-    witnessCons ShiftRU       = ConsWit
-    witnessCons ShiftL        = ConsWit
-    witnessCons ShiftR        = ConsWit
-    witnessCons RotateLU      = ConsWit
-    witnessCons RotateRU      = ConsWit
-    witnessCons RotateL       = ConsWit
-    witnessCons RotateR       = ConsWit
-    witnessCons ReverseBits   = ConsWit
-
-    witnessCons BitScan       = ConsWit
-    witnessCons BitCount      = ConsWit
-
-    witnessCons IsSigned      = ConsWit
-
-
-instance WitnessSat BITS
-  where
-    type SatContext BITS = TypeCtx
-    witnessSat BAnd          = SatWit
-    witnessSat BOr           = SatWit
-    witnessSat BXor          = SatWit
-    witnessSat Complement    = SatWit
-
-    witnessSat Bit           = SatWit
-    witnessSat SetBit        = SatWit
-    witnessSat ClearBit      = SatWit
-    witnessSat ComplementBit = SatWit
-    witnessSat TestBit       = SatWit
-
-    witnessSat ShiftLU       = SatWit
-    witnessSat ShiftRU       = SatWit
-    witnessSat ShiftL        = SatWit
-    witnessSat ShiftR        = SatWit
-    witnessSat RotateLU      = SatWit
-    witnessSat RotateRU      = SatWit
-    witnessSat RotateL       = SatWit
-    witnessSat RotateR       = SatWit
-    witnessSat ReverseBits   = SatWit
-
-    witnessSat BitScan       = SatWit
-    witnessSat BitCount      = SatWit
-
-    witnessSat IsSigned      = SatWit
-
-
-instance MaybeWitnessSat TypeCtx BITS
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
-
 instance Semantic BITS
   where
     semantics BAnd          = Sem "(.&.)"      (.&.)
@@ -165,7 +100,6 @@ instance Semantic BITS
     semantics BitCount      = Sem "bitCount" evalBitCount
 
     semantics IsSigned      = Sem "isSigned" isSigned
-
 
 liftIntWord :: (a -> Int -> b) -> (a -> WordN -> b)
 liftIntWord f x = f x . fromIntegral
@@ -198,10 +132,10 @@ evalBitCount b = loop b (bitSize b - 1) 0
                | testBit x i   = loop x (i-1) (n+1)
                | otherwise     = loop x (i-1) n
 
-instance ExprEq   BITS where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   BITS where renderPart = renderPartSem
+instance Equality BITS where equal = equalDefault; exprHash = exprHashDefault
+instance Render   BITS where renderArgs = renderArgsDefault
 instance ToTree   BITS
-instance Eval     BITS where evaluate = evaluateSem
+instance Eval     BITS where evaluate = evaluateDefault
 instance EvalBind BITS where evalBindSym = evalBindSymDefault
 instance Sharable BITS
 
@@ -209,6 +143,7 @@ instance AlphaEq dom dom dom env => AlphaEq BITS BITS dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp BITS
   where
     sizeProp BAnd (WrapFull a :* WrapFull b :* Nil) = rangeAnd (infoSize a) (infoSize b)
@@ -289,4 +224,5 @@ optZero :: ( Eq b, Num b
 optZero f (a :* b :* Nil)
     | Just 0 <- viewLiteral b = return a
     | otherwise               = constructFeatUnOpt f (a :* b :* Nil)
+-}
 

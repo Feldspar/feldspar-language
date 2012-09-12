@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -40,35 +40,25 @@ data NoInline a
   where
     NoInline :: (Type a) => NoInline (a :-> Full a)
 
-instance WitnessCons NoInline
-  where
-    witnessCons NoInline = ConsWit
-
-instance WitnessSat NoInline
-  where
-    type SatContext NoInline = TypeCtx
-    witnessSat NoInline = SatWit
-
-instance MaybeWitnessSat ctx NoInline
-  where
-    maybeWitnessSat _ _ = Nothing
-
 instance Semantic NoInline
   where
     semantics NoInline  = Sem "NoInline" id
 
-instance ExprEq   NoInline where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   NoInline where renderPart = renderPartSem
+instance Equality NoInline where equal = equalDefault; exprHash = exprHashDefault
+instance Render   NoInline where renderArgs = renderArgsDefault
 instance ToTree   NoInline
-instance Eval     NoInline where evaluate = evaluateSem
+instance Eval     NoInline where evaluate = evaluateDefault
 instance EvalBind NoInline where evalBindSym = evalBindSymDefault
-instance SizeProp NoInline where sizeProp = sizePropDefault
+--instance SizeProp NoInline where sizeProp = sizePropDefault
 instance Sharable NoInline
 
 instance AlphaEq dom dom dom env => AlphaEq NoInline NoInline dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance (NoInline :<: dom, Optimize dom dom) => Optimize NoInline dom
   where
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
+

@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -51,27 +51,6 @@ data NUM a
     Sub  :: (Type a, Num a, Num (Size a)) => NUM (a :-> a :-> Full a)
     Mul  :: (Type a, Num a, Num (Size a)) => NUM (a :-> a :-> Full a)
 
-instance WitnessCons NUM
-  where
-    witnessCons Abs  = ConsWit
-    witnessCons Sign = ConsWit
-    witnessCons Add  = ConsWit
-    witnessCons Sub  = ConsWit
-    witnessCons Mul  = ConsWit
-
-instance WitnessSat NUM
-  where
-    type SatContext NUM = TypeCtx
-    witnessSat Abs  = SatWit
-    witnessSat Sign = SatWit
-    witnessSat Add  = SatWit
-    witnessSat Sub  = SatWit
-    witnessSat Mul  = SatWit
-
-instance MaybeWitnessSat TypeCtx NUM
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
 instance Semantic NUM
   where
     semantics Abs  = Sem "abs" abs
@@ -80,10 +59,10 @@ instance Semantic NUM
     semantics Sub  = Sem "(-)" (-)
     semantics Mul  = Sem "(*)" (*)
 
-instance ExprEq   NUM where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   NUM where renderPart = renderPartSem
+instance Equality NUM where equal = equalDefault; exprHash = exprHashDefault
+instance Render   NUM
 instance ToTree   NUM
-instance Eval     NUM where evaluate = evaluateSem
+instance Eval     NUM where evaluate = evaluateDefault
 instance EvalBind NUM where evalBindSym = evalBindSymDefault
 instance Sharable NUM
 
@@ -91,6 +70,7 @@ instance AlphaEq dom dom dom env => AlphaEq NUM NUM dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp NUM
   where
     sizeProp Abs  (WrapFull a :* Nil)               = abs (infoSize a)
@@ -98,7 +78,6 @@ instance SizeProp NUM
     sizeProp Add  (WrapFull a :* WrapFull b :* Nil) = infoSize a + infoSize b
     sizeProp Sub  (WrapFull a :* WrapFull b :* Nil) = infoSize a - infoSize b
     sizeProp Mul  (WrapFull a :* WrapFull b :* Nil) = infoSize a * infoSize b
-
 
 
 instance (NUM :<: dom, OptimizeSuper dom) => Optimize NUM dom
@@ -211,4 +190,4 @@ instance (NUM :<: dom, OptimizeSuper dom) => Optimize NUM dom
     constructFeatOpt a args = constructFeatUnOpt a args
 
     constructFeatUnOpt = constructFeatUnOptDefault
-
+-}

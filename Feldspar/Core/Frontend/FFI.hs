@@ -34,7 +34,7 @@ import Feldspar.Core.Types
 import Feldspar.Core.Constructs.FFI
 
 foreignImport :: ( Type (DenResult a)
-                 , Signature a
+--                 , Signature a
                  , SyntacticN c b
                  , ApplySym a b dom
                  , FFI :<: dom

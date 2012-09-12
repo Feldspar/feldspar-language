@@ -42,39 +42,29 @@ data PropSize a
     PropSize :: (Type a, Type b) =>
         (Size a -> Size b) -> PropSize (a :-> b :-> Full b)
 
-instance WitnessCons PropSize
-  where
-    witnessCons (PropSize _) = ConsWit
-
-instance WitnessSat PropSize
-  where
-    type SatContext PropSize = TypeCtx
-    witnessSat (PropSize _)  = SatWit
-
-instance MaybeWitnessSat TypeCtx PropSize
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
 instance Semantic PropSize
   where
     semantics (PropSize _) = Sem "propSize" (const id)
 
-instance ExprEq   PropSize where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   PropSize where renderPart = renderPartSem
+instance Equality PropSize where equal = equalDefault; exprHash = exprHashDefault
+instance Render   PropSize where renderArgs = renderArgsDefault
 instance ToTree   PropSize
-instance Eval     PropSize where evaluate = evaluateSem
+instance Eval     PropSize where evaluate = evaluateDefault
 instance EvalBind PropSize where evalBindSym = evalBindSymDefault
 instance Sharable PropSize
 
+{-
 instance SizeProp PropSize
   where
     sizeProp (PropSize prop) (WrapFull a :* WrapFull b :* Nil) =
         prop (infoSize a) /\ infoSize b
+-}
 
 instance AlphaEq dom dom dom env => AlphaEq PropSize PropSize dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance (PropSize :<: dom, Optimize dom dom) => Optimize PropSize dom
   where
     constructFeatOpt (PropSize prop) (a :* b :* Nil) =
@@ -84,4 +74,5 @@ instance (PropSize :<: dom, Optimize dom dom) => Optimize PropSize dom
         f newSize info = info {infoSize = infoSize info /\ newSize}
 
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

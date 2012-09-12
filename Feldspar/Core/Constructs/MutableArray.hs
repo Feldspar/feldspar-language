@@ -50,18 +50,6 @@ data MutableArray a
     ArrLength :: MutableArray (MArr a :-> Full (Mut Length))
       -- TODO Should be pure?
 
-instance WitnessCons MutableArray
-  where
-    witnessCons NewArr    = ConsWit
-    witnessCons NewArr_   = ConsWit
-    witnessCons GetArr    = ConsWit
-    witnessCons SetArr    = ConsWit
-    witnessCons ArrLength = ConsWit
-
-instance MaybeWitnessSat ctx MutableArray
-  where
-    maybeWitnessSat _ _ = Nothing
-
 instance Semantic MutableArray
   where
     semantics NewArr    = Sem "newMArr"   (\l -> newArray  (0,l-1))
@@ -70,10 +58,10 @@ instance Semantic MutableArray
     semantics SetArr    = Sem "setMArr"   writeArray
     semantics ArrLength = Sem "arrLength" (getBounds >=> \(l,u) -> return (u-l+1))
 
-instance ExprEq   MutableArray where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   MutableArray where renderPart = renderPartSem
+instance Equality MutableArray where equal = equalDefault; exprHash = exprHashDefault
+instance Render   MutableArray where renderArgs = renderArgsDefault
 instance ToTree   MutableArray
-instance Eval     MutableArray where evaluate = evaluateSem
+instance Eval     MutableArray where evaluate = evaluateDefault
 instance EvalBind MutableArray where evalBindSym = evalBindSymDefault
 instance Sharable MutableArray
   -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
@@ -82,6 +70,7 @@ instance AlphaEq dom dom dom env => AlphaEq MutableArray MutableArray dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp MutableArray
   where
     sizeProp NewArr  (WrapFull len :* _ :* Nil) = infoSize len :> universal
@@ -99,4 +88,5 @@ instance (MutableArray :<: dom, Optimize dom dom) => Optimize MutableArray dom
     constructFeatUnOpt GetArr    args = constructFeatUnOptDefaultTyp (MutType typeRep) GetArr args
     constructFeatUnOpt SetArr    args = constructFeatUnOptDefaultTyp (MutType typeRep) SetArr args
     constructFeatUnOpt ArrLength args = constructFeatUnOptDefaultTyp (MutType typeRep) ArrLength args
+-}
 

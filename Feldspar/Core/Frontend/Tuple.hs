@@ -35,9 +35,10 @@ import QuickAnnotate
 import Language.Syntactic
 
 import Feldspar.Core.Types
-import Feldspar.Core.Constructs.Tuple
+import Feldspar.Core.Constructs.Tuple ()
 import Feldspar.Core.Constructs
 
+{-
 instance
     ( Syntax a
     , Syntax b
@@ -151,6 +152,7 @@ instance
 
     desugar = desugarTup7 typeCtx
     sugar   = sugarTup7 typeCtx
+-}
 
 instance (Syntax a, Syntax b)                                                   => Syntax (a,b)
 instance (Syntax a, Syntax b, Syntax c)                                         => Syntax (a,b,c)

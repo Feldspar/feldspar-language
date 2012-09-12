@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -52,30 +52,6 @@ data Loop a
     ForLoop   :: Type a => Loop (Length :-> a :-> (Index -> a -> a) :-> Full a)
     WhileLoop :: Type a => Loop (a :-> (a -> Bool) :-> (a -> a) :-> Full a)
 
-instance WitnessCons (LoopM m)
-  where
-    witnessCons While = ConsWit
-    witnessCons For   = ConsWit
-
-instance WitnessCons Loop
-  where
-    witnessCons ForLoop   = ConsWit
-    witnessCons WhileLoop = ConsWit
-
-instance WitnessSat Loop
-  where
-    type SatContext Loop = TypeCtx
-    witnessSat ForLoop   = SatWit
-    witnessSat WhileLoop = SatWit
-
-instance MaybeWitnessSat TypeCtx (LoopM m)
-  where
-    maybeWitnessSat _ _ = Nothing
-
-instance MaybeWitnessSat TypeCtx Loop
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
 instance Monad m => Semantic (LoopM m)
   where
     semantics While = Sem "while" while
@@ -101,18 +77,18 @@ instance Semantic Loop
             go st | cond st   = go $ body st
                   | otherwise = st
 
-instance Monad m => ExprEq   (LoopM m) where exprEq = exprEqSem; exprHash = exprHashSem
-instance Monad m => Render   (LoopM m) where renderPart = renderPartSem
+instance Monad m => Equality (LoopM m) where equal = equalDefault; exprHash = exprHashDefault
+instance Monad m => Render   (LoopM m) where renderArgs = renderArgsDefault
 instance Monad m => ToTree   (LoopM m)
-instance Monad m => Eval     (LoopM m) where evaluate = evaluateSem
+instance Monad m => Eval     (LoopM m) where evaluate = evaluateDefault
 instance Monad m => EvalBind (LoopM m) where evalBindSym = evalBindSymDefault
 instance Sharable (LoopM m)
   -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
 
-instance ExprEq   Loop where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   Loop where renderPart = renderPartSem
+instance Equality Loop where equal = equalDefault; exprHash = exprHashDefault
+instance Render   Loop where renderArgs = renderArgsDefault
 instance ToTree   Loop
-instance Eval     Loop where evaluate = evaluateSem
+instance Eval     Loop where evaluate = evaluateDefault
 instance EvalBind Loop where evalBindSym = evalBindSymDefault
 instance Sharable Loop
 
@@ -125,6 +101,7 @@ instance AlphaEq dom dom dom env => AlphaEq Loop Loop dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp (LoopM m)
   where
     sizeProp While _ = AnySize
@@ -214,4 +191,5 @@ instance ( Variable TypeCtx :<: dom
     constructFeatOpt feat args = constructFeatUnOpt feat args
 
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

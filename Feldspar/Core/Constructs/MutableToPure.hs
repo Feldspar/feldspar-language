@@ -54,16 +54,6 @@ data MutableToPure a where
   RunMutableArray :: Type a => MutableToPure (Mut (MArr a) :-> Full [a])
   WithArray       :: Type b => MutableToPure (MArr a :-> ([a] -> Mut b) :-> Full (Mut b))
 
-instance WitnessCons MutableToPure
-  where
-    witnessCons RunMutableArray = ConsWit
-    witnessCons WithArray       = ConsWit
-
-instance MaybeWitnessSat TypeCtx MutableToPure
-  where
-    maybeWitnessSat _ RunMutableArray = Just SatWit
-    maybeWitnessSat _ _               = Nothing
-
 instance Semantic MutableToPure
   where
     semantics RunMutableArray = Sem "runMutableArray" runMutableArrayEval
@@ -80,10 +70,10 @@ withArrayEval ma f
     = do a <- f (elems (unsafePerformIO $ freeze ma :: Array WordN a))
          C.evaluate a
 
-instance ExprEq   MutableToPure where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   MutableToPure where renderPart = renderPartSem
+instance Equality MutableToPure where equal = equalDefault; exprHash = exprHashDefault
+instance Render   MutableToPure where renderArgs = renderArgsDefault
 instance ToTree   MutableToPure
-instance Eval     MutableToPure where evaluate = evaluateSem
+instance Eval     MutableToPure where evaluate = evaluateDefault
 instance EvalBind MutableToPure where evalBindSym = evalBindSymDefault
 instance Sharable MutableToPure
 
@@ -91,6 +81,7 @@ instance AlphaEq dom dom dom env => AlphaEq MutableToPure MutableToPure dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp MutableToPure
   where
     sizeProp RunMutableArray _ = universal
@@ -100,4 +91,5 @@ instance (MutableToPure :<: dom, Optimize dom dom) => Optimize MutableToPure dom
   where
     constructFeatUnOpt RunMutableArray args = constructFeatUnOptDefaultTyp typeRep RunMutableArray args
     constructFeatUnOpt WithArray args       = constructFeatUnOptDefaultTyp (MutType typeRep) WithArray args
+-}
 

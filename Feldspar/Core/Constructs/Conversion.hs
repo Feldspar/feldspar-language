@@ -64,29 +64,6 @@ rangeProp (Range l u)
   where withinBounds i = toInteger (minBound :: a) <= i &&
                          i <= toInteger (maxBound :: a)
 
-instance WitnessCons Conversion
-  where
-    witnessCons F2I     = ConsWit
-    witnessCons I2N     = ConsWit
-    witnessCons B2I     = ConsWit
-    witnessCons Round   = ConsWit
-    witnessCons Ceiling = ConsWit
-    witnessCons Floor   = ConsWit
-
-instance WitnessSat Conversion
-  where
-    type SatContext Conversion = TypeCtx
-    witnessSat F2I     = SatWit
-    witnessSat I2N     = SatWit
-    witnessSat B2I     = SatWit
-    witnessSat Round   = SatWit
-    witnessSat Ceiling = SatWit
-    witnessSat Floor   = SatWit
-
-instance MaybeWitnessSat TypeCtx Conversion
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
 instance Semantic Conversion
   where
     semantics F2I     = Sem "f2i"     truncate
@@ -96,9 +73,9 @@ instance Semantic Conversion
     semantics Ceiling = Sem "ceiling" ceiling
     semantics Floor   = Sem "floor"   floor
 
-instance ExprEq   Conversion where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   Conversion where renderPart = renderPartSem
-instance Eval     Conversion where evaluate = evaluateSem
+instance Equality Conversion where equal = equalDefault; exprHash = exprHashDefault
+instance Render   Conversion where renderArgs = renderArgsDefault
+instance Eval     Conversion where evaluate = evaluateDefault
 instance ToTree   Conversion
 instance EvalBind Conversion where evalBindSym = evalBindSymDefault
 instance Sharable Conversion
@@ -107,6 +84,7 @@ instance AlphaEq dom dom dom env => AlphaEq Conversion Conversion dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp Conversion
   where
     sizeProp F2I     _ = universal
@@ -126,4 +104,5 @@ instance (Conversion :<: dom, Optimize dom dom) => Optimize Conversion dom
     constructFeatOpt a args = constructFeatUnOpt a args
 
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

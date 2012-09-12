@@ -736,10 +736,12 @@ typeRepByProxy _ = typeRep
 -- | Context for supported types
 data TypeCtx
 
+{-
 instance Type a => Sat TypeCtx a
   where
     data Witness TypeCtx a = Type a => TypeWit
     witness = TypeWit
+-}
 
 typeCtx :: Proxy TypeCtx
 typeCtx = Proxy

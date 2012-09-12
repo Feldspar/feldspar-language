@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -56,31 +56,6 @@ data Array a
     GetLength  :: Type a => Array ([a] :-> Full Length)
     SetLength  :: Type a => Array (Length :-> [a] :-> Full [a])
 
-instance WitnessCons Array
-  where
-    witnessCons Parallel   = ConsWit
-    witnessCons Sequential = ConsWit
-    witnessCons Append     = ConsWit
-    witnessCons GetIx      = ConsWit
-    witnessCons SetIx      = ConsWit
-    witnessCons GetLength  = ConsWit
-    witnessCons SetLength  = ConsWit
-
-instance WitnessSat Array
-  where
-    type SatContext Array = TypeCtx
-    witnessSat Parallel   = SatWit
-    witnessSat Sequential = SatWit
-    witnessSat Append     = SatWit
-    witnessSat GetIx      = SatWit
-    witnessSat SetIx      = SatWit
-    witnessSat GetLength  = SatWit
-    witnessSat SetLength  = SatWit
-
-instance MaybeWitnessSat TypeCtx Array
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
 instance Semantic Array
   where
     semantics Append    = Sem "(++)"      (++)
@@ -112,10 +87,10 @@ instance Semantic Array
           where
             len = genericLength as
 
-instance ExprEq   Array where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   Array where renderPart = renderPartSem
+instance Equality Array where equal = equalDefault; exprHash = exprHashDefault
+instance Render   Array where renderArgs = renderArgsDefault
 instance ToTree   Array
-instance Eval     Array where evaluate = evaluateSem
+instance Eval     Array where evaluate = evaluateDefault
 instance EvalBind Array where evalBindSym = evalBindSymDefault
 
 instance AlphaEq dom dom dom env => AlphaEq Array Array dom env
@@ -127,6 +102,7 @@ instance Sharable Array
     sharable GetIx = False
     sharable _     = True
 
+{-
 instance SizeProp Array
   where
     sizeProp Parallel (WrapFull len :* WrapFull ixf :* Nil) =
@@ -261,4 +237,5 @@ instance
     constructFeatOpt a args = constructFeatUnOpt a args
 
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

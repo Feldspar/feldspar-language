@@ -41,10 +41,9 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Logic
 
+instance Sharable Condition
 
-
-instance Sharable (Condition TypeCtx)
-
+{-
 instance SizeProp (Condition TypeCtx)
   where
     sizeProp cond@Condition (_ :* WrapFull t :* WrapFull f :* Nil)
@@ -72,4 +71,5 @@ instance (Condition TypeCtx :<: dom, Logic :<: dom, OptimizeSuper dom) =>
       --      example
       --
       --        condition (x<10) (min x 20) x  ==>  x
+-}
 

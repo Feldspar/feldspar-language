@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -30,41 +30,24 @@
 
 module Feldspar.Core.Constructs.Save where
 
-
-
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
 
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 
-
-
 data Save a
   where
     Save :: Type a => Save (a :-> Full a)
-
-instance WitnessCons Save
-  where
-    witnessCons Save = ConsWit
-
-instance WitnessSat Save
-  where
-    type SatContext Save = TypeCtx
-    witnessSat Save = SatWit
-
-instance MaybeWitnessSat TypeCtx Save
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
 
 instance Semantic Save
   where
     semantics Save = Sem "save" id
 
-instance ExprEq   Save where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   Save where renderPart = renderPartSem
+instance Equality Save where equal = equalDefault; exprHash = exprHashDefault
+instance Render   Save where renderArgs = renderArgsDefault
 instance ToTree   Save
-instance Eval     Save where evaluate = evaluateSem
+instance Eval     Save where evaluate = evaluateDefault
 instance EvalBind Save where evalBindSym = evalBindSymDefault
 instance Sharable Save
 
@@ -72,6 +55,7 @@ instance AlphaEq dom dom dom env => AlphaEq Save Save dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp Save
   where
     sizeProp Save (WrapFull a :* Nil) = infoSize a
@@ -79,4 +63,5 @@ instance SizeProp Save
 instance (Save :<: dom, Optimize dom dom) => Optimize Save dom
   where
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

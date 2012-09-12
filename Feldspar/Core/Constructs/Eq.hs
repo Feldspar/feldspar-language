@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -43,37 +43,24 @@ data EQ a
     Equal    :: (Type a, Eq a) => EQ (a :-> a :-> Full Bool)
     NotEqual :: (Type a, Eq a) => EQ (a :-> a :-> Full Bool)
 
-instance WitnessCons EQ
-  where
-    witnessCons Equal    = ConsWit
-    witnessCons NotEqual = ConsWit
-
-instance WitnessSat EQ
-  where
-    type SatContext EQ  = TypeCtx
-    witnessSat Equal    = SatWit
-    witnessSat NotEqual = SatWit
-
-instance MaybeWitnessSat TypeCtx EQ
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
-
 instance Semantic EQ
   where
     semantics Equal    = Sem "(==)" (==)
     semantics NotEqual = Sem "(/=)" (/=)
 
-instance ExprEq   EQ where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   EQ where renderPart = renderPartSem
+instance Equality EQ where equal = equalDefault; exprHash = exprHashDefault
+instance Render   EQ where renderArgs = renderArgsDefault
 instance ToTree   EQ
-instance Eval     EQ where evaluate = evaluateSem
+instance Eval     EQ where evaluate = evaluateDefault
 instance EvalBind EQ where evalBindSym = evalBindSymDefault
-instance SizeProp EQ where sizeProp = sizePropDefault
 instance Sharable EQ
 
 instance AlphaEq dom dom dom env => AlphaEq EQ EQ dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+{-
+instance SizeProp EQ where sizeProp = sizePropDefault
 
 instance (EQ :<: dom, OptimizeSuper dom) => Optimize EQ dom
   where
@@ -100,4 +87,5 @@ instance (EQ :<: dom, OptimizeSuper dom) => Optimize EQ dom
     constructFeatOpt a args = constructFeatUnOpt a args
 
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

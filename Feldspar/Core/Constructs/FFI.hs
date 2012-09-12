@@ -39,7 +39,7 @@ import Feldspar.Core.Interpretation
 data FFI a
   where
     ForeignImport :: ( Type (DenResult a)
-                     , Signature a
+--                     , Signature a
                      )
                   => String -> Denotation a -> FFI a
 
@@ -47,30 +47,18 @@ instance Semantic FFI
   where
     semantics (ForeignImport name f) = Sem name f
 
-instance ExprEq   FFI where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   FFI where renderPart = renderPartSem
+instance Equality FFI where equal = equalDefault; exprHash = exprHashDefault
+instance Render   FFI where renderArgs = renderArgsDefault
 instance ToTree   FFI
-instance Eval     FFI where evaluate = evaluateSem
+instance Eval     FFI where evaluate = evaluateDefault
 instance EvalBind FFI where evalBindSym = evalBindSymDefault
 instance Sharable FFI
-
-instance WitnessCons FFI
-  where
-    witnessCons (ForeignImport _ _) = ConsWit
-
-instance WitnessSat FFI
-  where
-    type SatContext FFI = TypeCtx
-    witnessSat (ForeignImport _ _) = SatWit
-
-instance MaybeWitnessSat ctx FFI
-  where
-    maybeWitnessSat _ _ = Nothing
 
 instance AlphaEq dom dom dom env => AlphaEq FFI FFI dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp FFI
   where
     sizeProp = sizePropDefault
@@ -81,4 +69,5 @@ instance ( FFI :<: dom
       => Optimize FFI dom
   where
     constructFeatUnOpt = constructFeatUnOptDefault
+-}
 

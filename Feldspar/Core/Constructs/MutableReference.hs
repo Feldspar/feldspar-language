@@ -46,26 +46,16 @@ data MutableReference a
     GetRef :: Type a => MutableReference (IORef a :-> Full (Mut a))
     SetRef :: Type a => MutableReference (IORef a :-> a :-> Full (Mut ()))
 
-instance WitnessCons MutableReference
-  where
-    witnessCons NewRef = ConsWit
-    witnessCons GetRef = ConsWit
-    witnessCons SetRef = ConsWit
-
-instance MaybeWitnessSat ctx MutableReference
-  where
-    maybeWitnessSat _ _ = Nothing
-
 instance Semantic MutableReference
   where
     semantics NewRef = Sem "newRef" newIORef
     semantics GetRef = Sem "getRef" readIORef
     semantics SetRef = Sem "setRef" writeIORef
 
-instance ExprEq   MutableReference where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   MutableReference where renderPart = renderPartSem
+instance Equality MutableReference where equal = equalDefault; exprHash = exprHashDefault
+instance Render   MutableReference where renderArgs = renderArgsDefault
 instance ToTree   MutableReference
-instance Eval     MutableReference where evaluate = evaluateSem
+instance Eval     MutableReference where evaluate = evaluateDefault
 instance EvalBind MutableReference where evalBindSym = evalBindSymDefault
 instance Sharable MutableReference
   -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
@@ -75,6 +65,7 @@ instance AlphaEq dom dom dom env =>
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp MutableReference
   where
     sizeProp NewRef _ = universal
@@ -87,4 +78,5 @@ instance (MutableReference :<: dom, Optimize dom dom) =>
     constructFeatUnOpt NewRef args = constructFeatUnOptDefaultTyp (MutType $ RefType typeRep) NewRef args
     constructFeatUnOpt GetRef args = constructFeatUnOptDefaultTyp (MutType typeRep) GetRef args
     constructFeatUnOpt SetRef args = constructFeatUnOptDefaultTyp (MutType typeRep) SetRef args
+-}
 

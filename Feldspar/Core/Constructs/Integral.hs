@@ -47,7 +47,6 @@ import Feldspar.Core.Constructs.Ord
 import Feldspar.Core.Constructs.Num
 import Feldspar.Core.Constructs.Logic
 
-
 data INTEGRAL a
   where
     Quot :: (Type a, BoundedInt a, Size a ~ Range a) => INTEGRAL (a :-> a :-> Full a)
@@ -55,27 +54,6 @@ data INTEGRAL a
     Div  :: (Type a, BoundedInt a, Size a ~ Range a) => INTEGRAL (a :-> a :-> Full a)
     Mod  :: (Type a, BoundedInt a, Size a ~ Range a) => INTEGRAL (a :-> a :-> Full a)
     Exp  :: (Type a, BoundedInt a, Size a ~ Range a) => INTEGRAL (a :-> a :-> Full a)
-
-instance WitnessCons INTEGRAL
-  where
-    witnessCons Quot = ConsWit
-    witnessCons Rem  = ConsWit
-    witnessCons Div  = ConsWit
-    witnessCons Mod  = ConsWit
-    witnessCons Exp  = ConsWit
-
-instance WitnessSat INTEGRAL
-  where
-    type SatContext INTEGRAL = TypeCtx
-    witnessSat Quot = SatWit
-    witnessSat Rem  = SatWit
-    witnessSat Div  = SatWit
-    witnessSat Mod  = SatWit
-    witnessSat Exp  = SatWit
-
-instance MaybeWitnessSat TypeCtx INTEGRAL
-  where
-    maybeWitnessSat = maybeWitnessSatDefault
 
 instance Semantic INTEGRAL
   where
@@ -85,10 +63,10 @@ instance Semantic INTEGRAL
     semantics Mod  = Sem "mod"  mod
     semantics Exp  = Sem "(^)"  (^)
 
-instance ExprEq   INTEGRAL where exprEq = exprEqSem; exprHash = exprHashSem
-instance Render   INTEGRAL where renderPart = renderPartSem
+instance Equality INTEGRAL where equal = equalDefault; exprHash = exprHashDefault
+instance Render   INTEGRAL where renderArgs = renderArgsDefault
 instance ToTree   INTEGRAL
-instance Eval     INTEGRAL where evaluate = evaluateSem
+instance Eval     INTEGRAL where evaluate = evaluateDefault
 instance EvalBind INTEGRAL where evalBindSym = evalBindSymDefault
 instance Sharable INTEGRAL
 
@@ -96,6 +74,7 @@ instance AlphaEq dom dom dom env => AlphaEq INTEGRAL INTEGRAL dom env
   where
     alphaEqSym = alphaEqSymDefault
 
+{-
 instance SizeProp INTEGRAL
   where
     sizeProp Quot (WrapFull a :* WrapFull b :* Nil) = rangeQuot (infoSize a) (infoSize b)
@@ -205,4 +184,5 @@ sameSign :: BoundedInt a => Range a -> Range a -> Bool
 sameSign ra rb
     =  isNatural  ra && isNatural  rb
     || isNegative ra && isNegative rb
+-}
 
