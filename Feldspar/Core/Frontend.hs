@@ -162,6 +162,26 @@ injLt b
     = Decor (getInfo b) (inj Let)
 -}
 
+bindDict :: BindDict ((Lambda :+: Variable :+: FeldDomain) :|| Typeable)
+bindDict = BindDict
+    { prjVariable = \a -> do
+        Variable v <- prj a
+        return v
+    , prjLambda = \a -> do
+        Lambda v <- prj a
+        return v
+    , injVariable = \ref v -> case exprDict ref of
+        Dict -> injC (Variable v)
+    , injLambda = \refa refb v -> case (exprDict refa, exprDict refb) of
+        (Dict,Dict) -> injC (Lambda v)
+    , injLet = \ref -> case exprDict ref of
+        Dict -> injC Let  -- TODO Generalize the pattern of `Dict` matching
+                          --      followed by `injC`
+    }
+
+instance Sharable ((Lambda :+: Variable :+: FeldDomain) :|| Typeable)
+    where
+      sharable _ = True
 
 -- | Reification and optimization of a Feldspar program
 reifyFeld :: Syntactic a FeldDomainAll
@@ -170,7 +190,7 @@ reifyFeld :: Syntactic a FeldDomainAll
     -> ASTF ((Lambda :+: Variable :+: FeldDomain) :|| Typeable) (Internal a)
 reifyFeld n = flip evalState 0 .
     (   return
---    <=< codeMotion bindDict sharableDecor
+    <=< codeMotion bindDict sharable
 --    .   optimize
     .   targetSpecialization n
     <=< reifyM
