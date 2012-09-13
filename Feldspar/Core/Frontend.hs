@@ -45,8 +45,8 @@ module Feldspar.Core.Frontend
     , printExpr
     , showAST
     , drawAST
-    , showDecor
-    , drawDecor
+--    , showDecor
+--    , drawDecor
     , eval
     , evalTarget
     , desugar
@@ -61,7 +61,7 @@ module Feldspar.Core.Frontend
     , tData
     , tArr1
     , tArr2
-    , tM
+--    , tM
 
     -- * Functions
     , ilog2
@@ -75,6 +75,7 @@ import Control.Monad.State
 import Test.QuickCheck
 
 import Data.Patch
+import Data.Typeable
 
 import Language.Syntactic hiding
     (desugar, sugar, resugar, printExpr, showAST, drawAST)
@@ -93,43 +94,44 @@ import Feldspar.Core.Frontend.Binding          as Frontend
 import Feldspar.Core.Frontend.Bits             as Frontend
 import Feldspar.Core.Frontend.Complex          as Frontend
 import Feldspar.Core.Frontend.Condition        as Frontend
-import Feldspar.Core.Frontend.ConditionM       as Frontend
+--import Feldspar.Core.Frontend.ConditionM       as Frontend
 import Feldspar.Core.Frontend.Conversion       as Frontend
 import Feldspar.Core.Frontend.Eq               as Frontend
 import Feldspar.Core.Frontend.Error            as Frontend
 import Feldspar.Core.Frontend.FFI              as Frontend
 import Feldspar.Core.Frontend.Floating         as Frontend
 import Feldspar.Core.Frontend.Fractional       as Frontend
-import Feldspar.Core.Frontend.Future           as Frontend
+--import Feldspar.Core.Frontend.Future           as Frontend
 import Feldspar.Core.Frontend.Integral         as Frontend
 import Feldspar.Core.Frontend.Literal          as Frontend
 import Feldspar.Core.Frontend.Logic            as Frontend
 import Feldspar.Core.Frontend.Loop             as Frontend
-import Feldspar.Core.Frontend.Mutable          as Frontend
-import Feldspar.Core.Frontend.MutableArray     as Frontend
-import Feldspar.Core.Frontend.MutableReference as Frontend
-import Feldspar.Core.Frontend.MutableToPure    as Frontend
+--import Feldspar.Core.Frontend.Mutable          as Frontend
+--import Feldspar.Core.Frontend.MutableArray     as Frontend
+--import Feldspar.Core.Frontend.MutableReference as Frontend
+--import Feldspar.Core.Frontend.MutableToPure    as Frontend
 import Feldspar.Core.Frontend.NoInline         as Frontend
 import Feldspar.Core.Frontend.Num              as Frontend
 import Feldspar.Core.Frontend.Ord              as Frontend
-import Feldspar.Core.Frontend.Par              as Frontend
+--import Feldspar.Core.Frontend.Par              as Frontend
 import Feldspar.Core.Frontend.Save             as Frontend
 import Feldspar.Core.Frontend.Select           as Frontend
 import Feldspar.Core.Frontend.SizeProp         as Frontend
---import Feldspar.Core.Frontend.SourceInfo       as Frontend
+import Feldspar.Core.Frontend.SourceInfo       as Frontend
 import Feldspar.Core.Frontend.Trace            as Frontend
---import Feldspar.Core.Frontend.Tuple            as Frontend
+import Feldspar.Core.Frontend.Tuple            as Frontend
 
+{-
 bindDict :: BindDict
     TypeCtx
     (Decor Info (Lambda TypeCtx :+: Variable TypeCtx :+: FeldDomain))
 bindDict = BindDict
     { prjVariable = \a -> case a of
-        Decor _ (prjCtx typeCtx -> Just (Variable v)) -> Just v
+        Decor _ (prj -> Just (Variable v)) -> Just v
         _ -> Nothing
 
     , prjLambda = \a -> case a of
-        Decor _ (prjCtx typeCtx -> Just (Lambda v)) -> Just v
+        Decor _ (prj -> Just (Lambda v)) -> Just v
         _ -> Nothing
 
     , injVariable = injVar
@@ -137,43 +139,39 @@ bindDict = BindDict
     , injLet      = injLt
     }
 
-injVar :: forall a . Sat TypeCtx a
-    => ASTF (Decor Info (Lambda TypeCtx :+: Variable TypeCtx :+: FeldDomain)) a
+injVar :: forall a . Sat a
+    => ASTF (Decor Info (Lambda :+: Variable :+: FeldDomain)) a
     -> VarId
-    -> (Decor Info (Lambda TypeCtx :+: Variable TypeCtx :+: FeldDomain)) (Full a)
+    -> (Decor Info (Lambda :+: Variable :+: FeldDomain)) (Full a)
 injVar a v
-    | TypeWit <- witness :: Witness TypeCtx a
-    = Decor (getInfo a) (inj (Variable v `withContext` typeCtx))
+    = Decor (getInfo a) (inj (Variable v))
 
-injLam :: forall a b . (Sat TypeCtx a, Sat TypeCtx b)
-    => ASTF (Decor Info (Lambda TypeCtx :+: Variable TypeCtx :+: FeldDomain)) b
+injLam :: forall a b . (Sat a, Sat b)
+    => ASTF (Decor Info (Lambda :+: Variable :+: FeldDomain)) b
     -> VarId
-    -> (Decor Info (Lambda TypeCtx :+: Variable TypeCtx :+: FeldDomain)) (b :-> Full (a -> b))
+    -> (Decor Info (Lambda :+: Variable :+: FeldDomain)) (b :-> Full (a -> b))
 injLam b v
-    | TypeWit <- witness :: Witness TypeCtx a
-    , TypeWit <- witness :: Witness TypeCtx b
     = Decor
         ((mkInfoTy (FunType typeRep typeRep)) {infoSize = infoSize (getInfo b)})
-        (inj (Lambda v `withContext` typeCtx))
+        (inj (Lambda v))
 
-injLt :: forall a b . (Sat TypeCtx a, Sat TypeCtx b)
-    => ASTF (Decor Info (Lambda TypeCtx :+: Variable TypeCtx :+: FeldDomain)) b
-    -> (Decor Info (Lambda TypeCtx :+: Variable TypeCtx :+: FeldDomain)) (a :-> (a -> b) :-> Full b)
+injLt :: forall a b . (Sat a, Sat b)
+    => ASTF (Decor Info (Lambda :+: Variable :+: FeldDomain)) b
+    -> (Decor Info (Lambda :+: Variable :+: FeldDomain)) (a :-> (a -> b) :-> Full b)
 injLt b
-    | TypeWit <- witness :: Witness TypeCtx b
-    = Decor (getInfo b) (inj (letBind typeCtx))
-
+    = Decor (getInfo b) (inj Let)
+-}
 
 
 -- | Reification and optimization of a Feldspar program
 reifyFeld :: Syntactic a FeldDomainAll
     => BitWidth n
     -> a
-    -> ASTF (Decor Info (Lambda TypeCtx :+: Variable TypeCtx :+: FeldDomain)) (Internal a)
+    -> ASTF ((Lambda :+: Variable :+: FeldDomain) :|| Typeable) (Internal a)
 reifyFeld n = flip evalState 0 .
     (   return
-    <=< codeMotion bindDict sharableDecor
-    .   optimize
+--    <=< codeMotion bindDict sharableDecor
+--    .   optimize
     .   targetSpecialization n
     <=< reifyM
     .   Syntactic.desugar
@@ -197,12 +195,12 @@ drawAST :: Syntactic a FeldDomainAll => a -> IO ()
 drawAST = Syntactic.drawAST . reifyFeld N32
 
 -- | Draw a syntax tree decorated with type and size information
-showDecor :: Syntactic a FeldDomainAll => a -> String
-showDecor = Syntactic.showDecor . reifyFeld N32
+--showDecor :: Syntactic a FeldDomainAll => a -> String
+--showDecor = Syntactic.showDecor . reifyFeld N32
 
 -- | Draw a syntax tree decorated with type and size information
-drawDecor :: Syntactic a FeldDomainAll => a -> IO ()
-drawDecor = Syntactic.drawDecor . reifyFeld N32
+--drawDecor :: Syntactic a FeldDomainAll => a -> IO ()
+--drawDecor = Syntactic.drawDecor . reifyFeld N32
 
 eval :: Syntactic a FeldDomainAll => a -> Internal a
 eval = evalBind . reifyFeld N32
@@ -271,8 +269,8 @@ tArr1 _ = id
 tArr2 :: Patch a a -> Patch (Data [[a]]) (Data [[a]])
 tArr2 _ = id
 
-tM :: Patch a a -> Patch (M a) (M a)
-tM _ = id
+--tM :: Patch a a -> Patch (M a) (M a)
+--tM _ = id
 
 
 --------------------------------------------------------------------------------

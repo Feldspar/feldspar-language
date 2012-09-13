@@ -35,7 +35,7 @@ import Data.Word
 import Data.List (inits)
 import qualified Data.TypeLevel as TL
 
-import Language.Syntactic
+import Language.Syntactic hiding (fold)
 
 import Feldspar.Wrap
 import Feldspar.Prelude

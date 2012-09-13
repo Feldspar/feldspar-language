@@ -39,7 +39,7 @@ import Feldspar.Core.Constructs
 import Feldspar.Core.Frontend.Logic
 import qualified Feldspar.Core.Constructs.Mutable as Feature
 
-newtype M a = M { unM :: Mon TypeCtx FeldDomain Mut a }
+newtype M a = M { unM :: Mon FeldDomain Mut a }
   deriving (Functor, Monad)
 
 instance Syntax a => Syntactic (M a) FeldDomainAll
@@ -49,10 +49,11 @@ instance Syntax a => Syntactic (M a) FeldDomainAll
     sugar   = M . sugar
 
 runMutable :: (Syntax a) => M a -> a
-runMutable = sugarSym Feature.Run
+runMutable = sugarSymC Feature.Run
 
 when :: Data Bool -> M () -> M ()
-when = sugarSym Feature.When
+when = sugarSymC Feature.When
 
 unless :: Data Bool -> M () -> M ()
 unless = when . not
+

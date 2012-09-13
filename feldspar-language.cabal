@@ -31,7 +31,7 @@ library
     Feldspar.Core.Constructs.Bits
     Feldspar.Core.Constructs.Complex
     Feldspar.Core.Constructs.Condition
-    Feldspar.Core.Constructs.ConditionM
+--    Feldspar.Core.Constructs.ConditionM
     Feldspar.Core.Constructs.Conversion
     Feldspar.Core.Constructs.Eq
     Feldspar.Core.Constructs.Error
@@ -42,12 +42,12 @@ library
     Feldspar.Core.Constructs.Literal
     Feldspar.Core.Constructs.Logic
     Feldspar.Core.Constructs.Loop
-    Feldspar.Core.Constructs.Mutable
-    Feldspar.Core.Constructs.MutableArray
-    Feldspar.Core.Constructs.MutableReference
-    Feldspar.Core.Constructs.MutableToPure
+--    Feldspar.Core.Constructs.Mutable
+--    Feldspar.Core.Constructs.MutableArray
+--    Feldspar.Core.Constructs.MutableReference
+--    Feldspar.Core.Constructs.MutableToPure
     Feldspar.Core.Constructs.NoInline
-    Feldspar.Core.Constructs.Par
+--    Feldspar.Core.Constructs.Par
     Feldspar.Core.Constructs.Num
     Feldspar.Core.Constructs.Ord
     Feldspar.Core.Constructs.SizeProp
@@ -62,7 +62,7 @@ library
     Feldspar.Core.Frontend.Bits
     Feldspar.Core.Frontend.Complex
     Feldspar.Core.Frontend.Condition
-    Feldspar.Core.Frontend.ConditionM
+--    Feldspar.Core.Frontend.ConditionM
     Feldspar.Core.Frontend.Conversion
     Feldspar.Core.Frontend.Eq
     Feldspar.Core.Frontend.Error
@@ -73,12 +73,12 @@ library
     Feldspar.Core.Frontend.Literal
     Feldspar.Core.Frontend.Logic
     Feldspar.Core.Frontend.Loop
-    Feldspar.Core.Frontend.Mutable
-    Feldspar.Core.Frontend.MutableArray
-    Feldspar.Core.Frontend.MutableReference
-    Feldspar.Core.Frontend.MutableToPure
+--    Feldspar.Core.Frontend.Mutable
+--    Feldspar.Core.Frontend.MutableArray
+--    Feldspar.Core.Frontend.MutableReference
+--    Feldspar.Core.Frontend.MutableToPure
     Feldspar.Core.Frontend.NoInline
-    Feldspar.Core.Frontend.Par
+--    Feldspar.Core.Frontend.Par
     Feldspar.Core.Frontend.Num
     Feldspar.Core.Frontend.Ord
     Feldspar.Core.Frontend.Select
@@ -93,16 +93,16 @@ library
     Feldspar.Core
     Feldspar.BitVector
     Feldspar.FixedPoint
-    Feldspar.Future
+--    Feldspar.Future
     Feldspar.Matrix
     Feldspar.Option
-    Feldspar.Repa
-    Feldspar.Stream
+--    Feldspar.Repa
+--    Feldspar.Stream
     Feldspar.Vector.Internal
     Feldspar.Vector
-    Feldspar.Vector.Push
+ --   Feldspar.Vector.Push
     Feldspar.Wrap
-    Feldspar.Par
+ --   Feldspar.Par
     Feldspar
 
   build-depends:

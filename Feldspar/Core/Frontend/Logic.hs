@@ -43,13 +43,13 @@ infixr 2 ||
 infixr 2 ||*
 
 not :: Data Bool -> Data Bool
-not = sugarSym Not
+not = sugarSymC Not
 
 (&&) :: Data Bool -> Data Bool -> Data Bool
-(&&) = sugarSym And
+(&&) = sugarSymC And
 
 (||) :: Data Bool -> Data Bool -> Data Bool
-(||) = sugarSym Or
+(||) = sugarSymC Or
 
 
 -- | Lazy conjunction, second argument only evaluated if necessary

@@ -39,7 +39,7 @@ import Test.QuickCheck
 
 import QuickAnnotate
 
-import Language.Syntactic
+import Language.Syntactic hiding (fold)
 
 import Feldspar.Range (rangeSubSat)
 import Feldspar hiding (sugar,desugar,resugar)

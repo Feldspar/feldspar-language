@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -52,50 +52,50 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
   where
     -- Logical operations
     (.&.)         :: Data a -> Data a -> Data a
-    (.&.)         = sugarSym BAnd
+    (.&.)         = sugarSymC BAnd
     (.|.)         :: Data a -> Data a -> Data a
-    (.|.)         = sugarSym BOr
+    (.|.)         = sugarSymC BOr
     xor           :: Data a -> Data a -> Data a
-    xor           = sugarSym BXor
+    xor           = sugarSymC BXor
     complement    :: Data a -> Data a
-    complement    = sugarSym Complement
+    complement    = sugarSymC Complement
 
     -- Bitwise operations
     bit           :: Data Index -> Data a
-    bit           = sugarSym Bit
+    bit           = sugarSymC Bit
     setBit        :: Data a -> Data Index -> Data a
-    setBit        = sugarSym SetBit
+    setBit        = sugarSymC SetBit
     clearBit      :: Data a -> Data Index -> Data a
-    clearBit      = sugarSym ClearBit
+    clearBit      = sugarSymC ClearBit
     complementBit :: Data a -> Data Index -> Data a
-    complementBit = sugarSym ComplementBit
+    complementBit = sugarSymC ComplementBit
     testBit       :: Data a -> Data Index -> Data Bool
-    testBit       = sugarSym TestBit
+    testBit       = sugarSymC TestBit
 
     -- Movement operations
     shiftLU       :: Data a -> Data Index -> Data a
-    shiftLU       = sugarSym ShiftLU
+    shiftLU       = sugarSymC ShiftLU
     shiftRU       :: Data a -> Data Index -> Data a
-    shiftRU       = sugarSym ShiftRU
+    shiftRU       = sugarSymC ShiftRU
     shiftL        :: Data a -> Data IntN -> Data a
-    shiftL        = sugarSym ShiftL
+    shiftL        = sugarSymC ShiftL
     shiftR        :: Data a -> Data IntN -> Data a
-    shiftR        = sugarSym ShiftR
+    shiftR        = sugarSymC ShiftR
     rotateLU      :: Data a -> Data Index -> Data a
-    rotateLU      = sugarSym RotateLU
+    rotateLU      = sugarSymC RotateLU
     rotateRU      :: Data a -> Data Index -> Data a
-    rotateRU      = sugarSym RotateRU
+    rotateRU      = sugarSymC RotateRU
     rotateL       :: Data a -> Data IntN -> Data a
-    rotateL       = sugarSym RotateL
+    rotateL       = sugarSymC RotateL
     rotateR       :: Data a -> Data IntN -> Data a
-    rotateR       = sugarSym RotateR
+    rotateR       = sugarSymC RotateR
     reverseBits   :: Data a -> Data a
-    reverseBits   = sugarSym ReverseBits
+    reverseBits   = sugarSymC ReverseBits
 
     bitScan       :: Data a -> Data Index
-    bitScan       = sugarSym BitScan
+    bitScan       = sugarSymC BitScan
     bitCount      :: Data a -> Data Index
-    bitCount      = sugarSym BitCount
+    bitCount      = sugarSymC BitCount
 
     bitSize       :: Data a -> Data Index
     bitSize       = value . bitSize'
@@ -103,7 +103,7 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     bitSize'      :: Data a -> Index
     bitSize'      = const $ fromIntegral $ B.bitSize (undefined :: a)
     isSigned      :: Data a -> Data Bool
-    isSigned      = sugarSym IsSigned
+    isSigned      = sugarSymC IsSigned
 
 (⊕)    :: (Bits a) => Data a -> Data a -> Data a
 (⊕)    =  xor

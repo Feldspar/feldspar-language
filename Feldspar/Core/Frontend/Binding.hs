@@ -36,7 +36,7 @@ import Feldspar.Core.Constructs
 
 -- | Share an expression in the scope of a function
 share :: (Syntax a, Syntax b) => a -> (a -> b) -> b
-share = sugarSym (letBind typeCtx)
+share = sugarSymC Let
 
 -- | Share the intermediate result when composing functions
 (.<) :: (Syntax b, Syntax c) => (b -> c) -> (a -> b) -> a -> c

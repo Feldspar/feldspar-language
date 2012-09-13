@@ -40,29 +40,29 @@ import Feldspar.Core.Frontend.Tuple ()
 import Language.Syntactic
 
 parallel :: Type a => Data Length -> (Data Index -> Data a) -> Data [a]
-parallel = sugarSym Parallel
+parallel = sugarSymC Parallel
 
 sequential :: (Type a, Syntax s) =>
               Data Length -> s -> (Data Index -> s -> (Data a,s)) -> Data [a]
-sequential = sugarSym Sequential
+sequential = sugarSymC Sequential
 
 append :: Type a => Data [a] -> Data [a] -> Data [a]
-append = sugarSym Append
+append = sugarSymC Append
 
 getLength :: Type a => Data [a] -> Data Length
-getLength = sugarSym GetLength
+getLength = sugarSymC GetLength
 
 -- | Change the length of the vector to the supplied value. If the supplied
 -- length is greater than the old length, the new elements will have undefined
 -- value.
 setLength :: Type a => Data Length -> Data [a] -> Data [a]
-setLength = sugarSym SetLength
+setLength = sugarSymC SetLength
 
 getIx :: Type a => Data [a] -> Data Index -> Data a
-getIx = sugarSym GetIx
+getIx = sugarSymC GetIx
 
 setIx :: Type a => Data [a] -> Data Index -> Data a -> Data [a]
-setIx = sugarSym SetIx
+setIx = sugarSymC SetIx
 
 type instance Elem      (Data [a]) = Data a
 type instance CollIndex (Data [a]) = Data Index

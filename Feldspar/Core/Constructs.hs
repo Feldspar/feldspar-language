@@ -158,7 +158,7 @@ instance Optimize FeldDomain (Lambda TypeCtx :+: (Variable TypeCtx :+: FeldDomai
     constructFeatUnOpt (FeldDomain a) = constructFeatUnOpt a
 -}
 
-type FeldDomainAll = HODomain (FeldDomain :|| Type) Typeable
+type FeldDomainAll = HODomain (FeldDomain) Typeable
 
 
 

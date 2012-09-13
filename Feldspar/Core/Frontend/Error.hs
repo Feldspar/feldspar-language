@@ -35,11 +35,11 @@ import Feldspar.Core.Constructs.Error
 import Feldspar.Core.Frontend.Literal
 
 undef :: Syntax a => a
-undef = sugarSym Undefined
+undef = sugarSymC Undefined
 
 -- | Assert that the condition holds or fail with message
 assertMsg :: Syntax a => String -> Data Bool -> a -> a
-assertMsg = sugarSym . Assert
+assertMsg = sugarSymC . Assert
 
 -- | Assert that the condition holds, the conditions string representation is used as the message
 assert :: Syntax a => Data Bool -> a -> a

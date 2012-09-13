@@ -52,8 +52,8 @@ instance Syntax a => Syntactic (Future a) FeldDomainAll
 instance Syntax a => Syntax (Future a)
 
 future :: Syntax a => a -> Future a
-future = sugarSym MkFuture
+future = sugarSymC MkFuture
 
 await :: Syntax a => Future a -> a
-await = sugarSym Await
+await = sugarSymC Await
 

@@ -51,19 +51,19 @@ infix 4 >=
 -- | Redefinition of the standard 'Prelude.Ord' class for Feldspar
 class (Eq a, Prelude.Ord a, Prelude.Ord (Size a)) => Ord a where
   (<)  :: Data a -> Data a -> Data Bool
-  (<)  =  sugarSym LTH
+  (<)  =  sugarSymC LTH
   (>)  :: Data a -> Data a -> Data Bool
-  (>)  =  sugarSym GTH
+  (>)  =  sugarSymC GTH
 
   (<=) :: Data a -> Data a -> Data Bool
-  (<=) =  sugarSym LTE
+  (<=) =  sugarSymC LTE
   (>=) :: Data a -> Data a -> Data Bool
-  (>=) =  sugarSym GTE
+  (>=) =  sugarSymC GTE
 
   min :: Data a -> Data a -> Data a
-  min = sugarSym Min
+  min = sugarSymC Min
   max :: Data a -> Data a -> Data a
-  max = sugarSym Max
+  max = sugarSymC Max
 
 instance Ord ()
 instance Ord Bool

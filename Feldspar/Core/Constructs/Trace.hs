@@ -53,6 +53,11 @@ instance Semantic Trace
   where
     semantics Trace = Sem "trace" (\i a -> trace (show i ++ ":" ++ show a) a)
 
+instance Constrained Trace
+    where
+      type Sat Trace = Type
+      exprDict Trace = Dict
+
 instance Equality Trace where equal = equalDefault; exprHash = exprHashDefault
 instance Render   Trace where renderArgs = renderArgsDefault
 instance ToTree   Trace
