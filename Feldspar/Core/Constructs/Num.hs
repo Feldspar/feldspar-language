@@ -60,7 +60,7 @@ instance Semantic NUM
     semantics Mul  = Sem "(*)" (*)
 
 instance Equality NUM where equal = equalDefault; exprHash = exprHashDefault
-instance Render   NUM
+instance Render   NUM where renderArgs = renderArgsDefault
 instance ToTree   NUM
 instance Eval     NUM where evaluate = evaluateDefault
 instance EvalBind NUM where evalBindSym = evalBindSymDefault
