@@ -1,11 +1,17 @@
+{-# LANGUAGE CPP                  #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +19,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -26,14 +32,9 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE UndecidableInstances #-}
-
 -- | Bounded integer ranges
 
 module Feldspar.Range where
-
-
 
 -- TODO This module should be broken up into smaller pieces. Since most
 -- functions seem to be useful not only for Feldspar, it would probably be good
@@ -427,7 +428,7 @@ rangeExpUnsigned m@(Range l1 u1) e@(Range l2 u2)
 
 -- | Sigend case for 'rangeExp'
 rangeExpSigned :: BoundedInt a => Range a -> Range a -> Range a
-rangeExpSigned m e | m == singletonRange (-1) = range (-1) 1
+rangeExpSigned m _ | m == singletonRange (-1) = range (-1) 1
 rangeExpSigned _ _ = universal
 
 -- | Propagates range information through '.|.'.
@@ -443,9 +444,9 @@ rangeOrUnsignedCheap (Range l1 u1) (Range l2 u2) =
 -- | @a \`maxPlus\` b@ adds @a@ and @b@ but if the addition overflows then
 --   'maxBound' is returned.
 maxPlus :: BoundedInt a => a -> a -> a
-maxPlus b d = if sum < b then maxBound
-              else sum
-  where sum = b + d
+maxPlus b d = if s < b then maxBound
+              else s
+  where s = b + d
 
 -- | Accurate lower bound for '.|.' on unsigned numbers.
 minOrUnsigned :: BoundedInt a => a -> a -> a -> a -> a
