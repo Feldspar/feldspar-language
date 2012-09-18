@@ -132,7 +132,7 @@ class SizeProp feature
 -- | Convenient default implementation of 'sizeProp'
 sizePropDefault :: (Type a, Lattice (Size (DenResult a)))
                 => feature a -> Args (WrapFull Info) a -> Size (DenResult a)
-sizePropDefault a _ = universal
+sizePropDefault _ _ = universal
 
 
 
