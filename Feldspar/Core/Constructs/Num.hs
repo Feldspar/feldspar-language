@@ -77,7 +77,10 @@ instance AlphaEq dom dom dom env => AlphaEq NUM NUM dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
+instance Typed NUM
+  where
+    witnessSym Add = Just Dict
+
 instance SizeProp NUM
   where
     sizeProp Abs  (WrapFull a :* Nil)               = abs (infoSize a)
@@ -87,13 +90,13 @@ instance SizeProp NUM
     sizeProp Mul  (WrapFull a :* WrapFull b :* Nil) = infoSize a * infoSize b
 
 
-instance (NUM :<: dom, OptimizeSuper dom) => Optimize NUM dom
+instance (OptimizeSuper dom) => Optimize NUM dom
   where
-    constructFeatOpt Abs (a :* Nil)
+    constructFeatOpt _ Abs (a :* Nil)
         | RangeSet r <- infoRange (getInfo a)
         , isNatural r
         = return a
-
+{-
     constructFeatOpt Sign (a :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , 0 `rangeLess` ra
@@ -194,7 +197,7 @@ instance (NUM :<: dom, OptimizeSuper dom) => Optimize NUM dom
     constructFeatOpt Mul (a :* b :* Nil)
         | Just _ <- viewLiteral a = constructFeatUnOpt Mul (b :* a :* Nil)
 
-    constructFeatOpt a args = constructFeatUnOpt a args
-
-    constructFeatUnOpt = constructFeatUnOptDefault
+    constructFeatOpt wit a args = constructFeatUnOpt wit a args
 -}
+
+    constructFeatUnOpt = undefined -- constructFeatUnOptDefault

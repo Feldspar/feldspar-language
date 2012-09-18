@@ -83,41 +83,54 @@ import Feldspar.Core.Constructs.Tuple
 -- * Domain
 --------------------------------------------------------------------------------
 
-type FeldDomain
-    =   Decor SourceInfo1 Identity
-    :+: Condition
-    :+: ConditionM Mut
-    :+: FFI
-    :+: Let
-    :+: Literal
-    :+: Select
-    :+: Tuple
-    :+: Array
-    :+: BITS
-    :+: COMPLEX
-    :+: Conversion
-    :+: EQ
-    :+: Error
-    :+: FLOATING
-    :+: FRACTIONAL
-    :+: FUTURE
-    :+: INTEGRAL
-    :+: Logic
-    :+: Loop
-    :+: LoopM Mut
-    :+: MONAD Mut
-    :+: Mutable
-    :+: MutableArray
-    :+: MutableReference
-    :+: MutableToPure
-    :+: MONAD Par
-    :+: NUM
-    :+: NoInline
-    :+: ORD
-    :+: ParFeature
-    :+: PropSize
-    :+: Save
-    :+: Trace
+type FeldSymbols = NUM :+: Literal
+--    =   Decor SourceInfo1 Identity
+--    :+: Condition
+--    :+: ConditionM Mut
+--    :+: FFI
+--    :+: Let
+--    :+: Literal
+--    :+: Select
+--    :+: Tuple
+--    :+: Array
+--    :+: BITS
+--    :+: COMPLEX
+--    :+: Conversion
+--    :+: EQ
+--    :+: Error
+--    :+: FLOATING
+--    :+: FRACTIONAL
+--    :+: FUTURE
+--    :+: INTEGRAL
+--    :+: Logic
+--    :+: Loop
+--    :+: LoopM Mut
+--    :+: MONAD Mut
+--    :+: Mutable
+--    :+: MutableArray
+--    :+: MutableReference
+--    :+: MutableToPure
+--    :+: MONAD Par
+--    :+: NUM
+--    :+: NoInline
+--    :+: ORD
+--    :+: ParFeature
+--    :+: PropSize
+--    :+: Save
+--    :+: Trace
+
+type FODomain dom constr = (Lambda :+: Variable :+: dom) :|| constr
+
+type TypedFeldSymbols = FeldSymbols :|| Type
+
+type FeldDomain = FODomain TypedFeldSymbols Typeable
+
+type FeldDomainAll = HODomain TypedFeldSymbols Typeable
+
+instance Typed FeldDomain
+  where
+    witnessSym (C' (InjR (InjR (C' _)))) = Just Dict
+    witnessSym _                         = Nothing
 
 --newtype FeldDomain a = FeldDomain (FeldSymbols a)
 
@@ -168,7 +181,6 @@ instance Optimize FeldDomain (Lambda TypeCtx :+: (Variable TypeCtx :+: FeldDomai
     constructFeatUnOpt (FeldDomain a) = constructFeatUnOpt a
 -}
 
-type FeldDomainAll = HODomain (FeldDomain) Typeable
 
 
 

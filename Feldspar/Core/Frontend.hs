@@ -1,6 +1,5 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -75,8 +74,8 @@ module Feldspar.Core.Frontend
 --    , tM
 
     -- * Functions
-    , ilog2
-    , nlz
+--    , ilog2
+--    , nlz
     ) where
 
 
@@ -100,37 +99,37 @@ import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation hiding (showDecor, drawDecor)
 import Feldspar.Core.Constructs
-import Feldspar.Core.Frontend.Array            as Frontend
-import Feldspar.Core.Frontend.Binding          as Frontend
-import Feldspar.Core.Frontend.Bits             as Frontend
-import Feldspar.Core.Frontend.Complex          as Frontend
-import Feldspar.Core.Frontend.Condition        as Frontend
+--import Feldspar.Core.Frontend.Array            as Frontend
+--import Feldspar.Core.Frontend.Binding          as Frontend
+--import Feldspar.Core.Frontend.Bits             as Frontend
+--import Feldspar.Core.Frontend.Complex          as Frontend
+--import Feldspar.Core.Frontend.Condition        as Frontend
 --import Feldspar.Core.Frontend.ConditionM       as Frontend
-import Feldspar.Core.Frontend.Conversion       as Frontend
-import Feldspar.Core.Frontend.Eq               as Frontend
-import Feldspar.Core.Frontend.Error            as Frontend
-import Feldspar.Core.Frontend.FFI              as Frontend
-import Feldspar.Core.Frontend.Floating         as Frontend
-import Feldspar.Core.Frontend.Fractional       as Frontend
+--import Feldspar.Core.Frontend.Conversion       as Frontend
+--import Feldspar.Core.Frontend.Eq               as Frontend
+--import Feldspar.Core.Frontend.Error            as Frontend
+--import Feldspar.Core.Frontend.FFI              as Frontend
+--import Feldspar.Core.Frontend.Floating         as Frontend
+--import Feldspar.Core.Frontend.Fractional       as Frontend
 --import Feldspar.Core.Frontend.Future           as Frontend
-import Feldspar.Core.Frontend.Integral         as Frontend
+--import Feldspar.Core.Frontend.Integral         as Frontend
 import Feldspar.Core.Frontend.Literal          as Frontend
-import Feldspar.Core.Frontend.Logic            as Frontend
-import Feldspar.Core.Frontend.Loop             as Frontend
+--import Feldspar.Core.Frontend.Logic            as Frontend
+--import Feldspar.Core.Frontend.Loop             as Frontend
 --import Feldspar.Core.Frontend.Mutable          as Frontend
 --import Feldspar.Core.Frontend.MutableArray     as Frontend
 --import Feldspar.Core.Frontend.MutableReference as Frontend
 --import Feldspar.Core.Frontend.MutableToPure    as Frontend
-import Feldspar.Core.Frontend.NoInline         as Frontend
+--import Feldspar.Core.Frontend.NoInline         as Frontend
 import Feldspar.Core.Frontend.Num              as Frontend
-import Feldspar.Core.Frontend.Ord              as Frontend
+--import Feldspar.Core.Frontend.Ord              as Frontend
 --import Feldspar.Core.Frontend.Par              as Frontend
-import Feldspar.Core.Frontend.Save             as Frontend
-import Feldspar.Core.Frontend.Select           as Frontend
-import Feldspar.Core.Frontend.SizeProp         as Frontend
-import Feldspar.Core.Frontend.SourceInfo       as Frontend
-import Feldspar.Core.Frontend.Trace            as Frontend
-import Feldspar.Core.Frontend.Tuple            as Frontend
+--import Feldspar.Core.Frontend.Save             as Frontend
+--import Feldspar.Core.Frontend.Select           as Frontend
+--import Feldspar.Core.Frontend.SizeProp         as Frontend
+--import Feldspar.Core.Frontend.SourceInfo       as Frontend
+--import Feldspar.Core.Frontend.Trace            as Frontend
+--import Feldspar.Core.Frontend.Tuple            as Frontend
 
 {-
 bindDict :: BindDict
@@ -173,6 +172,7 @@ injLt b
     = Decor (getInfo b) (inj Let)
 -}
 
+{-
 bindDict :: BindDict ((Lambda :+: Variable :+: FeldDomain) :|| Typeable)
 bindDict = BindDict
     { prjVariable = \a -> do
@@ -189,20 +189,21 @@ bindDict = BindDict
         Dict -> injC Let  -- TODO Generalize the pattern of `Dict` matching
                           --      followed by `injC`
     }
+-}
 
 instance Sharable ((Lambda :+: Variable :+: FeldDomain) :|| Typeable)
     where
       sharable _ = True
 
 -- | Reification and optimization of a Feldspar program
-reifyFeld :: Syntactic a FeldDomainAll
-    => BitWidth n
-    -> a
-    -> ASTF ((Lambda :+: Variable :+: FeldDomain) :|| Typeable) (Internal a)
+--reifyFeld :: Syntactic a FeldDomainAll
+--    => BitWidth n
+--    -> a
+--    -> ASTF ((Lambda :+: Variable :+: FeldDomain) :|| Typeable) (Internal a)
 reifyFeld n = flip evalState 0 .
     (   return
-    <=< codeMotion bindDict sharable
---    .   optimize
+--    <=< codeMotion bindDict sharable
+    .   optimize
     .   targetSpecialization n
     <=< reifyM
     .   Syntactic.desugar
@@ -310,13 +311,13 @@ tArr2 _ = id
 
 -- | Integer logarithm in base 2
 --   Based on an algorithm in Hacker's Delight
-ilog2 :: (Bits a) => Data a -> Data Index
-ilog2 x = bitSize x - 1 - nlz x
+--ilog2 :: (Bits a) => Data a -> Data Index
+--ilog2 x = bitSize x - 1 - nlz x
 
 -- | Count leading zeros
 --   Based on an algorithm in Hacker's Delight
-nlz :: (Bits a) => Data a -> Data Index
-nlz x = bitCount $ complement $ foldl go x $ takeWhile (P.< bitSize' x) $ P.map (2 P.^) [(0::Integer)..]  
-  where
-    go b s = b .|. (b .>>. value s)
+--nlz :: (Bits a) => Data a -> Data Index
+--nlz x = bitCount $ complement $ foldl go x $ takeWhile (P.< bitSize' x) $ P.map (2 P.^) [(0::Integer)..]  
+--  where
+--    go b s = b .|. (b .>>. value s)
 

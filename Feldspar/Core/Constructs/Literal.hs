@@ -55,10 +55,10 @@ instance SizeProp (Literal TypeCtx)
     sizeProp lit@(Literal a) Nil
         | TypeWit <- fromSatWit $ witnessSat lit
         = sizeOf a
+-}
 
-instance (Literal TypeCtx :<: dom, Optimize dom dom) =>
-    Optimize (Literal TypeCtx) dom
+instance (Project Literal dom, OptimizeSuper dom) =>
+    Optimize Literal dom
   where
     constructFeatUnOpt = constructFeatUnOptDefault
--}
 

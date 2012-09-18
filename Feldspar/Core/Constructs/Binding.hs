@@ -131,20 +131,28 @@ optimizeFunctionFix opt info (lam :$ body)
 
         constructFeatUnOpt (Lambda v `withContext` typeCtx) (body' :* Nil)
 
-
-
-instance (Variable TypeCtx :<: dom, Optimize dom dom) =>
-    Optimize (Variable TypeCtx) dom
+instance (Variable :<: dom, OptimizeSuper dom) =>
+    Optimize Variable dom
   where
-    constructFeatUnOpt var@(Variable v) Nil
-        | TypeWit <- fromSatWit $ witnessSat var
+    constructFeatUnOpt wit var@(Variable v) Nil
+        | Just Dict <- wit
         = reader $ \env -> case Prelude.lookup v (varEnv env) of
             Nothing -> error $
                 "optimizeFeat: can't get size of free variable: v" ++ show v
             Just (SomeInfo info) ->
                 let info' = (fromJust $ gcast info) {infoVars = singleton v (SomeType $ infoType info) }
-                in  injDecorCtx typeCtx info' (Variable v)
+                in  injDecor info' (Variable v)
+-}
 
+instance (Project Variable dom, OptimizeSuper dom) => Optimize Variable dom
+  where
+    constructFeatUnOpt = undefined
+
+instance (Project Lambda dom, OptimizeSuper dom) => Optimize Lambda dom
+  where
+    constructFeatUnOpt = undefined
+
+{-
 instance (Lambda TypeCtx :<: dom, Optimize dom dom) =>
     Optimize (Lambda TypeCtx) dom
   where
