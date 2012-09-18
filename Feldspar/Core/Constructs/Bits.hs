@@ -114,7 +114,7 @@ liftIntWord f x = f x . fromIntegral
 liftInt :: (a -> Int -> b) -> (a -> IntN -> b)
 liftInt f x = f x . fromIntegral
 
-evalReverseBits :: Bits b => b -> b
+evalReverseBits :: (Num b, Bits b) => b -> b
 evalReverseBits b = revLoop b 0 (0 `asTypeOf` b)
   where
     bSz = bitSize b

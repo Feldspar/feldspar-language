@@ -403,7 +403,7 @@ rangeMulUnsigned r1 r2
 
 -- | Returns the position of the highest bit set to 1. Counting starts at 1.
 -- Beware! It doesn't terminate for negative numbers.
-bits :: Bits b => b -> Int
+bits :: (Num b, Bits b) => b -> Int
 bits b = loop b 0
     where loop 0 c = c
           loop n c = loop (n `shiftR` 1) (c+1)
@@ -521,14 +521,14 @@ rangeShiftRU = handleSign rangeShiftRUUnsigned (\_ _ -> universal)
 -- TODO: improve accuracy
 
 -- | Unsigned case for 'rangeShiftRU'.
-rangeShiftRUUnsigned :: (Bits a, Ord a, Bounded b, Integral b, Bits b)
+rangeShiftRUUnsigned :: (Num a, Bits a, Ord a, Bounded b, Integral b, Bits b)
                      => Range a -> Range b -> Range a
 rangeShiftRUUnsigned (Range l1 u1) (Range l2 u2)
     = range (correctShiftRU l1 u2) (correctShiftRU u1 l2)
 
 -- | This is a replacement fror Haskell's shiftR. If we carelessly use
 --   Haskell's variant then we will get left shifts for very large shift values.
-correctShiftRU :: (Bits a, BoundedInt b) => a -> b -> a
+correctShiftRU :: (Num a, Bits a, BoundedInt b) => a -> b -> a
 correctShiftRU _ i | i > fromIntegral (maxBound :: Int) = 0
 correctShiftRU a i = shiftR a (fromIntegral i)
 

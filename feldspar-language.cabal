@@ -107,7 +107,7 @@ library
 
   build-depends:
     array,
-    base >= 4 && < 4.6,
+    base >= 4 && < 4.7,
     containers,
     data-hash < 0.3,
     data-lens == 2.10.*,
@@ -121,7 +121,7 @@ library
     tuple == 0.2.*,
     type-level >= 0.2.4,
     monad-par >= 0.1 && < 0.2,
-    QuickAnnotate >= 0.5
+    QuickAnnotate >= 0.6
 
   extensions:
     DeriveDataTypeable
