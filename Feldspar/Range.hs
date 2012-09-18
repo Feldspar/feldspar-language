@@ -471,9 +471,9 @@ maxOrUnsigned a b c d = loop (bit (bitSize a - 1))
                  let temp = (b - m) .|. (m - 1)
                  in if temp >= a
                     then temp .|. d
-                    else let temp = (d - m) .|. (m - 1)
-                         in if temp >= c
-                            then b .|. temp
+                    else let tmp = (d - m) .|. (m - 1)
+                         in if tmp >= c
+                            then b .|. tmp
                             else loop (shiftR m 1)
              | otherwise = loop (shiftR m 1)
 -- Code from Hacker's Delight.
