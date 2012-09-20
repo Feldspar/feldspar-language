@@ -47,7 +47,7 @@ import Language.Syntactic.Constructs.Binding
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
-
+import Feldspar.Core.Constructs.Literal
 
 
 data NUM a
@@ -77,48 +77,49 @@ instance AlphaEq dom dom dom env => AlphaEq NUM NUM dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-instance Typed NUM
+instance SizeProp (NUM :||| Type)
   where
-    witnessSym Add = Just Dict
-
-instance SizeProp NUM
-  where
-    sizeProp Abs  (WrapFull a :* Nil)               = abs (infoSize a)
-    sizeProp Sign (WrapFull a :* Nil)               = signum (infoSize a)
-    sizeProp Add  (WrapFull a :* WrapFull b :* Nil) = infoSize a + infoSize b
-    sizeProp Sub  (WrapFull a :* WrapFull b :* Nil) = infoSize a - infoSize b
-    sizeProp Mul  (WrapFull a :* WrapFull b :* Nil) = infoSize a * infoSize b
+    sizeProp (C'' Abs)  (WrapFull a :* Nil)               = abs (infoSize a)
+    sizeProp (C'' Sign) (WrapFull a :* Nil)               = signum (infoSize a)
+    sizeProp (C'' Add)  (WrapFull a :* WrapFull b :* Nil) = infoSize a + infoSize b
+    sizeProp (C'' Sub)  (WrapFull a :* WrapFull b :* Nil) = infoSize a - infoSize b
+    sizeProp (C'' Mul)  (WrapFull a :* WrapFull b :* Nil) = infoSize a * infoSize b
 
 
-instance (OptimizeSuper dom) => Optimize NUM dom
+instance ( (NUM     :||| Type) :<: dom
+         , (Literal :||| Type) :<: dom
+         , OptimizeSuper dom
+         )
+      => Optimize (NUM :||| Type) dom
   where
-    constructFeatOpt _ Abs (a :* Nil)
+    constructFeatOpt (C'' Abs) (a :* Nil)
         | RangeSet r <- infoRange (getInfo a)
         , isNatural r
         = return a
-{-
-    constructFeatOpt Sign (a :* Nil)
+
+    constructFeatOpt (C'' Sign) (a :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , 0 `rangeLess` ra
         = return (literalDecor 1)
 
-    constructFeatOpt Sign (a :* Nil)
+    constructFeatOpt (C'' Sign) (a :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , ra `rangeLess` 0
         = return (literalDecor (-1))
 
-    constructFeatOpt Add (a :* b :* Nil)
+{-
+    constructFeatOpt (C'' Add) (a :* b :* Nil)
         | Just 0 <- viewLiteral b = return a
         | Just 0 <- viewLiteral a = return b
         | alphaEq a b = constructFeatOpt Mul (a :* literalDecor 2 :* Nil)
 
-    constructFeatOpt Add (a :* (op :$ b :$ c) :* Nil)
+    constructFeatOpt (C'' Add) (a :* (op :$ b :$ c) :* Nil)
         | Just a'      <- viewLiteral a
         , Just (_,Add) <- prjDecor op
         , Just c'      <- viewLiteral c
         = constructFeat Add (b :* literalDecor (a'+c') :* Nil)
 
-    constructFeatOpt Add (a :* (op :$ b :$ c) :* Nil)
+    constructFeatOpt (C'' Add) (a :* (op :$ b :$ c) :* Nil)
         | Just a'      <- viewLiteral a
         , Just (_,Sub) <- prjDecor op
         , Just c'      <- viewLiteral c
@@ -196,8 +197,8 @@ instance (OptimizeSuper dom) => Optimize NUM dom
 
     constructFeatOpt Mul (a :* b :* Nil)
         | Just _ <- viewLiteral a = constructFeatUnOpt Mul (b :* a :* Nil)
-
-    constructFeatOpt wit a args = constructFeatUnOpt wit a args
 -}
 
-    constructFeatUnOpt = undefined -- constructFeatUnOptDefault
+    constructFeatOpt a args = constructFeatUnOpt a args
+
+    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x

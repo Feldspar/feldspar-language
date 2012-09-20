@@ -83,7 +83,9 @@ import Feldspar.Core.Constructs.Tuple
 -- * Domain
 --------------------------------------------------------------------------------
 
-type FeldSymbols = NUM :+: Literal
+type FeldSymbols =   (Literal :||| Type)
+                 :+: (NUM     :||| Type)
+
 --    =   Decor SourceInfo1 Identity
 --    :+: Condition
 --    :+: ConditionM Mut
@@ -121,16 +123,9 @@ type FeldSymbols = NUM :+: Literal
 
 type FODomain dom constr = (Lambda :+: Variable :+: dom) :|| constr
 
-type TypedFeldSymbols = FeldSymbols :|| Type
+type FeldDomain = FODomain FeldSymbols Typeable
 
-type FeldDomain = FODomain TypedFeldSymbols Typeable
-
-type FeldDomainAll = HODomain TypedFeldSymbols Typeable
-
-instance Typed FeldDomain
-  where
-    witnessSym (C' (InjR (InjR (C' _)))) = Just Dict
-    witnessSym _                         = Nothing
+type FeldDomainAll = HODomain FeldSymbols Typeable
 
 --newtype FeldDomain a = FeldDomain (FeldSymbols a)
 
@@ -224,4 +219,8 @@ instance Type a => Eq (Data a)
 instance Type a => Show (Data a)
   where
     show (Data a) = render $ reify a
+
+c'' :: (Type (DenResult sig)) => feature sig -> (feature :||| Type) sig
+c'' = C''
+
 

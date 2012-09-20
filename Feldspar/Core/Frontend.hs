@@ -55,8 +55,8 @@ module Feldspar.Core.Frontend
     , printExpr
     , showAST
     , drawAST
---    , showDecor
---    , drawDecor
+    , showDecor
+    , drawDecor
     , eval
     , evalTarget
     , desugar
@@ -196,10 +196,10 @@ instance Sharable ((Lambda :+: Variable :+: FeldDomain) :|| Typeable)
       sharable _ = True
 
 -- | Reification and optimization of a Feldspar program
---reifyFeld :: Syntactic a FeldDomainAll
---    => BitWidth n
---    -> a
---    -> ASTF ((Lambda :+: Variable :+: FeldDomain) :|| Typeable) (Internal a)
+reifyFeld :: Syntactic a FeldDomainAll
+    => BitWidth n
+    -> a
+    -> ASTF (Decor Info FeldDomain) (Internal a)
 reifyFeld n = flip evalState 0 .
     (   return
 --    <=< codeMotion bindDict sharable
@@ -227,12 +227,12 @@ drawAST :: Syntactic a FeldDomainAll => a -> IO ()
 drawAST = Syntactic.drawAST . reifyFeld N32
 
 -- | Draw a syntax tree decorated with type and size information
---showDecor :: Syntactic a FeldDomainAll => a -> String
---showDecor = Syntactic.showDecor . reifyFeld N32
+showDecor :: Syntactic a FeldDomainAll => a -> String
+showDecor = Syntactic.showDecor . reifyFeld N32
 
 -- | Draw a syntax tree decorated with type and size information
---drawDecor :: Syntactic a FeldDomainAll => a -> IO ()
---drawDecor = Syntactic.drawDecor . reifyFeld N32
+drawDecor :: Syntactic a FeldDomainAll => a -> IO ()
+drawDecor = Syntactic.drawDecor . reifyFeld N32
 
 eval :: Syntactic a FeldDomainAll => a -> Internal a
 eval = evalBind . reifyFeld N32

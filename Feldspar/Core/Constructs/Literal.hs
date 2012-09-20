@@ -49,16 +49,13 @@ import Feldspar.Core.Interpretation
 instance Sharable Literal
   -- Will not be shared anyway, because it's a terminal
 
-{-
-instance SizeProp (Literal TypeCtx)
+instance SizeProp (Literal :||| Type)
   where
-    sizeProp lit@(Literal a) Nil
-        | TypeWit <- fromSatWit $ witnessSat lit
+    sizeProp lit@(C'' (Literal a)) Nil
         = sizeOf a
--}
 
-instance (Project Literal dom, OptimizeSuper dom) =>
-    Optimize Literal dom
+instance ((Literal :||| Type) :<: dom, OptimizeSuper dom) =>
+    Optimize (Literal :||| Type) dom
   where
-    constructFeatUnOpt = constructFeatUnOptDefault
+    constructFeatUnOpt l@(C'' (Literal _)) = constructFeatUnOptDefault l
 
