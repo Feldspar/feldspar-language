@@ -89,7 +89,7 @@ import Language.Syntactic.Constructs.Binding
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
-
+import Feldspar.Core.Interpretation.Typed
 
 
 --------------------------------------------------------------------------------
@@ -256,12 +256,11 @@ literalDecor = literalDecorSrc ""
 
 -- | Replaces an expression with a literal if the type permits, otherwise
 -- returns the expression unchanged.
-constFold :: ((Literal :||| Type) :<: dom) =>
+constFold :: (Typed dom, (Literal :||| Type) :<: dom) =>
     SourceInfo -> ASTF (Decor Info (dom :|| Typeable)) a -> a -> ASTF (Decor Info (dom :|| Typeable)) a
---constFold src expr a
---    | Dict <- exprDict expr
---    , Dict <- exprDict a
---    = literalDecorSrc src a
+constFold src expr a
+    | Just Dict <- typeDict expr
+    = literalDecorSrc src a
 constFold _ expr _ = expr
 
 -- | Environment for optimization
@@ -337,6 +336,7 @@ class
     , AlphaEq dom dom (Decor Info dom) [(VarId, VarId)]
     , EvalBind dom
     , (Literal :||| Type) :<: dom
+    , Typed dom
     , Optimize dom dom
     ) =>
       OptimizeSuper dom
@@ -346,6 +346,7 @@ instance
     , AlphaEq dom dom (Decor Info dom) [(VarId, VarId)]
     , EvalBind dom
     , (Literal :||| Type) :<: dom
+    , Typed dom
     , Optimize dom dom
     ) =>
       OptimizeSuper dom
@@ -468,40 +469,4 @@ optimizeFeatDefault
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
 optimizeFeatDefault feat args
     = constructFeat feat =<< mapArgsM optimizeM args
-
-data (expr :||| pred) sig
-  where
-    C'' :: pred (DenResult sig) => expr sig -> (expr :||| pred) sig
-
-infixl 4 :|||
-
-instance Equality dom => Equality (dom :||| pred)
-  where
-    equal (C'' a) (C'' b) = equal a b
-    exprHash (C'' a)     = exprHash a
-
-instance Render dom => Render (dom :||| pred)
-  where
-    renderArgs args (C'' a) = renderArgs args a
-
-instance Eval dom => Eval (dom :||| pred)
-  where
-    evaluate (C'' a) = evaluate a
-
-instance ToTree dom => ToTree (dom :||| pred)
-  where
-    toTreeArgs args (C'' a) = toTreeArgs args a
-
-instance EvalBind dom => EvalBind (dom :||| pred)
-  where
-    evalBindSym (C'' a) = evalBindSym a
-
-instance AlphaEq sub sub dom env => AlphaEq (sub :||| pred) (sub :||| pred) dom env
-  where
-    alphaEqSym (C'' a) aArgs (C'' b) bArgs = alphaEqSym a aArgs b bArgs
-
-instance Constrained (dom :||| pred)
-  where
-    type Sat (dom :||| pred) = pred
-    exprDict (C'' s) = Dict
 

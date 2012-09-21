@@ -26,6 +26,7 @@ library
     Feldspar.Algorithm.FFT
     Feldspar.Core.Types
     Feldspar.Core.Interpretation
+    Feldspar.Core.Interpretation.Typed
     Feldspar.Core.Constructs.Array
     Feldspar.Core.Constructs.Binding
     Feldspar.Core.Constructs.Bits
