@@ -195,8 +195,10 @@ instance Sharable ((Lambda :+: Variable :+: FeldDomain) :|| Typeable)
     where
       sharable _ = True
 
+type SyntacticFeld a = (Syntactic a FeldDomainAll, Typeable (Internal a))
+
 -- | Reification and optimization of a Feldspar program
-reifyFeld :: Syntactic a FeldDomainAll
+reifyFeld :: SyntacticFeld a
     => BitWidth n
     -> a
     -> ASTF (Decor Info FeldDomain) (Internal a)
@@ -214,31 +216,31 @@ reifyFeld n = flip evalState 0 .
   -- first, these sub-expressions would be let bound, preventing subsequent
   -- optimizations.
 
-showExpr :: Syntactic a FeldDomainAll => a -> String
+showExpr :: SyntacticFeld a => a -> String
 showExpr = render . reifyFeld N32
 
-printExpr :: Syntactic a FeldDomainAll => a -> IO ()
+printExpr :: SyntacticFeld a => a -> IO ()
 printExpr = Syntactic.printExpr . reifyFeld N32
 
-showAST :: Syntactic a FeldDomainAll => a -> String
+showAST :: SyntacticFeld a => a -> String
 showAST = Syntactic.showAST . reifyFeld N32
 
-drawAST :: Syntactic a FeldDomainAll => a -> IO ()
+drawAST :: SyntacticFeld a => a -> IO ()
 drawAST = Syntactic.drawAST . reifyFeld N32
 
 -- | Draw a syntax tree decorated with type and size information
-showDecor :: Syntactic a FeldDomainAll => a -> String
+showDecor :: SyntacticFeld a => a -> String
 showDecor = Syntactic.showDecor . reifyFeld N32
 
 -- | Draw a syntax tree decorated with type and size information
-drawDecor :: Syntactic a FeldDomainAll => a -> IO ()
+drawDecor :: SyntacticFeld a => a -> IO ()
 drawDecor = Syntactic.drawDecor . reifyFeld N32
 
-eval :: Syntactic a FeldDomainAll => a -> Internal a
+eval :: SyntacticFeld a => a -> Internal a
 eval = evalBind . reifyFeld N32
 
 evalTarget
-    :: ( Syntactic a FeldDomainAll
+    :: ( SyntacticFeld a
        , BoundedInt (GenericInt U n)
        , BoundedInt (GenericInt S n)
        )
@@ -317,7 +319,7 @@ tArr2 _ = id
 -- | Count leading zeros
 --   Based on an algorithm in Hacker's Delight
 --nlz :: (Bits a) => Data a -> Data Index
---nlz x = bitCount $ complement $ foldl go x $ takeWhile (P.< bitSize' x) $ P.map (2 P.^) [(0::Integer)..]  
+--nlz x = bitCount $ complement $ foldl go x $ takeWhile (P.< bitSize' x) $ P.map (2 P.^) [(0::Integer)..]
 --  where
 --    go b s = b .|. (b .>>. value s)
 
