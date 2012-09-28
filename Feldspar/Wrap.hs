@@ -1,3 +1,8 @@
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
@@ -28,7 +33,21 @@
 
 -- | Module "Data.TypeLevel.Num.Aliases" is re-exported because
 -- wrappers use type level numbers frequently
-module Feldspar.Wrap ( Wrap(..), Data'(..), module Data.TypeLevel.Num.Aliases, D0, D1, D2, D3, D4, D5, D6, D7, D8, D9) where
+module Feldspar.Wrap
+  ( Wrap(..)
+  , Data'(..)
+  , module Data.TypeLevel.Num.Aliases
+  , D0
+  , D1
+  , D2
+  , D3
+  , D4
+  , D5
+  , D6
+  , D7
+  , D8
+  , D9
+  ) where
 
 
 import Feldspar.Core.Constructs

@@ -38,10 +38,10 @@ import Feldspar.Core.Constructs.Loop
 --import Feldspar.Core.Frontend.Mutable
 
 forLoop :: Syntax a => Data Length -> a -> (Data Index -> a -> a) -> a
-forLoop = sugarSymC ForLoop
+forLoop = sugarSymF ForLoop
 
 whileLoop :: Syntax a => a -> (a -> Data Bool) -> (a -> a) -> a
-whileLoop = sugarSymC WhileLoop
+whileLoop = sugarSymF WhileLoop
 
 --forM :: (Syntax a) => Data Length -> (Data Index -> M a) -> M ()
 --forM = sugarSymC For

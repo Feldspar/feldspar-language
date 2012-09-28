@@ -39,7 +39,7 @@ import Feldspar.Core.Constructs.Literal
 import Feldspar.Core.Constructs
 
 value :: Syntax a => Internal a -> a
-value = sugarSymC . c' . Literal
+value = sugarSymF . Literal
 
 false :: Data Bool
 false = value False

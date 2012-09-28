@@ -90,8 +90,8 @@ type FeldSymbols
     :+: (FFI :|| Type)
 --    :+: Let
     :+: (Literal :|| Type)
---    :+: (Select  :||| Type)
---    :+: (Tuple   :||| Type)
+    :+: (Select  :|| Type)
+    :+: (Tuple   :|| Type)
     :+: (Array :|| Type)
     :+: (BITS :|| Type)
     :+: (COMPLEX :|| Type)
@@ -103,7 +103,7 @@ type FeldSymbols
     :+: (FUTURE :|| Type)
     :+: (INTEGRAL :|| Type)
     :+: (Logic :|| Type)
---    :+: Loop
+    :+: (Loop :|| Type)
 --    :+: LoopM Mut
 --    :+: MONAD Mut
 --    :+: Mutable

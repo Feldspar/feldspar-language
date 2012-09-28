@@ -38,6 +38,8 @@
 module Feldspar.Core.Constructs.Loop
 where
 
+import Data.Typeable
+
 import Control.Monad (forM_, when)
 
 import Language.Syntactic
@@ -113,14 +115,15 @@ instance SizeProp (LoopM m)
   where
     sizeProp While _ = AnySize
     sizeProp For   _ = AnySize
+-}
 
-instance SizeProp Loop
+instance SizeProp (Loop :|| Type)
   where
-    sizeProp ForLoop   (_ :* _ :* WrapFull step :* Nil) = infoSize step
-    sizeProp WhileLoop (_ :* _ :* WrapFull step :* Nil) = infoSize step
+    sizeProp (C' ForLoop)   (_ :* _ :* WrapFull step :* Nil) = infoSize step
+    sizeProp (C' WhileLoop) (_ :* _ :* WrapFull step :* Nil) = infoSize step
 
 
-
+{-
 instance ( MonadType m
          , LoopM m :<: dom
          , Lambda TypeCtx :<: dom
@@ -142,15 +145,18 @@ instance ( MonadType m
 
     constructFeatUnOpt While args = constructFeatUnOptDefaultTyp voidTypeRep While args
     constructFeatUnOpt For   args = constructFeatUnOptDefaultTyp voidTypeRep For   args
+-}
 
-instance ( Variable TypeCtx :<: dom
-         , Lambda TypeCtx :<: dom
-         , Loop :<: dom
+instance ( Variable :<: dom
+         , Lambda   :<: dom
+         , (Literal :|| Type) :<: dom
+         , (Loop    :|| Type) :<: dom
          , OptimizeSuper dom
          )
-      => Optimize Loop dom
+      => Optimize (Loop :|| Type) dom
   where
-    optimizeFeat ForLoop (len :* initial :* step :* Nil) = do
+{-    
+    optimizeFeat (C' ForLoop) (len :* initial :* step :* Nil) = do
         len'  <- optimizeM len
         init' <- optimizeM initial
         let szI     = infoSize (getInfo len')
@@ -166,7 +172,7 @@ instance ( Variable TypeCtx :<: dom
             step
         constructFeat ForLoop (len' :* init' :* step' :* Nil)
 
-    optimizeFeat WhileLoop (initial :* cond :* body :* Nil) = do
+    optimizeFeat (C' WhileLoop) (initial :* cond :* body :* Nil) = do
         init' <- optimizeM initial
         body' <- optimizeFunction optimizeM (mkInfoTy typeRep) body
         -- body' <- optimizeFunctionFix optimizeM info body
@@ -177,26 +183,26 @@ instance ( Variable TypeCtx :<: dom
         cond' <- optimizeFunction optimizeM info' cond
         constructFeat WhileLoop (init' :* cond' :* body' :* Nil)
 
-    constructFeatOpt ForLoop (len :* initial :* step :* Nil)
+    constructFeatOpt (C' ForLoop) (len :* initial :* step :* Nil)
         | Just 0 <- viewLiteral len = return initial
         | Just 1 <- viewLiteral len = do
           let init' = stripDecor initial
               step' = stripDecor step
-          optimizeM $ betaReduce typeCtx init' $ betaReduce typeCtx (appSymCtx typeCtx $ Literal 0) step'
+          optimizeM $ betaReduce init' $ betaReduce (appSym (c' (Literal 0))) step'
         -- TODO add an optional unroll limit?
 
       -- ForLoop len init (const id) ==> init
-    constructFeatOpt ForLoop (_ :* initial :* step :* Nil)
+    constructFeatOpt (C' ForLoop) (_ :* initial :* step :* Nil)
         | alphaEq step' (fun `asTypeOf` step') = optimizeM $ stripDecor initial
       where
         step' = stripDecor step
-        fun = appSymCtx typeCtx (Lambda 0) $ appSymCtx typeCtx (Lambda 1) $ appSymCtx typeCtx (Variable 1)
+        fun = appSym (Lambda 0) $ appSym (Lambda 1) $ appSym (Variable 1)
+-}
 
       -- TODO ForLoop len init (flip (const f)) ==> step (len - 1) init
       -- This optimization requires that the len > 0
 
     constructFeatOpt feat args = constructFeatUnOpt feat args
 
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 

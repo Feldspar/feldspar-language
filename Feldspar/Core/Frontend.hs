@@ -75,8 +75,8 @@ module Feldspar.Core.Frontend
 --    , tM
 
     -- * Functions
---    , ilog2
---    , nlz
+    , ilog2
+    , nlz
     ) where
 
 
@@ -112,11 +112,11 @@ import Feldspar.Core.Frontend.Error            as Frontend
 import Feldspar.Core.Frontend.FFI              as Frontend
 import Feldspar.Core.Frontend.Floating         as Frontend
 import Feldspar.Core.Frontend.Fractional       as Frontend
-import Feldspar.Core.Frontend.Future           as Frontend
+--import Feldspar.Core.Frontend.Future           as Frontend
 import Feldspar.Core.Frontend.Integral         as Frontend
 import Feldspar.Core.Frontend.Literal          as Frontend
 import Feldspar.Core.Frontend.Logic            as Frontend
---import Feldspar.Core.Frontend.Loop             as Frontend
+import Feldspar.Core.Frontend.Loop             as Frontend
 --import Feldspar.Core.Frontend.Mutable          as Frontend
 --import Feldspar.Core.Frontend.MutableArray     as Frontend
 --import Feldspar.Core.Frontend.MutableReference as Frontend
@@ -126,11 +126,11 @@ import Feldspar.Core.Frontend.Num              as Frontend
 import Feldspar.Core.Frontend.Ord              as Frontend
 --import Feldspar.Core.Frontend.Par              as Frontend
 import Feldspar.Core.Frontend.Save             as Frontend
---import Feldspar.Core.Frontend.Select           as Frontend
+import Feldspar.Core.Frontend.Select           as Frontend
 import Feldspar.Core.Frontend.SizeProp         as Frontend
 import Feldspar.Core.Frontend.SourceInfo       as Frontend
 import Feldspar.Core.Frontend.Trace            as Frontend
---import Feldspar.Core.Frontend.Tuple            as Frontend
+import Feldspar.Core.Frontend.Tuple            as Frontend
 
 {-
 bindDict :: BindDict
@@ -318,13 +318,13 @@ tArr2 _ = id
 
 -- | Integer logarithm in base 2
 --   Based on an algorithm in Hacker's Delight
---ilog2 :: (Bits a) => Data a -> Data Index
---ilog2 x = bitSize x - 1 - nlz x
+ilog2 :: (Bits a) => Data a -> Data Index
+ilog2 x = bitSize x - 1 - nlz x
 
 -- | Count leading zeros
 --   Based on an algorithm in Hacker's Delight
---nlz :: (Bits a) => Data a -> Data Index
---nlz x = bitCount $ complement $ foldl go x $ takeWhile (P.< bitSize' x) $ P.map (2 P.^) [(0::Integer)..]
---  where
---    go b s = b .|. (b .>>. value s)
+nlz :: (Bits a) => Data a -> Data Index
+nlz x = bitCount $ complement $ foldl go x $ takeWhile (P.< bitSize' x) $ P.map (2 P.^) [(0::Integer)..]
+  where
+    go b s = b .|. (b .>>. value s)
 
