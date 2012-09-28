@@ -67,11 +67,9 @@ instance ( (Condition :|| Type) :<: dom
     constructFeatOpt (C' Condition) (_ :* t :* f :* Nil)
         | alphaEq t f = return t
 
-{-
-    constructFeatOpt (C' cond@Condition) ((op :$ c) :* t :* f :* Nil)
-        | Just (_,Not) <- prjDecor op
+    constructFeatOpt cond@(C' Condition) ((op :$ c) :* t :* f :* Nil)
+        | Just (C' Not) <- prjC op
         = constructFeat cond (c :* f :* t :* Nil)
--}
 
     constructFeatOpt a args = constructFeatUnOpt a args
 

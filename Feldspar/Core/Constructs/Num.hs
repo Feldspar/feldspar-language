@@ -107,97 +107,95 @@ instance ( (NUM     :|| Type) :<: dom
         , ra `rangeLess` 0
         = return (literalDecor (-1))
 
-{-
     constructFeatOpt (C' Add) (a :* b :* Nil)
         | Just 0 <- viewLiteral b = return a
         | Just 0 <- viewLiteral a = return b
-        | alphaEq a b = constructFeatOpt Mul (a :* literalDecor 2 :* Nil)
+        | alphaEq a b = constructFeatOpt (c' Mul) (a :* literalDecor 2 :* Nil)
 
-    constructFeatOpt (C' Add) (a :* (op :$ b :$ c) :* Nil)
+    constructFeatOpt s@(C' Add) (a :* (op :$ b :$ c) :* Nil)
         | Just a'      <- viewLiteral a
-        , Just (_,Add) <- prjDecor op
+        , Just (C' Add) <- prjC op
         , Just c'      <- viewLiteral c
-        = constructFeat Add (b :* literalDecor (a'+c') :* Nil)
+        = constructFeat s (b :* literalDecor (a'+c') :* Nil)
 
-    constructFeatOpt (C' Add) (a :* (op :$ b :$ c) :* Nil)
+    constructFeatOpt s@(C' Add) (a :* (op :$ b :$ c) :* Nil)
         | Just a'      <- viewLiteral a
-        , Just (_,Sub) <- prjDecor op
+        , Just (C' Sub) <- prjC op
         , Just c'      <- viewLiteral c
-        = constructFeat Add (b :* literalDecor (a'-c') :* Nil)
+        = constructFeat s (b :* literalDecor (a'-c') :* Nil)
 
-    constructFeatOpt Add ((op :$ a :$ b) :* c :* Nil)
+    constructFeatOpt s@(C' Add) ((op :$ a :$ b) :* c :* Nil)
         | Just c'      <- viewLiteral c
-        , Just (_,Add) <- prjDecor op
+        , Just (C' Add) <- prjC op
         , Just b'      <- viewLiteral b
-        = constructFeat Add (a :* literalDecor (b'+c') :* Nil)
+        = constructFeat s (a :* literalDecor (b'+c') :* Nil)
 
-    constructFeatOpt Add ((op :$ a :$ b) :* c :* Nil)
+    constructFeatOpt s@(C' Add) ((op :$ a :$ b) :* c :* Nil)
         | Just c'      <- viewLiteral c
-        , Just (_,Sub) <- prjDecor op
+        , Just (C' Sub) <- prjC op
         , Just b'      <- viewLiteral b
-        = constructFeat Add (a :* literalDecor (c'-b') :* Nil)
+        = constructFeat s (a :* literalDecor (c'-b') :* Nil)
 
-    constructFeatOpt Add ((op1 :$ a :$ b) :* (op2 :$ c :$ d) :* Nil)
-        | Just (_,Add) <- prjDecor op1
-        , Just (_,Add) <- prjDecor op2
+    constructFeatOpt (C' Add) ((op1 :$ a :$ b) :* (op2 :$ c :$ d) :* Nil)
+        | Just (C' Add) <- prjC op1
+        , Just (C' Add) <- prjC op2
         , Just b'      <- viewLiteral b
         , Just d'      <- viewLiteral d
         = do
-            ac <- constructFeat Add (a :* c :* Nil)
-            constructFeat Add (ac :* literalDecor (b'+d') :* Nil)
+            ac <- constructFeat (c' Add) (a :* c :* Nil)
+            constructFeat (c' Add) (ac :* literalDecor (b'+d') :* Nil)
 
-    constructFeatOpt Add ((op1 :$ a :$ b) :* (op2 :$ c :$ d) :* Nil)
-        | Just (_,Add) <- prjDecor op1
-        , Just (_,Sub) <- prjDecor op2
+    constructFeatOpt (C' Add) ((op1 :$ a :$ b) :* (op2 :$ c :$ d) :* Nil)
+        | Just (C' Add) <- prjC op1
+        , Just (C' Sub) <- prjC op2
         , alphaEq a c
         , alphaEq b d
-        = constructFeat Add (a :* c :* Nil)
+        = constructFeat (c' Add) (a :* c :* Nil)
 
-    constructFeatOpt Sub ((op1 :$ a :$ b) :* (op2 :$ c :$ d) :* Nil)
-        | Just (_,Add) <- prjDecor op1
-        , Just (_,Sub) <- prjDecor op2
+    constructFeatOpt (C' Sub) ((op1 :$ a :$ b) :* (op2 :$ c :$ d) :* Nil)
+        | Just (C' Add) <- prjC op1
+        , Just (C' Sub) <- prjC op2
         , alphaEq a c
         , alphaEq b d
-        = constructFeat Add (b :* d :* Nil)
+        = constructFeat (c' Add) (b :* d :* Nil)
 
-    constructFeatOpt Sub (a :* b :* Nil)
+    constructFeatOpt (C' Sub) (a :* b :* Nil)
         | Just 0 <- viewLiteral b = return a
         | alphaEq a b             = return $ literalDecor 0
 
-    constructFeatOpt Mul (a :* b :* Nil)
+    constructFeatOpt (C' Mul) (a :* b :* Nil)
         | Just 0 <- viewLiteral a = return a
         | Just 1 <- viewLiteral a = return b
         | Just 0 <- viewLiteral b = return b
         | Just 1 <- viewLiteral b = return a
 
-    constructFeatOpt Mul (a :* (op :$ b :$ c) :* Nil)
+    constructFeatOpt s@(C' Mul) (a :* (op :$ b :$ c) :* Nil)
         | Just a'      <- viewLiteral a
-        , Just (_,Mul) <- prjDecor op
+        , Just (C' Mul) <- prjC op
         , Just c'      <- viewLiteral c
-        = constructFeat Mul (b :* literalDecor (a'*c') :* Nil)
+        = constructFeat s (b :* literalDecor (a'*c') :* Nil)
 
-    constructFeatOpt Mul ((op :$ a :$ b) :* c :* Nil)
+    constructFeatOpt s@(C' Mul) ((op :$ a :$ b) :* c :* Nil)
         | Just c'      <- viewLiteral c
-        , Just (_,Mul) <- prjDecor op
+        , Just (C' Mul) <- prjC op
         , Just b'      <- viewLiteral b
-        = constructFeat Mul (a :* literalDecor (b'*c') :* Nil)
+        = constructFeat s (a :* literalDecor (b'*c') :* Nil)
 
-    constructFeatOpt Mul ((op1 :$ a :$ b) :* (op2 :$ c :$ d) :* Nil)
-        | Just (_,Mul) <- prjDecor op1
-        , Just (_,Mul) <- prjDecor op2
+    constructFeatOpt (C' Mul) ((op1 :$ a :$ b) :* (op2 :$ c :$ d) :* Nil)
+        | Just (C' Mul) <- prjC op1
+        , Just (C' Mul) <- prjC op2
         , Just b'      <- viewLiteral b
         , Just d'      <- viewLiteral d
         = do
-            ac <- constructFeat Mul (a :* c :* Nil)
-            constructFeat Mul (ac :* literalDecor (b'*d') :* Nil)
+            ac <- constructFeat (c' Mul) (a :* c :* Nil)
+            constructFeat (c' Mul) (ac :* literalDecor (b'*d') :* Nil)
 
     -- Cases to make sure literals end up to the right:
-    constructFeatOpt Add (a :* b :* Nil)
-        | Just _ <- viewLiteral a = constructFeatUnOpt Add (b :* a :* Nil)
+    constructFeatOpt (C' Add) (a :* b :* Nil)
+        | Just _ <- viewLiteral a = constructFeatUnOpt (c' Add) (b :* a :* Nil)
 
-    constructFeatOpt Mul (a :* b :* Nil)
-        | Just _ <- viewLiteral a = constructFeatUnOpt Mul (b :* a :* Nil)
--}
+    constructFeatOpt (C' Mul) (a :* b :* Nil)
+        | Just _ <- viewLiteral a = constructFeatUnOpt (c' Mul) (b :* a :* Nil)
 
     constructFeatOpt a args = constructFeatUnOpt a args
 

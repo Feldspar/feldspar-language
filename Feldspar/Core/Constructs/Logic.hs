@@ -91,25 +91,23 @@ instance ( (Logic :|| Type) :<: dom
         | Just False <- viewLiteral b = return b
         | a `alphaEq` b               = return a
 
-{-
-    constructFeatOpt Or (a :* b :* Nil)
+    constructFeatOpt (C' Or) (a :* b :* Nil)
         | Just True  <- viewLiteral a = return a
         | Just False <- viewLiteral a = return b
         | Just True  <- viewLiteral b = return b
         | Just False <- viewLiteral b = return a
         | a `alphaEq` b               = return a
 
-    constructFeatOpt Not ((op :$ a) :* Nil)
-        | Just (_,Not) <- prjDecor op = return a
+    constructFeatOpt (C' Not) ((op :$ a) :* Nil)
+        | Just (C' Not) <- prjC op = return a
 
-    constructFeatOpt Not ((op :$ a :$ b) :* Nil)
-        | Just (_,Equal)    <- prjDecor op = constructFeat NotEqual (a :* b :* Nil)
-        | Just (_,NotEqual) <- prjDecor op = constructFeat Equal    (a :* b :* Nil)
-        | Just (_,LTH)      <- prjDecor op = constructFeat GTE      (a :* b :* Nil)
-        | Just (_,GTH)      <- prjDecor op = constructFeat LTE      (a :* b :* Nil)
-        | Just (_,LTE)      <- prjDecor op = constructFeat GTH      (a :* b :* Nil)
-        | Just (_,GTE)      <- prjDecor op = constructFeat LTH      (a :* b :* Nil)
--}
+    constructFeatOpt (C' Not) ((op :$ a :$ b) :* Nil)
+        | Just (C' Equal)    <- prjC op = constructFeat (c' NotEqual) (a :* b :* Nil)
+        | Just (C' NotEqual) <- prjC op = constructFeat (c' Equal)    (a :* b :* Nil)
+        | Just (C' LTH)      <- prjC op = constructFeat (c' GTE)      (a :* b :* Nil)
+        | Just (C' GTH)      <- prjC op = constructFeat (c' LTE)      (a :* b :* Nil)
+        | Just (C' LTE)      <- prjC op = constructFeat (c' GTH)      (a :* b :* Nil)
+        | Just (C' GTE)      <- prjC op = constructFeat (c' LTH)      (a :* b :* Nil)
 
     constructFeatOpt a args = constructFeatUnOpt a args
 

@@ -37,6 +37,7 @@ import Language.Syntactic
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs.Literal
 import Feldspar.Core.Constructs
+import Feldspar.Core.Interpretation
 
 value :: Syntax a => Internal a -> a
 value = sugarSymF . Literal

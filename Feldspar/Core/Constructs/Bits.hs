@@ -188,24 +188,22 @@ instance ( (BITS  :|| Type) :<: dom
 
     constructFeatOpt (C' BXor) (a :* b :* Nil)
         | Just 0 <- viewLiteral a              = return b
---        | Just x <- viewLiteral a, isAllOnes x = constructFeat Complement (b :* Nil)
+        | Just x <- viewLiteral a, isAllOnes x = constructFeat (c' Complement) (b :* Nil)
         | Just 0 <- viewLiteral b              = return a
---        | Just x <- viewLiteral b, isAllOnes x = constructFeat Complement (a :* Nil)
+        | Just x <- viewLiteral b, isAllOnes x = constructFeat (c' Complement) (a :* Nil)
 
-{-
     constructFeatOpt (C' BXor) ((xo :$ v1 :$ v2) :* v3 :* Nil)
-        | Just (_,BXor) <- prjDecor xo
+        | Just (C' BXor) <- prjC xo
         , alphaEq v2 v3
         = return v1
 
     constructFeatOpt (C' TestBit) ((xo :$ v1 :$ v2) :* v3 :* Nil)
-        | Just (_,BXor) <- prjDecor xo
+        | Just (C' BXor) <- prjC xo
         , Just a <- viewLiteral v2
         , Just b <- viewLiteral v3
         , a == 2 ^ b
-        = do tb <- constructFeat TestBit (v1 :* v3 :* Nil)
-             constructFeat Not (tb :* Nil)
--}
+        = do tb <- constructFeat (c' TestBit) (v1 :* v3 :* Nil)
+             constructFeat (c' Not) (tb :* Nil)
 
     constructFeatOpt x@(C' ShiftLU)  args = optZero x args
     constructFeatOpt x@(C' ShiftRU)  args = optZero x args
@@ -226,7 +224,7 @@ isAllOnes x = x Prelude.== complement 0
 
 optZero :: ( Eq b, Num b
            , (Literal :|| Type) :<: dom
-           , Optimize (feature) dom
+           , Optimize feature dom
            )
         => feature (a :-> (b :-> Full a))
         -> Args (AST (Decor Info (dom :|| Typeable))) (a :-> (b :-> Full a))

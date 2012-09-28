@@ -77,17 +77,15 @@ instance ( (FRACTIONAL :|| Type) :<: dom
         | Just 1 <- viewLiteral b = return a
         | alphaEq a b = return $ literalDecor 1
 
-{-
     constructFeatOpt (C' DivFrac) ((op :$ a :$ b) :* c :* Nil)
-        | Just (_,Mul) <- prjDecor op
+        | Just (C' Mul) <- prjC op
         , alphaEq b c
         = return a
 
     constructFeatOpt (C' DivFrac) ((op :$ a :$ b) :* c :* Nil)
-        | Just (_,Mul) <- prjDecor op
+        | Just (C' Mul) <- prjC op
         , alphaEq a c
         = return b
--}
 
     constructFeatOpt a args = constructFeatUnOpt a args
 

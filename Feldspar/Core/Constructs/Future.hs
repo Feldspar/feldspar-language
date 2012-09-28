@@ -73,15 +73,13 @@ instance ( (FUTURE :|| Type) :<: dom
          )
       => Optimize (FUTURE :|| Type) dom
   where
-{-
     constructFeatOpt (C' Await) ((op :$ a) :* Nil)
-      | Just (_,MkFuture) <- prjDecor op
+      | Just (C' MkFuture) <- prjC op
       = return a
 
     constructFeatOpt (C' MkFuture) ((op :$ a) :* Nil)
-      | Just (_,Await) <- prjDecor op
+      | Just (C' Await) <- prjC op
       = return a
--}
 
     constructFeatOpt feature args = constructFeatUnOpt feature args
 

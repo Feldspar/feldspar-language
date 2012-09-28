@@ -104,7 +104,6 @@ instance
     constructFeatOpt (C' Quot) (a :* b :* Nil)
         | Just 1 <- viewLiteral b = return a
 
-{-
     constructFeatOpt (C' Quot) (a :* b :* Nil)
         | Just b' <- viewLiteral b
         , b' > 0
@@ -112,20 +111,19 @@ instance
         , let l    = log2 b'
         , let lLit = literalDecor l
         = if isNatural $ infoSize $ getInfo a
-            then constructFeat ShiftR (a :* lLit :* Nil)
+            then constructFeat (c' ShiftR) (a :* lLit :* Nil)
             else do
-                aIsNeg  <- constructFeat LTH (a :* literalDecor 0 :* Nil)
-                a'      <- constructFeat Add (a :* literalDecor (2^l-1) :* Nil)
-                negCase <- constructFeat ShiftR (a' :* lLit :* Nil)
-                posCase <- constructFeat ShiftR (a :* lLit :* Nil)
-                constructFeat Condition
+                aIsNeg  <- constructFeat (c' LTH) (a :* literalDecor 0 :* Nil)
+                a'      <- constructFeat (c' Add) (a :* literalDecor (2^l-1) :* Nil)
+                negCase <- constructFeat (c' ShiftR) (a' :* lLit :* Nil)
+                posCase <- constructFeat (c' ShiftR) (a :* lLit :* Nil)
+                constructFeat (c' Condition)
                     (aIsNeg :* negCase :* posCase :* Nil)
       -- TODO This rule should also fire when `b` is `2^l` but not a literal.
       -- TODO Make a case for `isNegative $ infoSize $ getInfo a`. Note that
       --      `isNegative /= (not . isNatural)`
       -- TODO Or maybe both `isNegative` and ``isPositive` are handled by the
       --      size-based optimization of `Condition`?
--}
 
     constructFeatOpt (C' Rem) (a :* b :* Nil)
         | rangeLess sza szb
@@ -138,19 +136,15 @@ instance
     constructFeatOpt (C' Div) (a :* b :* Nil)
         | Just 1 <- viewLiteral b = return a
 
-{-
     constructFeatOpt (C' Div) (a :* b :* Nil)
         | Just b' <- viewLiteral b
         , b' > 0
         , isPowerOfTwo b'
-        = constructFeat ShiftR (a :* literalDecor (log2 b') :* Nil)
--}
+        = constructFeat (c' ShiftR) (a :* literalDecor (log2 b') :* Nil)
 
-{-
     constructFeatOpt (C' Div) (a :* b :* Nil)
         | sameSign (infoSize (getInfo a)) (infoSize (getInfo b))
-        = constructFeat Quot (a :* b :* Nil)
--}
+        = constructFeat (c' Quot) (a :* b :* Nil)
 
     constructFeatOpt (C' Mod) (a :* b :* Nil)
         | rangeLess sza szb
@@ -160,11 +154,9 @@ instance
         sza = infoSize $ getInfo a
         szb = infoSize $ getInfo b
 
-{-
     constructFeatOpt (C' Mod) (a :* b :* Nil)
         | sameSign (infoSize (getInfo a)) (infoSize (getInfo b))
-        = constructFeat Rem (a :* b :* Nil)
--}
+        = constructFeat (c' Rem) (a :* b :* Nil)
 
     constructFeatOpt (C' Exp) (a :* b :* Nil)
         | Just 1 <- viewLiteral a = return $ literalDecor 1
@@ -172,14 +164,12 @@ instance
         | Just 1 <- viewLiteral b = return a
         | Just 0 <- viewLiteral b = return $ literalDecor 1
 
-{-
     constructFeatOpt (C' Exp) (a :* b :* Nil)
         | Just (-1) <- viewLiteral a = do
-            bLSB    <- constructFeat BAnd (b :* literalDecor 1 :* Nil)
-            bIsEven <- constructFeat Equal (bLSB :* literalDecor 0 :* Nil)  -- TODO Use testBit? (remove EQ :<: dom and import)
-            constructFeat Condition
+            bLSB    <- constructFeat (c' BAnd) (b :* literalDecor 1 :* Nil)
+            bIsEven <- constructFeat (c' Equal) (bLSB :* literalDecor 0 :* Nil)  -- TODO Use testBit? (remove EQ :<: dom and import)
+            constructFeat (c' Condition)
                 (bIsEven :* literalDecor 1 :* literalDecor (-1) :* Nil)
--}
 
     constructFeatOpt a args = constructFeatUnOpt a args
 

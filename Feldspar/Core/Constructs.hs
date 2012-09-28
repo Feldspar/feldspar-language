@@ -225,8 +225,8 @@ instance Type a => Show (Data a)
   where
     show (Data a) = render $ reify a
 
-c' :: (Type (DenResult sig)) => feature sig -> (feature :|| Type) sig
-c' = C'
+--c' :: (Type (DenResult sig)) => feature sig -> (feature :|| Type) sig
+--c' = C'
 
 sugarSymF :: ( ApplySym sig b dom
              , SyntacticN c b

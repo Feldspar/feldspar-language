@@ -76,6 +76,7 @@ module Feldspar.Core.Interpretation
     , optimizeFeatDefault
     , injDecorC
     , prjC
+    , c'
     ) where
 
 
