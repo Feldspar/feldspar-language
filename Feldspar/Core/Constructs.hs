@@ -95,7 +95,7 @@ type FeldSymbols
 --    :+: Array
     :+: (BITS :|| Type)
 --    :+: COMPLEX
---    :+: Conversion
+    :+: (Conversion :|| Type)
     :+: (EQ :|| Type)
     :+: (Error :|| Type)
 --    :+: FLOATING

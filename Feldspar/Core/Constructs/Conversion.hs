@@ -93,25 +93,25 @@ instance AlphaEq dom dom dom env => AlphaEq Conversion Conversion dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance SizeProp Conversion
+instance SizeProp (Conversion :|| Type)
   where
-    sizeProp F2I     _ = universal
-    sizeProp i2n@I2N (WrapFull a :* Nil)
+    sizeProp (C' F2I)     _ = universal
+    sizeProp (C' i2n@I2N) (WrapFull a :* Nil)
         = rangeToSize (resultType i2n) (mapMonotonic toInteger (infoSize a))
-    sizeProp B2I     _ = universal
-    sizeProp Round   _ = universal
-    sizeProp Ceiling _ = universal
-    sizeProp Floor   _ = universal
+    sizeProp (C' B2I)     _ = universal
+    sizeProp (C' Round)   _ = universal
+    sizeProp (C' Ceiling) _ = universal
+    sizeProp (C' Floor)   _ = universal
 
-instance (Conversion :<: dom, Optimize dom dom) => Optimize Conversion dom
+instance ( (Conversion :|| Type) :<: dom
+         , OptimizeSuper dom)
+      => Optimize (Conversion :|| Type) dom
   where
-    constructFeatOpt i2n@I2N (a :* Nil)
+    constructFeatOpt (C' i2n@I2N) (a :* Nil)
         | Just TypeEq <- typeEq (resultType i2n) (infoType $ getInfo a)
         = return a
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt a@(C' _) = constructFeatUnOptDefault a
 
