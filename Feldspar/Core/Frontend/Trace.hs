@@ -41,5 +41,5 @@ import Feldspar.Core.Frontend.Num
 -- function, but a back end may treat this function specially, for example write
 -- its arguments to a log.
 trace :: Numeric a => Int -> Data a -> Data a
-trace label = sugarSymC Trace (fromIntegral label :: Data IntN)
+trace label = sugarSymF Trace (fromIntegral label :: Data IntN)
 

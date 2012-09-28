@@ -59,50 +59,50 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
   where
     -- Logical operations
     (.&.)         :: Data a -> Data a -> Data a
-    (.&.)         = sugarSymC BAnd
+    (.&.)         = sugarSymF BAnd
     (.|.)         :: Data a -> Data a -> Data a
-    (.|.)         = sugarSymC BOr
+    (.|.)         = sugarSymF BOr
     xor           :: Data a -> Data a -> Data a
-    xor           = sugarSymC BXor
+    xor           = sugarSymF BXor
     complement    :: Data a -> Data a
-    complement    = sugarSymC Complement
+    complement    = sugarSymF Complement
 
     -- Bitwise operations
     bit           :: Data Index -> Data a
-    bit           = sugarSymC Bit
+    bit           = sugarSymF Bit
     setBit        :: Data a -> Data Index -> Data a
-    setBit        = sugarSymC SetBit
+    setBit        = sugarSymF SetBit
     clearBit      :: Data a -> Data Index -> Data a
-    clearBit      = sugarSymC ClearBit
+    clearBit      = sugarSymF ClearBit
     complementBit :: Data a -> Data Index -> Data a
-    complementBit = sugarSymC ComplementBit
+    complementBit = sugarSymF ComplementBit
     testBit       :: Data a -> Data Index -> Data Bool
-    testBit       = sugarSymC TestBit
+    testBit       = sugarSymF TestBit
 
     -- Movement operations
     shiftLU       :: Data a -> Data Index -> Data a
-    shiftLU       = sugarSymC ShiftLU
+    shiftLU       = sugarSymF ShiftLU
     shiftRU       :: Data a -> Data Index -> Data a
-    shiftRU       = sugarSymC ShiftRU
+    shiftRU       = sugarSymF ShiftRU
     shiftL        :: Data a -> Data IntN -> Data a
-    shiftL        = sugarSymC ShiftL
+    shiftL        = sugarSymF ShiftL
     shiftR        :: Data a -> Data IntN -> Data a
-    shiftR        = sugarSymC ShiftR
+    shiftR        = sugarSymF ShiftR
     rotateLU      :: Data a -> Data Index -> Data a
-    rotateLU      = sugarSymC RotateLU
+    rotateLU      = sugarSymF RotateLU
     rotateRU      :: Data a -> Data Index -> Data a
-    rotateRU      = sugarSymC RotateRU
+    rotateRU      = sugarSymF RotateRU
     rotateL       :: Data a -> Data IntN -> Data a
-    rotateL       = sugarSymC RotateL
+    rotateL       = sugarSymF RotateL
     rotateR       :: Data a -> Data IntN -> Data a
-    rotateR       = sugarSymC RotateR
+    rotateR       = sugarSymF RotateR
     reverseBits   :: Data a -> Data a
-    reverseBits   = sugarSymC ReverseBits
+    reverseBits   = sugarSymF ReverseBits
 
     bitScan       :: Data a -> Data Index
-    bitScan       = sugarSymC BitScan
+    bitScan       = sugarSymF BitScan
     bitCount      :: Data a -> Data Index
-    bitCount      = sugarSymC BitCount
+    bitCount      = sugarSymF BitCount
 
     bitSize       :: Data a -> Data Index
     bitSize       = value . bitSize'
@@ -110,7 +110,7 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     bitSize'      :: Data a -> Index
     bitSize'      = const $ fromIntegral $ B.bitSize (undefined :: a)
     isSigned      :: Data a -> Data Bool
-    isSigned      = sugarSymC IsSigned
+    isSigned      = sugarSymF IsSigned
 
 (⊕)    :: (Bits a) => Data a -> Data a -> Data a
 (⊕)    =  xor

@@ -38,28 +38,28 @@ import Feldspar.Core.Frontend.Num
 import Language.Syntactic
 
 complex :: (Numeric a, RealFloat a) => Data a -> Data a -> Data (Complex a)
-complex = sugarSymC MkComplex
+complex = sugarSymF MkComplex
 
 realPart :: (Numeric a, RealFloat a) => Data (Complex a) -> Data a
-realPart = sugarSymC RealPart
+realPart = sugarSymF RealPart
 
 imagPart :: (Numeric a, RealFloat a) => Data (Complex a) -> Data a
-imagPart = sugarSymC ImagPart
+imagPart = sugarSymF ImagPart
 
 conjugate :: (Numeric a, RealFloat a) => Data (Complex a) -> Data (Complex a)
-conjugate = sugarSymC Conjugate
+conjugate = sugarSymF Conjugate
 
 mkPolar :: (Numeric a, RealFloat a) => Data a -> Data a -> Data (Complex a)
-mkPolar = sugarSymC MkPolar
+mkPolar = sugarSymF MkPolar
 
 cis :: (Numeric a, RealFloat a) => Data a -> Data (Complex a)
-cis = sugarSymC Cis
+cis = sugarSymF Cis
 
 magnitude :: (Numeric a, RealFloat a) => Data (Complex a) -> Data a
-magnitude = sugarSymC Magnitude
+magnitude = sugarSymF Magnitude
 
 phase :: (Numeric a, RealFloat a) => Data (Complex a) -> Data a
-phase = sugarSymC Phase
+phase = sugarSymF Phase
 
 polar :: (Numeric a, RealFloat a) => Data (Complex a) -> (Data a, Data a)
 polar c = (magnitude c, phase c)

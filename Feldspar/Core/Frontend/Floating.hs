@@ -44,41 +44,41 @@ infixr 8 **
 
 class (Fraction a, Prelude.Floating a) => Floating a where
   pi        :: Data a
-  pi        =  sugarSymC Pi
+  pi        =  sugarSymF Pi
   exp       :: Data a -> Data a
-  exp       =  sugarSymC Exp
+  exp       =  sugarSymF Exp
   sqrt      :: Data a -> Data a
-  sqrt      =  sugarSymC Sqrt
+  sqrt      =  sugarSymF Sqrt
   log       :: Data a -> Data a
-  log       =  sugarSymC Log
+  log       =  sugarSymF Log
   (**)      :: Data a -> Data a -> Data a
-  (**)      =  sugarSymC Pow
+  (**)      =  sugarSymF Pow
   logBase   :: Data a -> Data a -> Data a
-  logBase   =  sugarSymC LogBase
+  logBase   =  sugarSymF LogBase
   sin       :: Data a -> Data a
-  sin       =  sugarSymC Sin
+  sin       =  sugarSymF Sin
   tan       :: Data a -> Data a
-  tan       =  sugarSymC Tan
+  tan       =  sugarSymF Tan
   cos       :: Data a -> Data a
-  cos       =  sugarSymC Cos
+  cos       =  sugarSymF Cos
   asin      :: Data a -> Data a
-  asin      =  sugarSymC Asin
+  asin      =  sugarSymF Asin
   atan      :: Data a -> Data a
-  atan      =  sugarSymC Atan
+  atan      =  sugarSymF Atan
   acos      :: Data a -> Data a
-  acos      =  sugarSymC Acos
+  acos      =  sugarSymF Acos
   sinh      :: Data a -> Data a
-  sinh      =  sugarSymC Sinh
+  sinh      =  sugarSymF Sinh
   tanh      :: Data a -> Data a
-  tanh      =  sugarSymC Tanh
+  tanh      =  sugarSymF Tanh
   cosh      :: Data a -> Data a
-  cosh      =  sugarSymC Cosh
+  cosh      =  sugarSymF Cosh
   asinh     :: Data a -> Data a
-  asinh     =  sugarSymC Asinh
+  asinh     =  sugarSymF Asinh
   atanh     :: Data a -> Data a
-  atanh     =  sugarSymC Atanh
+  atanh     =  sugarSymF Atanh
   acosh     :: Data a -> Data a
-  acosh     =  sugarSymC Acosh
+  acosh     =  sugarSymF Acosh
 
 instance Floating Float
 instance (Fraction a, Prelude.RealFloat a) => Floating (Complex a)

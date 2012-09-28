@@ -57,15 +57,15 @@ import Feldspar.Core.Frontend.Ord
 class (Ord a, Numeric a, BoundedInt a, P.Integral a) => Integral a
   where
     quot :: (Size a ~ Range a) => Data a -> Data a -> Data a
-    quot = sugarSymC Quot
+    quot = sugarSymF Quot
     rem  :: (Size a ~ Range a) => Data a -> Data a -> Data a
-    rem  = sugarSymC Rem
+    rem  = sugarSymF Rem
     div  :: (Size a ~ Range a) => Data a -> Data a -> Data a
     div  = divSem
     mod  :: (Size a ~ Range a) => Data a -> Data a -> Data a
-    mod  = sugarSymC Mod
+    mod  = sugarSymF Mod
     (^)  :: (Size a ~ Range a) => Data a -> Data a -> Data a
-    (^)  = sugarSymC Exp
+    (^)  = sugarSymF Exp
 
 -- TODO: This is a short-term hack because the compiler doesn't compile
 -- the Div construct correctly. So we give the semantics of div in terms of

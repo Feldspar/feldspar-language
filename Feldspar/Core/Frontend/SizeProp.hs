@@ -61,7 +61,7 @@ type SizeCap a = Data a -> Data a
 -- where @sa@ is the size of @a@.
 sizeProp :: (Syntax a, Type b) =>
     (Size (Internal a) -> Size b) -> a -> SizeCap b
-sizeProp = sugarSymC . PropSize
+sizeProp = sugarSymF . PropSize
 
 -- | A guarantee that the argument is within the given size
 cap :: Type a => Size a -> SizeCap a

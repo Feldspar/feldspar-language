@@ -50,23 +50,23 @@ i2f :: (Integral a, Size a ~ Range a) => Data a -> Data Float
 i2f = i2n
 
 f2i :: Integral a => Data Float -> Data a
-f2i = sugarSymC F2I
+f2i = sugarSymF F2I
 
 i2n :: (Integral a, Numeric b, Size a ~ Range a) => Data a -> Data b
-i2n = sugarSymC I2N
+i2n = sugarSymF I2N
 
 b2i :: Integral a => Data Bool -> Data a
-b2i = sugarSymC B2I
+b2i = sugarSymF B2I
 
 truncate :: Integral a => Data Float -> Data a
 truncate = f2i
 
 round :: Integral a => Data Float -> Data a
-round = sugarSymC Round
+round = sugarSymF Round
 
 ceiling :: Integral a => Data Float -> Data a
-ceiling = sugarSymC Ceiling
+ceiling = sugarSymF Ceiling
 
 floor :: Integral a => Data Float -> Data a
-floor = sugarSymC Floor
+floor = sugarSymF Floor
 

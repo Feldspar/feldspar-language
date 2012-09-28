@@ -48,7 +48,7 @@ class (Fractional a, Numeric a) => Fraction a
     fromRationalFrac = value . fromRational
 
     divFrac :: Data a -> Data a -> Data a
-    divFrac = sugarSymC DivFrac
+    divFrac = sugarSymF DivFrac
 
 instance Fraction Float
 

@@ -100,36 +100,36 @@ import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation hiding (showDecor, drawDecor)
 import Feldspar.Core.Constructs
---import Feldspar.Core.Frontend.Array            as Frontend
+import Feldspar.Core.Frontend.Array            as Frontend
 --import Feldspar.Core.Frontend.Binding          as Frontend
---import Feldspar.Core.Frontend.Bits             as Frontend
---import Feldspar.Core.Frontend.Complex          as Frontend
+import Feldspar.Core.Frontend.Bits             as Frontend
+import Feldspar.Core.Frontend.Complex          as Frontend
 import Feldspar.Core.Frontend.Condition        as Frontend
 --import Feldspar.Core.Frontend.ConditionM       as Frontend
---import Feldspar.Core.Frontend.Conversion       as Frontend
+import Feldspar.Core.Frontend.Conversion       as Frontend
 import Feldspar.Core.Frontend.Eq               as Frontend
 import Feldspar.Core.Frontend.Error            as Frontend
---import Feldspar.Core.Frontend.FFI              as Frontend
---import Feldspar.Core.Frontend.Floating         as Frontend
---import Feldspar.Core.Frontend.Fractional       as Frontend
---import Feldspar.Core.Frontend.Future           as Frontend
---import Feldspar.Core.Frontend.Integral         as Frontend
+import Feldspar.Core.Frontend.FFI              as Frontend
+import Feldspar.Core.Frontend.Floating         as Frontend
+import Feldspar.Core.Frontend.Fractional       as Frontend
+import Feldspar.Core.Frontend.Future           as Frontend
+import Feldspar.Core.Frontend.Integral         as Frontend
 import Feldspar.Core.Frontend.Literal          as Frontend
---import Feldspar.Core.Frontend.Logic            as Frontend
+import Feldspar.Core.Frontend.Logic            as Frontend
 --import Feldspar.Core.Frontend.Loop             as Frontend
 --import Feldspar.Core.Frontend.Mutable          as Frontend
 --import Feldspar.Core.Frontend.MutableArray     as Frontend
 --import Feldspar.Core.Frontend.MutableReference as Frontend
 --import Feldspar.Core.Frontend.MutableToPure    as Frontend
---import Feldspar.Core.Frontend.NoInline         as Frontend
+import Feldspar.Core.Frontend.NoInline         as Frontend
 import Feldspar.Core.Frontend.Num              as Frontend
 import Feldspar.Core.Frontend.Ord              as Frontend
 --import Feldspar.Core.Frontend.Par              as Frontend
---import Feldspar.Core.Frontend.Save             as Frontend
+import Feldspar.Core.Frontend.Save             as Frontend
 --import Feldspar.Core.Frontend.Select           as Frontend
---import Feldspar.Core.Frontend.SizeProp         as Frontend
---import Feldspar.Core.Frontend.SourceInfo       as Frontend
---import Feldspar.Core.Frontend.Trace            as Frontend
+import Feldspar.Core.Frontend.SizeProp         as Frontend
+import Feldspar.Core.Frontend.SourceInfo       as Frontend
+import Feldspar.Core.Frontend.Trace            as Frontend
 --import Feldspar.Core.Frontend.Tuple            as Frontend
 
 {-
