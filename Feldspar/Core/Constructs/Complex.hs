@@ -73,49 +73,54 @@ instance ToTree   COMPLEX
 instance Eval     COMPLEX where evaluate = evaluateDefault
 instance EvalBind COMPLEX where evalBindSym = evalBindSymDefault
 instance Sharable COMPLEX
---instance SizeProp COMPLEX where sizeProp = sizePropDefault
+
+instance SizeProp (COMPLEX :|| Type)
+  where
+    sizeProp (C' s) = sizePropDefault s
 
 instance AlphaEq dom dom dom env => AlphaEq COMPLEX COMPLEX dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance (COMPLEX :<: dom, OptimizeSuper dom) => Optimize COMPLEX dom
+instance ( (COMPLEX :|| Type) :<: dom
+         , OptimizeSuper dom)
+      => Optimize (COMPLEX :|| Type) dom
   where
-    constructFeatOpt MkComplex ((rp :$ a) :* (ip :$ b) :* Nil)
+{-
+    constructFeatOpt (C' MkComplex) ((rp :$ a) :* (ip :$ b) :* Nil)
         | Just (_,RealPart) <- prjDecor rp
         , Just (_,ImagPart) <- prjDecor ip
         , alphaEq a b
         = return a
 
-    constructFeatOpt RealPart ((mkc :$ r :$ _) :* Nil)
+    constructFeatOpt (C' RealPart) ((mkc :$ r :$ _) :* Nil)
         | Just (_,MkComplex) <- prjDecor mkc
         = return r
 
-    constructFeatOpt ImagPart ((mkc :$ _ :$ i) :* Nil)
+    constructFeatOpt (C' ImagPart) ((mkc :$ _ :$ i) :* Nil)
         | Just (_,MkComplex) <- prjDecor mkc
         = return i
 
-    constructFeatOpt MkPolar ((mag :$ a) :* (ph :$ b) :* Nil)
+    constructFeatOpt (C' MkPolar) ((mag :$ a) :* (ph :$ b) :* Nil)
         | Just (_,Magnitude) <- prjDecor mag
         , Just (_,Phase)     <- prjDecor ph
         , alphaEq a b
         = return a
 
-    constructFeatOpt Magnitude ((mkp :$ m :$ _) :* Nil)
+    constructFeatOpt (C' Magnitude) ((mkp :$ m :$ _) :* Nil)
         | Just (_,MkPolar) <- prjDecor mkp
         = return m
 
-    constructFeatOpt Phase ((mkp :$ _ :$ p) :* Nil)
+    constructFeatOpt (C' Phase) ((mkp :$ _ :$ p) :* Nil)
         | Just (_,MkPolar) <- prjDecor mkp
         = return p
 
-    constructFeatOpt Conjugate ((conj :$ a) :* Nil)
+    constructFeatOpt (C' Conjugate) ((conj :$ a) :* Nil)
         | Just (_,Conjugate) <- prjDecor conj
         = return a
+-}
 
     constructFeatOpt sym args = constructFeatUnOpt sym args
 
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 

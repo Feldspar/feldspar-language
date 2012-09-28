@@ -94,7 +94,7 @@ type FeldSymbols
 --    :+: (Tuple   :||| Type)
     :+: (Array :|| Type)
     :+: (BITS :|| Type)
---    :+: COMPLEX
+    :+: (COMPLEX :|| Type)
     :+: (Conversion :|| Type)
     :+: (EQ :|| Type)
     :+: (Error :|| Type)
