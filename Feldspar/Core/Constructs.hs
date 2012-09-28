@@ -112,7 +112,7 @@ type FeldSymbols
 --    :+: MutableToPure
 --    :+: MONAD Par
     :+: (NUM :|| Type)
---    :+: NoInline
+    :+: (NoInline :|| Type)
     :+: (ORD :|| Type)
 --    :+: ParFeature
 --    :+: PropSize

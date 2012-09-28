@@ -55,16 +55,19 @@ instance Render   NoInline where renderArgs = renderArgsDefault
 instance ToTree   NoInline
 instance Eval     NoInline where evaluate = evaluateDefault
 instance EvalBind NoInline where evalBindSym = evalBindSymDefault
---instance SizeProp NoInline where sizeProp = sizePropDefault
 instance Sharable NoInline
+
+instance SizeProp (NoInline :|| Type)
+  where
+    sizeProp (C' s) = sizePropDefault s
 
 instance AlphaEq dom dom dom env => AlphaEq NoInline NoInline dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance (NoInline :<: dom, Optimize dom dom) => Optimize NoInline dom
+instance ( (NoInline :|| Type) :<: dom
+         , OptimizeSuper dom)
+      => Optimize (NoInline :|| Type) dom
   where
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
