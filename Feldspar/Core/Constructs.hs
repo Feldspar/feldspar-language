@@ -93,7 +93,7 @@ type FeldSymbols
 --    :+: (Select  :||| Type)
 --    :+: (Tuple   :||| Type)
 --    :+: Array
---    :+: BITS
+    :+: (BITS :|| Type)
 --    :+: COMPLEX
 --    :+: Conversion
     :+: (EQ :|| Type)

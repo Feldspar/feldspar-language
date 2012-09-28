@@ -39,6 +39,8 @@ module Feldspar.Core.Constructs.Bits
     ( BITS (..)
     ) where
 
+import Data.Typeable
+
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
 import Language.Syntactic.Constructs.Literal
@@ -150,86 +152,86 @@ instance AlphaEq dom dom dom env => AlphaEq BITS BITS dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance SizeProp BITS
+instance SizeProp (BITS :|| Type)
   where
-    sizeProp BAnd (WrapFull a :* WrapFull b :* Nil) = rangeAnd (infoSize a) (infoSize b)
-    sizeProp BOr  (WrapFull a :* WrapFull b :* Nil) = rangeOr (infoSize a) (infoSize b)
-    sizeProp BXor (WrapFull a :* WrapFull b :* Nil) = rangeXor (infoSize a) (infoSize b)
+    sizeProp (C' BAnd) (WrapFull a :* WrapFull b :* Nil) = rangeAnd (infoSize a) (infoSize b)
+    sizeProp (C' BOr) (WrapFull a :* WrapFull b :* Nil) = rangeOr (infoSize a) (infoSize b)
+    sizeProp (C' BXor) (WrapFull a :* WrapFull b :* Nil) = rangeXor (infoSize a) (infoSize b)
 
-    sizeProp ShiftLU (WrapFull a :* WrapFull b :* Nil) = rangeShiftLU (infoSize a) (infoSize b)
-    sizeProp ShiftRU (WrapFull a :* WrapFull b :* Nil) = rangeShiftRU (infoSize a) (infoSize b)
+    sizeProp (C' ShiftLU) (WrapFull a :* WrapFull b :* Nil) = rangeShiftLU (infoSize a) (infoSize b)
+    sizeProp (C' ShiftRU) (WrapFull a :* WrapFull b :* Nil) = rangeShiftRU (infoSize a) (infoSize b)
 
-    sizeProp Complement (WrapFull a :* Nil) = rangeComplement (infoSize a)
+    sizeProp (C' Complement) (WrapFull a :* Nil) = rangeComplement (infoSize a)
 
-    sizeProp a args = sizePropDefault a args
+    sizeProp a@(C' _) args = sizePropDefault a args
 
 
-instance ( BITS  :<: dom
-         , Logic :<: dom
-         , EQ    :<: dom
-         , ORD   :<: dom
+instance ( (BITS  :|| Type) :<: dom
+         , (Logic :|| Type) :<: dom
+         , (EQ    :|| Type) :<: dom
+         , (ORD   :|| Type) :<: dom
          , OptimizeSuper dom
          )
-      => Optimize BITS dom
+      => Optimize (BITS :|| Type) dom
   where
-    constructFeatOpt BAnd (a :* b :* Nil)
+    constructFeatOpt (C' BAnd) (a :* b :* Nil)
         | Just 0 <- viewLiteral a              = return a
         | Just x <- viewLiteral a, isAllOnes x = return b
         | Just 0 <- viewLiteral b              = return b
         | Just x <- viewLiteral b, isAllOnes x = return a
 
-    constructFeatOpt BOr (a :* b :* Nil)
+    constructFeatOpt (C' BOr) (a :* b :* Nil)
         | Just 0 <- viewLiteral a              = return b
         | Just x <- viewLiteral a, isAllOnes x = return a
         | Just 0 <- viewLiteral b              = return a
         | Just x <- viewLiteral b, isAllOnes x = return b
 
-    constructFeatOpt BXor (a :* b :* Nil)
+    constructFeatOpt (C' BXor) (a :* b :* Nil)
         | Just 0 <- viewLiteral a              = return b
-        | Just x <- viewLiteral a, isAllOnes x = constructFeat Complement (b :* Nil)
+--        | Just x <- viewLiteral a, isAllOnes x = constructFeat Complement (b :* Nil)
         | Just 0 <- viewLiteral b              = return a
-        | Just x <- viewLiteral b, isAllOnes x = constructFeat Complement (a :* Nil)
+--        | Just x <- viewLiteral b, isAllOnes x = constructFeat Complement (a :* Nil)
 
-    constructFeatOpt BXor ((xo :$ v1 :$ v2) :* v3 :* Nil)
+{-
+    constructFeatOpt (C' BXor) ((xo :$ v1 :$ v2) :* v3 :* Nil)
         | Just (_,BXor) <- prjDecor xo
         , alphaEq v2 v3
         = return v1
 
-    constructFeatOpt TestBit ((xo :$ v1 :$ v2) :* v3 :* Nil)
+    constructFeatOpt (C' TestBit) ((xo :$ v1 :$ v2) :* v3 :* Nil)
         | Just (_,BXor) <- prjDecor xo
         , Just a <- viewLiteral v2
         , Just b <- viewLiteral v3
         , a == 2 ^ b
         = do tb <- constructFeat TestBit (v1 :* v3 :* Nil)
              constructFeat Not (tb :* Nil)
+-}
 
-    constructFeatOpt ShiftLU  args = optZero ShiftLU  args
-    constructFeatOpt ShiftRU  args = optZero ShiftRU  args
-    constructFeatOpt ShiftL   args = optZero ShiftL   args
-    constructFeatOpt ShiftR   args = optZero ShiftR   args
-    constructFeatOpt RotateLU args = optZero RotateLU args
-    constructFeatOpt RotateRU args = optZero RotateRU args
-    constructFeatOpt RotateL  args = optZero RotateL  args
-    constructFeatOpt RotateR  args = optZero RotateR  args
+    constructFeatOpt x@(C' ShiftLU)  args = optZero x args
+    constructFeatOpt x@(C' ShiftRU)  args = optZero x args
+    constructFeatOpt x@(C' ShiftL)   args = optZero x args
+    constructFeatOpt x@(C' ShiftR)   args = optZero x args
+    constructFeatOpt x@(C' RotateLU) args = optZero x args
+    constructFeatOpt x@(C' RotateRU) args = optZero x args
+    constructFeatOpt x@(C' RotateL)  args = optZero x args
+    constructFeatOpt x@(C' RotateR)  args = optZero x args
 
     constructFeatOpt feat args = constructFeatUnOpt feat args
 
-    constructFeatUnOpt = constructFeatUnOptDefault
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
 
-isAllOnes :: Bits a => a -> Bool
+isAllOnes :: (Num a, Bits a) => a -> Bool
 isAllOnes x = x Prelude.== complement 0
 
 optZero :: ( Eq b, Num b
-           , Literal TypeCtx :<: dom
-           , Optimize feature dom
+           , (Literal :|| Type) :<: dom
+           , Optimize (feature) dom
            )
         => feature (a :-> (b :-> Full a))
-        -> Args (AST (Decor Info dom)) (a :-> (b :-> Full a))
-        -> Opt (AST (Decor Info dom) (Full a))
+        -> Args (AST (Decor Info (dom :|| Typeable))) (a :-> (b :-> Full a))
+        -> Opt (AST (Decor Info (dom :|| Typeable)) (Full a))
 optZero f (a :* b :* Nil)
     | Just 0 <- viewLiteral b = return a
     | otherwise               = constructFeatUnOpt f (a :* b :* Nil)
--}
 
