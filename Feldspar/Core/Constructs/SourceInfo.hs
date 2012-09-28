@@ -70,18 +70,18 @@ instance SizeProp Identity
   where
     sizeProp Id (WrapFull a :* Nil) = infoSize a
 
-instance SizeProp ((Decor SourceInfo1 Identity) :||| Type)
+instance SizeProp ((Decor SourceInfo1 Identity) :|| Type)
   where
-    sizeProp (C'' a) = sizeProp $ decorExpr a
+    sizeProp (C' a) = sizeProp $ decorExpr a
 
-instance ((Decor SourceInfo1 Identity :||| Type) :<: dom, Optimize dom dom) =>
-    Optimize ((Decor SourceInfo1 Identity) :||| Type) dom
+instance ((Decor SourceInfo1 Identity :|| Type) :<: dom, Optimize dom dom) =>
+    Optimize ((Decor SourceInfo1 Identity) :|| Type) dom
   where
-    optimizeFeat (C'' (Decor (SourceInfo1 src) Id)) (a :* Nil) =
+    optimizeFeat (C' (Decor (SourceInfo1 src) Id)) (a :* Nil) =
         localSource src $ optimizeM a
 
-    constructFeatOpt (C'' (Decor (SourceInfo1 _) Id)) (a :* Nil) = return a
+    constructFeatOpt (C' (Decor (SourceInfo1 _) Id)) (a :* Nil) = return a
 
-    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
 

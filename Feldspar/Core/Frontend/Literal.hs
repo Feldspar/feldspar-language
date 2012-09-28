@@ -39,7 +39,7 @@ import Feldspar.Core.Constructs.Literal
 import Feldspar.Core.Constructs
 
 value :: Syntax a => Internal a -> a
-value = sugarSymC . c'' . Literal
+value = sugarSymC . c' . Literal
 
 false :: Data Bool
 false = value False
@@ -50,7 +50,7 @@ true = value True
 instance Syntactic () FeldDomainAll
   where
     type Internal () = ()
-    desugar = appSymC . c'' . Literal
+    desugar = appSymC . c' . Literal
     sugar _ = ()
 
 instance Syntax ()

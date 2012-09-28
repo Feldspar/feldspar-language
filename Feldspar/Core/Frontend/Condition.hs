@@ -34,7 +34,7 @@ import Feldspar.Core.Constructs.Condition
 import Feldspar.Core.Constructs
 
 condition :: (Syntax a) => Data Bool -> a -> a -> a
-condition c t f = sugarSymC (c'' Condition) c t f
+condition c t f = sugarSymF Condition c t f
 
 (?) :: (Syntax a) => Data Bool -> (a, a) -> a
 c ? (t, e) = condition c t e

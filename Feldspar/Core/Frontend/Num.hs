@@ -50,15 +50,15 @@ class (Type a, Num a, Num (Size a)) => Numeric a
     fromIntegerNum :: Integer -> Data a
     fromIntegerNum =  value . fromInteger
     absNum         :: Data a -> Data a
-    absNum         =  sugarSymC $ c'' Abs
+    absNum         =  sugarSymF Abs
     signumNum      :: Data a -> Data a
-    signumNum      =  sugarSymC $ c'' Sign
+    signumNum      =  sugarSymF Sign
     addNum         :: Data a -> Data a -> Data a
-    addNum         =  sugarSymC $ c'' Add
+    addNum         =  sugarSymF Add
     subNum         :: Data a -> Data a -> Data a
-    subNum         =  sugarSymC $ c'' Sub
+    subNum         =  sugarSymF Sub
     mulNum         :: Data a -> Data a -> Data a
-    mulNum         =  sugarSymC $ c'' Mul
+    mulNum         =  sugarSymF Mul
 
 instance Numeric Word8
 instance Numeric Word16

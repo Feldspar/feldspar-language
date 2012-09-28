@@ -51,13 +51,13 @@ import Feldspar.Core.Interpretation
 
 instance Sharable Tuple
 
-instance SizeProp (Tuple :||| Type)
+instance SizeProp (Tuple :|| Type)
   where
-    sizeProp (C'' Tup2) (a :* b :* Nil)
+    sizeProp (C' Tup2) (a :* b :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         = (infoSize ia, infoSize ib)
-    sizeProp (C'' Tup3) (a :* b :* c :* Nil)
+    sizeProp (C' Tup3) (a :* b :* c :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         , WrapFull ic <- c
@@ -65,7 +65,7 @@ instance SizeProp (Tuple :||| Type)
           , infoSize ib
           , infoSize ic
           )
-    sizeProp (C'' Tup4) (a :* b :* c :* d :* Nil)
+    sizeProp (C' Tup4) (a :* b :* c :* d :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         , WrapFull ic <- c
@@ -75,7 +75,7 @@ instance SizeProp (Tuple :||| Type)
           , infoSize ic
           , infoSize id
           )
-    sizeProp (C'' Tup5) (a :* b :* c :* d :* e :* Nil)
+    sizeProp (C' Tup5) (a :* b :* c :* d :* e :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         , WrapFull ic <- c
@@ -87,7 +87,7 @@ instance SizeProp (Tuple :||| Type)
           , infoSize id
           , infoSize ie
           )
-    sizeProp (C'' Tup6) (a :* b :* c :* d :* e :* g :* Nil)
+    sizeProp (C' Tup6) (a :* b :* c :* d :* e :* g :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         , WrapFull ic <- c
@@ -101,7 +101,7 @@ instance SizeProp (Tuple :||| Type)
           , infoSize ie
           , infoSize ig
           )
-    sizeProp (C'' Tup7) (a :* b :* c :* d :* e :* g :* h :* Nil)
+    sizeProp (C' Tup7) (a :* b :* c :* d :* e :* g :* h :* Nil)
         | WrapFull ia <- a
         , WrapFull ib <- b
         , WrapFull ic <- c
@@ -163,21 +163,21 @@ sel6Size Tup7Type{} = sel6
 sel7Size :: (Sel7' a ~ b) => TypeRep a -> (Size a -> Size b)
 sel7Size Tup7Type{} = sel7
 
-instance SizeProp (Select :||| Type)
+instance SizeProp (Select :|| Type)
   where
-    sizeProp (C'' Sel1) (WrapFull ia :* Nil) =
+    sizeProp (C' Sel1) (WrapFull ia :* Nil) =
         sel1Size (infoType ia) (infoSize ia)
-    sizeProp (C'' Sel2) (WrapFull ia :* Nil) =
+    sizeProp (C' Sel2) (WrapFull ia :* Nil) =
         sel2Size (infoType ia) (infoSize ia)
-    sizeProp (C'' Sel3) (WrapFull ia :* Nil) =
+    sizeProp (C' Sel3) (WrapFull ia :* Nil) =
         sel3Size (infoType ia) (infoSize ia)
-    sizeProp (C'' Sel4) (WrapFull ia :* Nil) =
+    sizeProp (C' Sel4) (WrapFull ia :* Nil) =
         sel4Size (infoType ia) (infoSize ia)
-    sizeProp (C'' Sel5) (WrapFull ia :* Nil) =
+    sizeProp (C' Sel5) (WrapFull ia :* Nil) =
         sel5Size (infoType ia) (infoSize ia)
-    sizeProp (C'' Sel6) (WrapFull ia :* Nil) =
+    sizeProp (C' Sel6) (WrapFull ia :* Nil) =
         sel6Size (infoType ia) (infoSize ia)
-    sizeProp (C'' Sel7) (WrapFull ia :* Nil) =
+    sizeProp (C' Sel7) (WrapFull ia :* Nil) =
         sel7Size (infoType ia) (infoSize ia)
 
 -- | Compute a witness that a symbol and an expression have the same result type
@@ -186,45 +186,45 @@ tupEq :: Type (DenResult a) =>
 tupEq _ b = typeEq typeRep (infoType $ getInfo b)
 
 instance
-    ( (Tuple  :||| Type) :<: dom
-    , (Select :||| Type) :<: dom
+    ( (Tuple  :|| Type) :<: dom
+    , (Select :|| Type) :<: dom
     , OptimizeSuper dom
     ) =>
-      Optimize (Tuple :||| Type) dom
+      Optimize (Tuple :|| Type) dom
   where
-    constructFeatOpt (C'' tup@Tup2) (s1 :* s2 :* Nil)
-        | (prjC -> Just (C'' Sel1)) :$ a <- s1
-        , (prjC -> Just (C'' Sel2)) :$ b <- s2
+    constructFeatOpt (C' tup@Tup2) (s1 :* s2 :* Nil)
+        | (prjC -> Just (C' Sel1)) :$ a <- s1
+        , (prjC -> Just (C' Sel2)) :$ b <- s2
         , alphaEq a b
         , Just TypeEq <- tupEq tup a
         = return a
 
-    constructFeatOpt (C'' tup@Tup3) (s1 :* s2 :* s3 :* Nil)
-        | (prjC -> Just (C'' Sel1)) :$ a <- s1
-        , (prjC -> Just (C'' Sel2)) :$ b <- s2
-        , (prjC -> Just (C'' Sel3)) :$ c <- s3
+    constructFeatOpt (C' tup@Tup3) (s1 :* s2 :* s3 :* Nil)
+        | (prjC -> Just (C' Sel1)) :$ a <- s1
+        , (prjC -> Just (C' Sel2)) :$ b <- s2
+        , (prjC -> Just (C' Sel3)) :$ c <- s3
         , alphaEq a b
         , alphaEq a c
         , Just TypeEq <- tupEq tup a
         = return a
 
-    constructFeatOpt (C'' tup@Tup4) (s1 :* s2 :* s3 :* s4 :* Nil)
-        | (prjC -> Just (C'' Sel1)) :$ a <- s1
-        , (prjC -> Just (C'' Sel2)) :$ b <- s2
-        , (prjC -> Just (C'' Sel3)) :$ c <- s3
-        , (prjC -> Just (C'' Sel4)) :$ d <- s4
+    constructFeatOpt (C' tup@Tup4) (s1 :* s2 :* s3 :* s4 :* Nil)
+        | (prjC -> Just (C' Sel1)) :$ a <- s1
+        , (prjC -> Just (C' Sel2)) :$ b <- s2
+        , (prjC -> Just (C' Sel3)) :$ c <- s3
+        , (prjC -> Just (C' Sel4)) :$ d <- s4
         , alphaEq a b
         , alphaEq a c
         , alphaEq a d
         , Just TypeEq <- tupEq tup a
         = return a
 
-    constructFeatOpt (C'' tup@Tup5) (s1 :* s2 :* s3 :* s4 :* s5 :* Nil)
-        | (prjC -> Just (C'' Sel1)) :$ a <- s1
-        , (prjC -> Just (C'' Sel2)) :$ b <- s2
-        , (prjC -> Just (C'' Sel3)) :$ c <- s3
-        , (prjC -> Just (C'' Sel4)) :$ d <- s4
-        , (prjC -> Just (C'' Sel5)) :$ e <- s5
+    constructFeatOpt (C' tup@Tup5) (s1 :* s2 :* s3 :* s4 :* s5 :* Nil)
+        | (prjC -> Just (C' Sel1)) :$ a <- s1
+        , (prjC -> Just (C' Sel2)) :$ b <- s2
+        , (prjC -> Just (C' Sel3)) :$ c <- s3
+        , (prjC -> Just (C' Sel4)) :$ d <- s4
+        , (prjC -> Just (C' Sel5)) :$ e <- s5
         , alphaEq a b
         , alphaEq a c
         , alphaEq a d
@@ -232,13 +232,13 @@ instance
         , Just TypeEq <- tupEq tup a
         = return a
 
-    constructFeatOpt (C'' tup@Tup6) (s1 :* s2 :* s3 :* s4 :* s5 :* s6 :* Nil)
-        | (prjC -> Just (C'' Sel1)) :$ a <- s1
-        , (prjC -> Just (C'' Sel2)) :$ b <- s2
-        , (prjC -> Just (C'' Sel3)) :$ c <- s3
-        , (prjC -> Just (C'' Sel4)) :$ d <- s4
-        , (prjC -> Just (C'' Sel5)) :$ e <- s5
-        , (prjC -> Just (C'' Sel6)) :$ f <- s6
+    constructFeatOpt (C' tup@Tup6) (s1 :* s2 :* s3 :* s4 :* s5 :* s6 :* Nil)
+        | (prjC -> Just (C' Sel1)) :$ a <- s1
+        , (prjC -> Just (C' Sel2)) :$ b <- s2
+        , (prjC -> Just (C' Sel3)) :$ c <- s3
+        , (prjC -> Just (C' Sel4)) :$ d <- s4
+        , (prjC -> Just (C' Sel5)) :$ e <- s5
+        , (prjC -> Just (C' Sel6)) :$ f <- s6
         , alphaEq a b
         , alphaEq a c
         , alphaEq a d
@@ -247,14 +247,14 @@ instance
         , Just TypeEq <- tupEq tup a
         = return a
 
-    constructFeatOpt (C'' tup@Tup7) (s1 :* s2 :* s3 :* s4 :* s5 :* s6 :* s7 :* Nil)
-        | (prjC -> Just (C'' Sel1)) :$ a <- s1
-        , (prjC -> Just (C'' Sel2)) :$ b <- s2
-        , (prjC -> Just (C'' Sel3)) :$ c <- s3
-        , (prjC -> Just (C'' Sel4)) :$ d <- s4
-        , (prjC -> Just (C'' Sel5)) :$ e <- s5
-        , (prjC -> Just (C'' Sel6)) :$ f <- s6
-        , (prjC -> Just (C'' Sel7)) :$ g <- s7
+    constructFeatOpt (C' tup@Tup7) (s1 :* s2 :* s3 :* s4 :* s5 :* s6 :* s7 :* Nil)
+        | (prjC -> Just (C' Sel1)) :$ a <- s1
+        , (prjC -> Just (C' Sel2)) :$ b <- s2
+        , (prjC -> Just (C' Sel3)) :$ c <- s3
+        , (prjC -> Just (C' Sel4)) :$ d <- s4
+        , (prjC -> Just (C' Sel5)) :$ e <- s5
+        , (prjC -> Just (C' Sel6)) :$ f <- s6
+        , (prjC -> Just (C' Sel7)) :$ g <- s7
         , alphaEq a b
         , alphaEq a c
         , alphaEq a d
@@ -266,58 +266,58 @@ instance
 
     constructFeatOpt feat args = constructFeatUnOpt feat args
 
-    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
 
 instance
-    ( (Select :||| Type) :<: dom
-    , (Tuple  :||| Type) :<: dom
+    ( (Select :|| Type) :<: dom
+    , (Tuple  :|| Type) :<: dom
     , Optimize dom dom
     ) =>
-      Optimize (Select :||| Type) dom
+      Optimize (Select :|| Type) dom
   where
-    constructFeatOpt (C'' Sel1) (t :* Nil)
-        | ((prjC -> Just (C'' Tup2)) :$ a :$ _) <- t                          = return a
-        | ((prjC -> Just (C'' Tup3)) :$ a :$ _ :$ _) <- t                     = return a
-        | ((prjC -> Just (C'' Tup4)) :$ a :$ _ :$ _ :$ _) <- t                = return a
-        | ((prjC -> Just (C'' Tup5)) :$ a :$ _ :$ _ :$ _ :$ _) <- t           = return a
-        | ((prjC -> Just (C'' Tup6)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t      = return a
-        | ((prjC -> Just (C'' Tup7)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
+    constructFeatOpt (C' Sel1) (t :* Nil)
+        | ((prjC -> Just (C' Tup2)) :$ a :$ _) <- t                          = return a
+        | ((prjC -> Just (C' Tup3)) :$ a :$ _ :$ _) <- t                     = return a
+        | ((prjC -> Just (C' Tup4)) :$ a :$ _ :$ _ :$ _) <- t                = return a
+        | ((prjC -> Just (C' Tup5)) :$ a :$ _ :$ _ :$ _ :$ _) <- t           = return a
+        | ((prjC -> Just (C' Tup6)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t      = return a
+        | ((prjC -> Just (C' Tup7)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
 
-    constructFeatOpt (C'' Sel2) (t :* Nil)
-        | ((prjC -> Just (C'' Tup2)) :$ _ :$ a) <- t                          = return a
-        | ((prjC -> Just (C'' Tup3)) :$ _ :$ a :$ _) <- t                     = return a
-        | ((prjC -> Just (C'' Tup4)) :$ _ :$ a :$ _ :$ _) <- t                = return a
-        | ((prjC -> Just (C'' Tup5)) :$ _ :$ a :$ _ :$ _ :$ _) <- t           = return a
-        | ((prjC -> Just (C'' Tup6)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t      = return a
-        | ((prjC -> Just (C'' Tup7)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
+    constructFeatOpt (C' Sel2) (t :* Nil)
+        | ((prjC -> Just (C' Tup2)) :$ _ :$ a) <- t                          = return a
+        | ((prjC -> Just (C' Tup3)) :$ _ :$ a :$ _) <- t                     = return a
+        | ((prjC -> Just (C' Tup4)) :$ _ :$ a :$ _ :$ _) <- t                = return a
+        | ((prjC -> Just (C' Tup5)) :$ _ :$ a :$ _ :$ _ :$ _) <- t           = return a
+        | ((prjC -> Just (C' Tup6)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t      = return a
+        | ((prjC -> Just (C' Tup7)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
 
-    constructFeatOpt (C'' Sel3) (t :* Nil)
-        | ((prjC -> Just (C'' Tup3)) :$ _ :$ _ :$ a) <- t                     = return a
-        | ((prjC -> Just (C'' Tup4)) :$ _ :$ _ :$ a :$ _) <- t                = return a
-        | ((prjC -> Just (C'' Tup5)) :$ _ :$ _ :$ a :$ _ :$ _) <- t           = return a
-        | ((prjC -> Just (C'' Tup6)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t      = return a
-        | ((prjC -> Just (C'' Tup7)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t = return a
+    constructFeatOpt (C' Sel3) (t :* Nil)
+        | ((prjC -> Just (C' Tup3)) :$ _ :$ _ :$ a) <- t                     = return a
+        | ((prjC -> Just (C' Tup4)) :$ _ :$ _ :$ a :$ _) <- t                = return a
+        | ((prjC -> Just (C' Tup5)) :$ _ :$ _ :$ a :$ _ :$ _) <- t           = return a
+        | ((prjC -> Just (C' Tup6)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t      = return a
+        | ((prjC -> Just (C' Tup7)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t = return a
 
-    constructFeatOpt (C'' Sel4) (t :* Nil)
-        | ((prjC -> Just (C'' Tup4)) :$ _ :$ _ :$ _ :$ a) <- t                = return a
-        | ((prjC -> Just (C'' Tup5)) :$ _ :$ _ :$ _ :$ a :$ _) <- t           = return a
-        | ((prjC -> Just (C'' Tup6)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t      = return a
-        | ((prjC -> Just (C'' Tup7)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t = return a
+    constructFeatOpt (C' Sel4) (t :* Nil)
+        | ((prjC -> Just (C' Tup4)) :$ _ :$ _ :$ _ :$ a) <- t                = return a
+        | ((prjC -> Just (C' Tup5)) :$ _ :$ _ :$ _ :$ a :$ _) <- t           = return a
+        | ((prjC -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t      = return a
+        | ((prjC -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t = return a
 
-    constructFeatOpt (C'' Sel5) (t :* Nil)
-        | ((prjC -> Just (C'' Tup5)) :$ _ :$ _ :$ _ :$ _ :$ a) <- t           = return a
-        | ((prjC -> Just (C'' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t      = return a
-        | ((prjC -> Just (C'' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t = return a
+    constructFeatOpt (C' Sel5) (t :* Nil)
+        | ((prjC -> Just (C' Tup5)) :$ _ :$ _ :$ _ :$ _ :$ a) <- t           = return a
+        | ((prjC -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t      = return a
+        | ((prjC -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t = return a
 
-    constructFeatOpt (C'' Sel6) (t :* Nil)
-        | ((prjC -> Just (C'' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t      = return a
-        | ((prjC -> Just (C'' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t = return a
+    constructFeatOpt (C' Sel6) (t :* Nil)
+        | ((prjC -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t      = return a
+        | ((prjC -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t = return a
 
-    constructFeatOpt (C'' Sel7) (t :* Nil)
-        | ((prjC -> Just (C'' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t = return a
+    constructFeatOpt (C' Sel7) (t :* Nil)
+        | ((prjC -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t = return a
 
     constructFeatOpt feat args = constructFeatUnOpt feat args
 
-    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 

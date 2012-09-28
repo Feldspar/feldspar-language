@@ -50,32 +50,32 @@ import Feldspar.Core.Constructs.Logic
 
 instance Sharable Condition
 
-instance SizeProp (Condition :||| Type)
+instance SizeProp (Condition :|| Type)
   where
-    sizeProp (C'' Condition) (_ :* WrapFull t :* WrapFull f :* Nil)
+    sizeProp (C' Condition) (_ :* WrapFull t :* WrapFull f :* Nil)
         = infoSize t \/ infoSize f
 
-instance ( (Condition :||| Type) :<: dom
-         , (Logic     :||| Type) :<: dom
+instance ( (Condition :|| Type) :<: dom
+         , (Logic     :|| Type) :<: dom
          , OptimizeSuper dom
          )
-      => Optimize (Condition :||| Type) dom
+      => Optimize (Condition :|| Type) dom
   where
-    constructFeatOpt (C'' Condition) (c :* t :* f :* Nil)
+    constructFeatOpt (C' Condition) (c :* t :* f :* Nil)
         | Just c' <- viewLiteral c = return $ if c' then t else f
 
-    constructFeatOpt (C'' Condition) (_ :* t :* f :* Nil)
+    constructFeatOpt (C' Condition) (_ :* t :* f :* Nil)
         | alphaEq t f = return t
 
 {-
-    constructFeatOpt (C'' cond@Condition) ((op :$ c) :* t :* f :* Nil)
+    constructFeatOpt (C' cond@Condition) ((op :$ c) :* t :* f :* Nil)
         | Just (_,Not) <- prjDecor op
         = constructFeat cond (c :* f :* t :* Nil)
 -}
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
-    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
       -- TODO Propagate size information from the condition to the branches. For
       --      example

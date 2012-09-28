@@ -73,18 +73,18 @@ instance AlphaEq dom dom dom env => AlphaEq Logic Logic dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-instance SizeProp (Logic :||| Type)
+instance SizeProp (Logic :|| Type)
   where
-    sizeProp a@(C'' _) args = sizePropDefault a args
+    sizeProp a@(C' _) args = sizePropDefault a args
 
-instance ( (Logic :||| Type) :<: dom
-         , (EQ    :||| Type) :<: dom
-         , (ORD   :||| Type) :<: dom
+instance ( (Logic :|| Type) :<: dom
+         , (EQ    :|| Type) :<: dom
+         , (ORD   :|| Type) :<: dom
          , OptimizeSuper dom
          )
-      => Optimize (Logic :||| Type) dom
+      => Optimize (Logic :|| Type) dom
   where
-    constructFeatOpt (C'' And) (a :* b :* Nil)
+    constructFeatOpt (C' And) (a :* b :* Nil)
         | Just True  <- viewLiteral a = return b
         | Just False <- viewLiteral a = return a
         | Just True  <- viewLiteral b = return a
@@ -113,5 +113,5 @@ instance ( (Logic :||| Type) :<: dom
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
-    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 

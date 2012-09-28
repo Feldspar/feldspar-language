@@ -77,49 +77,49 @@ instance AlphaEq dom dom dom env => AlphaEq NUM NUM dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-instance SizeProp (NUM :||| Type)
+instance SizeProp (NUM :|| Type)
   where
-    sizeProp (C'' Abs)  (WrapFull a :* Nil)               = abs (infoSize a)
-    sizeProp (C'' Sign) (WrapFull a :* Nil)               = signum (infoSize a)
-    sizeProp (C'' Add)  (WrapFull a :* WrapFull b :* Nil) = infoSize a + infoSize b
-    sizeProp (C'' Sub)  (WrapFull a :* WrapFull b :* Nil) = infoSize a - infoSize b
-    sizeProp (C'' Mul)  (WrapFull a :* WrapFull b :* Nil) = infoSize a * infoSize b
+    sizeProp (C' Abs)  (WrapFull a :* Nil)               = abs (infoSize a)
+    sizeProp (C' Sign) (WrapFull a :* Nil)               = signum (infoSize a)
+    sizeProp (C' Add)  (WrapFull a :* WrapFull b :* Nil) = infoSize a + infoSize b
+    sizeProp (C' Sub)  (WrapFull a :* WrapFull b :* Nil) = infoSize a - infoSize b
+    sizeProp (C' Mul)  (WrapFull a :* WrapFull b :* Nil) = infoSize a * infoSize b
 
 
-instance ( (NUM     :||| Type) :<: dom
-         , (Literal :||| Type) :<: dom
+instance ( (NUM     :|| Type) :<: dom
+         , (Literal :|| Type) :<: dom
          , OptimizeSuper dom
          )
-      => Optimize (NUM :||| Type) dom
+      => Optimize (NUM :|| Type) dom
   where
-    constructFeatOpt (C'' Abs) (a :* Nil)
+    constructFeatOpt (C' Abs) (a :* Nil)
         | RangeSet r <- infoRange (getInfo a)
         , isNatural r
         = return a
 
-    constructFeatOpt (C'' Sign) (a :* Nil)
+    constructFeatOpt (C' Sign) (a :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , 0 `rangeLess` ra
         = return (literalDecor 1)
 
-    constructFeatOpt (C'' Sign) (a :* Nil)
+    constructFeatOpt (C' Sign) (a :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , ra `rangeLess` 0
         = return (literalDecor (-1))
 
 {-
-    constructFeatOpt (C'' Add) (a :* b :* Nil)
+    constructFeatOpt (C' Add) (a :* b :* Nil)
         | Just 0 <- viewLiteral b = return a
         | Just 0 <- viewLiteral a = return b
         | alphaEq a b = constructFeatOpt Mul (a :* literalDecor 2 :* Nil)
 
-    constructFeatOpt (C'' Add) (a :* (op :$ b :$ c) :* Nil)
+    constructFeatOpt (C' Add) (a :* (op :$ b :$ c) :* Nil)
         | Just a'      <- viewLiteral a
         , Just (_,Add) <- prjDecor op
         , Just c'      <- viewLiteral c
         = constructFeat Add (b :* literalDecor (a'+c') :* Nil)
 
-    constructFeatOpt (C'' Add) (a :* (op :$ b :$ c) :* Nil)
+    constructFeatOpt (C' Add) (a :* (op :$ b :$ c) :* Nil)
         | Just a'      <- viewLiteral a
         , Just (_,Sub) <- prjDecor op
         , Just c'      <- viewLiteral c
@@ -201,4 +201,4 @@ instance ( (NUM     :||| Type) :<: dom
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
-    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x

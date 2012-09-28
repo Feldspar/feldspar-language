@@ -49,13 +49,13 @@ import Feldspar.Core.Interpretation
 instance Sharable Literal
   -- Will not be shared anyway, because it's a terminal
 
-instance SizeProp (Literal :||| Type)
+instance SizeProp (Literal :|| Type)
   where
-    sizeProp lit@(C'' (Literal a)) Nil
+    sizeProp lit@(C' (Literal a)) Nil
         = sizeOf a
 
-instance ((Literal :||| Type) :<: dom, OptimizeSuper dom) =>
-    Optimize (Literal :||| Type) dom
+instance ((Literal :|| Type) :<: dom, OptimizeSuper dom) =>
+    Optimize (Literal :|| Type) dom
   where
-    constructFeatUnOpt l@(C'' (Literal _)) = constructFeatUnOptDefault l
+    constructFeatUnOpt l@(C' (Literal _)) = constructFeatUnOptDefault l
 

@@ -76,7 +76,6 @@ module Feldspar.Core.Interpretation
     , optimizeFeatDefault
     , injDecorC
     , prjC
-    , (:|||) (..)
     ) where
 
 
@@ -233,26 +232,26 @@ localSource :: SourceInfo -> Opt a -> Opt a
 localSource src = local $ \env -> env {sourceEnv = src}
 
 -- | It the expression is a literal, its value is returned, otherwise 'Nothing'
-viewLiteral :: forall info dom a. ((Literal :||| Type) :<: dom)
+viewLiteral :: forall info dom a. ((Literal :|| Type) :<: dom)
             => ASTF (Decor info (dom :|| Typeable)) a -> Maybe a
-viewLiteral (prjC -> Just (C'' (Literal a))) = Just a
+viewLiteral (prjC -> Just (C' (Literal a))) = Just a
 viewLiteral _ = Nothing
 
-prjC :: Project (sub :||| Type) sup => sup sig -> Maybe ((sub :||| Type) sig)
+prjC :: Project (sub :|| Type) sup => sup sig -> Maybe ((sub :|| Type) sig)
 prjC = prj
 
 -- | Construct a 'Literal' decorated with 'Info'
-literalDecorSrc :: (Type a, (Literal :||| Type) :<: dom) =>
+literalDecorSrc :: (Type a, (Literal :|| Type) :<: dom) =>
     SourceInfo -> a -> ASTF (Decor Info (dom :|| Typeable)) a
 literalDecorSrc src a = Sym $ Decor
     ((mkInfo (sizeOf a)) {infoSource = src})
-    (C' $ inj $ c'' $ Literal a)
+    (C' $ inj $ c' $ Literal a)
 
-c'' :: (Type (DenResult sig)) => feature sig -> (feature :||| Type) sig
-c'' = C''
+c' :: (Type (DenResult sig)) => feature sig -> (feature :|| Type) sig
+c' = C'
 
 -- | Construct a 'Literal' decorated with 'Info'
-literalDecor :: (Type a, (Literal :||| Type) :<: dom) =>
+literalDecor :: (Type a, (Literal :|| Type) :<: dom) =>
     a -> ASTF (Decor Info (dom :|| Typeable)) a
 literalDecor = literalDecorSrc ""
   -- Note: This function could get the 'SourceInfo' from the environment and
@@ -261,7 +260,7 @@ literalDecor = literalDecorSrc ""
 
 -- | Replaces an expression with a literal if the type permits, otherwise
 -- returns the expression unchanged.
-constFold :: (Typed dom, (Literal :||| Type) :<: dom) =>
+constFold :: (Typed dom, (Literal :|| Type) :<: dom) =>
     SourceInfo -> ASTF (Decor Info (dom :|| Typeable)) a -> a -> ASTF (Decor Info (dom :|| Typeable)) a
 constFold src expr a
     | Just Dict <- typeDict expr
@@ -345,7 +344,7 @@ class
     ( AlphaEq dom dom (dom :|| Typeable) [(VarId, VarId)]
     , AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId, VarId)]
     , EvalBind dom
-    , (Literal :||| Type) :<: dom
+    , (Literal :|| Type) :<: dom
     , Typed dom
     , Optimize dom dom
     ) =>
@@ -355,7 +354,7 @@ instance
     ( AlphaEq dom dom (dom :|| Typeable) [(VarId, VarId)]
     , AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId, VarId)]
     , EvalBind dom
-    , (Literal :||| Type) :<: dom
+    , (Literal :|| Type) :<: dom
     , Typed dom
     , Optimize dom dom
     ) =>

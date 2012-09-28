@@ -84,25 +84,25 @@ import Feldspar.Core.Constructs.Tuple
 --------------------------------------------------------------------------------
 
 type FeldSymbols 
-    =   (Decor SourceInfo1 Identity :||| Type)
-    :+: (Condition :||| Type)
+    =   (Decor SourceInfo1 Identity :|| Type)
+    :+: (Condition :|| Type)
 --    :+: ConditionM Mut
 --    :+: FFI
 --    :+: Let
-    :+: (Literal :||| Type)
+    :+: (Literal :|| Type)
 --    :+: (Select  :||| Type)
 --    :+: (Tuple   :||| Type)
 --    :+: Array
 --    :+: BITS
 --    :+: COMPLEX
 --    :+: Conversion
-    :+: (EQ :||| Type)
-    :+: (Error :||| Type)
+    :+: (EQ :|| Type)
+    :+: (Error :|| Type)
 --    :+: FLOATING
 --    :+: FRACTIONAL
 --    :+: FUTURE
 --    :+: INTEGRAL
-    :+: (Logic :||| Type)
+    :+: (Logic :|| Type)
 --    :+: Loop
 --    :+: LoopM Mut
 --    :+: MONAD Mut
@@ -111,13 +111,28 @@ type FeldSymbols
 --    :+: MutableReference
 --    :+: MutableToPure
 --    :+: MONAD Par
-    :+: (NUM :||| Type)
+    :+: (NUM :|| Type)
 --    :+: NoInline
-    :+: (ORD :||| Type)
+    :+: (ORD :|| Type)
 --    :+: ParFeature
 --    :+: PropSize
 --    :+: Save
 --    :+: Trace
+    :+: Empty
+
+data Empty a
+
+instance Render Empty
+instance AlphaEq Empty Empty dom env
+  where
+    alphaEqSym _ _ _ _ = return False
+instance ToTree Empty
+instance EvalBind Empty
+  where
+    evalBindSym _ _ = error "can't evaluate Empty"
+instance Optimize Empty dom
+  where
+    constructFeatUnOpt _ _ = error "can't optimize Empty"
 
 type FODomain dom constr = (Lambda :+: Variable :+: dom) :|| constr
 
@@ -224,14 +239,15 @@ instance Type a => Show (Data a)
   where
     show (Data a) = render $ reify a
 
-c'' :: (Type (DenResult sig)) => feature sig -> (feature :||| Type) sig
-c'' = C''
+c' :: (Type (DenResult sig)) => feature sig -> (feature :|| Type) sig
+c' = C'
 
 sugarSymF :: ( ApplySym sig b dom
              , SyntacticN c b
-             , InjectC (feature :||| Type) (AST dom) (DenResult sig)
+             -- , InjectC (feature :|| Type) (AST dom) (DenResult sig)
+             , InjectC (feature :|| Type) dom (DenResult sig)
              , Type (DenResult sig)
              )
           => feature sig -> c
-sugarSymF sym = sugarSymC (c'' sym)
+sugarSymF sym = sugarSymC (c' sym)
 
