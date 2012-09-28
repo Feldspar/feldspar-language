@@ -91,16 +91,19 @@ instance Render   FLOATING where renderArgs = renderArgsDefault
 instance ToTree   FLOATING
 instance Eval     FLOATING where evaluate = evaluateDefault
 instance EvalBind FLOATING where evalBindSym = evalBindSymDefault
---instance SizeProp FLOATING where sizeProp = sizePropDefault
 instance Sharable FLOATING
+
+instance SizeProp (FLOATING :|| Type)
+  where
+    sizeProp (C' s) = sizePropDefault s
 
 instance AlphaEq dom dom dom env => AlphaEq FLOATING FLOATING dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance (FLOATING :<: dom, Optimize dom dom) => Optimize FLOATING dom
+instance ( (FLOATING :|| Type) :<: dom
+         , OptimizeSuper dom)
+      => Optimize (FLOATING :|| Type) dom
   where
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt a@(C' _) = constructFeatUnOptDefault a
 

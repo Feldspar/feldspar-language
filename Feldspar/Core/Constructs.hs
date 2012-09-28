@@ -98,7 +98,7 @@ type FeldSymbols
     :+: (Conversion :|| Type)
     :+: (EQ :|| Type)
     :+: (Error :|| Type)
---    :+: FLOATING
+    :+: (FLOATING :|| Type)
 --    :+: FRACTIONAL
 --    :+: FUTURE
 --    :+: INTEGRAL
