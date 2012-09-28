@@ -62,13 +62,13 @@ instance AlphaEq dom dom dom env => AlphaEq Save Save dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance SizeProp Save
+instance SizeProp (Save :|| Type)
   where
-    sizeProp Save (WrapFull a :* Nil) = infoSize a
+    sizeProp (C' Save) (WrapFull a :* Nil) = infoSize a
 
-instance (Save :<: dom, Optimize dom dom) => Optimize Save dom
+instance ( (Save :|| Type) :<: dom
+         , OptimizeSuper dom)
+      => Optimize (Save :|| Type) dom
   where
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
