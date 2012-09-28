@@ -120,20 +120,6 @@ type FeldSymbols
     :+: (Trace :|| Type)
     :+: Empty
 
-data Empty a
-
-instance Render Empty
-instance AlphaEq Empty Empty dom env
-  where
-    alphaEqSym _ _ _ _ = return False
-instance ToTree Empty
-instance EvalBind Empty
-  where
-    evalBindSym _ _ = error "can't evaluate Empty"
-instance Optimize Empty dom
-  where
-    constructFeatUnOpt _ _ = error "can't optimize Empty"
-
 type FODomain dom constr = (Lambda :+: Variable :+: dom) :|| constr
 
 type FeldDomain = FODomain FeldSymbols Typeable

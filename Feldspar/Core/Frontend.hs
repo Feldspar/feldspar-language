@@ -217,6 +217,10 @@ reifyFeld n = flip evalState 0 .
   -- first, these sub-expressions would be let bound, preventing subsequent
   -- optimizations.
 
+instance Optimize Empty dom
+  where
+    constructFeatUnOpt _ _ = error "can't optimzie Empty"
+
 showExpr :: SyntacticFeld a => a -> String
 showExpr = render . reifyFeld N32
 
