@@ -117,7 +117,7 @@ type FeldSymbols
 --    :+: ParFeature
 --    :+: PropSize
     :+: (Save :|| Type)
---    :+: Trace
+    :+: (Trace :|| Type)
     :+: Empty
 
 data Empty a

@@ -75,13 +75,13 @@ instance AlphaEq dom dom dom env => AlphaEq Trace Trace dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance SizeProp Trace
+instance SizeProp (Trace :|| Type)
   where
-    sizeProp Trace (WrapFull _ :* WrapFull a :* Nil) = infoSize a
+    sizeProp (C' Trace) (WrapFull _ :* WrapFull a :* Nil) = infoSize a
 
-instance (Trace :<: dom, Optimize dom dom) => Optimize Trace dom
+instance ( (Trace :|| Type) :<: dom
+         , OptimizeSuper dom)
+      => Optimize (Trace :|| Type) dom
   where
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
