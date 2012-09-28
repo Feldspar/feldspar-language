@@ -60,26 +60,24 @@ instance Eval     PropSize where evaluate = evaluateDefault
 instance EvalBind PropSize where evalBindSym = evalBindSymDefault
 instance Sharable PropSize
 
-{-
-instance SizeProp PropSize
+instance SizeProp (PropSize :|| Type)
   where
-    sizeProp (PropSize prop) (WrapFull a :* WrapFull b :* Nil) =
+    sizeProp (C' (PropSize prop)) (WrapFull a :* WrapFull b :* Nil) =
         prop (infoSize a) /\ infoSize b
--}
 
 instance AlphaEq dom dom dom env => AlphaEq PropSize PropSize dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance (PropSize :<: dom, Optimize dom dom) => Optimize PropSize dom
+instance ( (PropSize :|| Type) :<: dom
+         , OptimizeSuper dom)
+      => Optimize (PropSize :|| Type) dom
   where
-    constructFeatOpt (PropSize prop) (a :* b :* Nil) =
+    constructFeatOpt (C' (PropSize prop)) (a :* b :* Nil) =
         return $ updateDecor (f (prop (infoSize $ getInfo a))) b
       where
         f :: Lattice (Size b) => Size b -> Info b -> Info b
         f newSize info = info {infoSize = infoSize info /\ newSize}
 
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 

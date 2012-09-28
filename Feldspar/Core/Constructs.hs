@@ -115,7 +115,7 @@ type FeldSymbols
     :+: (NoInline :|| Type)
     :+: (ORD :|| Type)
 --    :+: ParFeature
---    :+: PropSize
+    :+: (PropSize :|| Type)
     :+: (Save :|| Type)
     :+: (Trace :|| Type)
     :+: Empty
