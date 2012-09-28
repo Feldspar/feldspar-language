@@ -99,7 +99,7 @@ type FeldSymbols
     :+: (EQ :|| Type)
     :+: (Error :|| Type)
     :+: (FLOATING :|| Type)
---    :+: FRACTIONAL
+    :+: (FRACTIONAL :|| Type)
 --    :+: FUTURE
 --    :+: INTEGRAL
     :+: (Logic :|| Type)

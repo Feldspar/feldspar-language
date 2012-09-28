@@ -58,32 +58,38 @@ instance Render   FRACTIONAL where renderArgs = renderArgsDefault
 instance ToTree   FRACTIONAL
 instance Eval     FRACTIONAL where evaluate = evaluateDefault
 instance EvalBind FRACTIONAL where evalBindSym = evalBindSymDefault
---instance SizeProp FRACTIONAL where sizeProp = sizePropDefault
 instance Sharable FRACTIONAL
+
+instance SizeProp (FRACTIONAL :|| Type)
+  where
+    sizeProp (C' s) = sizePropDefault s
 
 instance AlphaEq dom dom dom env => AlphaEq FRACTIONAL FRACTIONAL dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance (FRACTIONAL :<: dom, NUM :<: dom, OptimizeSuper dom) => Optimize FRACTIONAL dom
+instance ( (FRACTIONAL :|| Type) :<: dom
+         , (NUM :|| Type) :<: dom
+         , OptimizeSuper dom)
+      => Optimize (FRACTIONAL :|| Type) dom
   where
-    constructFeatOpt DivFrac (a :* b :* Nil)
+    constructFeatOpt (C' DivFrac) (a :* b :* Nil)
         | Just 1 <- viewLiteral b = return a
         | alphaEq a b = return $ literalDecor 1
 
-    constructFeatOpt DivFrac ((op :$ a :$ b) :* c :* Nil)
+{-
+    constructFeatOpt (C' DivFrac) ((op :$ a :$ b) :* c :* Nil)
         | Just (_,Mul) <- prjDecor op
         , alphaEq b c
         = return a
 
-    constructFeatOpt DivFrac ((op :$ a :$ b) :* c :* Nil)
+    constructFeatOpt (C' DivFrac) ((op :$ a :$ b) :* c :* Nil)
         | Just (_,Mul) <- prjDecor op
         , alphaEq a c
         = return b
+-}
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
