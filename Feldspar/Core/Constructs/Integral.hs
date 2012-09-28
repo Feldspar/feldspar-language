@@ -80,32 +80,32 @@ instance AlphaEq dom dom dom env => AlphaEq INTEGRAL INTEGRAL dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance SizeProp INTEGRAL
+instance SizeProp (INTEGRAL :|| Type)
   where
-    sizeProp Quot (WrapFull a :* WrapFull b :* Nil) = rangeQuot (infoSize a) (infoSize b)
-    sizeProp Rem  (WrapFull a :* WrapFull b :* Nil) = rangeRem (infoSize a) (infoSize b)
-    sizeProp Div  (WrapFull a :* WrapFull b :* Nil) = rangeDiv (infoSize a) (infoSize b)
-    sizeProp Mod  (WrapFull a :* WrapFull b :* Nil) = rangeMod (infoSize a) (infoSize b)
-    sizeProp Exp  (WrapFull a :* WrapFull b :* Nil) = rangeExp (infoSize a) (infoSize b)
+    sizeProp (C' Quot) (WrapFull a :* WrapFull b :* Nil) = rangeQuot (infoSize a) (infoSize b)
+    sizeProp (C' Rem)  (WrapFull a :* WrapFull b :* Nil) = rangeRem (infoSize a) (infoSize b)
+    sizeProp (C' Div)  (WrapFull a :* WrapFull b :* Nil) = rangeDiv (infoSize a) (infoSize b)
+    sizeProp (C' Mod)  (WrapFull a :* WrapFull b :* Nil) = rangeMod (infoSize a) (infoSize b)
+    sizeProp (C' Exp)  (WrapFull a :* WrapFull b :* Nil) = rangeExp (infoSize a) (infoSize b)
 
 instance
-    ( INTEGRAL          :<: dom
-    , BITS              :<: dom
-    , NUM               :<: dom
-    , EQ                :<: dom
-    , ORD               :<: dom
-    , Condition TypeCtx :<: dom
-    , Logic             :<: dom
+    ( (INTEGRAL  :||Type) :<: dom
+    , (BITS      :||Type) :<: dom
+    , (NUM       :||Type) :<: dom
+    , (EQ        :||Type) :<: dom
+    , (ORD       :||Type) :<: dom
+    , (Condition :||Type) :<: dom
+    , (Logic     :||Type) :<: dom
     , OptimizeSuper dom
-    , Optimize (Condition TypeCtx) dom
+    , Optimize (Condition :|| Type) dom
     ) =>
-      Optimize INTEGRAL dom
+      Optimize (INTEGRAL :|| Type) dom
   where
-    constructFeatOpt Quot (a :* b :* Nil)
+    constructFeatOpt (C' Quot) (a :* b :* Nil)
         | Just 1 <- viewLiteral b = return a
 
-    constructFeatOpt Quot (a :* b :* Nil)
+{-
+    constructFeatOpt (C' Quot) (a :* b :* Nil)
         | Just b' <- viewLiteral b
         , b' > 0
         , isPowerOfTwo b'
@@ -118,15 +118,16 @@ instance
                 a'      <- constructFeat Add (a :* literalDecor (2^l-1) :* Nil)
                 negCase <- constructFeat ShiftR (a' :* lLit :* Nil)
                 posCase <- constructFeat ShiftR (a :* lLit :* Nil)
-                constructFeat (Condition `withContext` typeCtx)
+                constructFeat Condition
                     (aIsNeg :* negCase :* posCase :* Nil)
       -- TODO This rule should also fire when `b` is `2^l` but not a literal.
       -- TODO Make a case for `isNegative $ infoSize $ getInfo a`. Note that
       --      `isNegative /= (not . isNatural)`
       -- TODO Or maybe both `isNegative` and ``isPositive` are handled by the
       --      size-based optimization of `Condition`?
+-}
 
-    constructFeatOpt Rem (a :* b :* Nil)
+    constructFeatOpt (C' Rem) (a :* b :* Nil)
         | rangeLess sza szb
         , isNatural sza
         = return a
@@ -134,20 +135,24 @@ instance
         sza = infoSize $ getInfo a
         szb = infoSize $ getInfo b
 
-    constructFeatOpt Div (a :* b :* Nil)
+    constructFeatOpt (C' Div) (a :* b :* Nil)
         | Just 1 <- viewLiteral b = return a
 
-    constructFeatOpt Div (a :* b :* Nil)
+{-
+    constructFeatOpt (C' Div) (a :* b :* Nil)
         | Just b' <- viewLiteral b
         , b' > 0
         , isPowerOfTwo b'
         = constructFeat ShiftR (a :* literalDecor (log2 b') :* Nil)
+-}
 
-    constructFeatOpt Div (a :* b :* Nil)
+{-
+    constructFeatOpt (C' Div) (a :* b :* Nil)
         | sameSign (infoSize (getInfo a)) (infoSize (getInfo b))
         = constructFeat Quot (a :* b :* Nil)
+-}
 
-    constructFeatOpt Mod (a :* b :* Nil)
+    constructFeatOpt (C' Mod) (a :* b :* Nil)
         | rangeLess sza szb
         , isNatural sza
         = return a
@@ -155,31 +160,35 @@ instance
         sza = infoSize $ getInfo a
         szb = infoSize $ getInfo b
 
-    constructFeatOpt Mod (a :* b :* Nil)
+{-
+    constructFeatOpt (C' Mod) (a :* b :* Nil)
         | sameSign (infoSize (getInfo a)) (infoSize (getInfo b))
         = constructFeat Rem (a :* b :* Nil)
+-}
 
-    constructFeatOpt Exp (a :* b :* Nil)
+    constructFeatOpt (C' Exp) (a :* b :* Nil)
         | Just 1 <- viewLiteral a = return $ literalDecor 1
         | Just 0 <- viewLiteral a = return $ literalDecor 0
         | Just 1 <- viewLiteral b = return a
         | Just 0 <- viewLiteral b = return $ literalDecor 1
 
-    constructFeatOpt Exp (a :* b :* Nil)
+{-
+    constructFeatOpt (C' Exp) (a :* b :* Nil)
         | Just (-1) <- viewLiteral a = do
             bLSB    <- constructFeat BAnd (b :* literalDecor 1 :* Nil)
             bIsEven <- constructFeat Equal (bLSB :* literalDecor 0 :* Nil)  -- TODO Use testBit? (remove EQ :<: dom and import)
-            constructFeat (Condition `withContext` typeCtx)
+            constructFeat Condition
                 (bIsEven :* literalDecor 1 :* literalDecor (-1) :* Nil)
+-}
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
-    constructFeatUnOpt = constructFeatUnOptDefault
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
 -- Auxiliary functions
 
 -- shouldn't be used for negative numbers
-isPowerOfTwo :: Bits a => a -> Bool
+isPowerOfTwo :: (Num a, Bits a) => a -> Bool
 isPowerOfTwo x = x .&. (x - 1) == 0 && (x /= 0)
 
 log2 :: (BoundedInt a, Integral b) => a -> b
@@ -190,5 +199,4 @@ sameSign :: BoundedInt a => Range a -> Range a -> Bool
 sameSign ra rb
     =  isNatural  ra && isNatural  rb
     || isNegative ra && isNegative rb
--}
 

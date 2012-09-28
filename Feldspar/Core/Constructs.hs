@@ -101,7 +101,7 @@ type FeldSymbols
     :+: (FLOATING :|| Type)
     :+: (FRACTIONAL :|| Type)
 --    :+: FUTURE
---    :+: INTEGRAL
+    :+: (INTEGRAL :|| Type)
     :+: (Logic :|| Type)
 --    :+: Loop
 --    :+: LoopM Mut
