@@ -100,7 +100,7 @@ type FeldSymbols
     :+: (Error :|| Type)
     :+: (FLOATING :|| Type)
     :+: (FRACTIONAL :|| Type)
---    :+: FUTURE
+    :+: (FUTURE :|| Type)
     :+: (INTEGRAL :|| Type)
     :+: (Logic :|| Type)
 --    :+: Loop

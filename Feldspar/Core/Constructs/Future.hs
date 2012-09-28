@@ -63,28 +63,27 @@ instance AlphaEq dom dom dom env => AlphaEq FUTURE FUTURE dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance SizeProp FUTURE
+instance SizeProp (FUTURE :|| Type)
   where
-    sizeProp MkFuture (WrapFull a :* Nil) = infoSize a
-    sizeProp Await    (WrapFull a :* Nil) = infoSize a
+    sizeProp (C' MkFuture) (WrapFull a :* Nil) = infoSize a
+    sizeProp (C' Await)    (WrapFull a :* Nil) = infoSize a
 
-instance ( FUTURE :<: dom
-         , Optimize dom dom
+instance ( (FUTURE :|| Type) :<: dom
+         , OptimizeSuper dom
          )
-      => Optimize FUTURE dom
+      => Optimize (FUTURE :|| Type) dom
   where
-    constructFeatOpt Await ((op :$ a) :* Nil)
+{-
+    constructFeatOpt (C' Await) ((op :$ a) :* Nil)
       | Just (_,MkFuture) <- prjDecor op
       = return a
 
-    constructFeatOpt MkFuture ((op :$ a) :* Nil)
+    constructFeatOpt (C' MkFuture) ((op :$ a) :* Nil)
       | Just (_,Await) <- prjDecor op
       = return a
+-}
 
     constructFeatOpt feature args = constructFeatUnOpt feature args
 
-    constructFeatUnOpt MkFuture args = constructFeatUnOptDefault MkFuture args
-    constructFeatUnOpt Await    args = constructFeatUnOptDefault Await args
--}
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
