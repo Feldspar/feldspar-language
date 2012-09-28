@@ -45,9 +45,7 @@ import Feldspar.Core.Interpretation
 
 data FFI a
   where
-    ForeignImport :: ( Type (DenResult a)
---                     , Signature a
-                     )
+    ForeignImport :: (Type (DenResult a))
                   => String -> Denotation a -> FFI a
 
 instance Semantic FFI
@@ -65,16 +63,14 @@ instance AlphaEq dom dom dom env => AlphaEq FFI FFI dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance SizeProp FFI
+instance SizeProp (FFI :|| Type)
   where
-    sizeProp = sizePropDefault
+    sizeProp (C' s) = sizePropDefault s
 
-instance ( FFI :<: dom
-         , Optimize dom dom
+instance ( (FFI :|| Type) :<: dom
+         , OptimizeSuper dom
          )
-      => Optimize FFI dom
+      => Optimize (FFI :|| Type) dom
   where
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 

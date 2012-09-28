@@ -87,7 +87,7 @@ type FeldSymbols
     =   (Decor SourceInfo1 Identity :|| Type)
     :+: (Condition :|| Type)
 --    :+: ConditionM Mut
---    :+: FFI
+    :+: (FFI :|| Type)
 --    :+: Let
     :+: (Literal :|| Type)
 --    :+: (Select  :||| Type)
