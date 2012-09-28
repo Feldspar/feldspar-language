@@ -65,13 +65,16 @@ instance EvalBind Error where evalBindSym = evalBindSymDefault
 --instance SizeProp Error where sizeProp = sizePropDefault
 instance Sharable Error
 
+instance SizeProp (Error :||| Type)
+  where
+    sizeProp a@(C'' _) = sizePropDefault a
+
 instance AlphaEq dom dom dom env => AlphaEq Error Error dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance (Error :<: dom, Optimize dom dom) => Optimize Error dom
+instance ((Error :||| Type) :<: dom, Optimize dom dom)
+    => Optimize (Error :||| Type) dom
   where
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x
 

@@ -1,9 +1,11 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ConstraintKinds #-}
 
@@ -73,6 +75,7 @@ module Feldspar.Core.Interpretation
     , constructFeatUnOptDefault
     , optimizeFeatDefault
     , injDecorC
+    , prjC
     , (:|||) (..)
     ) where
 
@@ -134,11 +137,9 @@ class SizeProp feature
     sizeProp :: feature a -> Args (WrapFull Info) a -> Size (DenResult a)
 
 -- | Convenient default implementation of 'sizeProp'
-sizePropDefault :: (Type a, Lattice (Size (DenResult a)))
+sizePropDefault :: (Type (DenResult a))
                 => feature a -> Args (WrapFull Info) a -> Size (DenResult a)
 sizePropDefault _ _ = universal
-
-
 
 --------------------------------------------------------------------------------
 -- * Optimization and type/size inference
@@ -232,9 +233,13 @@ localSource :: SourceInfo -> Opt a -> Opt a
 localSource src = local $ \env -> env {sourceEnv = src}
 
 -- | It the expression is a literal, its value is returned, otherwise 'Nothing'
-viewLiteral :: (Literal :<: dom) => ASTF (Decor info dom) a -> Maybe a
-viewLiteral (prjDecor -> Just (_,Literal a)) = Just a
+viewLiteral :: forall info dom a. ((Literal :||| Type) :<: dom)
+            => ASTF (Decor info (dom :|| Typeable)) a -> Maybe a
+viewLiteral (prjC -> Just (C'' (Literal a))) = Just a
 viewLiteral _ = Nothing
+
+prjC :: Project (sub :||| Type) sup => sup sig -> Maybe ((sub :||| Type) sig)
+prjC = prj
 
 -- | Construct a 'Literal' decorated with 'Info'
 literalDecorSrc :: (Type a, (Literal :||| Type) :<: dom) =>
@@ -266,7 +271,12 @@ constFold _ expr _ = expr
 -- | Environment for optimization
 type Opt = Reader Env
 
-
+prjDecorC :: (sub :<: sup)
+          => AST (Decor info (sup )) a -> Maybe (info (DenResult a), sub a)
+prjDecorC a = do
+    (Sym (Decor info b)) <- return a
+    c                    <- prj b
+    return (info, c)
 
 injDecorC :: (InjectC sub sup (DenResult a))
           => info (DenResult a) -> sub a -> AST (Decor info sup) a
@@ -332,8 +342,8 @@ class Optimize feature dom
 --   * Replace all references to `OptimizeSuper dom` with `Optimize dom dom`
 --   * Remove `OptimizeSuper`
 class
-    ( AlphaEq dom dom dom [(VarId, VarId)]
-    , AlphaEq dom dom (Decor Info dom) [(VarId, VarId)]
+    ( AlphaEq dom dom (dom :|| Typeable) [(VarId, VarId)]
+    , AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId, VarId)]
     , EvalBind dom
     , (Literal :||| Type) :<: dom
     , Typed dom
@@ -342,8 +352,8 @@ class
       OptimizeSuper dom
 
 instance
-    ( AlphaEq dom dom dom [(VarId, VarId)]
-    , AlphaEq dom dom (Decor Info dom) [(VarId, VarId)]
+    ( AlphaEq dom dom (dom :|| Typeable) [(VarId, VarId)]
+    , AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId, VarId)]
     , EvalBind dom
     , (Literal :||| Type) :<: dom
     , Typed dom

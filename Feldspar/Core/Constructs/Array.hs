@@ -56,8 +56,8 @@ import Feldspar.Core.Constructs.Ord
 data Array a
   where
     Parallel   :: Type a => Array (Length :-> (Index -> a) :-> Full [a])
-    Sequential :: (Type a, Type st) =>
-                  Array (Length :-> st :-> (Index -> st -> (a,st)) :-> Full [a])
+--    Sequential :: (Type a, Type st) =>
+--                  Array (Length :-> st :-> (Index -> st -> (a,st)) :-> Full [a])
     Append     :: Type a => Array ([a] :-> [a] :-> Full [a])
     GetIx      :: Type a => Array ([a] :-> Index :-> Full a)
     SetIx      :: Type a => Array ([a] :-> Index :-> a :-> Full [a])
@@ -77,10 +77,12 @@ instance Semantic Array
     semantics Parallel = Sem "parallel"
         (\len ixf -> genericTake len $ map ixf [0..])
 
+{-
     semantics Sequential = Sem "sequential"
         (\len i step -> genericTake len $
                         snd $ mapAccumL (\a ix -> swap (step ix a)) i [0..])
       where swap (a,b) = (b,a)
+-}
 
     semantics SetIx = Sem "setIx" evalSetIx
       where
@@ -110,51 +112,49 @@ instance Sharable Array
     sharable GetIx = False
     sharable _     = True
 
-{-
-instance SizeProp Array
+instance SizeProp (Array :||| Type)
   where
-    sizeProp Parallel (WrapFull len :* WrapFull ixf :* Nil) =
+    sizeProp (C'' Parallel) (WrapFull len :* WrapFull ixf :* Nil) =
         infoSize len :> infoSize ixf
-    sizeProp Sequential (WrapFull len :* _ :* WrapFull step :* Nil) =
-        infoSize len :> fst (infoSize step)
-    sizeProp Append (WrapFull arra :* WrapFull arrb :* Nil) =
+--    sizeProp (C'' Sequential) (WrapFull len :* _ :* WrapFull step :* Nil) =
+--        infoSize len :> fst (infoSize step)
+    sizeProp (C'' Append) (WrapFull arra :* WrapFull arrb :* Nil) =
         (alen + blen) :> (aelem \/ belem)
       where
         alen :> aelem = infoSize arra
         blen :> belem = infoSize arrb
-    sizeProp GetIx (WrapFull arr :* _ :* Nil) = el
+    sizeProp (C'' GetIx) (WrapFull arr :* _ :* Nil) = el
       where
         _ :> el = infoSize arr
-    sizeProp SetIx (WrapFull arr :* _ :* WrapFull e :* Nil) =
+    sizeProp (C'' SetIx) (WrapFull arr :* _ :* WrapFull e :* Nil) =
         len :> (el \/ infoSize e)
       where
         len :> el = infoSize arr
-    sizeProp GetLength (WrapFull arr :* Nil) = len
+    sizeProp (C'' GetLength) (WrapFull arr :* Nil) = len
       where
         len :> _ = infoSize arr
-    sizeProp SetLength (WrapFull len :* WrapFull arr :* Nil) =
+    sizeProp (C'' SetLength) (WrapFull len :* WrapFull arr :* Nil) =
         infoSize len :> el
       where
         _ :> el = infoSize arr
 
-
-
 instance
-    ( Array :<: dom
-    , NUM :<: dom
-    , ORD :<: dom
+    ( (Array :||| Type) :<: dom
+    , (NUM   :||| Type) :<: dom
+    , (ORD   :||| Type) :<: dom
     , OptimizeSuper dom
     ) =>
-      Optimize Array dom
+      Optimize (Array :||| Type) dom
   where
-    optimizeFeat Parallel (len :* ixf :* Nil) = do
+{-
+    optimizeFeat (C'' Parallel) (len :* ixf :* Nil) = do
         len' <- optimizeM len
         let szI     = infoSize (getInfo len')
             ixRange = rangeByRange 0 (szI-1)
         ixf' <- optimizeFunction optimizeM (mkInfo ixRange) ixf
         constructFeat Parallel (len' :* ixf' :* Nil)
 
-    optimizeFeat Sequential (len :* inital :* step :* Nil) = do
+    optimizeFeat (C'' Sequential) (len :* inital :* step :* Nil) = do
         len'  <- optimizeM len
         init' <- optimizeM inital
         let szI     = infoSize (getInfo len')
@@ -166,75 +166,84 @@ instance
         constructFeat Sequential (len' :* init' :* step' :* Nil)
       -- TODO Should use fixed-point iteration, but `optimizeFunctionFix` only
       --      works for functions of type `a -> a`.
+-}
 
     optimizeFeat a args = optimizeFeatDefault a args
 
-    constructFeatOpt Parallel (len :* _ :* Nil)
+    constructFeatOpt (C'' Parallel) (len :* _ :* Nil)
         | Just 0 <- viewLiteral len
         = return $ literalDecor []
       -- TODO Optimize when length is one. This requires a way to create an
       --      uninitialized array of length one, and setting the first element.
       --      Use `betaReduce` to apply `ixf` to the literal 0.
 
-    constructFeatOpt Parallel (len :* (lam :$ (gix :$ arr2 :$ ix)) :* Nil)
-        | Just (_,Lambda v1)   <- prjDecorCtx typeCtx lam
-        , Just (_,GetIx)       <- prjDecor gix
-        , Just (_,Variable v2) <- prjDecorCtx typeCtx ix
+{-
+    constructFeatOpt (C'' Parallel) (len :* (lam :$ (gix :$ arr2 :$ ix)) :* Nil)
+        | Just ((Lambda v1))   <- prj lam
+        , Just (C'' GetIx)         <- prjC gix
+        , Just (C'' (Variable v2)) <- prjC ix
         , v1 == v2
         , v1 `notMember` infoVars (getInfo arr2)
         = constructFeat SetLength (len :* arr2 :* Nil)
+-}
 
-    constructFeatOpt Sequential (len :* _ :* _ :* Nil)
+{-
+    constructFeatOpt (C'' Sequential) (len :* _ :* _ :* Nil)
         | Just 0 <- viewLiteral len
         = return $ literalDecor []
       -- TODO Optimize when length is one. This requires a way to create an
       --      uninitialized array of length one, and setting the first element.
       --      Use `betaReduce` to apply the step function.
+-}
 
-    constructFeatOpt Append (a :* b :* Nil)
+    constructFeatOpt (C'' Append) (a :* b :* Nil)
         | Just [] <- viewLiteral a = return b
         | Just [] <- viewLiteral b = return a
 
-    constructFeatOpt GetIx ((op :$ _ :$ ixf) :* ix :* Nil)
-        | Just (_, Parallel) <- prjDecor op
-        = optimizeM $ betaReduce typeCtx (stripDecor ix) (stripDecor ixf)
+{-
+    constructFeatOpt (C'' GetIx) ((op :$ _ :$ ixf) :* ix :* Nil)
+        | Just (C'' Parallel) <- prjC op
+        = optimizeM $ betaReduce (stripDecor ix) (stripDecor ixf)
           -- TODO should not need to drop the decorations
+-}
 
-    constructFeatOpt GetIx ((op :$ _ :$ arr) :* ix :* Nil)
-        | Just (_, SetLength) <- prjDecor op
-        = constructFeat GetIx (arr :* ix :* Nil)
+    constructFeatOpt s@(C'' GetIx) ((op :$ _ :$ arr) :* ix :* Nil)
+        | Just (C'' SetLength) <- prjC op
+        = constructFeat s (arr :* ix :* Nil)
 
-    constructFeatOpt GetLength (arr :* Nil)
+    constructFeatOpt (C'' GetLength) (arr :* Nil)
         | Just as <- viewLiteral arr = return $ literalDecor $ genericLength as
 
-    constructFeatOpt GetLength (((prjDecor -> Just (_,op)) :$ a :$ _ :$ _) :* Nil)
-        | Sequential <- op = return a
-        | SetIx      <- op = constructFeat GetLength (a :* Nil)
+{-
+    constructFeatOpt s@(C'' GetLength) (((prjC -> Just op) :$ a :$ _ :$ _) :* Nil)
+        | C'' Sequential <- op = return a
+        | C'' SetIx      <- op = constructFeat s (a :* Nil)
 
-    constructFeatOpt GetLength (((prjDecor -> Just (_,op)) :$ a :$ b) :* Nil)
+    constructFeatOpt (C'' GetLength) (((prjC -> Just (C'' op)) :$ a :$ b) :* Nil)
         | Append <- op = do
             aLen <- constructFeat GetLength (a :* Nil)
             bLen <- constructFeat GetLength (b :* Nil)
-            constructFeatOpt Add (aLen :* bLen :* Nil)
+            constructFeatOpt (C'' Add) (aLen :* bLen :* Nil)
         | Parallel  <- op = return a
         | SetLength <- op = return a
+-}
 
     -- TODO remove this optimization when the singletonRange -> literal
     -- optimization in Feldspar.Core.Interpretation has been implemented
-    constructFeatOpt GetLength (arr :* Nil)
+    constructFeatOpt (C'' GetLength) (arr :* Nil)
         | len :> _ <- infoSize $ getInfo arr
         , isSingleton len
         = return $ literalDecor $ lowerBound len
 
-    constructFeatOpt SetLength (len :* _ :* Nil)
+    constructFeatOpt (C'' SetLength) (len :* _ :* Nil)
         | Just 0 <- viewLiteral len = return $ literalDecor []
 
-    constructFeatOpt SetLength ((getLength :$ arr') :* arr :* Nil)
-        | Just (_,GetLength) <- prjDecor getLength
+    constructFeatOpt (C'' SetLength) ((getLength :$ arr') :* arr :* Nil)
+        | Just (C'' GetLength) <- prjC getLength
         , alphaEq arr arr'
         = return arr
 
-    constructFeatOpt SetLength (len :* arr :* Nil)
+    constructFeatOpt (C'' SetLength) (len :* arr :* Nil)
         | rlen      <- infoSize $ getInfo len
         , rarr :> _ <- infoSize $ getInfo arr
         , isSingleton rlen
@@ -244,6 +253,5 @@ instance
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x
 

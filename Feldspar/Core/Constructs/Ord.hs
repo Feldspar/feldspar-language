@@ -79,109 +79,107 @@ instance AlphaEq dom dom dom env => AlphaEq ORD ORD dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance SizeProp ORD
+instance SizeProp (ORD :||| Type)
   where
-    sizeProp Min (WrapFull a :* WrapFull b :* Nil) = min (infoSize a) (infoSize b)
-    sizeProp Max (WrapFull a :* WrapFull b :* Nil) = max (infoSize a) (infoSize b)
-    sizeProp a args = sizePropDefault a args
+    sizeProp (C'' Min) (WrapFull a :* WrapFull b :* Nil) = min (infoSize a) (infoSize b)
+    sizeProp (C'' Max) (WrapFull a :* WrapFull b :* Nil) = max (infoSize a) (infoSize b)
+    sizeProp a@(C'' _) args = sizePropDefault a args
 
 
-instance
-    ( ORD :<: dom
-    , OptimizeSuper dom
-    ) =>
-      Optimize ORD dom
+instance ( (ORD :||| Type) :<: dom
+         , OptimizeSuper dom
+         )
+      => Optimize (ORD :||| Type) dom
   where
-    constructFeatOpt LTH (a :* b :* Nil)
+    constructFeatOpt (C'' LTH) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , ra `rangeLess` rb
         = return (literalDecor True)
 
-    constructFeatOpt LTH (a :* b :* Nil)
+    constructFeatOpt (C'' LTH) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , rb `rangeLessEq` ra
         = return (literalDecor False)
 
-    constructFeatOpt GTH (a :* b :* Nil)
+    constructFeatOpt (C'' GTH) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , rb `rangeLess` ra
         = return (literalDecor True)
 
-    constructFeatOpt GTH (a :* b :* Nil)
+    constructFeatOpt (C'' GTH) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , ra `rangeLessEq` rb
         = return (literalDecor False)
 
-    constructFeatOpt LTE (a :* b :* Nil)
+    constructFeatOpt (C'' LTE) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , ra `rangeLessEq` rb
         = return (literalDecor True)
 
-    constructFeatOpt LTE (a :* b :* Nil)
+    constructFeatOpt (C'' LTE) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , rb `rangeLess` ra
         = return (literalDecor False)
 
-    constructFeatOpt LTE (a :* b :* Nil)
+    constructFeatOpt (C'' LTE) (a :* b :* Nil)
         | alphaEq a b
         = return $ literalDecor True
 
-    constructFeatOpt GTE (a :* b :* Nil)
+    constructFeatOpt (C'' GTE) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , rb `rangeLessEq` ra
         = return (literalDecor True)
 
-    constructFeatOpt GTE (a :* b :* Nil)
+    constructFeatOpt (C'' GTE) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , ra `rangeLess` rb
         = return (literalDecor False)
 
-    constructFeatOpt GTE (a :* b :* Nil)
+    constructFeatOpt (C'' GTE) (a :* b :* Nil)
         | alphaEq a b
         = return $ literalDecor True
 
-    constructFeatOpt Min (a :* b :* Nil)
+    constructFeatOpt (C'' Min) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , ra `rangeLessEq` rb
         = return a
 
-    constructFeatOpt Min (a :* b :* Nil)
+    constructFeatOpt (C'' Min) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , rb `rangeLessEq` ra
         = return b
 
-    constructFeatOpt Min (a :* b :* Nil)
+    constructFeatOpt (C'' Min) (a :* b :* Nil)
         | alphaEq a b
         = return a
 
-    constructFeatOpt Max (a :* b :* Nil)
+    constructFeatOpt (C'' Max) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , ra `rangeLessEq` rb
         = return b
 
-    constructFeatOpt Max (a :* b :* Nil)
+    constructFeatOpt (C'' Max) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , rb `rangeLessEq` ra
         = return a
 
-    constructFeatOpt Max (a :* b :* Nil)
+    constructFeatOpt (C'' Max) (a :* b :* Nil)
         | alphaEq a b
         = return a
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x
+

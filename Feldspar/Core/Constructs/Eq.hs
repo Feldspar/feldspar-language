@@ -65,26 +65,26 @@ instance AlphaEq dom dom dom env => AlphaEq EQ EQ dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
-instance SizeProp EQ where sizeProp = sizePropDefault
+instance SizeProp (EQ :||| Type)
+  where sizeProp a@(C'' _) = sizePropDefault a
 
-instance (EQ :<: dom, OptimizeSuper dom) => Optimize EQ dom
+instance ((EQ :||| Type) :<: dom, OptimizeSuper dom) => Optimize (EQ :||| Type) dom
   where
-    constructFeatOpt Equal (a :* b :* Nil)
+    constructFeatOpt (C'' Equal) (a :* b :* Nil)
         | alphaEq a b
         = return $ literalDecor True
 
-    constructFeatOpt Equal (a :* b :* Nil)
+    constructFeatOpt (C'' Equal) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , ra `disjoint` rb
         = return $ literalDecor False
 
-    constructFeatOpt NotEqual (a :* b :* Nil)
+    constructFeatOpt (C'' NotEqual) (a :* b :* Nil)
         | alphaEq a b
         = return $ literalDecor False
 
-    constructFeatOpt NotEqual (a :* b :* Nil)
+    constructFeatOpt (C'' NotEqual) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , ra `disjoint` rb
@@ -92,6 +92,5 @@ instance (EQ :<: dom, OptimizeSuper dom) => Optimize EQ dom
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C'' _) = constructFeatUnOptDefault x
 

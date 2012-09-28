@@ -30,12 +30,11 @@ module Feldspar.Core.Frontend.Condition where
 
 import Language.Syntactic
 
-import Feldspar.Core.Types
 import Feldspar.Core.Constructs.Condition
 import Feldspar.Core.Constructs
 
 condition :: (Syntax a) => Data Bool -> a -> a -> a
-condition = sugarSymC Condition
+condition c t f = sugarSymC (c'' Condition) c t f
 
 (?) :: (Syntax a) => Data Bool -> (a, a) -> a
 c ? (t, e) = condition c t e

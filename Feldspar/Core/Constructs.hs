@@ -83,28 +83,26 @@ import Feldspar.Core.Constructs.Tuple
 -- * Domain
 --------------------------------------------------------------------------------
 
-type FeldSymbols =   (Literal :||| Type)
-                 :+: (NUM     :||| Type)
-
---    =   Decor SourceInfo1 Identity
---    :+: Condition
+type FeldSymbols 
+    =   (Decor SourceInfo1 Identity :||| Type)
+    :+: (Condition :||| Type)
 --    :+: ConditionM Mut
 --    :+: FFI
 --    :+: Let
---    :+: Literal
---    :+: Select
---    :+: Tuple
+    :+: (Literal :||| Type)
+--    :+: (Select  :||| Type)
+--    :+: (Tuple   :||| Type)
 --    :+: Array
 --    :+: BITS
 --    :+: COMPLEX
 --    :+: Conversion
---    :+: EQ
---    :+: Error
+    :+: (EQ :||| Type)
+    :+: (Error :||| Type)
 --    :+: FLOATING
 --    :+: FRACTIONAL
 --    :+: FUTURE
 --    :+: INTEGRAL
---    :+: Logic
+    :+: (Logic :||| Type)
 --    :+: Loop
 --    :+: LoopM Mut
 --    :+: MONAD Mut
@@ -113,9 +111,9 @@ type FeldSymbols =   (Literal :||| Type)
 --    :+: MutableReference
 --    :+: MutableToPure
 --    :+: MONAD Par
---    :+: NUM
+    :+: (NUM :||| Type)
 --    :+: NoInline
---    :+: ORD
+    :+: (ORD :||| Type)
 --    :+: ParFeature
 --    :+: PropSize
 --    :+: Save
@@ -165,6 +163,12 @@ type FeldDomainAll = HODomain FeldSymbols Typeable
 --  where
 --    alphaEqSym (FeldDomain a) aArgs (FeldDomain b) bArgs =
 --        alphaEqSym a aArgs b bArgs
+
+{-
+instance Equality dom => AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId,VarId)]
+  where
+    alphaEqSym = alphaEqSymDefault
+-}
 
 --deriving instance Sharable FeldDomain
 
@@ -223,4 +227,11 @@ instance Type a => Show (Data a)
 c'' :: (Type (DenResult sig)) => feature sig -> (feature :||| Type) sig
 c'' = C''
 
+sugarSymF :: ( ApplySym sig b dom
+             , SyntacticN c b
+             , InjectC (feature :||| Type) (AST dom) (DenResult sig)
+             , Type (DenResult sig)
+             )
+          => feature sig -> c
+sugarSymF sym = sugarSymC (c'' sym)
 

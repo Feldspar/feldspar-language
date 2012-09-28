@@ -49,9 +49,9 @@ infix 4 /=
 class (Type a) => Eq a
   where
     (==) :: Data a -> Data a -> Data Bool
-    (==) = sugarSymC Equal
+    (==) = sugarSymF Equal
     (/=) :: Data a -> Data a -> Data Bool
-    (/=) = sugarSymC NotEqual
+    (/=) = sugarSymF NotEqual
 
 instance Eq ()
 instance Eq Bool
