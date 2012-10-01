@@ -142,5 +142,7 @@ library
     TypeSynonymInstances
     ViewPatterns
 
+  hs-source-dirs: src
+
   ghc-options: -fcontext-stack=100
 
