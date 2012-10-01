@@ -14,8 +14,8 @@ license-file:   LICENSE
 stability:      experimental
 homepage:       http://feldspar.inf.elte.hu/feldspar/
 build-type:     Simple
-cabal-version:  >= 1.6
-tested-with:    GHC==7.0.4, GHC==7.4.1
+cabal-version:  >= 1.14
+tested-with:    GHC==7.6.1, GHC==7.4.1
 
 library
   exposed-modules:
@@ -89,7 +89,7 @@ library
     Feldspar.Core.Frontend.Tuple
     Feldspar.Core.Frontend.FFI
     Feldspar.Core.Frontend.Save
---    Feldspar.Core.Frontend
+    Feldspar.Core.Frontend
     Feldspar.Core.Collection
     Feldspar.Core
     Feldspar.BitVector
@@ -105,6 +105,8 @@ library
     Feldspar.Wrap
  --   Feldspar.Par
     Feldspar
+
+  default-language: Haskell2010
 
   build-depends:
     array,
@@ -124,7 +126,7 @@ library
     monad-par >= 0.1 && < 0.2,
     QuickAnnotate >= 0.6
 
-  extensions:
+  default-extensions:
     DeriveDataTypeable
     EmptyDataDecls
     FlexibleInstances
@@ -145,4 +147,25 @@ library
   hs-source-dirs: src
 
   ghc-options: -fcontext-stack=100
+
+test-suite range
+  type: exitcode-stdio-1.0
+
+  hs-source-dirs: tests
+
+  main-is: RangeTest.hs
+
+  other-modules:
+    Utils
+    RangeTest
+
+  default-language: Haskell2010
+
+  build-depends:
+    feldspar-language,
+    base >= 4 && < 4.7,
+    random >= 1 && <2,
+    QuickCheck >= 2.4 && <3,
+    test-framework >= 0.6 && < 0.7,
+    test-framework-quickcheck2 >= 0.2 && < 0.3
 

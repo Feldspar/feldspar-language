@@ -112,7 +112,7 @@ import Feldspar.Core.Frontend.Error            as Frontend
 import Feldspar.Core.Frontend.FFI              as Frontend
 import Feldspar.Core.Frontend.Floating         as Frontend
 import Feldspar.Core.Frontend.Fractional       as Frontend
---import Feldspar.Core.Frontend.Future           as Frontend
+import Feldspar.Core.Frontend.Future           as Frontend
 import Feldspar.Core.Frontend.Integral         as Frontend
 import Feldspar.Core.Frontend.Literal          as Frontend
 import Feldspar.Core.Frontend.Logic            as Frontend
