@@ -78,12 +78,12 @@ instance ( (FRACTIONAL :|| Type) :<: dom
         | alphaEq a b = return $ literalDecor 1
 
     constructFeatOpt (C' DivFrac) ((op :$ a :$ b) :* c :* Nil)
-        | Just (C' Mul) <- prjC op
+        | Just (C' Mul) <- prjF op
         , alphaEq b c
         = return a
 
     constructFeatOpt (C' DivFrac) ((op :$ a :$ b) :* c :* Nil)
-        | Just (C' Mul) <- prjC op
+        | Just (C' Mul) <- prjF op
         , alphaEq a c
         = return b
 

@@ -193,26 +193,26 @@ instance
       Optimize (Tuple :|| Type) dom
   where
     constructFeatOpt (C' tup@Tup2) (s1 :* s2 :* Nil)
-        | (prjC -> Just (C' Sel1)) :$ a <- s1
-        , (prjC -> Just (C' Sel2)) :$ b <- s2
+        | (prjF -> Just (C' Sel1)) :$ a <- s1
+        , (prjF -> Just (C' Sel2)) :$ b <- s2
         , alphaEq a b
         , Just TypeEq <- tupEq tup a
         = return a
 
     constructFeatOpt (C' tup@Tup3) (s1 :* s2 :* s3 :* Nil)
-        | (prjC -> Just (C' Sel1)) :$ a <- s1
-        , (prjC -> Just (C' Sel2)) :$ b <- s2
-        , (prjC -> Just (C' Sel3)) :$ c <- s3
+        | (prjF -> Just (C' Sel1)) :$ a <- s1
+        , (prjF -> Just (C' Sel2)) :$ b <- s2
+        , (prjF -> Just (C' Sel3)) :$ c <- s3
         , alphaEq a b
         , alphaEq a c
         , Just TypeEq <- tupEq tup a
         = return a
 
     constructFeatOpt (C' tup@Tup4) (s1 :* s2 :* s3 :* s4 :* Nil)
-        | (prjC -> Just (C' Sel1)) :$ a <- s1
-        , (prjC -> Just (C' Sel2)) :$ b <- s2
-        , (prjC -> Just (C' Sel3)) :$ c <- s3
-        , (prjC -> Just (C' Sel4)) :$ d <- s4
+        | (prjF -> Just (C' Sel1)) :$ a <- s1
+        , (prjF -> Just (C' Sel2)) :$ b <- s2
+        , (prjF -> Just (C' Sel3)) :$ c <- s3
+        , (prjF -> Just (C' Sel4)) :$ d <- s4
         , alphaEq a b
         , alphaEq a c
         , alphaEq a d
@@ -220,11 +220,11 @@ instance
         = return a
 
     constructFeatOpt (C' tup@Tup5) (s1 :* s2 :* s3 :* s4 :* s5 :* Nil)
-        | (prjC -> Just (C' Sel1)) :$ a <- s1
-        , (prjC -> Just (C' Sel2)) :$ b <- s2
-        , (prjC -> Just (C' Sel3)) :$ c <- s3
-        , (prjC -> Just (C' Sel4)) :$ d <- s4
-        , (prjC -> Just (C' Sel5)) :$ e <- s5
+        | (prjF -> Just (C' Sel1)) :$ a <- s1
+        , (prjF -> Just (C' Sel2)) :$ b <- s2
+        , (prjF -> Just (C' Sel3)) :$ c <- s3
+        , (prjF -> Just (C' Sel4)) :$ d <- s4
+        , (prjF -> Just (C' Sel5)) :$ e <- s5
         , alphaEq a b
         , alphaEq a c
         , alphaEq a d
@@ -233,12 +233,12 @@ instance
         = return a
 
     constructFeatOpt (C' tup@Tup6) (s1 :* s2 :* s3 :* s4 :* s5 :* s6 :* Nil)
-        | (prjC -> Just (C' Sel1)) :$ a <- s1
-        , (prjC -> Just (C' Sel2)) :$ b <- s2
-        , (prjC -> Just (C' Sel3)) :$ c <- s3
-        , (prjC -> Just (C' Sel4)) :$ d <- s4
-        , (prjC -> Just (C' Sel5)) :$ e <- s5
-        , (prjC -> Just (C' Sel6)) :$ f <- s6
+        | (prjF -> Just (C' Sel1)) :$ a <- s1
+        , (prjF -> Just (C' Sel2)) :$ b <- s2
+        , (prjF -> Just (C' Sel3)) :$ c <- s3
+        , (prjF -> Just (C' Sel4)) :$ d <- s4
+        , (prjF -> Just (C' Sel5)) :$ e <- s5
+        , (prjF -> Just (C' Sel6)) :$ f <- s6
         , alphaEq a b
         , alphaEq a c
         , alphaEq a d
@@ -248,13 +248,13 @@ instance
         = return a
 
     constructFeatOpt (C' tup@Tup7) (s1 :* s2 :* s3 :* s4 :* s5 :* s6 :* s7 :* Nil)
-        | (prjC -> Just (C' Sel1)) :$ a <- s1
-        , (prjC -> Just (C' Sel2)) :$ b <- s2
-        , (prjC -> Just (C' Sel3)) :$ c <- s3
-        , (prjC -> Just (C' Sel4)) :$ d <- s4
-        , (prjC -> Just (C' Sel5)) :$ e <- s5
-        , (prjC -> Just (C' Sel6)) :$ f <- s6
-        , (prjC -> Just (C' Sel7)) :$ g <- s7
+        | (prjF -> Just (C' Sel1)) :$ a <- s1
+        , (prjF -> Just (C' Sel2)) :$ b <- s2
+        , (prjF -> Just (C' Sel3)) :$ c <- s3
+        , (prjF -> Just (C' Sel4)) :$ d <- s4
+        , (prjF -> Just (C' Sel5)) :$ e <- s5
+        , (prjF -> Just (C' Sel6)) :$ f <- s6
+        , (prjF -> Just (C' Sel7)) :$ g <- s7
         , alphaEq a b
         , alphaEq a c
         , alphaEq a d
@@ -277,45 +277,45 @@ instance
       Optimize (Select :|| Type) dom
   where
     constructFeatOpt (C' Sel1) (t :* Nil)
-        | ((prjC -> Just (C' Tup2)) :$ a :$ _) <- t                          = return a
-        | ((prjC -> Just (C' Tup3)) :$ a :$ _ :$ _) <- t                     = return a
-        | ((prjC -> Just (C' Tup4)) :$ a :$ _ :$ _ :$ _) <- t                = return a
-        | ((prjC -> Just (C' Tup5)) :$ a :$ _ :$ _ :$ _ :$ _) <- t           = return a
-        | ((prjC -> Just (C' Tup6)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t      = return a
-        | ((prjC -> Just (C' Tup7)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
+        | ((prjF -> Just (C' Tup2)) :$ a :$ _) <- t                          = return a
+        | ((prjF -> Just (C' Tup3)) :$ a :$ _ :$ _) <- t                     = return a
+        | ((prjF -> Just (C' Tup4)) :$ a :$ _ :$ _ :$ _) <- t                = return a
+        | ((prjF -> Just (C' Tup5)) :$ a :$ _ :$ _ :$ _ :$ _) <- t           = return a
+        | ((prjF -> Just (C' Tup6)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t      = return a
+        | ((prjF -> Just (C' Tup7)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
 
     constructFeatOpt (C' Sel2) (t :* Nil)
-        | ((prjC -> Just (C' Tup2)) :$ _ :$ a) <- t                          = return a
-        | ((prjC -> Just (C' Tup3)) :$ _ :$ a :$ _) <- t                     = return a
-        | ((prjC -> Just (C' Tup4)) :$ _ :$ a :$ _ :$ _) <- t                = return a
-        | ((prjC -> Just (C' Tup5)) :$ _ :$ a :$ _ :$ _ :$ _) <- t           = return a
-        | ((prjC -> Just (C' Tup6)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t      = return a
-        | ((prjC -> Just (C' Tup7)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
+        | ((prjF -> Just (C' Tup2)) :$ _ :$ a) <- t                          = return a
+        | ((prjF -> Just (C' Tup3)) :$ _ :$ a :$ _) <- t                     = return a
+        | ((prjF -> Just (C' Tup4)) :$ _ :$ a :$ _ :$ _) <- t                = return a
+        | ((prjF -> Just (C' Tup5)) :$ _ :$ a :$ _ :$ _ :$ _) <- t           = return a
+        | ((prjF -> Just (C' Tup6)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t      = return a
+        | ((prjF -> Just (C' Tup7)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
 
     constructFeatOpt (C' Sel3) (t :* Nil)
-        | ((prjC -> Just (C' Tup3)) :$ _ :$ _ :$ a) <- t                     = return a
-        | ((prjC -> Just (C' Tup4)) :$ _ :$ _ :$ a :$ _) <- t                = return a
-        | ((prjC -> Just (C' Tup5)) :$ _ :$ _ :$ a :$ _ :$ _) <- t           = return a
-        | ((prjC -> Just (C' Tup6)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t      = return a
-        | ((prjC -> Just (C' Tup7)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t = return a
+        | ((prjF -> Just (C' Tup3)) :$ _ :$ _ :$ a) <- t                     = return a
+        | ((prjF -> Just (C' Tup4)) :$ _ :$ _ :$ a :$ _) <- t                = return a
+        | ((prjF -> Just (C' Tup5)) :$ _ :$ _ :$ a :$ _ :$ _) <- t           = return a
+        | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t      = return a
+        | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t = return a
 
     constructFeatOpt (C' Sel4) (t :* Nil)
-        | ((prjC -> Just (C' Tup4)) :$ _ :$ _ :$ _ :$ a) <- t                = return a
-        | ((prjC -> Just (C' Tup5)) :$ _ :$ _ :$ _ :$ a :$ _) <- t           = return a
-        | ((prjC -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t      = return a
-        | ((prjC -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t = return a
+        | ((prjF -> Just (C' Tup4)) :$ _ :$ _ :$ _ :$ a) <- t                = return a
+        | ((prjF -> Just (C' Tup5)) :$ _ :$ _ :$ _ :$ a :$ _) <- t           = return a
+        | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t      = return a
+        | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t = return a
 
     constructFeatOpt (C' Sel5) (t :* Nil)
-        | ((prjC -> Just (C' Tup5)) :$ _ :$ _ :$ _ :$ _ :$ a) <- t           = return a
-        | ((prjC -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t      = return a
-        | ((prjC -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t = return a
+        | ((prjF -> Just (C' Tup5)) :$ _ :$ _ :$ _ :$ _ :$ a) <- t           = return a
+        | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t      = return a
+        | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t = return a
 
     constructFeatOpt (C' Sel6) (t :* Nil)
-        | ((prjC -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t      = return a
-        | ((prjC -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t = return a
+        | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t      = return a
+        | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t = return a
 
     constructFeatOpt (C' Sel7) (t :* Nil)
-        | ((prjC -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t = return a
+        | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t = return a
 
     constructFeatOpt feat args = constructFeatUnOpt feat args
 

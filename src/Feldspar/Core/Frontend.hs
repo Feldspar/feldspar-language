@@ -192,9 +192,11 @@ bindDict = BindDict
     }
 -}
 
+{-
 instance Sharable ((Lambda :+: Variable :+: FeldDomain) :|| Typeable)
     where
       sharable _ = True
+-}
 
 type SyntacticFeld a = (Syntactic a FeldDomainAll, Typeable (Internal a))
 
@@ -216,10 +218,6 @@ reifyFeld n = flip evalState 0 .
   -- where 'optimize' removes all but one occurrence. If 'codeMotion' was run
   -- first, these sub-expressions would be let bound, preventing subsequent
   -- optimizations.
-
-instance Optimize Empty dom
-  where
-    constructFeatUnOpt _ _ = error "can't optimzie Empty"
 
 showExpr :: SyntacticFeld a => a -> String
 showExpr = render . reifyFeld N32

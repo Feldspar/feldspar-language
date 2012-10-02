@@ -120,11 +120,9 @@ type FeldSymbols
     :+: (Trace :|| Type)
     :+: Empty
 
-type FODomain dom constr = (Lambda :+: Variable :+: dom) :|| constr
+type FeldDomain    = FODomain FeldSymbols Typeable Type
 
-type FeldDomain = FODomain FeldSymbols Typeable
-
-type FeldDomainAll = HODomain FeldSymbols Typeable
+type FeldDomainAll = HODomain FeldSymbols Typeable Type
 
 --newtype FeldDomain a = FeldDomain (FeldSymbols a)
 
@@ -230,7 +228,6 @@ instance Type a => Show (Data a)
 
 sugarSymF :: ( ApplySym sig b dom
              , SyntacticN c b
-             -- , InjectC (feature :|| Type) (AST dom) (DenResult sig)
              , InjectC (feature :|| Type) dom (DenResult sig)
              , Type (DenResult sig)
              )

@@ -147,9 +147,7 @@ instance ( MonadType m
     constructFeatUnOpt For   args = constructFeatUnOptDefaultTyp voidTypeRep For   args
 -}
 
-instance ( Variable :<: dom
-         , Lambda   :<: dom
-         , (Literal :|| Type) :<: dom
+instance ( (Literal :|| Type) :<: dom
          , (Loop    :|| Type) :<: dom
          , OptimizeSuper dom
          )

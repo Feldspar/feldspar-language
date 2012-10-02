@@ -99,15 +99,15 @@ instance ( (Logic :|| Type) :<: dom
         | a `alphaEq` b               = return a
 
     constructFeatOpt (C' Not) ((op :$ a) :* Nil)
-        | Just (C' Not) <- prjC op = return a
+        | Just (C' Not) <- prjF op = return a
 
     constructFeatOpt (C' Not) ((op :$ a :$ b) :* Nil)
-        | Just (C' Equal)    <- prjC op = constructFeat (c' NotEqual) (a :* b :* Nil)
-        | Just (C' NotEqual) <- prjC op = constructFeat (c' Equal)    (a :* b :* Nil)
-        | Just (C' LTH)      <- prjC op = constructFeat (c' GTE)      (a :* b :* Nil)
-        | Just (C' GTH)      <- prjC op = constructFeat (c' LTE)      (a :* b :* Nil)
-        | Just (C' LTE)      <- prjC op = constructFeat (c' GTH)      (a :* b :* Nil)
-        | Just (C' GTE)      <- prjC op = constructFeat (c' LTH)      (a :* b :* Nil)
+        | Just (C' Equal)    <- prjF op = constructFeat (c' NotEqual) (a :* b :* Nil)
+        | Just (C' NotEqual) <- prjF op = constructFeat (c' Equal)    (a :* b :* Nil)
+        | Just (C' LTH)      <- prjF op = constructFeat (c' GTE)      (a :* b :* Nil)
+        | Just (C' GTH)      <- prjF op = constructFeat (c' LTE)      (a :* b :* Nil)
+        | Just (C' LTE)      <- prjF op = constructFeat (c' GTH)      (a :* b :* Nil)
+        | Just (C' GTE)      <- prjF op = constructFeat (c' LTH)      (a :* b :* Nil)
 
     constructFeatOpt a args = constructFeatUnOpt a args
 

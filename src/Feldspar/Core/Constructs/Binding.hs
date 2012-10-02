@@ -55,6 +55,7 @@ import Data.Proxy
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding.HigherOrder (ArgConstr)
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
@@ -144,11 +145,15 @@ instance (Variable :<: dom, OptimizeSuper dom) =>
                 in  injDecor info' (Variable v)
 -}
 
-instance (Project Variable dom, OptimizeSuper dom) => Optimize Variable dom
+instance ( (Variable :|| Type) :<: dom
+         , OptimizeSuper dom)
+      => Optimize (Variable :|| Type) dom
   where
     constructFeatUnOpt = undefined
 
-instance (Project Lambda dom, OptimizeSuper dom) => Optimize Lambda dom
+instance ( ArgConstr Lambda Type :<: dom
+         , OptimizeSuper dom)
+      => Optimize (ArgConstr Lambda Type) dom
   where
     constructFeatUnOpt = undefined
 

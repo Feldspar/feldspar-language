@@ -42,8 +42,9 @@ module Feldspar.Core.Constructs.Bits
 import Data.Typeable
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Binding
 import Language.Syntactic.Constructs.Literal
+import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding.HigherOrder (FODomain)
 
 import Feldspar.Range
 import Feldspar.Core.Types
@@ -193,12 +194,12 @@ instance ( (BITS  :|| Type) :<: dom
         | Just x <- viewLiteral b, isAllOnes x = constructFeat (c' Complement) (a :* Nil)
 
     constructFeatOpt (C' BXor) ((xo :$ v1 :$ v2) :* v3 :* Nil)
-        | Just (C' BXor) <- prjC xo
+        | Just (C' BXor) <- prjF xo
         , alphaEq v2 v3
         = return v1
 
     constructFeatOpt (C' TestBit) ((xo :$ v1 :$ v2) :* v3 :* Nil)
-        | Just (C' BXor) <- prjC xo
+        | Just (C' BXor) <- prjF xo
         , Just a <- viewLiteral v2
         , Just b <- viewLiteral v3
         , a == 2 ^ b
@@ -227,8 +228,8 @@ optZero :: ( Eq b, Num b
            , Optimize feature dom
            )
         => feature (a :-> (b :-> Full a))
-        -> Args (AST (Decor Info (dom :|| Typeable))) (a :-> (b :-> Full a))
-        -> Opt (AST (Decor Info (dom :|| Typeable)) (Full a))
+        -> Args (AST (Decor Info (FODomain dom Typeable Type))) (a :-> (b :-> Full a))
+        -> Opt (AST (Decor Info (FODomain dom Typeable Type)) (Full a))
 optZero f (a :* b :* Nil)
     | Just 0 <- viewLiteral b = return a
     | otherwise               = constructFeatUnOpt f (a :* b :* Nil)

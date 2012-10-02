@@ -64,7 +64,6 @@ module Feldspar.Core.Interpretation
     , Env (..)
     , localVar
     , localSource
-    , Witness
     , Opt
     , Optimize (..)
     , OptimizeSuper
@@ -75,7 +74,7 @@ module Feldspar.Core.Interpretation
     , constructFeatUnOptDefault
     , optimizeFeatDefault
     , injDecorC
-    , prjC
+    , prjF
     , c'
     ) where
 
@@ -89,6 +88,7 @@ import Language.Syntactic
 import Language.Syntactic.Constructs.Decoration
 import Language.Syntactic.Constructs.Literal
 import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding.HigherOrder
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
@@ -144,8 +144,6 @@ sizePropDefault _ _ = universal
 --------------------------------------------------------------------------------
 -- * Optimization and type/size inference
 --------------------------------------------------------------------------------
-
-type Witness a = Maybe (Dict (Type a, Typeable a))
 
 -- | Compute a type representation of a symbol's result type
 resultType :: Type (DenResult a) => c a -> TypeRep (DenResult a)
@@ -235,11 +233,14 @@ localSource src = local $ \env -> env {sourceEnv = src}
 -- | It the expression is a literal, its value is returned, otherwise 'Nothing'
 viewLiteral :: forall info dom a. ((Literal :|| Type) :<: dom)
             => ASTF (Decor info (dom :|| Typeable)) a -> Maybe a
-viewLiteral (prjC -> Just (C' (Literal a))) = Just a
+viewLiteral (prjF -> Just (C' (Literal a))) = Just a
 viewLiteral _ = Nothing
 
-prjC :: Project (sub :|| Type) sup => sup sig -> Maybe ((sub :|| Type) sig)
-prjC = prj
+tProxy :: PProxy Type
+tProxy = PProxy
+
+prjF :: Project (sub :|| Type) sup => sup sig -> Maybe ((sub :|| Type) sig)
+prjF = prjC' tProxy
 
 -- | Construct a 'Literal' decorated with 'Info'
 literalDecorSrc :: (Type a, (Literal :|| Type) :<: dom) =>
@@ -296,8 +297,8 @@ class Optimize feature dom
            , OptimizeSuper dom
            )
         => feature a
-        -> Args (AST (dom :|| Typeable)) a
-        -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
+        -> Args (AST dom) a
+        -> Opt (ASTF (Decor Info dom) (DenResult a))
     optimizeFeat = optimizeFeatDefault
 
     -- | Optimized construction of an expression from a symbol and its optimized
@@ -307,18 +308,21 @@ class Optimize feature dom
     -- 'constructFeat' which has more accurate propagation of 'Info'.
     constructFeatOpt
         :: feature a
-        -> Args (AST (Decor Info (dom :|| Typeable))) a
-        -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
+        -> Args (AST (Decor Info dom)) a
+        -> Opt (ASTF (Decor Info dom) (DenResult a))
     constructFeatOpt = constructFeatUnOpt
 
     -- | Unoptimized construction of an expression from a symbol and its
     -- optimized arguments
     constructFeatUnOpt
         :: feature a
-        -> Args (AST (Decor Info (dom :|| Typeable))) a
-        -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
+        -> Args (AST (Decor Info dom)) a
+        -> Opt (ASTF (Decor Info dom) (DenResult a))
 
 
+instance Optimize Empty dom
+  where
+    constructFeatUnOpt = error "Not implemented: constructFeatUnOpt for Empty"
 
 -- These classes used to be super-classes of `Optimize`, but after switching to
 -- GHC 7.4, that lead to looping dictionaries (at run time). The problem arises
@@ -342,21 +346,27 @@ class Optimize feature dom
 --   * Replace all references to `OptimizeSuper dom` with `Optimize dom dom`
 --   * Remove `OptimizeSuper`
 class
-    ( AlphaEq dom dom (dom :|| Typeable) [(VarId, VarId)]
-    , AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId, VarId)]
+    ( AlphaEq dom dom dom [(VarId, VarId)]
+    , AlphaEq dom dom (Decor Info dom) [(VarId, VarId)]
     , EvalBind dom
     , (Literal :|| Type) :<: dom
+    , Optimize (Variable :|| Type) dom
+    , Optimize (ArgConstr Lambda Type) dom
     , Typed dom
+    , Constrained dom
     , Optimize dom dom
     ) =>
       OptimizeSuper dom
 
 instance
-    ( AlphaEq dom dom (dom :|| Typeable) [(VarId, VarId)]
-    , AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId, VarId)]
+    ( AlphaEq dom dom dom [(VarId, VarId)]
+    , AlphaEq dom dom (Decor Info dom) [(VarId, VarId)]
     , EvalBind dom
-    , (Literal :|| Type) :<: dom
+    , (Literal  :|| Type) :<: dom
+    , Optimize (Variable :|| Type) dom
+    , Optimize (ArgConstr Lambda Type) dom
     , Typed dom
+    , Constrained dom
     , Optimize dom dom
     ) =>
       OptimizeSuper dom
@@ -373,8 +383,8 @@ instance
 -- arguments
 constructFeat :: Optimize feature dom
     => feature a
-    -> Args (AST (Decor Info (dom :|| Typeable))) a
-    -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
+    -> Args (AST (Decor Info dom)) a
+    -> Opt (ASTF (Decor Info dom) (DenResult a))
 constructFeat a args = do
     aUnOpt <- constructFeatUnOpt a args
     aOpt   <- constructFeatOpt a args
@@ -411,7 +421,7 @@ instance
 -- folding on all closed expressions, provided that the type permits making a
 -- literal.
 optimizeM :: (OptimizeSuper dom)
-          => ASTF (dom :|| Typeable) a -> Opt (ASTF (Decor Info (dom :|| Typeable)) a)
+          => ASTF dom a -> Opt (ASTF (Decor Info dom) a)
 optimizeM a
     | Dict <- exprDict a
     = do
@@ -431,7 +441,7 @@ optimizeM a
 optimize :: ( Typeable a
             , OptimizeSuper dom
             )
-         => ASTF (dom :|| Typeable) a -> ASTF (Decor Info (dom :|| Typeable)) a
+         => ASTF dom a -> ASTF (Decor Info dom) a
 optimize = flip runReader initEnv . optimizeM
 
 -- | Convenient default implementation of 'constructFeatUnOpt'. Uses 'sizeProp'
@@ -460,8 +470,8 @@ constructFeatUnOptDefault
        , Type (DenResult a)
        )
     => feature a
-    -> Args (AST (Decor Info (dom :|| Typeable))) a
-    -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
+    -> Args (AST (Decor Info dom)) a
+    -> Opt (ASTF (Decor Info dom) (DenResult a))
 constructFeatUnOptDefault feat args
     = do
         src <- asks sourceEnv
@@ -475,8 +485,8 @@ optimizeFeatDefault
        , OptimizeSuper dom
        )
     => feature a
-    -> Args (AST (dom :|| Typeable)) a
-    -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
+    -> Args (AST dom) a
+    -> Opt (ASTF (Decor Info dom) (DenResult a))
 optimizeFeatDefault feat args
     = constructFeat feat =<< mapArgsM optimizeM args
 

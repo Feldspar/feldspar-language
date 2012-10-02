@@ -208,7 +208,7 @@ instance
 -}
 
     constructFeatOpt s@(C' GetIx) ((op :$ _ :$ arr) :* ix :* Nil)
-        | Just (C' SetLength) <- prjC op
+        | Just (C' SetLength) <- prjF op
         = constructFeat s (arr :* ix :* Nil)
 
     constructFeatOpt (C' GetLength) (arr :* Nil)
@@ -239,7 +239,7 @@ instance
         | Just 0 <- viewLiteral len = return $ literalDecor []
 
     constructFeatOpt (C' SetLength) ((getLength :$ arr') :* arr :* Nil)
-        | Just (C' GetLength) <- prjC getLength
+        | Just (C' GetLength) <- prjF getLength
         , alphaEq arr arr'
         = return arr
 
