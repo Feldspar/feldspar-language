@@ -41,18 +41,18 @@ import Feldspar.Core.Types
 import Feldspar.Core.Collection
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Array
---import Feldspar.Core.Frontend.Tuple ()
+import Feldspar.Core.Frontend.Tuple ()
 
 import Language.Syntactic
 
 parallel :: Type a => Data Length -> (Data Index -> Data a) -> Data [a]
 parallel = sugarSymF Parallel
 
-{-
+
 sequential :: (Type a, Syntax s) =>
               Data Length -> s -> (Data Index -> s -> (Data a,s)) -> Data [a]
 sequential = sugarSymF Sequential
--}
+
 
 append :: Type a => Data [a] -> Data [a] -> Data [a]
 append = sugarSymF Append
