@@ -44,6 +44,8 @@ module Feldspar.Core.Constructs.Binding
     , optimizeLambda
     , optimizeFunction
 --    , optimizeFunctionFix
+    , prjLambda
+    , betaReduce
     ) where
 
 import Control.Monad.Reader
@@ -55,7 +57,7 @@ import Data.Lens.Common
 import Data.Proxy
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding hiding (subst,betaReduce)
 import Language.Syntactic.Constructs.Binding.HigherOrder (ArgConstr(..))
 
 import Feldspar.Lattice
@@ -71,6 +73,47 @@ instance Sharable Lambda
 
 instance Sharable Let
 
+-- | Should be a capture-avoiding substitution, but it is currently not correct.
+--
+-- Note: Variables with a different type than the new expression will be
+-- silently ignored.
+subst :: forall constr dom a b
+    .  ( Constrained dom
+       , ArgConstr Lambda Type :<: dom
+       , (Variable :|| Type) :<: dom
+       )
+    => VarId       -- ^ Variable to be substituted
+    -> ASTF (dom :|| Typeable) a  -- ^ Expression to substitute for
+    -> ASTF (dom :|| Typeable) b  -- ^ Expression to substitute in
+    -> ASTF (dom :|| Typeable) b
+subst v new a = go a
+  where
+    go :: AST (dom :|| Typeable) c -> AST (dom :|| Typeable) c
+    go a@((prjLambda -> Just (ArgConstr (Lambda w))) :$ _)
+        | v==w = a  -- Capture
+    go (f :$ a) = go f :$ go a
+    go var
+        | Just (C' (Variable w)) <- prjF var
+        , v==w
+        , Dict :: Dict (Typeable a) <- exprDictSub new
+        , Dict :: Dict (Typeable x) <- exprDictSub var
+        , Just new' <- gcast new
+        = new'
+    go a = a
+  -- TODO Make it correct (may need to alpha-convert `new` before inserting it)
+  -- TODO Should there be an error if `gcast` fails? (See note in Haddock
+  --      comment.)
+
+betaReduce
+    :: ( Constrained dom
+       , ArgConstr Lambda Type :<: dom
+       , (Variable :|| Type) :<: dom
+       )
+    => ASTF (dom :|| Typeable) a         -- ^ Argument
+    -> ASTF (dom :|| Typeable) (a -> b)  -- ^ Function to be reduced
+    -> ASTF (dom :|| Typeable) b
+betaReduce new (lam :$ body)
+    | Just (ArgConstr (Lambda v)) <- prjLambda lam = subst v new body
 
 optimizeLambda :: ( ArgConstr Lambda Type :<: dom
                   , OptimizeSuper dom)
