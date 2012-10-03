@@ -43,7 +43,8 @@ import Data.List
 import Data.Map (notMember)
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding hiding (betaReduce)
+import Language.Syntactic.Constructs.Binding.HigherOrder (ArgConstr(..))
 
 import Feldspar.Range
 import Feldspar.Lattice
@@ -56,8 +57,8 @@ import Feldspar.Core.Constructs.Ord
 data Array a
   where
     Parallel   :: Type a => Array (Length :-> (Index -> a) :-> Full [a])
---    Sequential :: (Type a, Type st) =>
---                  Array (Length :-> st :-> (Index -> st -> (a,st)) :-> Full [a])
+    Sequential :: (Type a, Type st) =>
+                  Array (Length :-> st :-> (Index -> st -> (a,st)) :-> Full [a])
     Append     :: Type a => Array ([a] :-> [a] :-> Full [a])
     GetIx      :: Type a => Array ([a] :-> Index :-> Full a)
     SetIx      :: Type a => Array ([a] :-> Index :-> a :-> Full [a])
@@ -77,12 +78,10 @@ instance Semantic Array
     semantics Parallel = Sem "parallel"
         (\len ixf -> genericTake len $ map ixf [0..])
 
-{-
     semantics Sequential = Sem "sequential"
         (\len i step -> genericTake len $
                         snd $ mapAccumL (\a ix -> swap (step ix a)) i [0..])
       where swap (a,b) = (b,a)
--}
 
     semantics SetIx = Sem "setIx" evalSetIx
       where
@@ -116,8 +115,8 @@ instance SizeProp (Array :|| Type)
   where
     sizeProp (C' Parallel) (WrapFull len :* WrapFull ixf :* Nil) =
         infoSize len :> infoSize ixf
---    sizeProp (C' Sequential) (WrapFull len :* _ :* WrapFull step :* Nil) =
---        infoSize len :> fst (infoSize step)
+    sizeProp (C' Sequential) (WrapFull len :* _ :* WrapFull step :* Nil) =
+        infoSize len :> fst (infoSize step)
     sizeProp (C' Append) (WrapFull arra :* WrapFull arrb :* Nil) =
         (alen + blen) :> (aelem \/ belem)
       where
@@ -142,19 +141,20 @@ instance
     ( (Array :|| Type) :<: dom
     , (NUM   :|| Type) :<: dom
     , (ORD   :|| Type) :<: dom
+    , (Variable :|| Type) :<: dom
+    , ArgConstr Lambda Type :<: dom
     , OptimizeSuper dom
     ) =>
       Optimize (Array :|| Type) dom
   where
-{-
-    optimizeFeat (C' Parallel) (len :* ixf :* Nil) = do
+    optimizeFeat sym@(C' Parallel) (len :* ixf :* Nil) = do
         len' <- optimizeM len
         let szI     = infoSize (getInfo len')
             ixRange = rangeByRange 0 (szI-1)
         ixf' <- optimizeFunction optimizeM (mkInfo ixRange) ixf
-        constructFeat Parallel (len' :* ixf' :* Nil)
+        constructFeat sym (len' :* ixf' :* Nil)
 
-    optimizeFeat (C' Sequential) (len :* inital :* step :* Nil) = do
+    optimizeFeat sym@(C' Sequential) (len :* inital :* step :* Nil) = do
         len'  <- optimizeM len
         init' <- optimizeM inital
         let szI     = infoSize (getInfo len')
@@ -163,10 +163,9 @@ instance
             optimizeM  -- TODO (optimizeFunctionFix optimizeM (mkInfo universal))
             (mkInfo ixRange)
             step
-        constructFeat Sequential (len' :* init' :* step' :* Nil)
+        constructFeat sym (len' :* init' :* step' :* Nil)
       -- TODO Should use fixed-point iteration, but `optimizeFunctionFix` only
       --      works for functions of type `a -> a`.
--}
 
     optimizeFeat a args = optimizeFeatDefault a args
 
@@ -177,35 +176,29 @@ instance
       --      uninitialized array of length one, and setting the first element.
       --      Use `betaReduce` to apply `ixf` to the literal 0.
 
-{-
     constructFeatOpt (C' Parallel) (len :* (lam :$ (gix :$ arr2 :$ ix)) :* Nil)
-        | Just ((Lambda v1))   <- prj lam
-        , Just (C'' GetIx)         <- prjC gix
-        , Just (C'' (Variable v2)) <- prjC ix
+        | Just (ArgConstr (Lambda v1))   <- prjLambda lam
+        , Just (C' GetIx)         <- prjF gix
+        , Just (C' (Variable v2)) <- prjF ix
         , v1 == v2
         , v1 `notMember` infoVars (getInfo arr2)
-        = constructFeat SetLength (len :* arr2 :* Nil)
--}
+        = constructFeat (constr' tProxy SetLength) (len :* arr2 :* Nil)
 
-{-
     constructFeatOpt (C' Sequential) (len :* _ :* _ :* Nil)
         | Just 0 <- viewLiteral len
         = return $ literalDecor []
       -- TODO Optimize when length is one. This requires a way to create an
       --      uninitialized array of length one, and setting the first element.
       --      Use `betaReduce` to apply the step function.
--}
 
     constructFeatOpt (C' Append) (a :* b :* Nil)
         | Just [] <- viewLiteral a = return b
         | Just [] <- viewLiteral b = return a
 
-{-
     constructFeatOpt (C' GetIx) ((op :$ _ :$ ixf) :* ix :* Nil)
-        | Just (C'' Parallel) <- prjC op
+        | Just (C' Parallel) <- prjF op
         = optimizeM $ betaReduce (stripDecor ix) (stripDecor ixf)
           -- TODO should not need to drop the decorations
--}
 
     constructFeatOpt s@(C' GetIx) ((op :$ _ :$ arr) :* ix :* Nil)
         | Just (C' SetLength) <- prjF op
@@ -214,19 +207,17 @@ instance
     constructFeatOpt (C' GetLength) (arr :* Nil)
         | Just as <- viewLiteral arr = return $ literalDecor $ genericLength as
 
-{-
-    constructFeatOpt s@(C' GetLength) (((prjC -> Just op) :$ a :$ _ :$ _) :* Nil)
-        | C'' Sequential <- op = return a
-        | C'' SetIx      <- op = constructFeat s (a :* Nil)
+    constructFeatOpt s@(C' GetLength) ((op :$ a :$ _ :$ _) :* Nil)
+        | Just (C' Sequential) <- prjF op = return a
+        | Just (C' SetIx)      <- prjF op = constructFeat s (a :* Nil)
 
-    constructFeatOpt (C' GetLength) (((prjC -> Just (C'' op)) :$ a :$ b) :* Nil)
-        | Append <- op = do
-            aLen <- constructFeat GetLength (a :* Nil)
-            bLen <- constructFeat GetLength (b :* Nil)
-            constructFeatOpt (C'' Add) (aLen :* bLen :* Nil)
-        | Parallel  <- op = return a
-        | SetLength <- op = return a
--}
+    constructFeatOpt sym@(C' GetLength) ((op :$ a :$ b) :* Nil)
+        | Just (C' Append) <- prjF op = do
+            aLen <- constructFeat sym (a :* Nil)
+            bLen <- constructFeat sym (b :* Nil)
+            constructFeatOpt (constr' tProxy Add) (aLen :* bLen :* Nil)
+        | Just (C' Parallel)  <- prjF op = return a
+        | Just (C' SetLength) <- prjF op = return a
 
     -- TODO remove this optimization when the singletonRange -> literal
     -- optimization in Feldspar.Core.Interpretation has been implemented
