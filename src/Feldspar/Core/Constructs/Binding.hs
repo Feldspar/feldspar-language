@@ -41,8 +41,8 @@
 
 module Feldspar.Core.Constructs.Binding
     ( module Language.Syntactic.Constructs.Binding
---    , optimizeLambda
---    , optimizeFunction
+    , optimizeLambda
+    , optimizeFunction
 --    , optimizeFunctionFix
     ) where
 

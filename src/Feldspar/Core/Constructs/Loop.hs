@@ -44,6 +44,7 @@ import Control.Monad (forM_, when)
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding.HigherOrder (ArgConstr(..))
 
 import Feldspar.Range
 import Feldspar.Core.Types
@@ -149,12 +150,12 @@ instance ( MonadType m
 
 instance ( (Literal :|| Type) :<: dom
          , (Loop    :|| Type) :<: dom
+         , ArgConstr Lambda Type :<: dom
          , OptimizeSuper dom
          )
       => Optimize (Loop :|| Type) dom
   where
-{-    
-    optimizeFeat (C' ForLoop) (len :* initial :* step :* Nil) = do
+    optimizeFeat sym@(C' ForLoop) (len :* initial :* step :* Nil) = do
         len'  <- optimizeM len
         init' <- optimizeM initial
         let szI     = infoSize (getInfo len')
@@ -168,9 +169,9 @@ instance ( (Literal :|| Type) :<: dom
             --        drawAST $ fold max (value minBound) -:: tVec1 tWordN >-> id
             (mkInfo ixRange)
             step
-        constructFeat ForLoop (len' :* init' :* step' :* Nil)
+        constructFeat sym (len' :* init' :* step' :* Nil)
 
-    optimizeFeat (C' WhileLoop) (initial :* cond :* body :* Nil) = do
+    optimizeFeat sym@(C' WhileLoop) (initial :* cond :* body :* Nil) = do
         init' <- optimizeM initial
         body' <- optimizeFunction optimizeM (mkInfoTy typeRep) body
         -- body' <- optimizeFunctionFix optimizeM info body
@@ -179,8 +180,9 @@ instance ( (Literal :|| Type) :<: dom
         let info  = getInfo init'
         let info' = info { infoSize = infoSize (getInfo body') }
         cond' <- optimizeFunction optimizeM info' cond
-        constructFeat WhileLoop (init' :* cond' :* body' :* Nil)
+        constructFeat sym (init' :* cond' :* body' :* Nil)
 
+{-
     constructFeatOpt (C' ForLoop) (len :* initial :* step :* Nil)
         | Just 0 <- viewLiteral len = return initial
         | Just 1 <- viewLiteral len = do

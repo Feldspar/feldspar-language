@@ -76,6 +76,7 @@ module Feldspar.Core.Interpretation
     , injDecorC
     , prjF
     , c'
+    , tProxy
     ) where
 
 
