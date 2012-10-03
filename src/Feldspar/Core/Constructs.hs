@@ -83,27 +83,27 @@ import Feldspar.Core.Constructs.Tuple
 -- * Domain
 --------------------------------------------------------------------------------
 
-type FeldSymbols 
+type FeldSymbols
     =   (Decor SourceInfo1 Identity :|| Type)
-    :+: (Condition :|| Type)
+    :+: (Condition                  :|| Type)
 --    :+: ConditionM Mut
-    :+: (FFI :|| Type)
+    :+: (FFI                        :|| Type)
 --    :+: Let
-    :+: (Literal :|| Type)
-    :+: (Select  :|| Type)
-    :+: (Tuple   :|| Type)
-    :+: (Array :|| Type)
-    :+: (BITS :|| Type)
-    :+: (COMPLEX :|| Type)
-    :+: (Conversion :|| Type)
-    :+: (EQ :|| Type)
-    :+: (Error :|| Type)
-    :+: (FLOATING :|| Type)
-    :+: (FRACTIONAL :|| Type)
-    :+: (FUTURE :|| Type)
-    :+: (INTEGRAL :|| Type)
-    :+: (Logic :|| Type)
-    :+: (Loop :|| Type)
+    :+: (Literal                    :|| Type)
+    :+: (Select                     :|| Type)
+    :+: (Tuple                      :|| Type)
+    :+: (Array                      :|| Type)
+    :+: (BITS                       :|| Type)
+    :+: (COMPLEX                    :|| Type)
+    :+: (Conversion                 :|| Type)
+    :+: (EQ                         :|| Type)
+    :+: (Error                      :|| Type)
+    :+: (FLOATING                   :|| Type)
+    :+: (FRACTIONAL                 :|| Type)
+    :+: (FUTURE                     :|| Type)
+    :+: (INTEGRAL                   :|| Type)
+    :+: (Logic                      :|| Type)
+    :+: (Loop                       :|| Type)
 --    :+: LoopM Mut
 --    :+: MONAD Mut
 --    :+: Mutable
@@ -111,13 +111,13 @@ type FeldSymbols
 --    :+: MutableReference
 --    :+: MutableToPure
 --    :+: MONAD Par
-    :+: (NUM :|| Type)
-    :+: (NoInline :|| Type)
-    :+: (ORD :|| Type)
+    :+: (NUM                        :|| Type)
+    :+: (NoInline                   :|| Type)
+    :+: (ORD                        :|| Type)
 --    :+: ParFeature
-    :+: (PropSize :|| Type)
-    :+: (Save :|| Type)
-    :+: (Trace :|| Type)
+    :+: (PropSize                   :|| Type)
+    :+: (Save                       :|| Type)
+    :+: (Trace                      :|| Type)
     :+: Empty
 
 type FeldDomain    = FODomain FeldSymbols Typeable Type
