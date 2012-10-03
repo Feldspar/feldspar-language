@@ -44,7 +44,6 @@ import Data.Typeable
 import Language.Syntactic
 import Language.Syntactic.Constructs.Literal
 import Language.Syntactic.Constructs.Binding
-import Language.Syntactic.Constructs.Binding.HigherOrder (FODomain)
 
 import Feldspar.Range
 import Feldspar.Core.Types
@@ -228,8 +227,8 @@ optZero :: ( Eq b, Num b
            , Optimize feature dom
            )
         => feature (a :-> (b :-> Full a))
-        -> Args (AST (Decor Info (FODomain dom Typeable Type))) (a :-> (b :-> Full a))
-        -> Opt (AST (Decor Info (FODomain dom Typeable Type)) (Full a))
+        -> Args (AST (Decor Info (dom :|| Typeable))) (a :-> (b :-> Full a))
+        -> Opt (AST (Decor Info (dom :|| Typeable)) (Full a))
 optZero f (a :* b :* Nil)
     | Just 0 <- viewLiteral b = return a
     | otherwise               = constructFeatUnOpt f (a :* b :* Nil)

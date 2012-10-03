@@ -297,8 +297,8 @@ class Optimize feature dom
            , OptimizeSuper dom
            )
         => feature a
-        -> Args (AST dom) a
-        -> Opt (ASTF (Decor Info dom) (DenResult a))
+        -> Args (AST (dom :|| Typeable)) a
+        -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
     optimizeFeat = optimizeFeatDefault
 
     -- | Optimized construction of an expression from a symbol and its optimized
@@ -308,16 +308,16 @@ class Optimize feature dom
     -- 'constructFeat' which has more accurate propagation of 'Info'.
     constructFeatOpt
         :: feature a
-        -> Args (AST (Decor Info dom)) a
-        -> Opt (ASTF (Decor Info dom) (DenResult a))
+        -> Args (AST (Decor Info (dom :|| Typeable))) a
+        -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
     constructFeatOpt = constructFeatUnOpt
 
     -- | Unoptimized construction of an expression from a symbol and its
     -- optimized arguments
     constructFeatUnOpt
         :: feature a
-        -> Args (AST (Decor Info dom)) a
-        -> Opt (ASTF (Decor Info dom) (DenResult a))
+        -> Args (AST (Decor Info (dom :|| Typeable))) a
+        -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
 
 
 instance Optimize Empty dom
@@ -346,8 +346,8 @@ instance Optimize Empty dom
 --   * Replace all references to `OptimizeSuper dom` with `Optimize dom dom`
 --   * Remove `OptimizeSuper`
 class
-    ( AlphaEq dom dom dom [(VarId, VarId)]
-    , AlphaEq dom dom (Decor Info dom) [(VarId, VarId)]
+    ( AlphaEq dom dom (dom :|| Typeable) [(VarId, VarId)]
+    , AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId, VarId)]
     , EvalBind dom
     , (Literal :|| Type) :<: dom
     , Optimize (Variable :|| Type) dom
@@ -359,8 +359,8 @@ class
       OptimizeSuper dom
 
 instance
-    ( AlphaEq dom dom dom [(VarId, VarId)]
-    , AlphaEq dom dom (Decor Info dom) [(VarId, VarId)]
+    ( AlphaEq dom dom (dom :|| Typeable) [(VarId, VarId)]
+    , AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId, VarId)]
     , EvalBind dom
     , (Literal  :|| Type) :<: dom
     , Optimize (Variable :|| Type) dom
@@ -383,8 +383,8 @@ instance
 -- arguments
 constructFeat :: Optimize feature dom
     => feature a
-    -> Args (AST (Decor Info dom)) a
-    -> Opt (ASTF (Decor Info dom) (DenResult a))
+    -> Args (AST (Decor Info (dom :|| Typeable))) a
+    -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
 constructFeat a args = do
     aUnOpt <- constructFeatUnOpt a args
     aOpt   <- constructFeatOpt a args
@@ -421,7 +421,7 @@ instance
 -- folding on all closed expressions, provided that the type permits making a
 -- literal.
 optimizeM :: (OptimizeSuper dom)
-          => ASTF dom a -> Opt (ASTF (Decor Info dom) a)
+          => ASTF (dom :|| Typeable) a -> Opt (ASTF (Decor Info (dom :|| Typeable)) a)
 optimizeM a
     | Dict <- exprDict a
     = do
@@ -441,7 +441,7 @@ optimizeM a
 optimize :: ( Typeable a
             , OptimizeSuper dom
             )
-         => ASTF dom a -> ASTF (Decor Info dom) a
+         => ASTF (dom :|| Typeable) a -> ASTF (Decor Info (dom :|| Typeable)) a
 optimize = flip runReader initEnv . optimizeM
 
 -- | Convenient default implementation of 'constructFeatUnOpt'. Uses 'sizeProp'
@@ -470,8 +470,8 @@ constructFeatUnOptDefault
        , Type (DenResult a)
        )
     => feature a
-    -> Args (AST (Decor Info dom)) a
-    -> Opt (ASTF (Decor Info dom) (DenResult a))
+    -> Args (AST (Decor Info (dom :|| Typeable))) a
+    -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
 constructFeatUnOptDefault feat args
     = do
         src <- asks sourceEnv
@@ -485,8 +485,8 @@ optimizeFeatDefault
        , OptimizeSuper dom
        )
     => feature a
-    -> Args (AST dom) a
-    -> Opt (ASTF (Decor Info dom) (DenResult a))
+    -> Args (AST (dom :|| Typeable)) a
+    -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
 optimizeFeatDefault feat args
     = constructFeat feat =<< mapArgsM optimizeM args
 
