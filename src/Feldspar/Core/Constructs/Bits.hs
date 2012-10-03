@@ -224,6 +224,7 @@ isAllOnes x = x Prelude.== complement 0
 
 optZero :: ( Eq b, Num b
            , (Literal :|| Type) :<: dom
+           , Typeable a
            , Optimize feature dom
            )
         => feature (a :-> (b :-> Full a))

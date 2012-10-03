@@ -55,7 +55,7 @@ import Data.Proxy
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
-import Language.Syntactic.Constructs.Binding.HigherOrder (ArgConstr)
+import Language.Syntactic.Constructs.Binding.HigherOrder (ArgConstr(..))
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
@@ -71,17 +71,20 @@ instance Sharable Lambda
 instance Sharable Let
 
 
-{-
-optimizeLambda :: (Lambda TypeCtx :<: dom, Optimize dom dom)
-    => (ASTF dom b -> Opt (ASTF (Decor Info dom) b))  -- ^ Optimization of the body
+optimizeLambda :: ( ArgConstr Lambda Type :<: dom
+                  , Typeable a
+                  , Typeable b
+                  , OptimizeSuper dom)
+    => (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
     -> Info a
-    -> Lambda TypeCtx (b :-> Full (a -> b))
-    -> Args (AST dom) (b :-> Full (a -> b))
-    -> Opt (ASTF (Decor Info dom) (a -> b))
-optimizeLambda opt info lam@(Lambda v) (body :* Nil) = do
+    -> ArgConstr Lambda Type (b :-> Full (a -> b))
+    -> Args (AST (dom :|| Typeable)) (b :-> Full (a -> b))
+    -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b))
+optimizeLambda opt info lam@(ArgConstr (Lambda v)) (body :* Nil) = do
     body' <- localVar v info $ opt body
     constructFeatUnOpt lam (body' :* Nil)
 
+{-
 -- | Assumes that the expression is a 'Lambda'
 optimizeFunction :: (Lambda TypeCtx :<: dom, Optimize dom dom)
     => (ASTF dom b -> Opt (ASTF (Decor Info dom) b))  -- ^ Optimization of the body
@@ -132,49 +135,39 @@ optimizeFunctionFix opt info (lam :$ body)
 
         constructFeatUnOpt (Lambda v `withContext` typeCtx) (body' :* Nil)
 
-instance (Variable :<: dom, OptimizeSuper dom) =>
-    Optimize Variable dom
+-}
+instance ( (Variable :|| Type) :<: dom
+         , OptimizeSuper dom)
+      => Optimize (Variable :|| Type) dom
   where
-    constructFeatUnOpt wit var@(Variable v) Nil
-        | Just Dict <- wit
+    constructFeatUnOpt var@(C' (Variable v)) Nil
         = reader $ \env -> case Prelude.lookup v (varEnv env) of
             Nothing -> error $
                 "optimizeFeat: can't get size of free variable: v" ++ show v
             Just (SomeInfo info) ->
                 let info' = (fromJust $ gcast info) {infoVars = singleton v (SomeType $ infoType info) }
-                in  injDecor info' (Variable v)
--}
-
-instance ( (Variable :|| Type) :<: dom
-         , OptimizeSuper dom)
-      => Optimize (Variable :|| Type) dom
-  where
-    constructFeatUnOpt = undefined
+                 in Sym $ Decor info' $ C' $ inj $ c' (Variable v)
 
 instance ( ArgConstr Lambda Type :<: dom
          , OptimizeSuper dom)
       => Optimize (ArgConstr Lambda Type) dom
   where
-    constructFeatUnOpt = undefined
-
-{-
-instance (Lambda TypeCtx :<: dom, Optimize dom dom) =>
-    Optimize (Lambda TypeCtx) dom
-  where
     -- | Assigns a 'universal' size to the bound variable. This only makes sense
     -- for top-level lambdas. For other uses, use 'optimizeLambda' instead.
-    optimizeFeat lam@(Lambda v)
-        | TypeWit <- witnessByProxy typeCtx (argProxy lam)
-        = optimizeLambda optimizeM (mkInfo universal) (Lambda v)
 
-    constructFeatUnOpt lam@(Lambda v) (body :* Nil)
-        | TypeWit <- witnessByProxy typeCtx (argProxy lam)
+    optimizeFeat lam@(ArgConstr (Lambda v))
+        | Dict <- exprDict lam
+        = optimizeLambda optimizeM (mkInfo universal) lam
+
+    constructFeatUnOpt lam@(ArgConstr (Lambda v)) (body :* Nil)
+        | Dict <- exprDict lam
         , Info t sz vars _ <- getInfo body
         = do
             src <- asks sourceEnv
             let info = Info (FunType typeRep t) sz (delete v vars) src
-            return $ injDecorCtx typeCtx info (Lambda v) :$ body
+            return $ (Sym $ Decor info $ C' $ inj lam) :$ body
 
+{-
 argProxy :: Lambda TypeCtx (b :-> Full (a -> b)) -> Proxy a
 argProxy (Lambda _) = Proxy
 

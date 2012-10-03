@@ -307,7 +307,8 @@ class Optimize feature dom
     -- Note: This function should normally not be called directly. Instead, use
     -- 'constructFeat' which has more accurate propagation of 'Info'.
     constructFeatOpt
-        :: feature a
+        :: ( Typeable (DenResult a))
+        => feature a
         -> Args (AST (Decor Info (dom :|| Typeable))) a
         -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
     constructFeatOpt = constructFeatUnOpt
@@ -315,7 +316,8 @@ class Optimize feature dom
     -- | Unoptimized construction of an expression from a symbol and its
     -- optimized arguments
     constructFeatUnOpt
-        :: feature a
+        :: ( Typeable (DenResult a))
+        => feature a
         -> Args (AST (Decor Info (dom :|| Typeable))) a
         -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
 
@@ -350,8 +352,6 @@ class
     , AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId, VarId)]
     , EvalBind dom
     , (Literal :|| Type) :<: dom
-    , Optimize (Variable :|| Type) dom
-    , Optimize (ArgConstr Lambda Type) dom
     , Typed dom
     , Constrained dom
     , Optimize dom dom
@@ -363,8 +363,6 @@ instance
     , AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId, VarId)]
     , EvalBind dom
     , (Literal  :|| Type) :<: dom
-    , Optimize (Variable :|| Type) dom
-    , Optimize (ArgConstr Lambda Type) dom
     , Typed dom
     , Constrained dom
     , Optimize dom dom
@@ -381,7 +379,8 @@ instance
 
 -- | Optimized construction of an expression from a symbol and its optimized
 -- arguments
-constructFeat :: Optimize feature dom
+constructFeat :: ( Typeable (DenResult a)
+                 , Optimize feature dom)
     => feature a
     -> Args (AST (Decor Info (dom :|| Typeable))) a
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
@@ -482,6 +481,7 @@ constructFeatUnOptDefault feat args
 -- | Convenient default implementation of 'optimizeFeat'
 optimizeFeatDefault
     :: ( Optimize feature dom
+       , Typeable (DenResult a)
        , OptimizeSuper dom
        )
     => feature a
