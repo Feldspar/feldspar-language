@@ -43,7 +43,7 @@ import Data.Typeable
 import Control.Monad (forM_, when)
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding hiding (betaReduce)
 import Language.Syntactic.Constructs.Binding.HigherOrder (ArgConstr(..))
 
 import Feldspar.Range
@@ -148,8 +148,9 @@ instance ( MonadType m
     constructFeatUnOpt For   args = constructFeatUnOptDefaultTyp voidTypeRep For   args
 -}
 
-instance ( (Literal :|| Type) :<: dom
-         , (Loop    :|| Type) :<: dom
+instance ( (Literal  :|| Type) :<: dom
+         , (Loop     :|| Type) :<: dom
+         , (Variable :|| Type) :<: dom
          , ArgConstr Lambda Type :<: dom
          , OptimizeSuper dom
          )
