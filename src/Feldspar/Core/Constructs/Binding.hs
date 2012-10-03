@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -79,20 +80,24 @@ optimizeLambda :: ( ArgConstr Lambda Type :<: dom
     -> Args (AST (dom :|| Typeable)) (b :-> Full (a -> b))
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b))
 optimizeLambda opt info lam@(ArgConstr (Lambda v)) (body :* Nil)
-    | Dict <- exprDict body = do
+    | Dict <- exprDict body
+    = do
         body' <- localVar v info $ opt body
         constructFeatUnOpt lam (body' :* Nil)
 
-{-
 -- | Assumes that the expression is a 'Lambda'
-optimizeFunction :: (Lambda TypeCtx :<: dom, Optimize dom dom)
-    => (ASTF dom b -> Opt (ASTF (Decor Info dom) b))  -- ^ Optimization of the body
+optimizeFunction :: ( ArgConstr Lambda Type :<: dom
+                    , OptimizeSuper dom)
+    => (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
     -> Info a
-    -> (ASTF dom (a -> b) -> Opt (ASTF (Decor Info dom) (a -> b)))
-optimizeFunction opt info (lam :$ body)
-    | Just (Lambda v) <- prjCtx typeCtx lam
-    = optimizeLambda opt info (Lambda v) (body :* Nil)
+    -> (ASTF (dom :|| Typeable) (a -> b) -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b)))
+optimizeFunction opt info a@(sym :$ body)
+    | Dict <- exprDict a
+    , Dict <- exprDict body
+    , Just (lam@(ArgConstr (Lambda v))) <- prjLambda sym
+    = optimizeLambda opt info lam (body :* Nil)
 
+{-
 optimizeFunBody :: (Lambda TypeCtx :<: dom, Optimize dom dom, Typeable a)
     => (ASTF dom a -> Opt (ASTF (Decor Info dom) a))  -- ^ Optimization of the body
     -> Env                                            -- ^ Environment (instead of using 'Opt')
@@ -135,6 +140,7 @@ optimizeFunctionFix opt info (lam :$ body)
         constructFeatUnOpt (Lambda v `withContext` typeCtx) (body' :* Nil)
 
 -}
+
 instance ( (Variable :|| Type) :<: dom
          , OptimizeSuper dom)
       => Optimize (Variable :|| Type) dom
@@ -166,37 +172,36 @@ instance ( ArgConstr Lambda Type :<: dom
             let info = Info (FunType typeRep t) sz (delete v vars) src
             return $ (Sym $ Decor info $ C' $ inj lam) :$ body
 
-{-
-argProxy :: Lambda TypeCtx (b :-> Full (a -> b)) -> Proxy a
-argProxy (Lambda _) = Proxy
-
-instance SizeProp (Let TypeCtx TypeCtx)
+instance SizeProp (Let :|| Type)
   where
-    sizeProp Let (_ :* WrapFull f :* Nil) = infoSize f
+    sizeProp (C' Let) (_ :* WrapFull f :* Nil) = infoSize f
 
 instance
-    ( Let TypeCtx TypeCtx :<: dom
-    , Lambda TypeCtx :<: dom
-    , Variable TypeCtx :<: dom
-    , Optimize dom dom
+    ( (Let      :|| Type)   :<: dom
+    , (Variable :|| Type)   :<: dom
+    , ArgConstr Lambda Type :<: dom
+    , OptimizeSuper dom
     ) =>
-      Optimize (Let TypeCtx TypeCtx) dom
+      Optimize (Let :|| Type) dom
   where
-    optimizeFeat lt@Let (a :* f :* Nil) = do
+    optimizeFeat lt@(C' Let) (a :* f :* Nil) = do
         a' <- optimizeM a
         f' <- optimizeFunction optimizeM (getInfo a') f
         case getInfo f' of
           Info{} -> constructFeat lt (a' :* f' :* Nil)
             -- TODO Why is this pattern match needed?
 
-    constructFeatOpt Let (a :* (lam :$ var) :* Nil)
-        | Just (_,Lambda v1)   <- prjDecorCtx typeCtx lam
-        , Just (_,Variable v2) <- prjDecorCtx typeCtx var
+    constructFeatOpt (C' Let) (a :* (lam :$ var) :* Nil)
+        | Just (C' (Variable v2))      <- prjF var
+        , Just (ArgConstr (Lambda v1)) <- prjLambda lam
         , v1 == v2
         = return $ fromJust $ gcast a
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+
+prjLambda :: (Project (ArgConstr Lambda Type) dom)
+          => dom sig -> Maybe ((ArgConstr Lambda Type) sig)
+prjLambda = prj
 
