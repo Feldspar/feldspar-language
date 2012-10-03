@@ -72,17 +72,16 @@ instance Sharable Let
 
 
 optimizeLambda :: ( ArgConstr Lambda Type :<: dom
-                  , Typeable a
-                  , Typeable b
                   , OptimizeSuper dom)
     => (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
     -> Info a
     -> ArgConstr Lambda Type (b :-> Full (a -> b))
     -> Args (AST (dom :|| Typeable)) (b :-> Full (a -> b))
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b))
-optimizeLambda opt info lam@(ArgConstr (Lambda v)) (body :* Nil) = do
-    body' <- localVar v info $ opt body
-    constructFeatUnOpt lam (body' :* Nil)
+optimizeLambda opt info lam@(ArgConstr (Lambda v)) (body :* Nil)
+    | Dict <- exprDict body = do
+        body' <- localVar v info $ opt body
+        constructFeatUnOpt lam (body' :* Nil)
 
 {-
 -- | Assumes that the expression is a 'Lambda'
