@@ -43,6 +43,9 @@ instance (Typed sub) => Typed (Decor info sub)
 instance Typed Empty
   where dict _ = Nothing
 
+instance Typed dom
+  where dict _ = Nothing
+
 typeDict :: Typed dom => ASTF dom a -> Maybe (Dict (Type a))
 typeDict = simpleMatch (const . dict)
 
