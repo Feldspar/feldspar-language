@@ -88,7 +88,7 @@ type FeldSymbols
     :+: (Condition                  :|| Type)
 --    :+: ConditionM Mut
     :+: (FFI                        :|| Type)
---    :+: Let
+    :+: (Let                        :|| Type) 
     :+: (Literal                    :|| Type)
     :+: (Select                     :|| Type)
     :+: (Tuple                      :|| Type)

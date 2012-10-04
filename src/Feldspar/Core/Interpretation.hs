@@ -43,6 +43,7 @@
 
 module Feldspar.Core.Interpretation
     ( module Language.Syntactic.Constructs.Decoration
+    , module Feldspar.Core.Interpretation.Typed
 
     , targetSpecialization
     , Sharable (..)

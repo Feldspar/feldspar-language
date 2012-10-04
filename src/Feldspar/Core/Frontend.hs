@@ -79,7 +79,6 @@ module Feldspar.Core.Frontend
     , nlz
     ) where
 
-
 import Prelude as P
 
 import Control.Monad.State
@@ -132,71 +131,29 @@ import Feldspar.Core.Frontend.SourceInfo       as Frontend
 import Feldspar.Core.Frontend.Trace            as Frontend
 import Feldspar.Core.Frontend.Tuple            as Frontend
 
-{-
-bindDict :: BindDict
-    TypeCtx
-    (Decor Info (Lambda TypeCtx :+: Variable TypeCtx :+: FeldDomain))
-bindDict = BindDict
-    { prjVariable = \a -> case a of
-        Decor _ (prj -> Just (Variable v)) -> Just v
-        _ -> Nothing
+instance Sharable FeldDomain
 
-    , prjLambda = \a -> case a of
-        Decor _ (prj -> Just (Lambda v)) -> Just v
-        _ -> Nothing
+instance Sharable dom => Sharable (Decor info dom)
+  where
+    sharable = sharableDecor
 
-    , injVariable = injVar
-    , injLambda   = injLam
-    , injLet      = injLt
-    }
+prjDict :: PrjDict (Decor Info FeldDomain)
+prjDict = PrjDict
+    (fmap (\(C' (Variable v)) -> v) . prjC' tProxy . decorExpr)
+    (fmap (\(ArgConstr (Lambda v)) -> v) . prjArgConstr tProxy . decorExpr)
 
-injVar :: forall a . Sat a
-    => ASTF (Decor Info (Lambda :+: Variable :+: FeldDomain)) a
-    -> VarId
-    -> (Decor Info (Lambda :+: Variable :+: FeldDomain)) (Full a)
-injVar a v
-    = Decor (getInfo a) (inj (Variable v))
+mkId :: MkInjDict (Decor Info FeldDomain)
+mkId a b | simpleMatch (const . sharable) a
+         , Just Dict <- typeDict b
+         , Just Dict <- typeDict a
+         = Just InjDict
+             { injVariable = Decor (getInfo a) . injC . constr' tProxy . Variable
+             , injLambda   = let info = ((mkInfoTy (FunType typeRep typeRep)) { infoSize = infoSize (getInfo b)})
+                             in Decor info . injC . argConstr tProxy . Lambda
+             , injLet      = Decor (getInfo b) $ injC $ constr' tProxy Let
+             }
+mkId _ _ = Nothing
 
-injLam :: forall a b . (Sat a, Sat b)
-    => ASTF (Decor Info (Lambda :+: Variable :+: FeldDomain)) b
-    -> VarId
-    -> (Decor Info (Lambda :+: Variable :+: FeldDomain)) (b :-> Full (a -> b))
-injLam b v
-    = Decor
-        ((mkInfoTy (FunType typeRep typeRep)) {infoSize = infoSize (getInfo b)})
-        (inj (Lambda v))
-
-injLt :: forall a b . (Sat a, Sat b)
-    => ASTF (Decor Info (Lambda :+: Variable :+: FeldDomain)) b
-    -> (Decor Info (Lambda :+: Variable :+: FeldDomain)) (a :-> (a -> b) :-> Full b)
-injLt b
-    = Decor (getInfo b) (inj Let)
--}
-
-{-
-bindDict :: BindDict ((Lambda :+: Variable :+: FeldDomain) :|| Typeable)
-bindDict = BindDict
-    { prjVariable = \a -> do
-        Variable v <- prj a
-        return v
-    , prjLambda = \a -> do
-        Lambda v <- prj a
-        return v
-    , injVariable = \ref v -> case exprDict ref of
-        Dict -> injC (Variable v)
-    , injLambda = \refa refb v -> case (exprDict refa, exprDict refb) of
-        (Dict,Dict) -> injC (Lambda v)
-    , injLet = \ref -> case exprDict ref of
-        Dict -> injC Let  -- TODO Generalize the pattern of `Dict` matching
-                          --      followed by `injC`
-    }
--}
-
-{-
-instance Sharable ((Lambda :+: Variable :+: FeldDomain) :|| Typeable)
-    where
-      sharable _ = True
--}
 
 type SyntacticFeld a = (Syntactic a FeldDomainAll, Typeable (Internal a))
 
@@ -207,7 +164,7 @@ reifyFeld :: SyntacticFeld a
     -> ASTF (Decor Info FeldDomain) (Internal a)
 reifyFeld n = flip evalState 0 .
     (   return
---    <=< codeMotion bindDict sharable
+    <=< codeMotion prjDict mkId
     .   optimize
     .   targetSpecialization n
     <=< reifyM
