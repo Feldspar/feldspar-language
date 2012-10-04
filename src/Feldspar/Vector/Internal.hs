@@ -70,10 +70,6 @@ type instance CollIndex (Vector a) = Data Index
 type instance CollSize  (Vector a) = Data Length
 
 -- | Non-nested vector
-type DVector a = Vector (Data a)
-{-# DEPRECATED DVector "Please use `Vector1` instead." #-}
-
--- | Non-nested vector
 type Vector1 a = Vector (Data a)
 
 -- | Two-level nested vector
@@ -135,14 +131,6 @@ thawVector arr = indexed (getLength arr) (getIx arr)
 
 thawVector' :: Type a => Length -> Data [a] -> Vector (Data a)
 thawVector' len arr = thawVector $ setLength (value len) arr
-
-unfreezeVector :: Type a => Data [a] -> Vector (Data a)
-unfreezeVector = thawVector
-{-# DEPRECATED unfreezeVector "Please use `thawVector` instead." #-}
-
-unfreezeVector' :: Type a => Length -> Data [a] -> Vector (Data a)
-unfreezeVector' = thawVector'
-{-# DEPRECATED unfreezeVector' "Please use `thawVector'` instead." #-}
 
 
 
@@ -335,7 +323,7 @@ instance (Arbitrary (Internal a), Syntax a) => Arbitrary (Vector a)
 instance (Type a) => Wrap (Vector (Data a)) (Data [a]) where
     wrap = freezeVector
 
-instance (Wrap t u, Type a, TL.Nat s) => Wrap (DVector a -> t) (Data' s [a] -> u) where
+instance (Wrap t u, Type a, TL.Nat s) => Wrap (Vector1 a -> t) (Data' s [a] -> u) where
     wrap f = \(Data' d) -> wrap $ f $ thawVector $ setLength s' d where
         s' = fromInteger $ toInteger $ TL.toInt (undefined :: s)
 
