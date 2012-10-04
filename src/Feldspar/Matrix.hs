@@ -64,14 +64,6 @@ thawMatrix = map thawVector . thawVector
 thawMatrix' :: Type a => Length -> Length -> Data [[a]] -> Matrix a
 thawMatrix' y x = map (thawVector' x) . thawVector' y
 
-unfreezeMatrix :: Type a => Data [[a]] -> Matrix a
-unfreezeMatrix = thawMatrix
-{-# DEPRECATED unfreezeMatrix "Please use `thawMatrix` instead." #-}
-
-unfreezeMatrix' :: Type a => Length -> Length -> Data [[a]] -> Matrix a
-unfreezeMatrix' = thawMatrix'
-{-# DEPRECATED unfreezeMatrix' "Please use `thawMatrix'` instead." #-}
-
 -- | Constructs a matrix. The elements are stored in a core array.
 matrix :: Type a => [[a]] -> Matrix a
 matrix = value
