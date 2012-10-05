@@ -90,7 +90,6 @@ instance AlphaEq dom dom dom env => AlphaEq MutableToPure MutableToPure dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
 instance SizeProp MutableToPure
   where
     sizeProp RunMutableArray _ = universal
@@ -100,5 +99,4 @@ instance (MutableToPure :<: dom, Optimize dom dom) => Optimize MutableToPure dom
   where
     constructFeatUnOpt RunMutableArray args = constructFeatUnOptDefaultTyp typeRep RunMutableArray args
     constructFeatUnOpt WithArray args       = constructFeatUnOptDefaultTyp (MutType typeRep) WithArray args
--}
 

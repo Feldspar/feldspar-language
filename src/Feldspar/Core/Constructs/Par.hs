@@ -38,8 +38,9 @@
 module Feldspar.Core.Constructs.Par where
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Binding
 import Language.Syntactic.Constructs.Monad
+import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding.HigherOrder
 
 import qualified Control.Monad.Par as CMP
 import qualified Control.Monad.Par.Internal as CMP
@@ -86,7 +87,6 @@ instance AlphaEq dom dom dom env => AlphaEq ParFeature ParFeature dom env
 instance Sharable (MONAD Par)
   -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
 
-{-
 instance SizeProp ParFeature
   where
     sizeProp ParRun   (WrapFull a :* Nil) = infoSize a
@@ -119,7 +119,12 @@ instance SizeProp (MONAD Par)
     sizeProp Then   (_ :* WrapFull b :* Nil) = infoSize b
     sizeProp When   _                        = AnySize
 
-instance (MONAD Par :<: dom, OptimizeSuper dom) => Optimize (MONAD Par) dom
+instance ( MONAD Par :<: dom
+         , (Variable :|| Type) :<: dom
+         , ArgConstr Lambda Type :<: dom
+         , OptimizeSuper dom
+         )
+      => Optimize (MONAD Par) dom
   where
     optimizeFeat bnd@Bind (ma :* f :* Nil) = do
         ma' <- optimizeM ma
@@ -132,15 +137,15 @@ instance (MONAD Par :<: dom, OptimizeSuper dom) => Optimize (MONAD Par) dom
     optimizeFeat a args = optimizeFeatDefault a args
 
     constructFeatOpt Bind (ma :* (lam :$ (Sym (Decor _ ret) :$ var)) :* Nil)
-      | Just (_,Lambda v1)   <- prjDecorCtx typeCtx lam
-      , Just Return          <- prjMonad monadProxy ret
-      , Just (_,Variable v2) <- prjDecorCtx typeCtx var
+      | Just (ArgConstr (Lambda v1)) <- prjLambda lam
+      , Just Return                  <- prjMonad monadProxy ret
+      , Just (C' (Variable v2))      <- prjF var
       , v1 == v2
       , Just ma' <- gcast ma
       = return ma'
 
     constructFeatOpt Bind (ma :* (lam :$ body) :* Nil)
-        | Just (_,Lambda v) <- prjDecorCtx typeCtx lam
+        | Just (ArgConstr (Lambda v)) <- prjLambda lam
         , v `notMember` vars
         = constructFeat Then (ma :* body :* Nil)
       where
@@ -181,5 +186,4 @@ instance (MONAD Par :<: dom, OptimizeSuper dom) => Optimize (MONAD Par) dom
 
     constructFeatUnOpt When args =
         constructFeatUnOptDefaultTyp voidTypeRep When args
--}
 

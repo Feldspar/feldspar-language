@@ -86,38 +86,38 @@ import Feldspar.Core.Constructs.Tuple
 type FeldSymbols
     =   (Decor SourceInfo1 Identity :|| Type)
     :+: (Condition                  :|| Type)
---    :+: ConditionM Mut
-    :+: (FFI                        :|| Type)
-    :+: (Let                        :|| Type) 
-    :+: (Literal                    :|| Type)
-    :+: (Select                     :|| Type)
-    :+: (Tuple                      :|| Type)
-    :+: (Array                      :|| Type)
-    :+: (BITS                       :|| Type)
-    :+: (COMPLEX                    :|| Type)
-    :+: (Conversion                 :|| Type)
-    :+: (EQ                         :|| Type)
-    :+: (Error                      :|| Type)
-    :+: (FLOATING                   :|| Type)
-    :+: (FRACTIONAL                 :|| Type)
-    :+: (FUTURE                     :|| Type)
-    :+: (INTEGRAL                   :|| Type)
-    :+: (Logic                      :|| Type)
-    :+: (Loop                       :|| Type)
---    :+: LoopM Mut
---    :+: MONAD Mut
---    :+: Mutable
---    :+: MutableArray
---    :+: MutableReference
---    :+: MutableToPure
---    :+: MONAD Par
-    :+: (NUM                        :|| Type)
-    :+: (NoInline                   :|| Type)
-    :+: (ORD                        :|| Type)
---    :+: ParFeature
-    :+: (PropSize                   :|| Type)
-    :+: (Save                       :|| Type)
-    :+: (Trace                      :|| Type)
+    :+: (FFI        :|| Type)
+    :+: (Let        :|| Type) 
+    :+: (Literal    :|| Type)
+    :+: (Select     :|| Type)
+    :+: (Tuple      :|| Type)
+    :+: (Array      :|| Type)
+    :+: (BITS       :|| Type)
+    :+: (COMPLEX    :|| Type)
+    :+: (Conversion :|| Type)
+    :+: (EQ         :|| Type)
+    :+: (Error      :|| Type)
+    :+: (FLOATING   :|| Type)
+    :+: (FRACTIONAL :|| Type)
+    :+: (FUTURE     :|| Type)
+    :+: (INTEGRAL   :|| Type)
+    :+: (Logic      :|| Type)
+    :+: (Loop       :|| Type)
+    :+: (NUM        :|| Type)
+    :+: (NoInline   :|| Type)
+    :+: (ORD        :|| Type)
+    :+: (PropSize   :|| Type)
+    :+: (Save       :|| Type)
+    :+: (Trace      :|| Type)
+    :+: ConditionM Mut
+    :+: LoopM Mut
+    :+: MONAD Mut
+    :+: Mutable
+    :+: MutableArray
+    :+: MutableReference
+    :+: MutableToPure
+    :+: MONAD Par
+    :+: ParFeature
     :+: Empty
 
 type FeldDomain    = FODomain FeldSymbols Typeable Type

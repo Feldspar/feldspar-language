@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -49,6 +50,7 @@ import Data.Proxy
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding.HigherOrder
 import Language.Syntactic.Constructs.Monad
 
 import Feldspar.Core.Types
@@ -78,7 +80,6 @@ instance AlphaEq dom dom dom env => AlphaEq Mutable Mutable dom env
 instance Sharable (MONAD Mut)
   -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
 
-{-
 instance SizeProp (MONAD Mut)
   where
     sizeProp Return (WrapFull a :* Nil)      = infoSize a
@@ -93,7 +94,11 @@ instance SizeProp Mutable
 monadProxy :: Proxy (Mut a)
 monadProxy = Proxy
 
-instance (MONAD Mut :<: dom, OptimizeSuper dom) => Optimize (MONAD Mut) dom
+instance ( MONAD Mut :<: dom
+         , (Variable :|| Type) :<: dom
+         , ArgConstr Lambda Type :<: dom
+         , OptimizeSuper dom)
+      => Optimize (MONAD Mut) dom
   where
     optimizeFeat bnd@Bind (ma :* f :* Nil) = do
         ma' <- optimizeM ma
@@ -106,15 +111,15 @@ instance (MONAD Mut :<: dom, OptimizeSuper dom) => Optimize (MONAD Mut) dom
     optimizeFeat a args = optimizeFeatDefault a args
 
     constructFeatOpt Bind (ma :* (lam :$ (Sym (Decor _ ret) :$ var)) :* Nil)
-      | Just (_,Lambda v1)   <- prjDecorCtx typeCtx lam
-      , Just Return          <- prjMonad monadProxy ret
-      , Just (_,Variable v2) <- prjDecorCtx typeCtx var
+      | Just (ArgConstr (Lambda v1)) <- prjLambda lam
+      , Just Return                  <- prjMonad monadProxy ret
+      , Just (C' (Variable v2))      <- prjF var
       , v1 == v2
       , Just ma' <- gcast ma
       = return ma'
 
     constructFeatOpt Bind (ma :* (lam :$ body) :* Nil)
-        | Just (_,Lambda v) <- prjDecorCtx typeCtx lam
+        | Just (ArgConstr (Lambda v)) <- prjLambda lam
         , v `notMember` vars
         = constructFeat Then (ma :* body :* Nil)
       where
@@ -156,8 +161,7 @@ instance (MONAD Mut :<: dom, OptimizeSuper dom) => Optimize (MONAD Mut) dom
     constructFeatUnOpt When args =
         constructFeatUnOptDefaultTyp voidTypeRep When args
 
-instance (Mutable :<: dom, Optimize dom dom) => Optimize Mutable dom
+instance (Mutable :<: dom, OptimizeSuper dom) => Optimize Mutable dom
   where
-    constructFeatUnOpt = constructFeatUnOptDefault
--}
+    constructFeatUnOpt Run args = constructFeatUnOptDefault Run args
 

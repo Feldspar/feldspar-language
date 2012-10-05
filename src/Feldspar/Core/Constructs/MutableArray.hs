@@ -77,7 +77,6 @@ instance AlphaEq dom dom dom env => AlphaEq MutableArray MutableArray dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
 instance SizeProp MutableArray
   where
     sizeProp NewArr  (WrapFull len :* _ :* Nil) = infoSize len :> universal
@@ -95,5 +94,4 @@ instance (MutableArray :<: dom, Optimize dom dom) => Optimize MutableArray dom
     constructFeatUnOpt GetArr    args = constructFeatUnOptDefaultTyp (MutType typeRep) GetArr args
     constructFeatUnOpt SetArr    args = constructFeatUnOptDefaultTyp (MutType typeRep) SetArr args
     constructFeatUnOpt ArrLength args = constructFeatUnOptDefaultTyp (MutType typeRep) ArrLength args
--}
 

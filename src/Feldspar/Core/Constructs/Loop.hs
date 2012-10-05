@@ -111,12 +111,10 @@ instance AlphaEq dom dom dom env => AlphaEq Loop Loop dom env
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
 instance SizeProp (LoopM m)
   where
     sizeProp While _ = AnySize
     sizeProp For   _ = AnySize
--}
 
 instance SizeProp (Loop :|| Type)
   where
@@ -124,12 +122,9 @@ instance SizeProp (Loop :|| Type)
     sizeProp (C' WhileLoop) (_ :* _ :* WrapFull step :* Nil) = infoSize step
 
 
-{-
 instance ( MonadType m
          , LoopM m :<: dom
-         , Lambda TypeCtx :<: dom
-         , WitnessCons (LoopM m)
-         , MaybeWitnessSat TypeCtx dom
+         , ArgConstr Lambda Type :<: dom
          , Optimize dom dom
          )
       => Optimize (LoopM m) dom
@@ -146,7 +141,6 @@ instance ( MonadType m
 
     constructFeatUnOpt While args = constructFeatUnOptDefaultTyp voidTypeRep While args
     constructFeatUnOpt For   args = constructFeatUnOptDefaultTyp voidTypeRep For   args
--}
 
 instance ( (Literal  :|| Type) :<: dom
          , (Loop     :|| Type) :<: dom

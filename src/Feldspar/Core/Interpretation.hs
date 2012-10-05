@@ -71,7 +71,7 @@ module Feldspar.Core.Interpretation
     , constructFeat
     , optimizeM
     , optimize
---    , constructFeatUnOptDefaultTyp
+    , constructFeatUnOptDefaultTyp
     , constructFeatUnOptDefault
     , optimizeFeatDefault
     , injDecorC
@@ -447,9 +447,10 @@ optimize = flip runReader initEnv . optimizeM
 
 -- | Convenient default implementation of 'constructFeatUnOpt'. Uses 'sizeProp'
 -- to propagate size.
-{-
 constructFeatUnOptDefaultTyp
     :: ( feature :<: dom
+       , SizeProp feature
+       , Typeable (DenResult a)
        , Show (Size (DenResult a))
        )
     => TypeRep (DenResult a)
@@ -459,10 +460,9 @@ constructFeatUnOptDefaultTyp
 constructFeatUnOptDefaultTyp typ feat args
     = do
         src <- asks sourceEnv
-        let sz   = undefined -- sizeProp feat $ mapArgs (WrapFull . getInfo) args
+        let sz   = sizeProp feat $ mapArgs (WrapFull . getInfo) args
             vars = Map.unions $ listArgs (infoVars . getInfo) args
         return $ appArgs (Sym $ Decor (Info typ sz vars src) $ C' $ inj feat) args
--}
 
 -- | Like 'constructFeatUnOptDefaultTyp' but without an explicit 'TypeRep'
 constructFeatUnOptDefault

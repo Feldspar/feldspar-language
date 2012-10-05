@@ -70,14 +70,13 @@ instance AlphaEq dom dom dom env =>
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
 instance LatticeSize1 m => SizeProp (ConditionM m)
   where
     sizeProp ConditionM (_ :* WrapFull t :* WrapFull f :* Nil) =
         mergeSize t (infoSize t) (infoSize f)
 
 instance ( ConditionM m :<: dom
-         , Logic :<: dom
+         , (Logic :|| Type) :<: dom
          , OptimizeSuper dom
          , LatticeSize1 m
          )
@@ -90,7 +89,7 @@ instance ( ConditionM m :<: dom
         | alphaEq t f = return t
 
     constructFeatOpt cond@ConditionM ((op :$ c) :* t :* f :* Nil)
-        | Just (_, Not) <- prjDecor op
+        | Just (C' Not) <- prjF op
         = constructFeat cond (c :* f :* t :* Nil)
 
     constructFeatOpt a args = constructFeatUnOpt a args
@@ -103,5 +102,4 @@ instance ( ConditionM m :<: dom
       --      example
       --
       --        condition (x<10) (min x 20) x  ==>  x
--}
 

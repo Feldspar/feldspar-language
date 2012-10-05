@@ -72,7 +72,6 @@ instance AlphaEq dom dom dom env =>
   where
     alphaEqSym = alphaEqSymDefault
 
-{-
 instance SizeProp MutableReference
   where
     sizeProp NewRef _ = universal
@@ -85,5 +84,4 @@ instance (MutableReference :<: dom, Optimize dom dom) =>
     constructFeatUnOpt NewRef args = constructFeatUnOptDefaultTyp (MutType $ RefType typeRep) NewRef args
     constructFeatUnOpt GetRef args = constructFeatUnOptDefaultTyp (MutType typeRep) GetRef args
     constructFeatUnOpt SetRef args = constructFeatUnOptDefaultTyp (MutType typeRep) SetRef args
--}
 
