@@ -31,7 +31,7 @@ module Feldspar.Repa where
 
 import qualified Prelude as P
 
-import Language.Syntactic.Syntax hiding (size)
+import Language.Syntactic.Sugar
 import Feldspar hiding (desugar,sugar,resugar)
 
 import QuickAnnotate

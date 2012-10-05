@@ -50,22 +50,22 @@ import Feldspar.Core.Constructs.Par
 import Feldspar.Core.Frontend.Par
 
 runPar :: Syntax a => P a -> a
-runPar = sugarSym ParRun
+runPar = sugarSymC ParRun
 
 new :: Syntax a => P (IVar a)
-new = sugarSym ParNew
+new = sugarSymC ParNew
 
 get :: Syntax a => IVar a -> P a
-get = sugarSym ParGet
+get = sugarSymC ParGet
 
 put :: Syntax a => IVar a -> a -> P ()
-put = sugarSym ParPut
+put = sugarSymC ParPut
 
 fork :: P () -> P ()
-fork = sugarSym ParFork
+fork = sugarSymC ParFork
 
 yield :: P ()
-yield = sugarSym ParYield
+yield = sugarSymC ParYield
 
 spawn :: Syntax a => P a -> P (IVar a)
 spawn p = do
