@@ -106,6 +106,9 @@ library
     Feldspar.Par
     Feldspar
 
+  other-modules:
+    Examples.Simple.Basics
+
   default-language: Haskell2010
 
   build-depends:
@@ -144,7 +147,7 @@ library
     TypeSynonymInstances
     ViewPatterns
 
-  hs-source-dirs: src
+  hs-source-dirs: src examples
 
   ghc-options: -fcontext-stack=100
 
