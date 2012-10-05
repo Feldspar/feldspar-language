@@ -186,7 +186,6 @@ test-suite semantics
   build-depends:
     feldspar-language,
     base >= 4 && < 4.7,
-    random >= 1 && <2,
     QuickCheck >= 2.4 && <3,
     test-framework >= 0.6 && < 0.7,
     test-framework-th >= 0.2 && < 0.3,
