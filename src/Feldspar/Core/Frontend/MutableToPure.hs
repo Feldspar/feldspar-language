@@ -40,10 +40,10 @@ import Feldspar.Core.Frontend.MutableArray
 
 
 withArray :: (Type a, Syntax b) => Data (MArr a) -> (Data [a] -> M b) -> M b
-withArray = sugarSym WithArray
+withArray = sugarSymC WithArray
 
 runMutableArray :: Type a => M (Data (MArr a)) -> Data [a]
-runMutableArray = sugarSym RunMutableArray
+runMutableArray = sugarSymC RunMutableArray
 
 freezeArray :: Type a => Data (MArr a) -> M (Data [a])
 freezeArray marr = withArray marr return
@@ -55,3 +55,4 @@ thawArray arr = do
     setArr marr ix (getIx arr ix)
    )
   return marr
+

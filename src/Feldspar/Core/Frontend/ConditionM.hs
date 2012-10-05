@@ -36,5 +36,5 @@ import Feldspar.Core.Constructs
 import Feldspar.Core.Frontend.Mutable
 
 ifM :: Syntax a => Data Bool -> M a -> M a -> M a
-ifM = sugarSym ConditionM
+ifM = sugarSymC ConditionM
 

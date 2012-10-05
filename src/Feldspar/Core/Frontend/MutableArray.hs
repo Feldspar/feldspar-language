@@ -38,26 +38,26 @@ import Feldspar.Core.Constructs.MutableArray
 import Feldspar.Core.Frontend.Mutable
 
 newArr :: Type a => Data Length -> Data a -> M (Data (MArr a))
-newArr = sugarSym NewArr
+newArr = sugarSymC NewArr
 
 newArr_ :: Type a => Data Length -> M (Data (MArr a))
-newArr_ = sugarSym NewArr_
+newArr_ = sugarSymC NewArr_
 
 newListArr :: Type a => [Data a] -> M (Data (MArr a))
 newListArr _ = error "newListArr: unimplemented" -- TODO
 
 getArr :: Type a => Data (MArr a) -> Data Index -> M (Data a)
-getArr = sugarSym GetArr
+getArr = sugarSymC GetArr
 
 setArr :: Type a => Data (MArr a) -> Data Index -> Data a -> M ()
-setArr = sugarSym SetArr
+setArr = sugarSymC SetArr
 
 modifyArr :: Type a
           => Data (MArr a) -> Data Index -> (Data a -> Data a) -> M ()
 modifyArr arr i f = getArr arr i >>= setArr arr i . f
 
 arrLength :: Type a => Data (MArr a) -> M (Data Length)
-arrLength = sugarSym ArrLength
+arrLength = sugarSymC ArrLength
 
 mapArray :: Type a => (Data a -> Data a) -> Data (MArr a) -> M (Data (MArr a))
 mapArray f arr = do
@@ -66,7 +66,7 @@ mapArray f arr = do
     return arr
 
 forArr :: Syntax a => Data Length -> (Data Index -> M a) -> M ()
-forArr = sugarSym For
+forArr = sugarSymC For
 
 swap :: Syntax a
      => Data (MArr (Internal a)) -> Data Index -> Data Index -> M ()

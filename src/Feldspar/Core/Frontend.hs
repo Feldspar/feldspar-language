@@ -72,7 +72,7 @@ module Feldspar.Core.Frontend
     , tData
     , tArr1
     , tArr2
---    , tM
+    , tM
 
     -- * Functions
     , ilog2
@@ -100,11 +100,11 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation hiding (showDecor, drawDecor)
 import Feldspar.Core.Constructs
 import Feldspar.Core.Frontend.Array            as Frontend
---import Feldspar.Core.Frontend.Binding          as Frontend
+import Feldspar.Core.Frontend.Binding          as Frontend
 import Feldspar.Core.Frontend.Bits             as Frontend
 import Feldspar.Core.Frontend.Complex          as Frontend
 import Feldspar.Core.Frontend.Condition        as Frontend
---import Feldspar.Core.Frontend.ConditionM       as Frontend
+import Feldspar.Core.Frontend.ConditionM       as Frontend
 import Feldspar.Core.Frontend.Conversion       as Frontend
 import Feldspar.Core.Frontend.Eq               as Frontend
 import Feldspar.Core.Frontend.Error            as Frontend
@@ -116,14 +116,14 @@ import Feldspar.Core.Frontend.Integral         as Frontend
 import Feldspar.Core.Frontend.Literal          as Frontend
 import Feldspar.Core.Frontend.Logic            as Frontend
 import Feldspar.Core.Frontend.Loop             as Frontend
---import Feldspar.Core.Frontend.Mutable          as Frontend
---import Feldspar.Core.Frontend.MutableArray     as Frontend
---import Feldspar.Core.Frontend.MutableReference as Frontend
---import Feldspar.Core.Frontend.MutableToPure    as Frontend
+import Feldspar.Core.Frontend.Mutable          as Frontend
+import Feldspar.Core.Frontend.MutableArray     as Frontend
+import Feldspar.Core.Frontend.MutableReference as Frontend
+import Feldspar.Core.Frontend.MutableToPure    as Frontend
 import Feldspar.Core.Frontend.NoInline         as Frontend
 import Feldspar.Core.Frontend.Num              as Frontend
 import Feldspar.Core.Frontend.Ord              as Frontend
---import Feldspar.Core.Frontend.Par              as Frontend
+import Feldspar.Core.Frontend.Par              as Frontend
 import Feldspar.Core.Frontend.Save             as Frontend
 import Feldspar.Core.Frontend.Select           as Frontend
 import Feldspar.Core.Frontend.SizeProp         as Frontend
@@ -263,8 +263,8 @@ tArr1 _ = id
 tArr2 :: Patch a a -> Patch (Data [[a]]) (Data [[a]])
 tArr2 _ = id
 
---tM :: Patch a a -> Patch (M a) (M a)
---tM _ = id
+tM :: Patch a a -> Patch (M a) (M a)
+tM _ = id
 
 
 --------------------------------------------------------------------------------

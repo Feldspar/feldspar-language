@@ -54,13 +54,13 @@ instance Syntax a => Syntactic (Ref a) FeldDomainAll
 instance Syntax a => Syntax (Ref a)
 
 newRef :: Syntax a => a -> M (Ref a)
-newRef = sugarSym NewRef
+newRef = sugarSymC NewRef
 
 getRef :: Syntax a => Ref a -> M a
-getRef = sugarSym GetRef
+getRef = sugarSymC GetRef
 
 setRef :: Syntax a => Ref a -> a -> M ()
-setRef = sugarSym SetRef
+setRef = sugarSymC SetRef
 
 modifyRef :: Syntax a => Ref a -> (a -> a) -> M ()
 modifyRef r f = getRef r >>= setRef r . f

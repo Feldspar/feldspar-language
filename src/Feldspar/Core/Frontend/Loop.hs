@@ -35,7 +35,7 @@ import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Loop
 
---import Feldspar.Core.Frontend.Mutable
+import Feldspar.Core.Frontend.Mutable
 
 forLoop :: Syntax a => Data Length -> a -> (Data Index -> a -> a) -> a
 forLoop = sugarSymF ForLoop
@@ -43,9 +43,9 @@ forLoop = sugarSymF ForLoop
 whileLoop :: Syntax a => a -> (a -> Data Bool) -> (a -> a) -> a
 whileLoop = sugarSymF WhileLoop
 
---forM :: (Syntax a) => Data Length -> (Data Index -> M a) -> M ()
---forM = sugarSymC For
+forM :: (Syntax a) => Data Length -> (Data Index -> M a) -> M ()
+forM = sugarSymC For
 
---whileM :: Syntax a => M (Data Bool) -> M a -> M ()
---whileM = sugarSymC While
+whileM :: Syntax a => M (Data Bool) -> M a -> M ()
+whileM = sugarSymC While
 

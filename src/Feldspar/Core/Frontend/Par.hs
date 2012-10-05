@@ -43,7 +43,7 @@ import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Frontend.Literal ()
 
-newtype P a = P { unP :: Mon FeldDomain Par a }
+newtype P a = P { unP :: Mon FeldSymbols Type Par a }
   deriving (Functor, Monad)
 
 instance Syntax a => Syntactic (P a) FeldDomainAll
