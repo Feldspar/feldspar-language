@@ -17,6 +17,10 @@ build-type:     Simple
 cabal-version:  >= 1.14
 tested-with:    GHC==7.6.1, GHC==7.4.1
 
+source-repository head
+  type:     git
+  location: git://github.com/emwap/feldspar-language.git
+
 library
   exposed-modules:
     Feldspar.Prelude
@@ -112,24 +116,22 @@ library
   default-language: Haskell2010
 
   build-depends:
-    array,
-    base >= 4 && < 4.7,
-    containers,
-    data-hash < 0.3,
-    data-lens == 2.10.*,
-    monad-par,
-    mtl,
-    QuickCheck >= 2.4 && < 3,
-    patch-combinators == 0.1.*,
-    random,
-    syntactic == 1.1.*,
-    tagged == 0.4.*,
-    tuple == 0.2.*,
-    type-level >= 0.2.4,
-    monad-par >= 0.1 && < 0.2,
-    QuickAnnotate >= 0.6
+    array                       >= 0.4    && < 0.5,
+    base                        >= 4      && < 4.7,
+    containers                  >= 0.5    && < 0.6,
+    data-hash                   >= 0.2    && < 0.3,
+    data-lens                   >= 2.10   && < 2.11,
+    mtl                         >= 2.1    && < 2.2,
+    QuickCheck                  >= 2.4    && < 3,
+    patch-combinators           >= 0.1    && < 0.2,
+    syntactic                   >= 1.1    && < 1.2,
+    tagged                      >= 0.4    && < 0.5,
+    tuple                       >= 0.2    && < 0.3,
+    type-level                  >= 0.2.4  && < 0.3,
+    monad-par                   >= 0.1    && < 0.2,
+    QuickAnnotate               >= 0.6    && < 0.7
 
-  default-extensions:
+  other-extensions:
     DeriveDataTypeable
     EmptyDataDecls
     FlexibleInstances
@@ -150,6 +152,7 @@ library
   hs-source-dirs: src examples
 
   ghc-options: -fcontext-stack=100
+
 
 test-suite range
   type: exitcode-stdio-1.0
@@ -185,10 +188,10 @@ test-suite semantics
 
   build-depends:
     feldspar-language,
-    base >= 4 && < 4.7,
-    QuickCheck >= 2.4 && <3,
-    test-framework >= 0.6 && < 0.7,
-    test-framework-th >= 0.2 && < 0.3,
+    base                       >= 4   && < 4.7,
+    QuickCheck                 >= 2.4 && < 3,
+    test-framework             >= 0.6 && < 0.7,
+    test-framework-th          >= 0.2 && < 0.3,
     test-framework-quickcheck2 >= 0.2 && < 0.3
 
 test-suite decoration
@@ -205,8 +208,8 @@ test-suite decoration
 
   build-depends:
     feldspar-language,
-    base >= 4 && < 4.7,
-    bytestring >= 0.10 && < 0.11,
-    test-framework >= 0.6 && < 0.7,
-    test-framework-golden >= 1.1 && < 1.2
+    base                  >= 4    && < 4.7,
+    bytestring            >= 0.10 && < 0.11,
+    test-framework        >= 0.6  && < 0.7,
+    test-framework-golden >= 1.1  && < 1.2
 
