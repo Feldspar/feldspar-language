@@ -159,7 +159,6 @@ test-suite range
   main-is: RangeTest.hs
 
   other-modules:
-    Utils
     RangeTest
 
   default-language: Haskell2010
@@ -170,5 +169,26 @@ test-suite range
     random >= 1 && <2,
     QuickCheck >= 2.4 && <3,
     test-framework >= 0.6 && < 0.7,
+    test-framework-quickcheck2 >= 0.2 && < 0.3
+
+test-suite semantics
+  type: exitcode-stdio-1.0
+
+  hs-source-dirs: tests examples
+
+  main-is: SemanticsTest.hs
+
+  other-modules:
+    SemanticsTest
+
+  default-language: Haskell2010
+
+  build-depends:
+    feldspar-language,
+    base >= 4 && < 4.7,
+    random >= 1 && <2,
+    QuickCheck >= 2.4 && <3,
+    test-framework >= 0.6 && < 0.7,
+    test-framework-th >= 0.2 && < 0.3,
     test-framework-quickcheck2 >= 0.2 && < 0.3
 
