@@ -14,8 +14,12 @@ license-file:   LICENSE
 stability:      experimental
 homepage:       http://feldspar.inf.elte.hu/feldspar/
 build-type:     Simple
-cabal-version:  >= 1.6
-tested-with:    GHC==7.0.4, GHC==7.4.1
+cabal-version:  >= 1.14
+tested-with:    GHC==7.6.1, GHC==7.4.2
+
+source-repository head
+  type:     git
+  location: git://github.com/emwap/feldspar-language.git
 
 library
   exposed-modules:
@@ -26,6 +30,7 @@ library
     Feldspar.Algorithm.FFT
     Feldspar.Core.Types
     Feldspar.Core.Interpretation
+    Feldspar.Core.Interpretation.Typed
     Feldspar.Core.Constructs.Array
     Feldspar.Core.Constructs.Binding
     Feldspar.Core.Constructs.Bits
@@ -105,25 +110,28 @@ library
     Feldspar.Par
     Feldspar
 
-  build-depends:
-    array,
-    base >= 4 && < 4.6,
-    containers,
-    data-hash < 0.3,
-    data-lens == 2.10.*,
-    monad-par,
-    mtl,
-    QuickCheck >= 2.4 && < 3,
-    patch-combinators == 0.1.*,
-    random,
-    syntactic == 0.9.*,
-    tagged == 0.4.*,
-    tuple == 0.2.*,
-    type-level >= 0.2.4,
-    monad-par >= 0.1 && < 0.2,
-    QuickAnnotate >= 0.5
+  other-modules:
+    Examples.Simple.Basics
 
-  extensions:
+  default-language: Haskell2010
+
+  build-depends:
+    array                       >= 0.4    && < 0.5,
+    base                        >= 4      && < 4.7,
+    containers                  >= 0.4    && < 0.6,
+    data-hash                   >= 0.1    && < 0.3,
+    data-lens                   >= 2.10   && < 2.11,
+    mtl                         >= 2.1    && < 2.2,
+    QuickCheck                  >= 2.4    && < 3,
+    patch-combinators           >= 0.1    && < 0.2,
+    syntactic                   >= 1.1    && < 1.2,
+    tagged                      >= 0.4    && < 0.5,
+    tuple                       >= 0.2    && < 0.3,
+    type-level                  >= 0.2.4  && < 0.3,
+    monad-par                   >= 0.1    && < 0.2,
+    QuickAnnotate               >= 0.6    && < 0.7
+
+  other-extensions:
     DeriveDataTypeable
     EmptyDataDecls
     FlexibleInstances
@@ -141,5 +149,64 @@ library
     TypeSynonymInstances
     ViewPatterns
 
+  hs-source-dirs: src examples
+
   ghc-options: -fcontext-stack=100
+
+
+test-suite range
+  type: exitcode-stdio-1.0
+
+  hs-source-dirs: tests
+
+  main-is: RangeTest.hs
+
+  other-modules:
+    Feldspar.Range.Test
+
+  default-language: Haskell2010
+
+  build-depends:
+    feldspar-language,
+    base >= 4 && < 4.7,
+    random >= 1 && <2,
+    QuickCheck >= 2.4 && <3,
+    test-framework >= 0.6 && < 0.7,
+    test-framework-quickcheck2 >= 0.2 && < 0.3
+
+test-suite semantics
+  type: exitcode-stdio-1.0
+
+  hs-source-dirs: tests examples
+
+  main-is: SemanticsTest.hs
+
+  other-modules:
+    SemanticsTest
+
+  default-language: Haskell2010
+
+  build-depends:
+    feldspar-language,
+    base                       >= 4   && < 4.7,
+    QuickCheck                 >= 2.4 && < 3,
+    test-framework             >= 0.6 && < 0.7,
+    test-framework-th          >= 0.2 && < 0.3,
+    test-framework-quickcheck2 >= 0.2 && < 0.3
+
+test-suite decoration
+  type: exitcode-stdio-1.0
+
+  hs-source-dirs: tests examples
+
+  main-is: DecorationTests.hs
+
+  default-language: Haskell2010
+
+  build-depends:
+    feldspar-language,
+    base                  >= 4    && < 4.7,
+    bytestring            >= 0.10 && < 0.11,
+    test-framework        >= 0.6  && < 0.7,
+    test-framework-golden >= 1.1  && < 1.2
 
