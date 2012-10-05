@@ -43,6 +43,7 @@
 module Feldspar.Core.Frontend
     ( module Data.Patch
     , Syntactic
+    , SyntacticFeld
     , Internal
 
     , FeldDomainAll
