@@ -121,7 +121,7 @@ library
     containers                  >= 0.4    && < 0.6,
     data-hash                   >= 0.1    && < 0.3,
     data-lens                   >= 2.10   && < 2.11,
-    mtl                         >= 2.1    && < 2.2,
+    mtl                         >= 2.0    && < 2.2,
     QuickCheck                  >= 2.4    && < 3,
     patch-combinators           >= 0.1    && < 0.2,
     syntactic                   >= 1.1    && < 1.2,
