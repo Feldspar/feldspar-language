@@ -74,7 +74,6 @@ module Feldspar.Core.Interpretation
     , constructFeatUnOptDefaultTyp
     , constructFeatUnOptDefault
     , optimizeFeatDefault
-    , injDecorC
     , prjF
     , c'
     , tProxy
@@ -238,11 +237,12 @@ viewLiteral :: forall info dom a. ((Literal :|| Type) :<: dom)
 viewLiteral (prjF -> Just (C' (Literal a))) = Just a
 viewLiteral _ = Nothing
 
-tProxy :: PProxy Type
-tProxy = PProxy
+tProxy :: P Type
+tProxy = P
+-- TODO Rename to pType
 
-prjF :: Project (sub :|| Type) sup => sup sig -> Maybe ((sub :|| Type) sig)
-prjF = prjC' tProxy
+prjF :: forall sub sup sig . Project (sub :|| Type) sup => sup sig -> Maybe ((sub :|| Type) sig)
+prjF = prjP (P::P (sub :|| Type))
 
 -- | Construct a 'Literal' decorated with 'Info'
 literalDecorSrc :: (Type a, (Literal :|| Type) :<: dom) =>
@@ -273,17 +273,6 @@ constFold _ expr _ = expr
 
 -- | Environment for optimization
 type Opt = Reader Env
-
-prjDecorC :: (sub :<: sup)
-          => AST (Decor info (sup )) a -> Maybe (info (DenResult a), sub a)
-prjDecorC a = do
-    (Sym (Decor info b)) <- return a
-    c                    <- prj b
-    return (info, c)
-
-injDecorC :: (InjectC sub sup (DenResult a))
-          => info (DenResult a) -> sub a -> AST (Decor info sup) a
-injDecorC info = Sym . Decor info . injC
 
 -- | Basic optimization of a feature
 --
