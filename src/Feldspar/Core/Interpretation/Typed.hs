@@ -7,22 +7,28 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverlappingInstances #-}
 
+-- | Witness 'Type' constraints
+
 module Feldspar.Core.Interpretation.Typed
+  ( Typed(..)
+  , typeDict
+  )
 where
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Binding
 import Language.Syntactic.Constructs.Binding.HigherOrder
 import Language.Syntactic.Constructs.Decoration
 
 import Feldspar.Core.Types (Type)
 
+-- | Class representing a possible dictionary to witness a 'Type'
+-- constraint.
 class Typed dom
   where
     dict :: dom a -> Maybe (Dict (Type (DenResult a)))
 
 instance Typed (sub :|| Type)
-  where dict (C' s) = Just Dict
+  where dict (C' _) = Just Dict
 
 instance Typed sub => Typed (sub :|| pred)
   where dict (C' s) = dict s
@@ -46,6 +52,7 @@ instance Typed Empty
 instance Typed dom
   where dict _ = Nothing
 
+-- | Extract a possible 'Type' constraint witness from an 'AST'
 typeDict :: Typed dom => ASTF dom a -> Maybe (Dict (Type a))
 typeDict = simpleMatch (const . dict)
 

@@ -57,6 +57,7 @@ class Sized a
     collSize    :: a -> CollSize a
     setCollSize :: CollSize a -> a -> a
 
+-- | Mapping over collections
 class CollMap a b
   where
     collMap :: (Elem a -> Elem b) -> a -> b
