@@ -1,8 +1,8 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -43,13 +43,6 @@ module Feldspar.Range where
 -- should go into `Feldspar.Core.Constructs.*` (or whereever suitable).
 
 import Data.Bits
---import Data.Int
---import Data.Word
---import Data.Typeable
---import System.Random -- Should maybe be exported from QuickCheck
---import Test.QuickCheck hiding ((.&.))
---import qualified Test.QuickCheck as QC
-
 import Feldspar.Lattice
 
 --------------------------------------------------------------------------------
