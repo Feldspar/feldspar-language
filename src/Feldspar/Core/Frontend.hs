@@ -138,20 +138,21 @@ instance Sharable dom => Sharable (Decor info dom)
   where
     sharable = sharableDecor
 
+-- TODO Remove
 prjDict :: PrjDict (Decor Info FeldDomain)
 prjDict = PrjDict
-    (fmap (\(C' (Variable v)) -> v) . prjC' tProxy . decorExpr)
-    (fmap (\(ArgConstr (Lambda v)) -> v) . prjArgConstr tProxy . decorExpr)
+    (prjVariable prjDictFO . decorExpr)
+    (prjLambda   prjDictFO . decorExpr)
 
 mkId :: MkInjDict (Decor Info FeldDomain)
 mkId a b | simpleMatch (const . sharable) a
          , Just Dict <- typeDict b
          , Just Dict <- typeDict a
          = Just InjDict
-             { injVariable = Decor (getInfo a) . injC . constr' tProxy . Variable
+             { injVariable = Decor (getInfo a) . injC . c' . Variable
              , injLambda   = let info = ((mkInfoTy (FunType typeRep typeRep)) { infoSize = infoSize (getInfo b)})
-                             in Decor info . injC . argConstr tProxy . Lambda
-             , injLet      = Decor (getInfo b) $ injC $ constr' tProxy Let
+                             in Decor info . injC . symType (Language.Syntactic.P::Language.Syntactic.P (SubConstr2 (->) Lambda Type Top)) . SubConstr2 . Lambda
+             , injLet      = Decor (getInfo b) $ injC $ c' Let
              }
 mkId _ _ = Nothing
 

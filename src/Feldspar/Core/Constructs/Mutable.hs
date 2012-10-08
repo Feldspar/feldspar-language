@@ -46,8 +46,6 @@ import Data.Map
 import Data.Typeable
 import System.IO.Unsafe
 
-import Data.Proxy
-
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
 import Language.Syntactic.Constructs.Binding.HigherOrder
@@ -91,12 +89,12 @@ instance SizeProp Mutable
   where
     sizeProp Run (WrapFull a :* Nil) = infoSize a
 
-monadProxy :: Proxy (Mut a)
-monadProxy = Proxy
+monadProxy :: P Mut
+monadProxy = P
 
 instance ( MONAD Mut :<: dom
          , (Variable :|| Type) :<: dom
-         , ArgConstr Lambda Type :<: dom
+         , SubConstr2 (->) Lambda Type Top :<: dom
          , OptimizeSuper dom)
       => Optimize (MONAD Mut) dom
   where
@@ -111,15 +109,15 @@ instance ( MONAD Mut :<: dom
     optimizeFeat a args = optimizeFeatDefault a args
 
     constructFeatOpt Bind (ma :* (lam :$ (Sym (Decor _ ret) :$ var)) :* Nil)
-      | Just (ArgConstr (Lambda v1)) <- prjLambda lam
-      , Just Return                  <- prjMonad monadProxy ret
-      , Just (C' (Variable v2))      <- prjF var
+      | Just (SubConstr2 (Lambda v1)) <- prjLambda lam
+      , Just Return                   <- prjMonad monadProxy ret
+      , Just (C' (Variable v2))       <- prjF var
       , v1 == v2
       , Just ma' <- gcast ma
       = return ma'
 
     constructFeatOpt Bind (ma :* (lam :$ body) :* Nil)
-        | Just (ArgConstr (Lambda v)) <- prjLambda lam
+        | Just (SubConstr2 (Lambda v)) <- prjLambda lam
         , v `notMember` vars
         = constructFeat Then (ma :* body :* Nil)
       where

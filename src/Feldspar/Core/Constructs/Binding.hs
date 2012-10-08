@@ -60,7 +60,6 @@ import Data.Proxy
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding hiding (subst,betaReduce)
-import Language.Syntactic.Constructs.Binding.HigherOrder (ArgConstr(..))
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
@@ -75,13 +74,15 @@ instance Sharable Lambda
 
 instance Sharable Let
 
+-- TODO Make an alias for `SubConstr2 (->) Lambda Type Top` ?
+
 -- | Should be a capture-avoiding substitution, but it is currently not correct.
 --
 -- Note: Variables with a different type than the new expression will be
 -- silently ignored.
 subst :: forall constr dom a b
     .  ( Constrained dom
-       , ArgConstr Lambda Type :<: dom
+       , SubConstr2 (->) Lambda Type Top :<: dom
        , (Variable :|| Type) :<: dom
        )
     => VarId       -- ^ Variable to be substituted
@@ -91,14 +92,14 @@ subst :: forall constr dom a b
 subst v new a = go a
   where
     go :: AST (dom :|| Typeable) c -> AST (dom :|| Typeable) c
-    go a@((prjLambda -> Just (ArgConstr (Lambda w))) :$ _)
+    go a@((prjLambda -> Just (SubConstr2 (Lambda w))) :$ _)
         | v==w = a  -- Capture
     go (f :$ a) = go f :$ go a
     go var
         | Just (C' (Variable w)) <- prjF var
         , v==w
-        , Dict :: Dict (Typeable a) <- exprDictSub new
-        , Dict :: Dict (Typeable x) <- exprDictSub var
+        , Dict <- exprDictSub pTypeable new
+        , Dict <- exprDictSub pTypeable var
         , Just new' <- gcast new
         = new'
     go a = a
@@ -108,30 +109,30 @@ subst v new a = go a
 
 betaReduce
     :: ( Constrained dom
-       , ArgConstr Lambda Type :<: dom
+       , SubConstr2 (->) Lambda Type Top :<: dom
        , (Variable :|| Type) :<: dom
        )
     => ASTF (dom :|| Typeable) a         -- ^ Argument
     -> ASTF (dom :|| Typeable) (a -> b)  -- ^ Function to be reduced
     -> ASTF (dom :|| Typeable) b
 betaReduce new (lam :$ body)
-    | Just (ArgConstr (Lambda v)) <- prjLambda lam = subst v new body
+    | Just (SubConstr2 (Lambda v)) <- prjLambda lam = subst v new body
 
-optimizeLambda :: ( ArgConstr Lambda Type :<: dom
+optimizeLambda :: forall dom a b . ( SubConstr2 (->) Lambda Type Top :<: dom
                   , OptimizeSuper dom)
     => (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
     -> Info a
-    -> ArgConstr Lambda Type (b :-> Full (a -> b))
+    -> SubConstr2 (->) Lambda Type Top (b :-> Full (a -> b))
     -> Args (AST (dom :|| Typeable)) (b :-> Full (a -> b))
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b))
-optimizeLambda opt info lam@(ArgConstr (Lambda v)) (body :* Nil)
+optimizeLambda opt info lam@(SubConstr2 (Lambda v)) (body :* Nil)
     | Dict <- exprDict body
     = do
-        body' <- localVar v info $ opt body
+        body' <- localVar v (info :: Info a) $ opt body
         constructFeatUnOpt lam (body' :* Nil)
 
 -- | Assumes that the expression is a 'Lambda'
-optimizeFunction :: ( ArgConstr Lambda Type :<: dom
+optimizeFunction :: ( SubConstr2 (->) Lambda Type Top :<: dom
                     , OptimizeSuper dom)
     => (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
     -> Info a
@@ -139,7 +140,7 @@ optimizeFunction :: ( ArgConstr Lambda Type :<: dom
 optimizeFunction opt info a@(sym :$ body)
     | Dict <- exprDict a
     , Dict <- exprDict body
-    , Just (lam@(ArgConstr (Lambda v))) <- prjLambda sym
+    , Just (lam@(SubConstr2 (Lambda v))) <- prjLambda sym
     = optimizeLambda opt info lam (body :* Nil)
 
 {-
@@ -198,18 +199,18 @@ instance ( (Variable :|| Type) :<: dom
                 let info' = (fromJust $ gcast info) {infoVars = singleton v (SomeType $ infoType info) }
                  in Sym $ Decor info' $ C' $ inj $ c' (Variable v)
 
-instance ( ArgConstr Lambda Type :<: dom
+instance ( SubConstr2 (->) Lambda Type Top :<: dom
          , OptimizeSuper dom)
-      => Optimize (ArgConstr Lambda Type) dom
+      => Optimize (SubConstr2 (->) Lambda Type Top) dom
   where
     -- | Assigns a 'universal' size to the bound variable. This only makes sense
     -- for top-level lambdas. For other uses, use 'optimizeLambda' instead.
 
-    optimizeFeat lam@(ArgConstr (Lambda v))
+    optimizeFeat lam@(SubConstr2 (Lambda v))
         | Dict <- exprDict lam
         = optimizeLambda optimizeM (mkInfo universal) lam
 
-    constructFeatUnOpt lam@(ArgConstr (Lambda v)) (body :* Nil)
+    constructFeatUnOpt lam@(SubConstr2 (Lambda v)) (body :* Nil)
         | Dict <- exprDict lam
         , Info t sz vars _ <- getInfo body
         = do
@@ -222,9 +223,9 @@ instance SizeProp (Let :|| Type)
     sizeProp (C' Let) (_ :* WrapFull f :* Nil) = infoSize f
 
 instance
-    ( (Let      :|| Type)   :<: dom
-    , (Variable :|| Type)   :<: dom
-    , ArgConstr Lambda Type :<: dom
+    ( (Let      :|| Type)             :<: dom
+    , (Variable :|| Type)             :<: dom
+    , SubConstr2 (->) Lambda Type Top :<: dom
     , OptimizeSuper dom
     ) =>
       Optimize (Let :|| Type) dom
@@ -237,8 +238,8 @@ instance
             -- TODO Why is this pattern match needed?
 
     constructFeatOpt (C' Let) (a :* (lam :$ var) :* Nil)
-        | Just (C' (Variable v2))      <- prjF var
-        , Just (ArgConstr (Lambda v1)) <- prjLambda lam
+        | Just (C' (Variable v2))       <- prjF var
+        , Just (SubConstr2 (Lambda v1)) <- prjLambda lam
         , v1 == v2
         = return $ fromJust $ gcast a
 
@@ -246,7 +247,7 @@ instance
 
     constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
 
-prjLambda :: (Project (ArgConstr Lambda Type) dom)
-          => dom sig -> Maybe ((ArgConstr Lambda Type) sig)
+prjLambda :: (Project (SubConstr2 (->) Lambda Type Top) dom)
+          => dom sig -> Maybe ((SubConstr2 (->) Lambda Type Top) sig)
 prjLambda = prj
 
