@@ -256,11 +256,13 @@ enumFrom = flip enumFromTo (value maxBound)
 (...) :: Data Index -> Data Index -> Vector (Data Index)
 (...) = enumFromTo
 
+-- | 'map' @f v@ is the 'Vector' obtained by applying f to each element of
+-- @f@.
 map :: (a -> b) -> Vector a -> Vector b
 map _ Empty = Empty
 map f (Indexed l ixf cont) = Indexed l (f . ixf) $ map f cont
 
--- | Zipping a single-segment vector
+-- | Zipping two 'Vector's
 zip :: (Syntax a, Syntax b) => Vector a -> Vector b -> Vector (a,b)
 zip v1 v2 = go (mergeSegments v1) (mergeSegments v2)
   where
@@ -269,6 +271,9 @@ zip v1 v2 = go (mergeSegments v1) (mergeSegments v2)
     go (Indexed l1 ixf1 Empty) (Indexed l2 ixf2 Empty) =
       indexed (min l1 l2) ((,) <$> ixf1 <*> ixf2)
 
+-- | Zipping three 'Vector's
+zip3 :: (Syntax a, Syntax b, Syntax c)
+     => Vector a -> Vector b -> Vector c -> Vector (a,b,c)
 zip3 v1 v2 v3 = go (mergeSegments v1) (mergeSegments v2) (mergeSegments v3)
   where
     go Empty _ _ = Empty
@@ -277,6 +282,9 @@ zip3 v1 v2 v3 = go (mergeSegments v1) (mergeSegments v2) (mergeSegments v3)
     go (Indexed l1 ixf1 Empty) (Indexed l2 ixf2 Empty) (Indexed l3 ixf3 Empty) =
       indexed (Prelude.foldr1 min [l1,l2,l3]) ((,,) <$> ixf1 <*> ixf2 <*> ixf3)
 
+-- | Zipping four 'Vector's
+zip4 :: (Syntax a, Syntax b, Syntax c, Syntax d)
+     => Vector a -> Vector b -> Vector c -> Vector d -> Vector (a,b,c,d)
 zip4 v1 v2 v3 v4 = go (mergeSegments v1) (mergeSegments v2) (mergeSegments v3) (mergeSegments v4)
   where
     go Empty _ _ _ = Empty
@@ -286,6 +294,9 @@ zip4 v1 v2 v3 v4 = go (mergeSegments v1) (mergeSegments v2) (mergeSegments v3) (
     go (Indexed l1 ixf1 Empty) (Indexed l2 ixf2 Empty) (Indexed l3 ixf3 Empty) (Indexed l4 ixf4 Empty) =
       indexed (Prelude.foldr1 min [l1,l2,l3,l4]) ((,,,) <$> ixf1 <*> ixf2 <*> ixf3 <*> ixf4)
 
+-- | Zipping five 'Vector's
+zip5 :: (Syntax a, Syntax b, Syntax c, Syntax d, Syntax e)
+     => Vector a -> Vector b -> Vector c -> Vector d -> Vector e -> Vector (a,b,c,d,e)
 zip5 v1 v2 v3 v4 v5 = go (mergeSegments v1) (mergeSegments v2) (mergeSegments v3) (mergeSegments v4) (mergeSegments v5)
   where
     go Empty _ _ _ _ = Empty
@@ -296,30 +307,42 @@ zip5 v1 v2 v3 v4 v5 = go (mergeSegments v1) (mergeSegments v2) (mergeSegments v3
     go (Indexed l1 ixf1 Empty) (Indexed l2 ixf2 Empty) (Indexed l3 ixf3 Empty) (Indexed l4 ixf4 Empty) (Indexed l5 ixf5 Empty) =
       indexed (Prelude.foldr1 min [l1,l2,l3,l4,l5]) ((,,,,) <$> ixf1 <*> ixf2 <*> ixf3 <*> ixf4 <*> ixf5)
 
+-- | Unzip to two 'Vector's
 unzip :: Vector (a,b) -> (Vector a, Vector b)
 unzip v = (map sel1 v, map sel2 v)
 
+-- | Unzip to three 'Vector's
 unzip3 :: Vector (a,b,c) -> (Vector a, Vector b, Vector c)
 unzip3 v = (map sel1 v, map sel2 v, map sel3 v)
 
+-- | Unzip to four 'Vector's
 unzip4 :: Vector (a,b,c,d) -> (Vector a, Vector b, Vector c, Vector d)
 unzip4 v = (map sel1 v, map sel2 v, map sel3 v, map sel4 v)
 
+-- | Unzip to five 'Vector's
 unzip5 :: Vector (a,b,c,d,e) -> (Vector a, Vector b, Vector c, Vector d, Vector e)
 unzip5 v = (map sel1 v, map sel2 v, map sel3 v, map sel4 v, map sel5 v)
 
+-- | Generalization of 'zip' using the supplied function instead of tupling
+-- to combine the elements
 zipWith :: (Syntax a, Syntax b) =>
     (a -> b -> c) -> Vector a -> Vector b -> Vector c
 zipWith f a b = map (uncurryN f) $ zip a b
 
+-- | Generalization of 'zip3' using the supplied function instead of tupling
+-- to combine the elements
 zipWith3 :: (Syntax a, Syntax b, Syntax c) =>
     (a -> b -> c -> d) -> Vector a -> Vector b -> Vector c -> Vector d
 zipWith3 f a b c = map (uncurryN f) $ zip3 a b c
 
+-- | Generalization of 'zip4' using the supplied function instead of tupling
+-- to combine the elements
 zipWith4 :: (Syntax a, Syntax b, Syntax c, Syntax d) =>
     (a -> b -> c -> d -> e) -> Vector a -> Vector b -> Vector c -> Vector d -> Vector e
 zipWith4 f a b c d = map (uncurryN f) $ zip4 a b c d
 
+-- | Generalization of 'zip5' using the supplied function instead of tupling
+-- to combine the elements
 zipWith5 :: (Syntax a, Syntax b, Syntax c, Syntax d, Syntax e) =>
     (a -> b -> c -> d -> e -> f) -> Vector a -> Vector b -> Vector c -> Vector d -> Vector e -> Vector f
 zipWith5 f a b c d e = map (uncurryN f) $ zip5 a b c d e
