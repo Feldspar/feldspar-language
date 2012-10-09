@@ -36,8 +36,8 @@ instance Typed sub => Typed (sub :|| pred)
 instance Typed sub => Typed (sub :| p)
   where dict (C s) = dict s
 
-instance Typed (ArgConstr sub Type)
-  where dict (ArgConstr s) = Nothing
+instance Typed (SubConstr2 (->) sub Type Top)
+  where dict (SubConstr2 s) = Nothing
 
 instance (Typed sub, Typed sup) => Typed (sub :+: sup)
   where dict (InjL s) = dict s

@@ -43,7 +43,6 @@ import Data.Map (notMember)
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding hiding (betaReduce)
-import Language.Syntactic.Constructs.Binding.HigherOrder (ArgConstr(..))
 
 import Feldspar.Range
 import Feldspar.Lattice
@@ -141,7 +140,7 @@ instance
     , (NUM   :|| Type) :<: dom
     , (ORD   :|| Type) :<: dom
     , (Variable :|| Type) :<: dom
-    , ArgConstr Lambda Type :<: dom
+    , SubConstr2 (->) Lambda Type Top :<: dom
     , OptimizeSuper dom
     ) =>
       Optimize (Array :|| Type) dom
@@ -176,12 +175,12 @@ instance
       --      Use `betaReduce` to apply `ixf` to the literal 0.
 
     constructFeatOpt (C' Parallel) (len :* (lam :$ (gix :$ arr2 :$ ix)) :* Nil)
-        | Just (ArgConstr (Lambda v1))   <- prjLambda lam
+        | Just (SubConstr2 (Lambda v1))   <- prjLambda lam
         , Just (C' GetIx)         <- prjF gix
         , Just (C' (Variable v2)) <- prjF ix
         , v1 == v2
         , v1 `notMember` infoVars (getInfo arr2)
-        = constructFeat (constr' tProxy SetLength) (len :* arr2 :* Nil)
+        = constructFeat (c' SetLength) (len :* arr2 :* Nil)
 
     constructFeatOpt (C' Sequential) (len :* _ :* _ :* Nil)
         | Just 0 <- viewLiteral len
@@ -214,7 +213,7 @@ instance
         | Just (C' Append) <- prjF op = do
             aLen <- constructFeat sym (a :* Nil)
             bLen <- constructFeat sym (b :* Nil)
-            constructFeatOpt (constr' tProxy Add) (aLen :* bLen :* Nil)
+            constructFeatOpt (c' Add) (aLen :* bLen :* Nil)
         | Just (C' Parallel)  <- prjF op = return a
         | Just (C' SetLength) <- prjF op = return a
 

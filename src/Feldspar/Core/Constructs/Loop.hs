@@ -44,7 +44,6 @@ import Control.Monad (forM_, when)
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding hiding (betaReduce)
-import Language.Syntactic.Constructs.Binding.HigherOrder (ArgConstr(..))
 
 import Feldspar.Range
 import Feldspar.Core.Types
@@ -124,7 +123,7 @@ instance SizeProp (Loop :|| Type)
 
 instance ( MonadType m
          , LoopM m :<: dom
-         , ArgConstr Lambda Type :<: dom
+         , SubConstr2 (->) Lambda Type Top :<: dom
          , Optimize dom dom
          )
       => Optimize (LoopM m) dom
@@ -145,7 +144,7 @@ instance ( MonadType m
 instance ( (Literal  :|| Type) :<: dom
          , (Loop     :|| Type) :<: dom
          , (Variable :|| Type) :<: dom
-         , ArgConstr Lambda Type :<: dom
+         , SubConstr2 (->) Lambda Type Top :<: dom
          , OptimizeSuper dom
          )
       => Optimize (Loop :|| Type) dom

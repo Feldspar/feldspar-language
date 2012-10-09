@@ -36,7 +36,7 @@
 
 module Feldspar.Core.Frontend.Par where
 
-import Language.Syntactic
+import Language.Syntactic hiding (P)
 import Language.Syntactic.Frontend.Monad (Mon(..))
 
 import Feldspar.Core.Types

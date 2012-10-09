@@ -51,7 +51,6 @@ import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Binding
 
 import Data.Map
-import Data.Proxy
 import Data.Typeable
 
 data ParFeature a
@@ -109,8 +108,8 @@ instance ( MONAD Par :<: dom
     constructFeatUnOpt ParFork args  = constructFeatUnOptDefaultTyp (ParType typeRep) ParFork args
     constructFeatUnOpt ParYield args = constructFeatUnOptDefaultTyp (ParType typeRep) ParYield args
 
-monadProxy :: Proxy (Par a)
-monadProxy = Proxy
+monadProxy :: P Par
+monadProxy = P
 
 instance SizeProp (MONAD Par)
   where
@@ -121,7 +120,7 @@ instance SizeProp (MONAD Par)
 
 instance ( MONAD Par :<: dom
          , (Variable :|| Type) :<: dom
-         , ArgConstr Lambda Type :<: dom
+         , SubConstr2 (->) Lambda Type Top :<: dom
          , OptimizeSuper dom
          )
       => Optimize (MONAD Par) dom
@@ -137,15 +136,15 @@ instance ( MONAD Par :<: dom
     optimizeFeat a args = optimizeFeatDefault a args
 
     constructFeatOpt Bind (ma :* (lam :$ (Sym (Decor _ ret) :$ var)) :* Nil)
-      | Just (ArgConstr (Lambda v1)) <- prjLambda lam
-      , Just Return                  <- prjMonad monadProxy ret
-      , Just (C' (Variable v2))      <- prjF var
+      | Just (SubConstr2 (Lambda v1)) <- prjLambda lam
+      , Just Return                   <- prjMonad monadProxy ret
+      , Just (C' (Variable v2))       <- prjF var
       , v1 == v2
       , Just ma' <- gcast ma
       = return ma'
 
     constructFeatOpt Bind (ma :* (lam :$ body) :* Nil)
-        | Just (ArgConstr (Lambda v)) <- prjLambda lam
+        | Just (SubConstr2 (Lambda v)) <- prjLambda lam
         , v `notMember` vars
         = constructFeat Then (ma :* body :* Nil)
       where
