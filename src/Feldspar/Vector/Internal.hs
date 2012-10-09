@@ -38,7 +38,7 @@ module Feldspar.Vector.Internal where
 
 
 import qualified Prelude
-import Control.Arrow ((&&&))
+import Control.Applicative
 import qualified Data.TypeLevel as TL
 import Test.QuickCheck
 
@@ -50,6 +50,7 @@ import Feldspar.Range (rangeSubSat)
 import Feldspar hiding (sugar,desugar,resugar)
 import Feldspar.Wrap
 
+import Data.Tuple.Curry
 
 
 --------------------------------------------------------------------------------
@@ -110,6 +111,7 @@ length vec   = Prelude.sum $ Prelude.map segmentLength $ segments vec
 
 -- | Converts a segmented vector to a vector with a single segment.
 mergeSegments :: Syntax a => Vector a -> Vector a
+mergeSegments Empty = Empty
 mergeSegments vec = Indexed (length vec) (ixFun (segments vec)) Empty
     -- Note: Important to use `Indexed` instead of `indexed` since we need to
     --       guarantee that the result has a single segment.
@@ -258,14 +260,40 @@ map _ Empty = Empty
 map f (Indexed l ixf cont) = Indexed l (f . ixf) $ map f cont
 
 -- | Zipping a single-segment vector
-zip1 :: Vector a -> Vector b -> Vector (a,b)
-zip1 Empty _ = Empty
-zip1 _ Empty = Empty
-zip1 (Indexed l1 ixf1 Empty) (Indexed l2 ixf2 Empty) =
-    indexed (min l1 l2) (ixf1 &&& ixf2)
-
 zip :: (Syntax a, Syntax b) => Vector a -> Vector b -> Vector (a,b)
-zip vec1 vec2 = zip1 (mergeSegments vec1) (mergeSegments vec2)
+zip v1 v2 = go (mergeSegments v1) (mergeSegments v2)
+  where
+    go Empty _ = Empty
+    go _ Empty = Empty
+    go (Indexed l1 ixf1 Empty) (Indexed l2 ixf2 Empty) =
+      indexed (min l1 l2) ((,) <$> ixf1 <*> ixf2)
+
+zip3 v1 v2 v3 = go (mergeSegments v1) (mergeSegments v2) (mergeSegments v3)
+  where
+    go Empty _ _ = Empty
+    go _ Empty _ = Empty
+    go _ _ Empty = Empty
+    go (Indexed l1 ixf1 Empty) (Indexed l2 ixf2 Empty) (Indexed l3 ixf3 Empty) =
+      indexed (Prelude.foldr1 min [l1,l2,l3]) ((,,) <$> ixf1 <*> ixf2 <*> ixf3)
+
+zip4 v1 v2 v3 v4 = go (mergeSegments v1) (mergeSegments v2) (mergeSegments v3) (mergeSegments v4)
+  where
+    go Empty _ _ _ = Empty
+    go _ Empty _ _ = Empty
+    go _ _ Empty _ = Empty
+    go _ _ _ Empty = Empty
+    go (Indexed l1 ixf1 Empty) (Indexed l2 ixf2 Empty) (Indexed l3 ixf3 Empty) (Indexed l4 ixf4 Empty) =
+      indexed (Prelude.foldr1 min [l1,l2,l3,l4]) ((,,,) <$> ixf1 <*> ixf2 <*> ixf3 <*> ixf4)
+
+zip5 v1 v2 v3 v4 v5 = go (mergeSegments v1) (mergeSegments v2) (mergeSegments v3) (mergeSegments v4) (mergeSegments v5)
+  where
+    go Empty _ _ _ _ = Empty
+    go _ Empty _ _ _ = Empty
+    go _ _ Empty _ _ = Empty
+    go _ _ _ Empty _ = Empty
+    go _ _ _ _ Empty = Empty
+    go (Indexed l1 ixf1 Empty) (Indexed l2 ixf2 Empty) (Indexed l3 ixf3 Empty) (Indexed l4 ixf4 Empty) (Indexed l5 ixf5 Empty) =
+      indexed (Prelude.foldr1 min [l1,l2,l3,l4,l5]) ((,,,,) <$> ixf1 <*> ixf2 <*> ixf3 <*> ixf4 <*> ixf5)
 
 unzip :: Vector (a,b) -> (Vector a, Vector b)
 unzip Empty = (Empty, Empty)
@@ -276,7 +304,19 @@ unzip (Indexed l ixf cont) =
 
 zipWith :: (Syntax a, Syntax b) =>
     (a -> b -> c) -> Vector a -> Vector b -> Vector c
-zipWith f aVec bVec = map (uncurry f) $ zip aVec bVec
+zipWith f a b = map (uncurryN f) $ zip a b
+
+zipWith3 :: (Syntax a, Syntax b, Syntax c) =>
+    (a -> b -> c -> d) -> Vector a -> Vector b -> Vector c -> Vector d
+zipWith3 f a b c = map (uncurryN f) $ zip3 a b c
+
+zipWith4 :: (Syntax a, Syntax b, Syntax c, Syntax d) =>
+    (a -> b -> c -> d -> e) -> Vector a -> Vector b -> Vector c -> Vector d -> Vector e
+zipWith4 f a b c d = map (uncurryN f) $ zip4 a b c d
+
+zipWith5 :: (Syntax a, Syntax b, Syntax c, Syntax d, Syntax e) =>
+    (a -> b -> c -> d -> e -> f) -> Vector a -> Vector b -> Vector c -> Vector d -> Vector e -> Vector f
+zipWith5 f a b c d e = map (uncurryN f) $ zip5 a b c d e
 
 -- | Corresponds to the standard 'foldl'.
 fold :: (Syntax a) => (a -> b -> a) -> a -> Vector b -> a
