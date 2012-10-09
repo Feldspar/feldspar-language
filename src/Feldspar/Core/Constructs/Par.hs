@@ -120,7 +120,7 @@ instance SizeProp (MONAD Par)
 
 instance ( MONAD Par :<: dom
          , (Variable :|| Type) :<: dom
-         , SubConstr2 (->) Lambda Type Top :<: dom
+         , CLambda Type :<: dom
          , OptimizeSuper dom
          )
       => Optimize (MONAD Par) dom

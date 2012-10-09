@@ -100,6 +100,7 @@ import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation hiding (showDecor, drawDecor)
 import Feldspar.Core.Constructs
+import Feldspar.Core.Constructs.Binding (cLambda)
 import Feldspar.Core.Frontend.Array            as Frontend
 import Feldspar.Core.Frontend.Binding          as Frontend
 import Feldspar.Core.Frontend.Bits             as Frontend
@@ -151,7 +152,7 @@ mkId a b | simpleMatch (const . sharable) a
          = Just InjDict
              { injVariable = Decor (getInfo a) . injC . c' . Variable
              , injLambda   = let info = ((mkInfoTy (FunType typeRep typeRep)) { infoSize = infoSize (getInfo b)})
-                             in Decor info . injC . symType (Language.Syntactic.P::Language.Syntactic.P (SubConstr2 (->) Lambda Type Top)) . SubConstr2 . Lambda
+                             in Decor info . injC . cLambda
              , injLet      = Decor (getInfo b) $ injC $ c' Let
              }
 mkId _ _ = Nothing
