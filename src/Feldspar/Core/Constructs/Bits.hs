@@ -35,6 +35,7 @@
 
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | Implementation of constructs and operations on 'Bits'
 module Feldspar.Core.Constructs.Bits
     ( BITS (..)
     ) where
@@ -54,6 +55,7 @@ import Feldspar.Core.Constructs.Ord
 
 import Data.Bits
 
+-- | Bits constructs
 data BITS a
   where
     BAnd          :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => BITS (a :-> a :-> Full a)

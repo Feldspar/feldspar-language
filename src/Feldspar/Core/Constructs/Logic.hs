@@ -34,6 +34,8 @@
 
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | Implementation of Logic constructs
+--
 module Feldspar.Core.Constructs.Logic
     ( Logic (..)
     ) where
@@ -49,6 +51,7 @@ import Feldspar.Core.Constructs.Eq
 import Feldspar.Core.Constructs.Ord
 
 
+-- | Logic constructs
 data Logic a
   where
     And :: Logic (Bool :-> Bool :-> Full Bool)

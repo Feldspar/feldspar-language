@@ -111,6 +111,7 @@ targetSpecialization _ = id
 -- * Code motion
 --------------------------------------------------------------------------------
 
+-- | Indication whether a symbol is sharable or not
 class Sharable dom
   where
     sharable :: dom a -> Bool
@@ -121,6 +122,7 @@ instance (Sharable sub1, Sharable sub2) => Sharable (sub1 :+: sub2)
     sharable (InjL a) = sharable a
     sharable (InjR a) = sharable a
 
+-- | Indication whether the decorated symbol is sharable
 sharableDecor :: Sharable dom => Decor info dom a -> Bool
 sharableDecor = sharable . decorExpr
 

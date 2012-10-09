@@ -34,6 +34,8 @@
 
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | Implementation of Equality constructs
+
 module Feldspar.Core.Constructs.Eq
 where
 
@@ -44,6 +46,7 @@ import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 
+-- | Equality constructs
 data EQ a
   where
     Equal    :: (Type a, Eq a) => EQ (a :-> a :-> Full Bool)

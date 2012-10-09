@@ -35,6 +35,8 @@
 
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | Implementation of ordering constructs
+
 module Feldspar.Core.Constructs.Ord
     ( ORD (..)
     ) where
@@ -49,7 +51,7 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 
 
-
+-- | Ordering constructs
 data ORD a
   where
     LTH :: (Type a, Ord a, Ord (Size a)) => ORD (a :-> a :-> Full Bool)
