@@ -51,6 +51,7 @@ import Feldspar hiding (sugar,desugar,resugar)
 import Feldspar.Wrap
 
 import Data.Tuple.Curry
+import Data.Tuple.Select
 
 
 --------------------------------------------------------------------------------
@@ -296,11 +297,16 @@ zip5 v1 v2 v3 v4 v5 = go (mergeSegments v1) (mergeSegments v2) (mergeSegments v3
       indexed (Prelude.foldr1 min [l1,l2,l3,l4,l5]) ((,,,,) <$> ixf1 <*> ixf2 <*> ixf3 <*> ixf4 <*> ixf5)
 
 unzip :: Vector (a,b) -> (Vector a, Vector b)
-unzip Empty = (Empty, Empty)
-unzip (Indexed l ixf cont) =
-    (Indexed l (fst.ixf) cont1, Indexed l (snd.ixf) cont2)
-  where
-    (cont1,cont2) = unzip cont
+unzip v = (map sel1 v, map sel2 v)
+
+unzip3 :: Vector (a,b,c) -> (Vector a, Vector b, Vector c)
+unzip3 v = (map sel1 v, map sel2 v, map sel3 v)
+
+unzip4 :: Vector (a,b,c,d) -> (Vector a, Vector b, Vector c, Vector d)
+unzip4 v = (map sel1 v, map sel2 v, map sel3 v, map sel4 v)
+
+unzip5 :: Vector (a,b,c,d,e) -> (Vector a, Vector b, Vector c, Vector d, Vector e)
+unzip5 v = (map sel1 v, map sel2 v, map sel3 v, map sel4 v, map sel5 v)
 
 zipWith :: (Syntax a, Syntax b) =>
     (a -> b -> c) -> Vector a -> Vector b -> Vector c
