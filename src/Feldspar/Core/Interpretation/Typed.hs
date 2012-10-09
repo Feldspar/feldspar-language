@@ -33,10 +33,10 @@ instance Typed (sub :|| Type)
 instance Typed sub => Typed (sub :|| pred)
   where dict (C' s) = dict s
 
-instance Typed sub => Typed (sub :| p)
+instance Typed sub => Typed (sub :| pred)
   where dict (C s) = dict s
 
-instance Typed (SubConstr2 (->) sub Type Top)
+instance Typed (SubConstr2 c sub Type Top)
   where dict (SubConstr2 s) = Nothing
 
 instance (Typed sub, Typed sup) => Typed (sub :+: sup)

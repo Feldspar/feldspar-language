@@ -94,7 +94,7 @@ monadProxy = P
 
 instance ( MONAD Mut :<: dom
          , (Variable :|| Type) :<: dom
-         , SubConstr2 (->) Lambda Type Top :<: dom
+         , CLambda Type :<: dom
          , OptimizeSuper dom)
       => Optimize (MONAD Mut) dom
   where

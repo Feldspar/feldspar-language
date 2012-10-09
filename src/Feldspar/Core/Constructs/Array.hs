@@ -43,6 +43,7 @@ import Data.Map (notMember)
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding hiding (betaReduce)
+import Language.Syntactic.Constructs.Binding.HigherOrder (CLambda)
 
 import Feldspar.Range
 import Feldspar.Lattice
@@ -140,7 +141,7 @@ instance
     , (NUM   :|| Type) :<: dom
     , (ORD   :|| Type) :<: dom
     , (Variable :|| Type) :<: dom
-    , SubConstr2 (->) Lambda Type Top :<: dom
+    , CLambda Type :<: dom
     , OptimizeSuper dom
     ) =>
       Optimize (Array :|| Type) dom

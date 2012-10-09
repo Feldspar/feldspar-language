@@ -76,7 +76,6 @@ module Feldspar.Core.Interpretation
     , optimizeFeatDefault
     , prjF
     , c'
-    , tProxy
     ) where
 
 
@@ -237,12 +236,8 @@ viewLiteral :: forall info dom a. ((Literal :|| Type) :<: dom)
 viewLiteral (prjF -> Just (C' (Literal a))) = Just a
 viewLiteral _ = Nothing
 
-tProxy :: P Type
-tProxy = P
--- TODO Rename to pType
-
-prjF :: forall sub sup sig . Project (sub :|| Type) sup => sup sig -> Maybe ((sub :|| Type) sig)
-prjF = prjP (P::P (sub :|| Type))
+prjF :: Project (sub :|| Type) sup => sup sig -> Maybe ((sub :|| Type) sig)
+prjF = prj
 
 -- | Construct a 'Literal' decorated with 'Info'
 literalDecorSrc :: (Type a, (Literal :|| Type) :<: dom) =>
