@@ -62,7 +62,7 @@ import qualified Prelude as P
 import Feldspar
 import Feldspar.Vector.Internal
          (Vector, Vector1
-         ,freezeVector,thawVector,indexed
+         ,freezeVector,indexed
          ,sum,length,replicate,scalarProd)
 
 -- | Infinite streams.
@@ -292,21 +292,21 @@ instance Syntax a => Indexed (Stream a) where
 
 -- | 'take n str' allocates 'n' elements from the stream 'str' into a
 --   core array.
-take :: (Type a) => Data Length -> Stream (Data a) -> Data [a]
+take :: (Syntax a) => Data Length -> Stream a -> Data [Internal a]
 take n (Stream next init)
     = runMutableArray $ do
         marr <- newArr_ n
         st   <- init
         forM n $ \ix -> do
           a <- next st
-          setArr marr ix a
+          setArr marr ix (desugar a)
         return marr
 
 -- | 'splitAt n str' allocates 'n' elements from the stream 'str' into a
 --   core array and returns the rest of the stream continuing from
 --   element 'n+1'.
-splitAt :: (Type a) =>
-           Data Length -> Stream (Data a) -> (Data [a], Stream (Data a))
+splitAt :: (Syntax a) =>
+           Data Length -> Stream a -> (Data [Internal a], Stream a)
 splitAt n stream = (take n stream,drop n stream)
 
 -- | Loops through a vector indefinitely to produce a stream.
@@ -332,17 +332,17 @@ unsafeVectorToStream vec = Stream next init
 --   the input stream.
 --
 --   This function allocates memory for the output vector.
-streamAsVector :: (Type a, Type b) =>
-                  (Stream (Data a) -> Stream (Data b))
-               -> (Vector (Data a) -> Vector (Data b))
-streamAsVector f v = thawVector $ take (length v) $ f $ unsafeVectorToStream v
+streamAsVector :: (Syntax a, Syntax b) =>
+                  (Stream a -> Stream b)
+               -> (Vector a -> Vector b)
+streamAsVector f v = sugar $ take (length v) $ f $ unsafeVectorToStream v
 
 -- | Similar to 'streamAsVector' except the size of the output array is computed by the second argument
 --   which is given the size of the input vector as a result.
-streamAsVectorSize :: (Type a, Type b) =>
-                      (Stream (Data a) -> Stream (Data b)) -> (Data Length -> Data Length)
-                   -> (Vector (Data a) -> Vector (Data b))
-streamAsVectorSize f s v = thawVector $ take (s $ length v) $ f $ cycle v
+streamAsVectorSize :: (Syntax a, Syntax b) =>
+                      (Stream a -> Stream b) -> (Data Length -> Data Length)
+                   -> (Vector a -> Vector b)
+streamAsVectorSize f s v = sugar $ take (s $ length v) $ f $ cycle v
 
 -- | A combinator for descibing recurrence equations, or feedback loops.
 --   The recurrence equation may refer to previous outputs of the stream,
