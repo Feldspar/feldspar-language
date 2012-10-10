@@ -60,7 +60,6 @@ instance
     ( Integral a
     , Bits a
     , Prelude.Real a
-    , Size a ~ Range a
     ) => Num (Fix a)
   where
     fromInteger n = Fix 0 (Prelude.fromInteger n)
@@ -74,14 +73,13 @@ instance
     ( Integral a
     , Bits a
     , Prelude.Real a
-    , Size a ~ Range a
     ) => Fractional (Fix a)
   where
     (/) = fixDiv'
     recip = fixRecip'
     fromRational = fixfromRational
 
-fixAddition :: (Integral a, Bits a, Prelude.Real a, Size a ~ Range a) => Fix a -> Fix a -> Fix a
+fixAddition :: (Integral a, Bits a, Prelude.Real a) => Fix a -> Fix a -> Fix a
 fixAddition f1@(Fix e1 _) f2@(Fix e2 _) = Fix e m
    where
      e = max e1 e2
@@ -108,21 +106,21 @@ fixSignum (Fix _ m1)  = Fix 0 m
    where
      m = signum m1
 
-fixDiv' :: (Integral a, Bits a, Prelude.Real a, Size a ~ Range a)
+fixDiv' :: (Integral a, Bits a, Prelude.Real a)
            => Fix a -> Fix a -> Fix a
 fixDiv' (Fix e1 m1) (Fix e2 m2) = Fix e m
    where
      e = e1 - e2
      m = div m1 m2
 
-fixRecip' :: forall a . (Integral a, Bits a, Prelude.Real a, Size a ~ Range a)
+fixRecip' :: forall a . (Integral a, Bits a, Prelude.Real a)
              => Fix a -> Fix a
 fixRecip' (Fix e m) = Fix (e + value (wordLength (T :: T a) - 1)) (div sh m)
    where
      sh  :: Data a
      sh  = (1::Data a) .<<. value (fromInteger $ toInteger $ wordLength (T :: T a) - 1)
 
-fixfromRational :: forall a . (Integral a, Size a ~ Range a) =>
+fixfromRational :: forall a . (Integral a) =>
                    Prelude.Rational -> Fix a
 fixfromRational inp = Fix e m
    where
@@ -150,7 +148,7 @@ freezeFix :: (Type a) => Fix a -> (Data IntN,Data a)
 freezeFix (Fix e m) = (e,m)
 
 -- | Converts an abstract real number to fixed point integer with given exponent
-freezeFix' :: (Bits a, Size a ~ Range a) => IntN -> Fix a -> Data a
+freezeFix' :: (Bits a) => IntN -> Fix a -> Data a
 freezeFix' e f = mantissa $ fix (value e) f
 
 -- | Converts a pair of exponent and mantissa to an abstract real number
@@ -189,7 +187,7 @@ class (Splittable t) => Fixable t where
     fix :: Data IntN -> t -> t
     getExp :: t -> Data IntN
 
-instance (Bits a, Size a ~ Range a) => Fixable (Fix a) where
+instance (Bits a) => Fixable (Fix a) where
     fix e' (Fix e m) = Fix e' $ e' > e ? (m .>>. i2n (e' - e), m .<<. i2n (e - e'))
     getExp = Feldspar.FixedPoint.exponent
 
@@ -216,7 +214,7 @@ instance (Type a) => Splittable (Data a) where
     patch = const id
     common _ _ = ()
 
-instance (Bits a, Size a ~ Range a) => Splittable (Fix a) where
+instance (Bits a) => Splittable (Fix a) where
     type Static (Fix a) = Data IntN
     type Dynamic (Fix a) = Data a
     store f = (Feldspar.FixedPoint.exponent f, mantissa f)

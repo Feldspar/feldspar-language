@@ -53,18 +53,17 @@ import Feldspar.Core.Frontend.Logic
 import Feldspar.Core.Frontend.Num
 import Feldspar.Core.Frontend.Ord
 
--- TODO Make (Size a ~ Range a) a super-class constraint when going to newer GHC
-class (Ord a, Numeric a, BoundedInt a, P.Integral a) => Integral a
+class (Ord a, Numeric a, BoundedInt a, P.Integral a, Size a ~ Range a) => Integral a
   where
-    quot :: (Size a ~ Range a) => Data a -> Data a -> Data a
+    quot :: Data a -> Data a -> Data a
     quot = sugarSymF Quot
-    rem  :: (Size a ~ Range a) => Data a -> Data a -> Data a
+    rem  :: Data a -> Data a -> Data a
     rem  = sugarSymF Rem
-    div  :: (Size a ~ Range a) => Data a -> Data a -> Data a
+    div  :: Data a -> Data a -> Data a
     div  = divSem
-    mod  :: (Size a ~ Range a) => Data a -> Data a -> Data a
+    mod  :: Data a -> Data a -> Data a
     mod  = sugarSymF Mod
-    (^)  :: (Size a ~ Range a) => Data a -> Data a -> Data a
+    (^)  :: Data a -> Data a -> Data a
     (^)  = sugarSymF Exp
 
 -- TODO: This is a short-term hack because the compiler doesn't compile
@@ -72,7 +71,7 @@ class (Ord a, Numeric a, BoundedInt a, P.Integral a) => Integral a
 -- quot directly, and never use the Div construct. In the long term the
 -- compiler should be fixed, but it involves writing type corrector plugins
 -- and this solution was quicker.
-divSem :: (Integral a, Size a ~ Range a)
+divSem :: (Integral a)
        => Data a -> Data a -> Data a
 divSem x y = (x > 0 && y < 0 || x < 0 && y > 0) && rem x y /= 0 ?
              (quot x y P.- 1,quot x y)
