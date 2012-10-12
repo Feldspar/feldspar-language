@@ -61,10 +61,10 @@ import Data.Typeable
 
 import Feldspar.Lattice
 
-tests = [ testGroup "Range Int"    $ typedTestsSigned "Int"    (undefined :: Int)
-        , testGroup "Range Int8"   $ typedTestsSigned "Int8"   (undefined :: Int8)
-        , testGroup "Range Word8"  $ typedTests       "Word8"  (undefined :: Word8)
-        , testGroup "Range Word32" $ typedTests       "Word32" (undefined :: Word32)
+tests = [ testGroup "Range Int"    $ typedTestsSigned   "Int"    (undefined :: Int)
+        , testGroup "Range Int8"   $ typedTestsSigned   "Int8"   (undefined :: Int8)
+        , testGroup "Range Word8"  $ typedTestsUnsigned "Word8"  (undefined :: Word8)
+        , testGroup "Range Word32" $ typedTestsUnsigned "Word32" (undefined :: Word32)
         ]
 
 typedTests name typ =
@@ -99,7 +99,6 @@ typedTests name typ =
     , testProperty (unwords ["prop_sub"            , name]) (prop_sub typ)
     , testProperty (unwords ["prop_mul"            , name]) (prop_mul typ)
     , testProperty (unwords ["prop_exp"            , name]) (prop_exp typ)
---    , testProperty (unwords ["prop_mulU"           , name]) (prop_mulU typ) -- TODO hangs in range
 --    , testProperty (unwords ["prop_subSat"         , name]) (prop_subSat typ) -- TODO out of bounds
     , testProperty (unwords ["prop_abs2"           , name]) (prop_abs2 typ)
     , testProperty (unwords ["prop_or"             , name]) (prop_or typ)
@@ -123,6 +122,10 @@ typedTests name typ =
     , testProperty (unwords ["prop_rangeMod2"      , name]) (prop_rangeMod2 typ)
     , testProperty (unwords ["prop_rangeRem"       , name]) (prop_rangeRem typ)
     , testProperty (unwords ["prop_rangeQuot"      , name]) (prop_rangeQuot typ)
+    ]
+
+typedTestsUnsigned name typ = typedTests name typ ++
+    [ testProperty (unwords ["prop_mulU"           , name]) (prop_mulU typ)
     ]
 
 typedTestsSigned name typ = typedTests name typ ++
