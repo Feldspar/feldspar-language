@@ -201,7 +201,6 @@ instance Type a => Syntactic (Data a)
 class
     ( Syntactic a
     , Domain a ~ FeldDomainAll
-    , SyntacticN a (ASTF FeldDomainAll (Internal a))
     , Type (Internal a)
     ) =>
       Syntax a
