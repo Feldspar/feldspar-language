@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -230,14 +231,14 @@ rotateVecR ix = reverse . rotateVecL ix . reverse
 replicate :: Data Length -> a -> Vector a
 replicate n a = Indexed n (const a) Empty
 
--- | @enumFromTo m n@: Enumerate the indexes from @m@ to @n@
+-- | @enumFromTo m n@: Enumerate the integers from @m@ to @n@
 --
--- In order to enumerate a different type, use 'i2n', e.g:
---
--- > map i2n (10...20) :: Vector1 Word8
-enumFromTo :: Data Index -> Data Index -> Vector (Data Index)
-enumFromTo 1 n = indexed n (+1)
-enumFromTo m n = indexed l (+m)
+enumFromTo :: forall a. (Integral a)
+           => Data a -> Data a -> Vector (Data a)
+enumFromTo 1 n
+    | IntType U _ <- typeRep :: TypeRep a
+    = indexed (i2n n) ((+1) . i2n)
+enumFromTo m n = indexed (i2n l) ((+m) . i2n)
   where
     l = (n<m) ? (0, n-m+1)
   -- TODO The first case avoids the comparison when `m` is 1. However, it
@@ -250,11 +251,11 @@ enumFromTo m n = indexed l (+m)
   --      probably be expressed in terms of this more general construct.
 
 -- | @enumFrom m@: Enumerate the indexes from @m@ to 'maxBound'
-enumFrom :: Data Index -> Vector (Data Index)
+enumFrom :: (Integral a) => Data a -> Vector (Data a)
 enumFrom = flip enumFromTo (value maxBound)
 
 -- | See 'enumFromTo'
-(...) :: Data Index -> Data Index -> Vector (Data Index)
+(...) :: (Integral a) => Data a -> Data a -> Vector (Data a)
 (...) = enumFromTo
 
 -- | 'map' @f v@ is the 'Vector' obtained by applying f to each element of
