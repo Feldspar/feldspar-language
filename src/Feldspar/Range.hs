@@ -371,7 +371,7 @@ subSat a b = a - min a b
 
 -- | Range propagation for 'subSat'
 rangeSubSat :: BoundedInt a => Range a -> Range a -> Range a
-rangeSubSat r1 r2 = Range
+rangeSubSat r1 r2 = range
     (subSat (lowerBound r1) (upperBound r2))
     (subSat (upperBound r1) (lowerBound r2))
 

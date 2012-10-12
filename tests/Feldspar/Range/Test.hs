@@ -99,7 +99,6 @@ typedTests name typ =
     , testProperty (unwords ["prop_sub"            , name]) (prop_sub typ)
     , testProperty (unwords ["prop_mul"            , name]) (prop_mul typ)
     , testProperty (unwords ["prop_exp"            , name]) (prop_exp typ)
---    , testProperty (unwords ["prop_subSat"         , name]) (prop_subSat typ) -- TODO out of bounds
     , testProperty (unwords ["prop_abs2"           , name]) (prop_abs2 typ)
     , testProperty (unwords ["prop_or"             , name]) (prop_or typ)
     , testProperty (unwords ["prop_and"            , name]) (prop_and typ)
@@ -126,6 +125,7 @@ typedTests name typ =
 
 typedTestsUnsigned name typ = typedTests name typ ++
     [ testProperty (unwords ["prop_mulU"           , name]) (prop_mulU typ)
+    , testProperty (unwords ["prop_subSat"         , name]) (prop_subSat typ)
     ]
 
 typedTestsSigned name typ = typedTests name typ ++
