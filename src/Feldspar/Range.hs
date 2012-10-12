@@ -327,21 +327,18 @@ rangeAddUnsigned (Range l1 u1) (Range l2 u2)
 
 -- | Signed case for 'rangeAdd'.
 rangeAddSigned :: BoundedInt a => Range a -> Range a -> Range a
-rangeAddSigned (Range l1 u1) (Range l2 u2)
+rangeAddSigned (Range a b) (Range c d)
     | (u .|. v) < 0 = fullRange
     | otherwise     = range s t
   where
-    s = l1 + l2
-    t = u1 + u2
-    u = l1 .&. l2 .&. complement s .&.
-        complement (u1 .&. u2 .&. complement t)
-    v = (xor l1 l2 .|. complement (xor l1 s)) .&.
-        (complement u1 .&. complement u2 .&. t)
--- Code from Hacker's Delight
+    s = a + c
+    t = b + d
+    u = a .&. c .&. complement s .&. complement (b .&. d .&. complement t)
+    v = ((a `xor` c) .|. complement (a `xor` s)) .&. (complement b .&. complement d .&. t)
 
 -- | Propagates range information through subtraction.
 rangeSub :: BoundedInt a => Range a -> Range a -> Range a
-rangeSub = handleSign rangeSubUnsigned (-)
+rangeSub = handleSign rangeSubUnsigned rangeSubSigned
 
 -- | Unsigned case for 'rangeSub'.
 rangeSubUnsigned :: BoundedInt a => Range a -> Range a -> Range a
@@ -354,6 +351,19 @@ rangeSubUnsigned (Range l1 u1) (Range l2 u2)
   -- Note: This is more accurate than the default definition using 'negate',
   --       because 'negate' always overflows for unsigned numbers.
   -- Code from Hacker's Delight
+
+rangeSubSigned :: BoundedInt a => Range a -> Range a -> Range a
+rangeSubSigned (Range a b) (Range c d)
+    | (u .|. v) < 0 = fullRange
+    | otherwise     = range s t
+  where
+    s = a - d
+    t = b - c
+    u = a .&. complement d .&. complement s .&.
+        complement (b .&. complement c .&. complement t)
+    v = (xor a (complement d) .|. complement (xor a s)) .&.
+        (complement b .&. c .&. t)
+-- Code from Hacker's Delight
 
 -- | Saturating unsigned subtraction
 subSat :: BoundedInt a => a -> a -> a

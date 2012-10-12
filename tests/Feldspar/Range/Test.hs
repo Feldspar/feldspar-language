@@ -96,11 +96,11 @@ typedTests name typ =
     , testProperty (unwords ["prop_sign"           , name]) (prop_sign typ)
     , testProperty (unwords ["prop_neg"            , name]) (prop_neg typ)
     , testProperty (unwords ["prop_add"            , name]) (prop_add typ)
---    , testProperty (unwords ["prop_sub"            , name]) (prop_sub typ)
+    , testProperty (unwords ["prop_sub"            , name]) (prop_sub typ)
     , testProperty (unwords ["prop_mul"            , name]) (prop_mul typ)
     , testProperty (unwords ["prop_exp"            , name]) (prop_exp typ)
---    , testProperty (unwords ["prop_mulU"           , name]) (prop_mulU typ)
---    , testProperty (unwords ["prop_subSat"         , name]) (prop_subSat typ)
+--    , testProperty (unwords ["prop_mulU"           , name]) (prop_mulU typ) -- TODO hangs in range
+--    , testProperty (unwords ["prop_subSat"         , name]) (prop_subSat typ) -- TODO out of bounds
     , testProperty (unwords ["prop_abs2"           , name]) (prop_abs2 typ)
     , testProperty (unwords ["prop_or"             , name]) (prop_or typ)
     , testProperty (unwords ["prop_and"            , name]) (prop_and typ)
