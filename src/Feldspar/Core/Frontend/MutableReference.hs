@@ -45,8 +45,9 @@ import Data.IORef
 
 newtype Ref a = Ref { unRef :: Data (IORef (Internal a)) }
 
-instance Syntax a => Syntactic (Ref a) FeldDomainAll
+instance Syntax a => Syntactic (Ref a)
   where
+    type Domain (Ref a)   = FeldDomainAll
     type Internal (Ref a) = IORef (Internal a)
     desugar = desugar . unRef
     sugar   = Ref . sugar

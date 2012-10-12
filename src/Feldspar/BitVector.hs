@@ -86,8 +86,9 @@ data Segment w
 type instance Elem      (BitVector w) = Data Bool
 type instance CollIndex (BitVector w) = Data Index
 
-instance (Unit a) => Syntactic (BitVector a) FeldDomainAll
+instance (Unit a) => Syntactic (BitVector a)
   where
+    type Domain (BitVector a)   = FeldDomainAll
     type Internal (BitVector a) = [a]
     desugar = desugar . freezeBitVector
     sugar   = unfreezeBitVector . sugar

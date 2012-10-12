@@ -18,7 +18,7 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 -- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -77,8 +77,9 @@ type Vector1 a = Vector (Data a)
 -- | Two-level nested vector
 type Vector2 a = Vector (Vector (Data a))
 
-instance Syntax a => Syntactic (Vector a) FeldDomainAll
+instance Syntax a => Syntactic (Vector a)
   where
+    type Domain (Vector a)   = FeldDomainAll
     type Internal (Vector a) = [Internal a]
     desugar = desugar . freezeVector . map resugar
     sugar   = map resugar . thawVector . sugar

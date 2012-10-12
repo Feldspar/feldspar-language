@@ -158,7 +158,8 @@ mkId a b | simpleMatch (const . sharable) a
 mkId _ _ = Nothing
 
 
-type SyntacticFeld a = (Syntactic a FeldDomainAll, Typeable (Internal a))
+type SyntacticFeld a = (Syntactic a, Domain a ~  FeldDomainAll, Typeable (Internal a))
+  -- TODO Typeable needed?
 
 -- | Reification and optimization of a Feldspar program
 reifyFeld :: SyntacticFeld a

@@ -3,6 +3,8 @@ module Examples.Simple.Basics where
 import qualified Prelude
 import Feldspar
 
+import Feldspar.Vector
+
 -- Identity function for 32 bit integers.
 example1 :: Data Int32 -> Data Int32
 example1 = id

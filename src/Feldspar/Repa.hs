@@ -150,8 +150,9 @@ instance Slice sl => Slice (sl :. All) where
 data Vector sh a = Vector sh (sh -> a)
 type DVector sh a = Vector sh (Data a)
 
-instance (Shape sh, Syntax a) => Syntactic (Vector sh a) FeldDomainAll
+instance (Shape sh, Syntax a) => Syntactic (Vector sh a)
   where
+    type Domain (Vector sh a)   = FeldDomainAll
     type Internal (Vector sh a) = ([Length],[Internal a])
     desugar = desugar . freezeVector . map resugar
     sugar   = map resugar . thawVector . sugar
@@ -210,7 +211,7 @@ extent :: Vector sh a -> sh
 extent (Vector sh _) = sh
 
 -- | Change the extent of the vector to the supplied value. If the supplied
--- extent will contain more elements than the old extent, the new elements 
+-- extent will contain more elements than the old extent, the new elements
 -- will have undefined value.
 newExtent :: sh -> Vector sh a -> Vector sh a
 newExtent sh (Vector _ ixf) = Vector sh ixf
@@ -367,7 +368,7 @@ mmMult vA vB
     (Z :. _     :. rowsA) = extent vA
     (Z :. colsB :. _    ) = extent vB
 
--- One dimensional vectors, meant to help transitioning from 
+-- One dimensional vectors, meant to help transitioning from
 -- the old vector library
 
 mapDIM1 :: (Data Index -> Data Index) -> DIM1 -> DIM1

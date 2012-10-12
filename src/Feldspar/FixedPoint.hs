@@ -137,7 +137,8 @@ fixfromRational inp = Fix e m
       m = value $ Prelude.floor $ inpAsFloat * 2.0 Prelude.** fromRational (toRational fracPartWith)
       e = negate $ value fracPartWith
 
-instance (Type a) => Syntactic (Fix a) FeldDomainAll where
+instance (Type a) => Syntactic (Fix a) where
+  type Domain (Fix a)   = FeldDomainAll
   type Internal (Fix a) = (IntN, a)
   desugar = desugar . freezeFix
   sugar   = unfreezeFix . sugar

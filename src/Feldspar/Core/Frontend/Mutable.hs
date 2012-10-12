@@ -50,8 +50,9 @@ import qualified Feldspar.Core.Constructs.Mutable as Feature
 newtype M a = M { unM :: Mon FeldSymbols Type Mut a }
   deriving (Functor, Monad)
 
-instance Syntax a => Syntactic (M a) FeldDomainAll
+instance Syntax a => Syntactic (M a)
   where
+    type Domain (M a)   = FeldDomainAll
     type Internal (M a) = Mut (Internal a)
     desugar = desugar . unM
     sugar   = M . sugar

@@ -87,7 +87,7 @@ type FeldSymbols
     =   (Decor SourceInfo1 Identity :|| Type)
     :+: (Condition  :|| Type)
     :+: (FFI        :|| Type)
-    :+: (Let        :|| Type) 
+    :+: (Let        :|| Type)
     :+: (Literal    :|| Type)
     :+: (Select     :|| Type)
     :+: (Tuple      :|| Type)
@@ -190,15 +190,17 @@ newtype Data a = Data { unData :: ASTF FeldDomainAll a }
 
 deriving instance Typeable1 Data
 
-instance Type a => Syntactic (Data a) FeldDomainAll
+instance Type a => Syntactic (Data a)
   where
+    type Domain (Data a)   = FeldDomainAll
     type Internal (Data a) = a
     desugar = unData
     sugar   = Data
 
 -- | Specialization of the 'Syntactic' class for the Feldspar domain
 class
-    ( Syntactic a FeldDomainAll
+    ( Syntactic a
+    , Domain a ~ FeldDomainAll
     , SyntacticN a (ASTF FeldDomainAll (Internal a))
     , Type (Internal a)
     ) =>

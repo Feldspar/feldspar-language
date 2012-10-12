@@ -44,8 +44,9 @@ import Language.Syntactic (Syntactic(..))
 data PushVector a where
   Push :: ((Data Index -> a -> M ()) -> M ()) -> Data Length -> PushVector a
 
-instance Syntax a => Syntactic (PushVector a) FeldDomainAll
+instance Syntax a => Syntactic (PushVector a)
   where
+    type Domain (PushVector a)   = FeldDomainAll
     type Internal (PushVector a) = [Internal a]
     desugar = desugar . freezePush
     sugar   = thawPush . sugar

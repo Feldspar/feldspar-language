@@ -48,8 +48,9 @@ false = value False
 true :: Data Bool
 true = value True
 
-instance Syntactic () FeldDomainAll
+instance Syntactic ()
   where
+    type Domain ()   = FeldDomainAll
     type Internal () = ()
     desugar = appSymC . c' . Literal
     sugar _ = ()
