@@ -23,4 +23,5 @@ prop_length = eval (length -:: tVec1 tIndex >-> tData tLength) === P.genericLeng
 prop_append = eval ((++) -:: tVec1 tIndex >-> id >-> id) === (P.++)
 prop_take   = eval (take -:: tData tLength >-> tVec1 tIndex >-> id) === P.genericTake
 prop_drop   = eval (drop -:: tData tLength >-> tVec1 tIndex >-> id) === P.genericDrop
+prop_revrev = eval ((reverse . reverse) -:: tVec1 tIndex >-> id) === id
 
