@@ -128,7 +128,7 @@ library
     tagged                      >= 0.4    && < 0.5,
     tuple                       >= 0.2    && < 0.3,
     type-level                  >= 0.2.4  && < 0.3,
-    monad-par                   >= 0.1    && < 0.4,
+    monad-par                   >= 0.3    && < 0.4,
     QuickAnnotate               >= 0.6    && < 0.7
 
   other-extensions:
