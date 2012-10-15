@@ -43,7 +43,7 @@ import Language.Syntactic.Constructs.Binding
 import Language.Syntactic.Constructs.Binding.HigherOrder
 
 import qualified Control.Monad.Par as CMP
-import qualified Control.Monad.Par.Internal as CMP
+import Control.Monad.Par.Scheds.TraceInternal (yield)
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
@@ -69,7 +69,7 @@ instance Semantic ParFeature
     semantics ParGet    = Sem "get" CMP.get
     semantics ParPut    = Sem "put" CMP.put_
     semantics ParFork   = Sem "fork" CMP.fork
-    semantics ParYield  = Sem "yield" CMP.yield
+    semantics ParYield  = Sem "yield" yield
 
 instance Equality ParFeature where equal = equalDefault; exprHash = exprHashDefault
 instance Render   ParFeature where renderArgs = renderArgsDefault
