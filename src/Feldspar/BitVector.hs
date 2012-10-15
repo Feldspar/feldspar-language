@@ -35,11 +35,14 @@
 
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | A 'Vector' interface to packed sequences of bits
+--
 module Feldspar.BitVector where
 
 import qualified Prelude
 import Data.Word
 import Data.List (inits)
+import Data.Proxy
 import qualified Data.TypeLevel as TL
 
 import Language.Syntactic hiding (fold)
@@ -51,12 +54,10 @@ import qualified Feldspar.Vector as Vec
 
 -- * Types and classes
 
-data T a = T
-  -- TODO Use `Data.Proxy.Proxy` instead
-
+-- | A 'Unit' is the internal representation of a 'BitVector'
 class (Type w, Numeric w, Bits w, Integral w) => Unit w
   where
-    width :: T w -> Length
+    width :: Proxy w -> Length
 
 instance Unit Word8
   where
@@ -85,6 +86,7 @@ data Segment w
 
 type instance Elem      (BitVector w) = Data Bool
 type instance CollIndex (BitVector w) = Data Index
+type instance CollSize  (BitVector w) = Data Length
 
 instance (Unit a) => Syntactic (BitVector a)
   where
@@ -101,7 +103,7 @@ length :: forall w . (Unit w) => BitVector w -> Data Length
 length bv = Prelude.sum $ Prelude.map segmentLen $ segments bv
   where
     segmentLen s = numUnits s * w
-    w = value $ width (T :: T w)
+    w = value $ width (Proxy :: Proxy w)
 
 numOfUnits :: (Unit w) => BitVector w -> Data Length
 numOfUnits bv = Prelude.sum $ Prelude.map numUnits $ segments bv
@@ -138,7 +140,7 @@ fromVector v = BitVector
         -- for the sake of efficiency?
     }
   where
-    w = value $ width (T :: T w)
+    w = value $ width (Proxy :: Proxy w)
     wl = Vec.length v `div` w
     loop n ix = forLoop n 0 $ \i st ->
         st `shiftLU` 1 .|. (v ! (w * ix + i) ? (1,0))
@@ -157,15 +159,15 @@ instance (Unit w, Size w ~ Range w) => Indexed (BitVector w)
             ( ixf s accum i
             , help (accum + numUnits s * w) ss
             )
-        w = value $ width (T :: T w)
+        w = value $ width (Proxy :: Proxy w)
         ixf s accum ix = testBit (elements s ((ix - accum) `div` w)) (w - 1 - ((ix - accum) `mod` w))
 
 fromBits :: forall w . (Unit w) => [Bool] -> BitVector w
 fromBits bs = unfreezeBitVector $ value xs
   where
-    xs = [ conv (T :: T w) $ Prelude.take w (Prelude.drop (i*w) bs) | i <- [0..Prelude.length bs `Prelude.div` w Prelude.- 1]]
-    w = fromInteger $ toInteger $ width (T :: T w)
-    conv :: (Unit w) => T w -> [Bool] -> w
+    xs = [ conv (Proxy :: Proxy w) $ Prelude.take w (Prelude.drop (i*w) bs) | i <- [0..Prelude.length bs `Prelude.div` w Prelude.- 1]]
+    w = fromInteger $ toInteger $ width (Proxy :: Proxy w)
+    conv :: (Unit w) => Proxy w -> [Bool] -> w
     conv _ = Prelude.foldl (\n b -> if b then n Prelude.* 2 Prelude.+ 1 else n Prelude.* 2) 0
 
 fromUnits :: (Unit w) => [w] -> BitVector w
@@ -218,7 +220,7 @@ drop :: forall w . (Unit w, Size w ~ Range w) =>
     Data Length -> Data w -> BitVector w -> BitVector w
 drop len end bv = dropSegments len $ segments bv
   where
-    w = value $ width (T :: T w)
+    w = value $ width (Proxy :: Proxy w)
     dropSegments _ [] = BitVector []
     dropSegments n (s:ss) = n < sLen ?
         ( dropUnits n s ss
@@ -269,7 +271,7 @@ fold f ini (BitVector (s:ss)) = fold f (forLoop (numUnits s) ini f') $ BitVector
     f' i st = Prelude.snd $ forLoop w (elements s i, st) f''
     f'' :: Data Index -> (Data w,a) -> (Data w,a)
     f'' _ (unit,st) = (unit `shiftLU` 1, f st $ testBit unit $ w-1)
-    w = value $ width (T :: T w)
+    w = value $ width (Proxy :: Proxy w)
 
 zipWith :: forall w. (Unit w, Size w ~ Range w) =>
     (Data Bool -> Data Bool -> Data Bool)
@@ -304,7 +306,7 @@ head = (!0)
 tail :: forall w. (Unit w, Size w ~ Range w) => Data Bool -> BitVector w -> BitVector w
 tail b = drop 1 (b2i b `shiftLU` (w - 1))
   where
-    w = value $ width (T :: T w)
+    w = value $ width (Proxy :: Proxy w)
 
 -- * Boolean functions extended to words
 
