@@ -69,14 +69,16 @@ instance ToTree   Mutable
 instance Eval     Mutable where evaluate = evaluateDefault
 instance EvalBind Mutable where evalBindSym = evalBindSymDefault
 instance Sharable Mutable
-  -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
+
+instance Typed Mutable
+  where
+    dict Run = Just Dict
 
 instance AlphaEq dom dom dom env => AlphaEq Mutable Mutable dom env
   where
     alphaEqSym = alphaEqSymDefault
 
 instance Sharable (MONAD Mut)
-  -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
 
 instance SizeProp (MONAD Mut)
   where

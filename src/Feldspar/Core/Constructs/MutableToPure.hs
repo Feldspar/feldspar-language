@@ -86,6 +86,12 @@ instance Eval     MutableToPure where evaluate = evaluateDefault
 instance EvalBind MutableToPure where evalBindSym = evalBindSymDefault
 instance Sharable MutableToPure
 
+instance Typed MutableToPure
+  where
+    dict RunMutableArray = Just Dict
+    dict _ = Nothing
+
+
 instance AlphaEq dom dom dom env => AlphaEq MutableToPure MutableToPure dom env
   where
     alphaEqSym = alphaEqSymDefault

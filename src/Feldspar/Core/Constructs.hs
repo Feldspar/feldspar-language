@@ -120,6 +120,11 @@ type FeldSymbols
     :+: ParFeature
     :+: Empty
 
+-- TODO We are currently a bit inconsistent in that `Type` constraints are sometimes attached
+--      separately using `(:||)` and sometimes baked into the symbol type. `Mutable` and
+--      `MutableToPure` (at least) have `Type` baked in. Note that `(MutableToPure :|| Type)` would
+--      currently not work, since `WithArray` has monadic result type.
+
 type FeldDomain    = FODomain FeldSymbols Typeable Type
 
 type FeldDomainAll = HODomain FeldSymbols Typeable Type
