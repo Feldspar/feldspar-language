@@ -6,13 +6,17 @@ description:    Feldspar (Functional Embedded Language for DSP and PARallelism)
                 algorithms. This package contains the language front-end and an
                 interpreter.
 category:       Language
-copyright:      Copyright (c) 2009-2011, ERICSSON AB
+copyright:      Copyright (c) 2012 Emil Axelsson, Gergely Dévai,
+                                   Anders Persson, Josef Svenningsson
+                Copyright (c) 2009-2011, ERICSSON AB
 author:         Functional programming group at Chalmers University of Technology
 maintainer:     Emil Axelsson <emax@chalmers.se>
+                Anders Persson <anders.cj.persson@gmail.com>
 license:        BSD3
 license-file:   LICENSE
 stability:      experimental
-homepage:       http://feldspar.inf.elte.hu/feldspar/
+homepage:       http://feldspar.github.com
+issue-tracker:  http://feldspar.github.com/feldspar-language/issues
 build-type:     Simple
 cabal-version:  >= 1.14
 tested-with:    GHC==7.6.1, GHC==7.4.2
@@ -22,7 +26,7 @@ extra-source-files:
 
 source-repository head
   type:     git
-  location: git://github.com/emwap/feldspar-language.git
+  location: git://github.com/feldspar/feldspar-language.git
 
 library
   exposed-modules:
