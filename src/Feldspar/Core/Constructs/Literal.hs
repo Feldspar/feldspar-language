@@ -47,7 +47,8 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 
 instance Sharable Literal
-  -- Will not be shared anyway, because it's a terminal
+  where
+    sharable _ = False
 
 instance SizeProp (Literal :|| Type)
   where

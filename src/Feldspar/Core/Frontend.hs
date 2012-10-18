@@ -133,11 +133,10 @@ import Feldspar.Core.Frontend.SourceInfo       as Frontend
 import Feldspar.Core.Frontend.Trace            as Frontend
 import Feldspar.Core.Frontend.Tuple            as Frontend
 
-instance Sharable FeldDomain
 
 instance Sharable dom => Sharable (Decor info dom)
   where
-    sharable = sharableDecor
+    sharable = sharable . decorExpr
 
 -- TODO Remove
 prjDict :: PrjDict (Decor Info FeldDomain)

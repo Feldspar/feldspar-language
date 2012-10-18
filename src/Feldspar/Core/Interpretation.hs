@@ -47,7 +47,6 @@ module Feldspar.Core.Interpretation
 
     , targetSpecialization
     , Sharable (..)
-    , sharableDecor
     , SizeProp (..)
     , sizePropDefault
     , resultType
@@ -122,9 +121,9 @@ instance (Sharable sub1, Sharable sub2) => Sharable (sub1 :+: sub2)
     sharable (InjL a) = sharable a
     sharable (InjR a) = sharable a
 
--- | Indication whether the decorated symbol is sharable
-sharableDecor :: Sharable dom => Decor info dom a -> Bool
-sharableDecor = sharable . decorExpr
+instance Sharable sym => Sharable (sym :|| pred)
+instance Sharable sym => Sharable (SubConstr2 c sym p1 p2)
+instance Sharable Empty
 
 
 

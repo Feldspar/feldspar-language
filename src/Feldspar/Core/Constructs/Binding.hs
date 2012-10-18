@@ -67,13 +67,8 @@ import Feldspar.Lattice
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 
-instance Sharable Variable
-  -- Will not be shared anyway, because it's a terminal
-
-instance Sharable Lambda
-  where
-    sharable _ = False
-
+instance Sharable Variable  -- `codeMotion` will not share variables anyway
+instance Sharable Lambda    -- Will not be shared anyway because we disallow variables of `->` type
 instance Sharable Let
 
 -- | Should be a capture-avoiding substitution, but it is currently not correct.
