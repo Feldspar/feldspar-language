@@ -46,14 +46,16 @@ import Language.Syntactic.Constructs.Literal
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 
+import Data.Typeable
+import Debug.Trace
+
 instance Sharable Literal
   where
-    sharable _ = False
+    sharable (Literal a) = typeRepTyCon (typeOf a) == typeRepTyCon (typeOf [()])
 
 instance SizeProp (Literal :|| Type)
   where
-    sizeProp lit@(C' (Literal a)) Nil
-        = sizeOf a
+    sizeProp lit@(C' (Literal a)) Nil = sizeOf a
 
 instance ((Literal :|| Type) :<: dom, OptimizeSuper dom) =>
     Optimize (Literal :|| Type) dom

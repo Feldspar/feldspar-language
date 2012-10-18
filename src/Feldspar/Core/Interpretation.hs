@@ -122,7 +122,17 @@ instance (Sharable sub1, Sharable sub2) => Sharable (sub1 :+: sub2)
     sharable (InjR a) = sharable a
 
 instance Sharable sym => Sharable (sym :|| pred)
+  where
+    sharable (C' s) = sharable s
+
 instance Sharable sym => Sharable (SubConstr2 c sym p1 p2)
+  where
+    sharable (SubConstr2 s) = sharable s
+
+instance Sharable dom => Sharable (Decor Info dom)
+  where
+    sharable = sharable . decorExpr
+
 instance Sharable Empty
 
 
