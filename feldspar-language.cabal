@@ -15,7 +15,7 @@ maintainer:     Emil Axelsson <emax@chalmers.se>
 license:        BSD3
 license-file:   LICENSE
 stability:      experimental
-homepage:       https://feldspar.github.com
+homepage:       http://feldspar.github.com
 bug-reports:    https://github.com/feldspar/feldspar-language/issues
 build-type:     Simple
 cabal-version:  >= 1.14
