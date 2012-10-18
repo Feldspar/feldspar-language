@@ -125,14 +125,7 @@ maps fs (Stream next initial) = Stream newNext newInit
 -- | 'intersperse a str' inserts an 'a' between each element of the stream
 --    'str'.
 intersperse :: Syntax a => a -> Stream a -> Stream a
-intersperse a (Stream next init) = Stream newNext newInit
-  where
-    newInit = do st <- init
-                 r  <- newRef true
-                 return (st,r)
-    newNext (st,r) = do b <- getRef r
-                        setRef r (not b)
-                        ifM b (next st) (return a)
+intersperse a s = interleave s (repeat a)
 
 -- | Create a new stream by alternating between the elements from
 --   the two input streams
@@ -236,8 +229,7 @@ iterate f a = Stream next init
 --
 -- @repeat a = [a, a, a, ...]@
 repeat :: Syntax a => a -> Stream a
-repeat a = Stream next (return ())
-  where next _ = return a
+repeat a = Stream return (return a)
 
 -- | @unfold f acc@ creates a new stream by successively applying 'f' to
 --   to the accumulator 'acc'.
@@ -259,18 +251,11 @@ drop i (Stream next init) = Stream next newInit
 
 -- | Pairs together two streams into one.
 zip :: Stream a -> Stream b -> Stream (a,b)
-zip (Stream next1 init1) (Stream next2 init2) = Stream next init
-  where
-    init = do st1 <- init1
-              st2 <- init2
-              return (st1,st2)
-    next (st1,st2) = do a <- next1 st1
-                        b <- next2 st2
-                        return (a,b)
+zip = zipWith (,)
 
 -- | Pairs together two streams using a function to combine the
 --   corresponding elements.
-zipWith :: Syntax c => (a -> b -> c) -> Stream a -> Stream b -> Stream c
+zipWith :: (a -> b -> c) -> Stream a -> Stream b -> Stream c
 zipWith f (Stream next1 init1) (Stream next2 init2) = Stream next init
   where
     init = do st1 <- init1
