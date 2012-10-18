@@ -72,7 +72,7 @@ instance Sharable Mutable
 
 instance Typed Mutable
   where
-    dict Run = Just Dict
+    typeDictSym Run = Just Dict
 
 instance AlphaEq dom dom dom env => AlphaEq Mutable Mutable dom env
   where

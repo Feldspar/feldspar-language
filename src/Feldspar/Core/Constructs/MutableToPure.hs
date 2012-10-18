@@ -88,8 +88,8 @@ instance Sharable MutableToPure
 
 instance Typed MutableToPure
   where
-    dict RunMutableArray = Just Dict
-    dict _ = Nothing
+    typeDictSym RunMutableArray = Just Dict
+    typeDictSym _ = Nothing
 
 
 instance AlphaEq dom dom dom env => AlphaEq MutableToPure MutableToPure dom env

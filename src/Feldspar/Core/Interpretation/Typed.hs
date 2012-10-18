@@ -24,34 +24,32 @@ import Feldspar.Core.Types (Type)
 -- constraint.
 class Typed dom
   where
-    dict :: dom a -> Maybe (Dict (Type (DenResult a)))
+    typeDictSym :: dom a -> Maybe (Dict (Type (DenResult a)))
+    typeDictSym _ = Nothing
 
 instance Typed (sub :|| Type)
-  where dict (C' _) = Just Dict
+  where typeDictSym (C' _) = Just Dict
 
 instance Typed sub => Typed (sub :|| pred)
-  where dict (C' s) = dict s
+  where typeDictSym (C' s) = typeDictSym s
 
 instance Typed sub => Typed (sub :| pred)
-  where dict (C s) = dict s
+  where typeDictSym (C s) = typeDictSym s
 
 instance Typed (SubConstr2 c sub Type Top)
-  where dict (SubConstr2 s) = Nothing
+  where typeDictSym (SubConstr2 s) = Nothing
 
 instance (Typed sub, Typed sup) => Typed (sub :+: sup)
-  where dict (InjL s) = dict s
-        dict (InjR s) = dict s
+  where typeDictSym (InjL s) = typeDictSym s
+        typeDictSym (InjR s) = typeDictSym s
 
 instance (Typed sub) => Typed (Decor info sub)
-  where dict (Decor _ s) = dict s
+  where typeDictSym (Decor _ s) = typeDictSym s
 
 instance Typed Empty
-  where dict _ = Nothing
-
 instance Typed dom
-  where dict _ = Nothing
 
 -- | Extract a possible 'Type' constraint witness from an 'AST'
 typeDict :: Typed dom => ASTF dom a -> Maybe (Dict (Type a))
-typeDict = simpleMatch (const . dict)
+typeDict = simpleMatch (const . typeDictSym)
 
