@@ -46,7 +46,7 @@ import Feldspar.Core.Frontend.Tuple ()
 import Language.Syntactic
 
 parallel :: Type a => Data Length -> (Data Index -> Data a) -> Data [a]
-parallel = sugarSymF Parallel
+parallel len ixf = sugar (sugarSymFF Parallel (desugar len) (undefined))
 
 
 sequential :: (Type a, Syntax s) =>

@@ -2,7 +2,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -42,7 +41,6 @@
 module Feldspar.Core.Frontend
     ( module Data.Patch
     , Syntactic
-    , SyntacticFeld
     , Internal
 
     , FeldDomainAll
@@ -150,9 +148,6 @@ mkId a b | simpleMatch (const . sharable) a
              }
 mkId _ _ = Nothing
 
-
-type SyntacticFeld a = (Syntactic a, Domain a ~  FeldDomainAll, Typeable (Internal a))
-  -- TODO Typeable needed?
 
 -- | Reification and optimization of a Feldspar program
 reifyFeld :: SyntacticFeld a

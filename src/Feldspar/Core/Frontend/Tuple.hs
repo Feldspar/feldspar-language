@@ -45,6 +45,8 @@ import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Tuple ()
 
+instance TupleSat FeldDomainAll Type
+
 instance (Syntax a, Syntax b)                                                   => Syntax (a,b)
 instance (Syntax a, Syntax b, Syntax c)                                         => Syntax (a,b,c)
 instance (Syntax a, Syntax b, Syntax c, Syntax d)                               => Syntax (a,b,c,d)

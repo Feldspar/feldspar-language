@@ -1,10 +1,12 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -122,65 +124,20 @@ type FeldSymbols
 --      `MutableToPure` (at least) have `Type` baked in. Note that `(MutableToPure :|| Type)` would
 --      currently not work, since `WithArray` has monadic result type.
 
-type FeldDomain    = FODomain FeldSymbols Typeable Type
+type FeldDomain = FODomain FeldSymbols Typeable Type
 
-type FeldDomainAll = HODomain FeldSymbols Typeable Type
+newtype FeldDomainAll a = FeldDomainAll (HODomain FeldSymbols Typeable Type a)
 
---newtype FeldDomain a = FeldDomain (FeldSymbols a)
-
-
---deriving instance (sym :<: FeldSymbols) => sym :<: FeldDomain
---deriving instance (Project sym FeldSymbols) => Project sym FeldDomain
-
-----instance (InjectC sym FeldSymbols a) => InjectC sym FeldDomain a
-----    where
-----      injC = injC . FeldDomain
-
-----instance Constrained FeldDomain
---    where
---        type Sat FeldDomain = Sat FeldSymbols
---        exprDict (FeldDomain a) = exprDict a
-
---deriving instance Equality FeldDomain
---deriving instance Render   FeldDomain
---deriving instance ToTree   FeldDomain
---deriving instance Eval     FeldDomain
---deriving instance EvalBind FeldDomain
-
---instance VarEqEnv env => AlphaEq
---    FeldDomain
---    FeldDomain
---    ((Lambda :+: (Variable :+: ((FeldDomain :|| Eq) :| Show))) :|| Typeable)
---    env
---  where
---    alphaEqSym (FeldDomain a) aArgs (FeldDomain b) bArgs =
---        alphaEqSym a aArgs b bArgs
-
---instance AlphaEq
---    FeldDomain
---    FeldDomain
---    ((Lambda :+: (Variable :+: ((FeldDomain :|| Eq) :| Show))) :|| Typeable)
---    [(VarId, VarId)]
---  where
---    alphaEqSym (FeldDomain a) aArgs (FeldDomain b) bArgs =
---        alphaEqSym a aArgs b bArgs
-
-{-
-instance Equality dom => AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId,VarId)]
+instance Constrained FeldDomainAll
   where
-    alphaEqSym = alphaEqSymDefault
--}
+    type Sat FeldDomainAll = Typeable
+    exprDict (FeldDomainAll s) = exprDict s
 
---deriving instance Sharable FeldDomain
+deriving instance (Project sym FeldSymbols) => Project sym FeldDomainAll
 
-{-
-instance Optimize FeldDomain (Lambda TypeCtx :+: (Variable TypeCtx :+: FeldDomain))
-  where
-    optimizeFeat       (FeldDomain a) = optimizeFeat       a
-    constructFeatOpt   (FeldDomain a) = constructFeatOpt   a
-    constructFeatUnOpt (FeldDomain a) = constructFeatUnOpt a
--}
-
+instance (InjectC sym FeldSymbols a, Typeable a) => InjectC sym FeldDomainAll a
+    where
+      injC = FeldDomainAll . injC
 
 
 
@@ -199,13 +156,10 @@ instance Type a => Syntactic (Data a)
     desugar = unData
     sugar   = Data
 
+type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomainAll, Type (Internal a))
+
 -- | Specialization of the 'Syntactic' class for the Feldspar domain
-class
-    ( Syntactic a
-    , Domain a ~ FeldDomainAll
-    , Type (Internal a)
-    ) =>
-      Syntax a
+class SyntacticFeld a => Syntax a
   -- It would be possible to let 'Syntax' be an alias instead of giving separate
   -- instances for all types. However, this leads to horrible error messages.
   -- For example, if 'Syntax' is an alias, the following expression gives a huge
@@ -216,24 +170,37 @@ class
   -- The type error is not very readable now either, but at least it fits on the
   -- screen.
 
+-- TODO Think about difference between `SyntacticFeld` and `Syntax`
+
+re :: SyntacticFeld a => a -> ASTF FeldDomain (Internal a)
+re = reifyTop . f . desugar
+  where
+    f :: AST FeldDomainAll a -> AST (HODomain FeldSymbols Typeable Type) a
+    f (Sym (FeldDomainAll s)) = Sym s
+    f (s :$ a) = f s :$ f a
+
 instance Type a => Syntax (Data a)
 
 instance Type a => Eq (Data a)
   where
-    Data a == Data b = alphaEq (reify a) (reify b)
+    Data a == Data b = alphaEq (re a) (re b)
 
 instance Type a => Show (Data a)
   where
-    show (Data a) = render $ reify a
+    show (Data a) = render $ re a
 
---c' :: (Type (DenResult sig)) => feature sig -> (feature :|| Type) sig
---c' = C'
-
-sugarSymF :: ( ApplySym sig b dom
+sugarSymF :: ( ApplySym sig b FeldDomainAll
              , SyntacticN c b
-             , InjectC (feature :|| Type) dom (DenResult sig)
+             , InjectC (feature :|| Type) (HODomain FeldSymbols Typeable Type) (DenResult sig)
              , Type (DenResult sig)
              )
           => feature sig -> c
-sugarSymF sym = sugarSymC (c' sym)
+sugarSymF sym = sugarN $ appSym' $ Sym $ FeldDomainAll $ injC (c' sym)
+
+sugarSymFF :: ( ApplySym sig b FeldDomainAll
+             , InjectC (feature :|| Type) (HODomain FeldSymbols Typeable Type) (DenResult sig)
+             , Type (DenResult sig)
+             )
+          => feature sig -> b
+sugarSymFF sym = appSym' $ Sym $ FeldDomainAll $ injC (c' sym)
 
