@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -95,11 +96,15 @@ newtype WordN = WordN Word32
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
     , Arbitrary )
 
+type instance UnsignedRep WordN = Word32
+
 -- | Target-dependent signed integers
 newtype IntN = IntN Int32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
     , Arbitrary )
+
+type instance UnsignedRep IntN = Word32
 
 instance Show WordN
   where

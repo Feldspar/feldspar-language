@@ -1,5 +1,8 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -43,6 +46,8 @@ module Feldspar.Range where
 -- should go into `Feldspar.Core.Constructs.*` (or whereever suitable).
 
 import Data.Bits
+import Data.Int
+import Data.Word
 import Feldspar.Lattice
 
 --------------------------------------------------------------------------------
@@ -57,8 +62,28 @@ data Range a = Range
     deriving (Eq, Show)
 
 -- | Convenience alias for bounded integers
-class    (Ord a, Num a, Bounded a, Integral a, Bits a) => BoundedInt a
-instance (Ord a, Num a, Bounded a, Integral a, Bits a) => BoundedInt a
+type BoundedInt a = (BoundedSuper a, BoundedSuper (UnsignedRep a))
+
+-- | Super class to 'BoundedInt'
+class    (Ord a, Num a, Bounded a, Integral a, Bits a) => BoundedSuper a
+instance (Ord a, Num a, Bounded a, Integral a, Bits a) => BoundedSuper a
+
+-- | Type famliy to determine the bit representation of a type
+type family UnsignedRep a
+type instance UnsignedRep Int8   = Word8
+type instance UnsignedRep Word8  = Word8
+type instance UnsignedRep Int16  = Word16
+type instance UnsignedRep Word16 = Word16
+type instance UnsignedRep Int32  = Int32
+type instance UnsignedRep Word32 = Word32
+type instance UnsignedRep Int64  = Word64
+type instance UnsignedRep Word64 = Word64
+type instance UnsignedRep Int    = Word
+
+-- | Convert an 'Integral' to its unsigned representation while preserving
+-- bit width
+unsigned :: (Integral a, Integral (UnsignedRep a)) => a -> UnsignedRep a
+unsigned = fromIntegral
 
 -- | A convenience function for defining range propagation.
 --   @handleSign propU propS@ chooses @propU@ for unsigned types and
@@ -511,7 +536,7 @@ rangeShiftLU = handleSign rangeShiftLUUnsigned (\_ _ -> universal)
 -- TODO: improve accuracy
 
 -- | Unsigned case for 'rangeShiftLU'.
-rangeShiftLUUnsigned :: (Bounded a, Bits a, Integral a, Integral b)
+rangeShiftLUUnsigned :: (BoundedInt a, Integral b)
                      => Range a -> Range b -> Range a
 rangeShiftLUUnsigned (Range _ u1) (Range _ u2)
     | toInteger (bits u1) + fromIntegral u2 > toInteger (bitSize u1) = universal
@@ -524,7 +549,7 @@ rangeShiftRU = handleSign rangeShiftRUUnsigned (\_ _ -> universal)
 -- TODO: improve accuracy
 
 -- | Unsigned case for 'rangeShiftRU'.
-rangeShiftRUUnsigned :: (Num a, Bits a, Ord a, Bounded b, Integral b, Bits b)
+rangeShiftRUUnsigned :: (BoundedInt a, BoundedInt b)
                      => Range a -> Range b -> Range a
 rangeShiftRUUnsigned (Range l1 u1) (Range l2 u2)
     = range (correctShiftRU l1 u2) (correctShiftRU u1 l2)
@@ -620,7 +645,7 @@ rangeQuotU (Range l1 u1) (Range l2 u2) = Range (l1 `quot` u2) (u1 `quot` l2)
 -- | Writing @d \`rangeLess\` abs r@ doesn't mean what you think it does because
 -- 'r' may contain minBound which doesn't have a positive representation.
 -- Instead, this function should be used.
-rangeLessAbs :: (Bounded a, Integral a, Bits a)
+rangeLessAbs :: (BoundedInt a)
              => Range a -> Range a -> Bool
 rangeLessAbs d r
     | r == singletonRange minBound
@@ -631,7 +656,7 @@ rangeLessAbs d r
 
 -- | Similar to 'rangeLessAbs' but replaces the expression
 --   @abs d \`rangeLess\` abs r@ instead.
-absRangeLessAbs :: (Bounded a, Integral a, Bits a)
+absRangeLessAbs :: (BoundedInt a)
                 => Range a -> Range a -> Bool
 absRangeLessAbs d r
     | lowerBound d == minBound = False
