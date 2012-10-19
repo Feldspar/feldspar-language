@@ -455,16 +455,6 @@ rangeExpSigned :: BoundedInt a => Range a -> Range a -> Range a
 rangeExpSigned m _ | m == singletonRange (-1) = range (-1) 1
 rangeExpSigned _ _ = universal
 
--- | Propagates range information through '.|.'.
-rangeOr :: forall a . BoundedInt a => Range a -> Range a -> Range a
-rangeOr = handleSign rangeOrUnsignedAccurate (\_ _ -> universal)
-
--- | Cheap and inaccurate range propagation for '.|.' on unsigned numbers.
-rangeOrUnsignedCheap :: BoundedInt a => Range a -> Range a -> Range a
-rangeOrUnsignedCheap (Range l1 u1) (Range l2 u2) =
-    range (max l1 l2) (maxPlus u1 u2)
--- Code from Hacker's Delight.
-
 -- | @a \`maxPlus\` b@ adds @a@ and @b@ but if the addition overflows then
 --   'maxBound' is returned.
 maxPlus :: BoundedInt a => a -> a -> a
@@ -474,7 +464,11 @@ maxPlus b d = if s < b then maxBound
 
 -- | Accurate lower bound for '.|.' on unsigned numbers.
 minOrUnsigned :: BoundedInt a => a -> a -> a -> a -> a
-minOrUnsigned a b c d = loop (bit (bitSize a - 1))
+minOrUnsigned a b c d =
+    fromIntegral $ minOr (unsigned a) (unsigned b) (unsigned c) (unsigned d)
+
+minOr :: BoundedSuper a => a -> a -> a -> a -> a
+minOr a b c d = loop (bit (bitSize a - 1))
   where loop 0 = a .|. c
         loop m
             | complement a .&. c .&. m > 0 =
@@ -492,7 +486,11 @@ minOrUnsigned a b c d = loop (bit (bitSize a - 1))
 
 -- | Accurate upper bound for '.|.' on unsigned numbers.
 maxOrUnsigned :: BoundedInt a => a -> a -> a -> a -> a
-maxOrUnsigned a b c d = loop (bit (bitSize a - 1))
+maxOrUnsigned a b c d =
+    fromIntegral $ maxOr (unsigned a) (unsigned b) (unsigned c) (unsigned d)
+
+maxOr :: BoundedSuper a => a -> a -> a -> a -> a
+maxOr a b c d = loop (bit (bitSize a - 1))
   where loop 0 = b .|. d
         loop m
              | b .&. d .&. m > 0 =
@@ -506,30 +504,105 @@ maxOrUnsigned a b c d = loop (bit (bitSize a - 1))
              | otherwise = loop (shiftR m 1)
 -- Code from Hacker's Delight.
 
+-- | Accurate lower bound for '.&.' on unsigned numbers
+minAndUnsigned :: BoundedInt a => a -> a -> a -> a -> a
+minAndUnsigned a b c d =
+  complement $ maxOrUnsigned (complement b) (complement a)
+                             (complement d) (complement c)
+
+-- | Accurate upper bound for '.&.' on unsigned numbers
+maxAndUnsigned :: BoundedInt a => a -> a -> a -> a -> a
+maxAndUnsigned a b c d =
+  complement $ minOrUnsigned (complement b) (complement a)
+                             (complement d) (complement c)
+
+-- | Accurate lower bound for 'xor' on unsigned numbers
+minXorUnsigned :: BoundedInt a => a -> a -> a -> a -> a
+minXorUnsigned a b c d = x .|. y
+  where
+    x = minAndUnsigned a b (complement d) (complement c)
+    y = minAndUnsigned (complement b) (complement a) c d
+
+-- | Accurate upper bound for 'xor' on unsigned numbers
+maxXorUnsigned :: BoundedInt a => a -> a -> a -> a -> a
+maxXorUnsigned a b c d = maxOrUnsigned 0 x 0 y
+  where
+    x = maxAndUnsigned a b (complement d) (complement c)
+    y = maxAndUnsigned (complement b) (complement a) c d
+
+minOrSigned :: BoundedInt a => a -> a -> a -> a -> a
+minOrSigned a b c d = case (a<0,b<0,c<0,d<0) of
+    (True ,True ,True ,True ) -> minOrUnsigned a b c d
+    (True ,True ,True ,False) -> a 
+    (True ,True ,False,False) -> minOrUnsigned a b c d
+    (True ,False,True ,True ) -> c 
+    (True ,False,True ,False) -> min a c 
+    (True ,False,False,False) -> minOrUnsigned a (-1) c d
+    (False,False,True ,True ) -> minOrUnsigned a b c d
+    (False,False,True ,False) -> minOrUnsigned a b c (-1)
+    (False,False,False,False) -> minOrUnsigned a b c d
+    (_    ,_    ,_    ,_    ) -> error "Can't propagate over 'or'"
+
+maxOrSigned :: BoundedInt a => a -> a -> a -> a -> a
+maxOrSigned a b c d = case (a<0,b<0,c<0,d<0) of
+    (True ,True ,True ,True ) -> maxOrUnsigned a b c d
+    (True ,True ,True ,False) -> -1                   
+    (True ,True ,False,False) -> maxOrUnsigned a b c d
+    (True ,False,True ,True ) -> -1                   
+    (True ,False,True ,False) -> maxOrUnsigned 0 b 0 d
+    (True ,False,False,False) -> maxOrUnsigned 0 b c d
+    (False,False,True ,True ) -> maxOrUnsigned a b c d
+    (False,False,True ,False) -> maxOrUnsigned a b 0 d
+    (False,False,False,False) -> maxOrUnsigned a b c d
+    (_    ,_    ,_    ,_    ) -> error "Can't propagate over 'or'"
+
+minAndSigned :: BoundedInt a => a -> a -> a -> a -> a
+minAndSigned a b c d =
+    complement $ maxOrSigned (complement b) (complement a)
+                             (complement d) (complement c)
+
+maxAndSigned :: BoundedInt a => a -> a -> a -> a -> a
+maxAndSigned a b c d =
+    complement $ minOrSigned (complement b) (complement a)
+                             (complement d) (complement c)
+
+-- | Propagates range information through '.|.'.
+rangeOr :: forall a . BoundedInt a => Range a -> Range a -> Range a
+rangeOr = handleSign rangeOrUnsignedAccurate rangeOrSignedAccurate
+
 -- | Accurate range propagation through '.|.' for unsigned types.
 rangeOrUnsignedAccurate :: BoundedInt a => Range a -> Range a -> Range a
 rangeOrUnsignedAccurate (Range l1 u1) (Range l2 u2) =
     range (minOrUnsigned l1 u1 l2 u2) (maxOrUnsigned l1 u1 l2 u2)
 -- Code from Hacker's Delight.
 
+rangeOrSignedAccurate :: BoundedInt a => Range a -> Range a -> Range a
+rangeOrSignedAccurate (Range a b) (Range c d) =
+    range (minOrSigned a b c d) (maxOrSigned a b c d)
+
 -- | Propagating range information through '.&.'.
 rangeAnd :: forall a . BoundedInt a => Range a -> Range a -> Range a
-rangeAnd = handleSign rangeAndUnsignedCheap (\_ _ -> universal)
+rangeAnd = handleSign rangeAndUnsignedAccurate rangeAndSignedAccurate
 
--- | Cheap and inaccurate range propagation for '.&.' on unsigned numbers.
-rangeAndUnsignedCheap :: BoundedInt a => Range a -> Range a -> Range a
-rangeAndUnsignedCheap (Range _ u1) (Range _ u2) = range 0 (min u1 u2)
--- Code from Hacker's Delight.
+-- | Accurate range propagation through '.&.' for unsigned types
+rangeAndUnsignedAccurate :: BoundedInt a => Range a -> Range a -> Range a
+rangeAndUnsignedAccurate (Range a b) (Range c d) =
+    range (minAndUnsigned a b c d) (maxAndUnsigned a b c d)
+
+rangeAndSignedAccurate :: BoundedInt a => Range a -> Range a -> Range a
+rangeAndSignedAccurate (Range a b) (Range c d) =
+    range (minAndSigned a b c d) (maxAndSigned a b c d)
 
 -- | Propagating range information through 'xor'.
 rangeXor :: forall a . BoundedInt a => Range a -> Range a -> Range a
-rangeXor = handleSign rangeXorUnsigned  (\_ _ -> universal)
+rangeXor = handleSign rangeXorUnsignedAccurate (\_ _ -> universal)
 
--- | Unsigned case for 'rangeXor'.
-rangeXorUnsigned :: BoundedInt a => Range a -> Range a -> Range a
-rangeXorUnsigned (Range _ u1) (Range _ u2) = range 0 (maxPlus u1 u2)
--- Code from Hacker's Delight.
+-- | Accurate range propagation through 'xor' for unsigned types
+rangeXorUnsignedAccurate :: BoundedInt a => Range a -> Range a -> Range a
+rangeXorUnsignedAccurate (Range a b) (Range c d) =
+    range (minXorUnsigned a b c d) (maxXorUnsigned a b c d)
 
+-- | 
 -- | Propagating range information through 'shiftLU'.
 rangeShiftLU :: (BoundedInt a, BoundedInt b) => Range a -> Range b -> Range a
 rangeShiftLU = handleSign rangeShiftLUUnsigned (\_ _ -> universal)
