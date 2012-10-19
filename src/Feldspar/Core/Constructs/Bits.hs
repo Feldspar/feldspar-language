@@ -161,7 +161,9 @@ instance SizeProp (BITS :|| Type)
     sizeProp (C' BOr) (WrapFull a :* WrapFull b :* Nil) = rangeOr (infoSize a) (infoSize b)
     sizeProp (C' BXor) (WrapFull a :* WrapFull b :* Nil) = rangeXor (infoSize a) (infoSize b)
 
+    sizeProp (C' ShiftL) (WrapFull a :* WrapFull b :* Nil) = rangeShiftLU (infoSize a) (infoSize b)
     sizeProp (C' ShiftLU) (WrapFull a :* WrapFull b :* Nil) = rangeShiftLU (infoSize a) (infoSize b)
+    sizeProp (C' ShiftR) (WrapFull a :* WrapFull b :* Nil) = rangeShiftRU (infoSize a) (infoSize b)
     sizeProp (C' ShiftRU) (WrapFull a :* WrapFull b :* Nil) = rangeShiftRU (infoSize a) (infoSize b)
 
     sizeProp (C' Complement) (WrapFull a :* Nil) = rangeComplement (infoSize a)
