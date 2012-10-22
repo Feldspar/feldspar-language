@@ -139,6 +139,11 @@ instance (InjectC sym FeldSymbols a, Typeable a) => InjectC sym FeldDomainAll a
     where
       injC = FeldDomainAll . injC
 
+instance IsHODomain FeldDomainAll Typeable Type
+  where
+    lambda f = case lambda f :: of
+        Sym s -> Sym (FeldDomainAll s)
+
 
 
 --------------------------------------------------------------------------------
