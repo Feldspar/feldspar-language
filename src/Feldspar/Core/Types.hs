@@ -79,8 +79,8 @@ infixr 5 :>
 
 instance (Lattice a, Lattice b) => Lattice (a :> b)
   where
-    empty     = empty :> empty
-    universal = universal :> universal
+    bot = bot :> bot
+    top = top :> top
     (a1:>a2) \/ (b1:>b2) = (a1 \/ b1) :> (a2 \/ b2)
     (a1:>a2) /\ (b1:>b2) = (a1 /\ b1) :> (a2 /\ b2)
 
@@ -775,10 +775,10 @@ instance Num AnySize
 
 instance Lattice AnySize
   where
-    empty     = AnySize
-    universal = AnySize
-    (\/)      = anySizeFun2
-    (/\)      = anySizeFun2
+    bot  = AnySize
+    top  = AnySize
+    (\/) = anySizeFun2
+    (/\) = anySizeFun2
 
 type family Size a
 

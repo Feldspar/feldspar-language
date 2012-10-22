@@ -1,11 +1,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -13,10 +13,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -39,75 +39,81 @@ import Data.Lens.Common
 -- | Lattice types
 class Eq a => Lattice a
   where
-    empty     :: a
-    universal :: a
-    -- | Union
+    bot       :: a
+    top       :: a
+    -- | Join
     (\/)      :: a -> a -> a
-    -- | Intersection
+    -- | Meet
     (/\)      :: a -> a -> a
+
+empty :: Lattice a => a
+empty = bot
+
+universal :: Lattice a => a
+universal = top
 
 instance Lattice ()
   where
-    empty     = ()
-    universal = ()
+    bot       = ()
+    top       = ()
     () \/ ()  = ()
     () /\ ()  = ()
 
 -- | Lattice product
 instance (Lattice a, Lattice b) => Lattice (a,b)
   where
-    empty     = (empty,empty)
-    universal = (universal,universal)
+    bot = (bot,bot)
+    top = (top,top)
     (a1,a2) \/ (b1,b2) = (a1 \/ b1, a2 \/ b2)
     (a1,a2) /\ (b1,b2) = (a1 /\ b1, a2 /\ b2)
 
 -- | Three-way product
 instance (Lattice a, Lattice b, Lattice c) => Lattice (a,b,c)
   where
-    empty     = (empty,empty,empty)
-    universal = (universal,universal,universal)
+    bot = (bot,bot,bot)
+    top = (top,top,top)
     (a1,a2,a3) \/ (b1,b2,b3) = (a1 \/ b1, a2 \/ b2, a3 \/ b3)
     (a1,a2,a3) /\ (b1,b2,b3) = (a1 /\ b1, a2 /\ b2, a3 /\ b3)
 
 -- | Four-way product
 instance (Lattice a, Lattice b, Lattice c, Lattice d) => Lattice (a,b,c,d)
   where
-    empty     = (empty,empty,empty,empty)
-    universal = (universal,universal,universal,universal)
+    bot = (bot,bot,bot,bot)
+    top = (top,top,top,top)
     (a1,a2,a3,a4) \/ (b1,b2,b3,b4) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4)
     (a1,a2,a3,a4) /\ (b1,b2,b3,b4) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4)
 
 -- | Five-way product
 instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e) => Lattice (a,b,c,d,e)
   where
-    empty     = (empty,empty,empty,empty,empty)
-    universal = (universal,universal,universal,universal,universal)
+    bot = (bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top)
     (a1,a2,a3,a4,a5) \/ (b1,b2,b3,b4,b5) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5)
     (a1,a2,a3,a4,a5) /\ (b1,b2,b3,b4,b5) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5)
 
 -- | Six-way product
 instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f) => Lattice (a,b,c,d,e,f)
   where
-    empty     = (empty,empty,empty,empty,empty,empty)
-    universal = (universal,universal,universal,universal,universal,universal)
+    bot = (bot,bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top,top)
     (a1,a2,a3,a4,a5,a6) \/ (b1,b2,b3,b4,b5,b6) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6)
     (a1,a2,a3,a4,a5,a6) /\ (b1,b2,b3,b4,b5,b6) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6)
 
 -- | Seven-way product
 instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f, Lattice g) => Lattice (a,b,c,d,e,f,g)
   where
-    empty     = (empty,empty,empty,empty,empty,empty,empty)
-    universal = (universal,universal,universal,universal,universal,universal,universal)
+    bot = (bot,bot,bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top,top,top)
     (a1,a2,a3,a4,a5,a6,a7) \/ (b1,b2,b3,b4,b5,b6,b7) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6, a7 \/ b7)
     (a1,a2,a3,a4,a5,a6,a7) /\ (b1,b2,b3,b4,b5,b6,b7) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6, a7 /\ b7)
 
--- | Accumulated union
+-- | Accumulated join
 unions :: Lattice a => [a] -> a
-unions = foldr (\/) empty
+unions = foldr (\/) bot
 
--- | Accumulated intersection
+-- | Accumulated meet
 intersections :: Lattice a => [a] -> a
-intersections = foldr (/\) universal
+intersections = foldr (/\) top
 
 
 
@@ -142,7 +148,7 @@ lensedIndexedFixedPoint aLens bLens f = go 0
         a'   = (aLens ^= bLat) a
 
 -- | Take the fixed point of a function. The second argument is an initial
---  element. A sensible default for the initial element is 'empty'.
+--  element. A sensible default for the initial element is 'bot'.
 --
 -- The function is not required to be monotonic. It is made monotonic internally
 -- by always taking the union of the result and the previous value.
@@ -160,10 +166,10 @@ indexedFixedPoint = lensedIndexedFixedPoint (iso id id) (iso id id)
 --   termination of the fixed point analysis.
 type Widening a = (Int -> a -> a) -> (Int -> a -> a)
 
--- | A widening operator which defaults to 'universal' when the number of
+-- | A widening operator which defaults to 'top' when the number of
 --   iterations goes over the specified value.
 cutOffAt :: Lattice a => Int -> Widening a
-cutOffAt n f i a | i >= n    = universal
+cutOffAt n f i a | i >= n    = top
                  | otherwise = f i a
 
 -- | A bounded version of 'lensedFixedPoint'. It will always do at least one
@@ -175,7 +181,7 @@ boundedLensedFixedPoint n aLens bLens f = go 0
   where
     go i a
         | aLat == bLat = ((bLens ^= aLat) b, i)
-        | i >= n-1     = ((bLens ^= universal) b, i)
+        | i >= n-1     = ((bLens ^= top) b, i)
         | otherwise    = go (i+1) a'
       where
         aLat = a ^! aLens
