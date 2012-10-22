@@ -382,6 +382,9 @@ any p = or . map p
 all :: (a -> Data Bool) -> Vector a -> Data Bool
 all p = and . map p
 
+eqVector :: Eq a => Vector (Data a) -> Vector (Data a) -> Data Bool
+eqVector a b = (length a == length b) && and (zipWith (==) a b)
+
 -- | Scalar product of two vectors
 scalarProd :: (Syntax a, Num a) => Vector a -> Vector a -> a
 scalarProd a b = sum (zipWith (*) a b)
