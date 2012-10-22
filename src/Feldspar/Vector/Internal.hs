@@ -368,6 +368,20 @@ maximum = fold1 max
 minimum :: Ord a => Vector (Data a) -> Data a
 minimum = fold1 min
 
+or :: Vector (Data Bool) -> Data Bool
+or = fold (||) false
+  -- TODO Should be lazy
+
+and :: Vector (Data Bool) -> Data Bool
+and = fold (&&) true
+  -- TODO Should be lazy
+
+any :: (a -> Data Bool) -> Vector a -> Data Bool
+any p = or . map p
+
+all :: (a -> Data Bool) -> Vector a -> Data Bool
+all p = and . map p
+
 -- | Scalar product of two vectors
 scalarProd :: (Syntax a, Num a) => Vector a -> Vector a -> a
 scalarProd a b = sum (zipWith (*) a b)
