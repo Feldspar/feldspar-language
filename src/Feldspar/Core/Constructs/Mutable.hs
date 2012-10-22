@@ -161,7 +161,9 @@ instance ( MONAD Mut :<: dom
     constructFeatUnOpt When args =
         constructFeatUnOptDefaultTyp voidTypeRep When args
 
-instance (Mutable :<: dom, OptimizeSuper dom) => Optimize Mutable dom
+instance (Mutable :<: dom, MONAD Mut :<: dom, OptimizeSuper dom) => Optimize Mutable dom
   where
+    constructFeatUnOpt Run ((ret :$ a) :* Nil)
+        | Just Return <- prjMonad monadProxy ret = return a
     constructFeatUnOpt Run args = constructFeatUnOptDefault Run args
 
