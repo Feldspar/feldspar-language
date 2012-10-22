@@ -430,11 +430,12 @@ rangeMulUnsigned r1 r2
     | otherwise = universal
 
 -- | Returns the position of the highest bit set to 1. Counting starts at 1.
--- Beware! It doesn't terminate for negative numbers.
-bits :: (Num b, Bits b) => b -> Int
-bits b = loop b 0
-    where loop 0 c = c
-          loop n c = loop (n `shiftR` 1) (c+1)
+bits :: forall b. BoundedInt b => b -> Int
+bits b = loop (unsigned b) 0
+  where
+    loop :: UnsignedRep b -> Int -> Int
+    loop 0 c = c
+    loop n c = loop (n `shiftR` 1) (c+1)
 
 -- | Propagates range information through exponentiation.
 rangeExp :: BoundedInt a => Range a -> Range a -> Range a
