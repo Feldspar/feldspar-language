@@ -1,3 +1,6 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
@@ -31,34 +34,49 @@ where
 
 import Language.Syntactic
 
+import Data.List (genericLength)
+import Control.Monad (zipWithM_)
+
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Loop
 import Feldspar.Core.Constructs.MutableArray
 import Feldspar.Core.Frontend.Mutable
+import Feldspar.Core.Frontend.Literal (value)
 
+-- | Create a new 'Mutable' Array and intialize all elements
 newArr :: Type a => Data Length -> Data a -> M (Data (MArr a))
 newArr = sugarSymC NewArr
 
+-- | Create a new 'Mutable' Array but leave the elements un-initialized
 newArr_ :: Type a => Data Length -> M (Data (MArr a))
 newArr_ = sugarSymC NewArr_
 
-newListArr :: Type a => [Data a] -> M (Data (MArr a))
-newListArr _ = error "newListArr: unimplemented" -- TODO
+-- | Create a new 'Mutable' Array and initialize with elements from the
+-- list
+newListArr :: forall a. Type a => [Data a] -> M (Data (MArr a))
+newListArr xs = do arr <- newArr_ (value $ genericLength xs)
+                   zipWithM_ (setArr arr . value) [0..] xs
+                   return arr
 
+-- | Extract the element at index
 getArr :: Type a => Data (MArr a) -> Data Index -> M (Data a)
 getArr = sugarSymC GetArr
 
+-- | Replace the value at index
 setArr :: Type a => Data (MArr a) -> Data Index -> Data a -> M ()
 setArr = sugarSymC SetArr
 
+-- | Modify the element at index
 modifyArr :: Type a
           => Data (MArr a) -> Data Index -> (Data a -> Data a) -> M ()
 modifyArr arr i f = getArr arr i >>= setArr arr i . f
 
+-- | Query the length of the array
 arrLength :: Type a => Data (MArr a) -> M (Data Length)
 arrLength = sugarSymC ArrLength
 
+-- | Modify all elements
 mapArray :: Type a => (Data a -> Data a) -> Data (MArr a) -> M (Data (MArr a))
 mapArray f arr = do
     len <- arrLength arr
@@ -68,6 +86,7 @@ mapArray f arr = do
 forArr :: Syntax a => Data Length -> (Data Index -> M a) -> M ()
 forArr = sugarSymC For
 
+-- | Swap two elements
 swap :: Syntax a
      => Data (MArr (Internal a)) -> Data Index -> Data Index -> M ()
 swap a i1 i2 = do
