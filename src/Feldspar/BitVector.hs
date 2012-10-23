@@ -95,8 +95,6 @@ instance (Unit a) => Syntactic (BitVector a)
     desugar = desugar . freezeBitVector
     sugar   = unfreezeBitVector . sugar
 
-instance (Unit a) => Syntax (BitVector a)
-
 -- * Operations
 
 length :: forall w . (Unit w) => BitVector w -> Data Length

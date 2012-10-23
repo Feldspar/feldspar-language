@@ -54,8 +54,6 @@ instance Syntax a => Syntactic (Option a)
     desugar = desugar . desugarOption . fmap resugar
     sugar   = fmap resugar . sugarOption . sugar
 
-instance Syntax a => Syntax (Option a)
-
 instance Functor Option
   where
     fmap f opt = opt {fromSome = f (fromSome opt)}

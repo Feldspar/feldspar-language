@@ -55,5 +55,3 @@ instance Syntactic ()
     desugar = appSymC . c' . Literal
     sugar _ = ()
 
-instance Syntax ()
-

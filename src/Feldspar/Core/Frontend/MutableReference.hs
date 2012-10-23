@@ -52,8 +52,6 @@ instance Syntax a => Syntactic (Ref a)
     desugar = desugar . unRef
     sugar   = Ref . sugar
 
-instance Syntax a => Syntax (Ref a)
-
 newRef :: Syntax a => a -> M (Ref a)
 newRef = sugarSymC NewRef
 

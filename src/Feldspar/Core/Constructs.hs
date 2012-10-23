@@ -172,7 +172,8 @@ instance Type a => Syntactic (Data a)
 type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomainAll, Typeable (Internal a))
 
 -- | Specialization of the 'Syntactic' class for the Feldspar domain
-class (SyntacticFeld a, Type (Internal a)) => Syntax a
+class    (SyntacticFeld a, Type (Internal a)) => Syntax a
+instance (SyntacticFeld a, Type (Internal a)) => Syntax a
   -- It would be possible to let 'Syntax' be an alias instead of giving separate
   -- instances for all types. However, this leads to horrible error messages.
   -- For example, if 'Syntax' is an alias, the following expression gives a huge
@@ -183,12 +184,8 @@ class (SyntacticFeld a, Type (Internal a)) => Syntax a
   -- The type error is not very readable now either, but at least it fits on the
   -- screen.
 
--- TODO Think about difference between `SyntacticFeld` and `Syntax`
-
 reifyF :: SyntacticFeld a => a -> ASTF FeldDomain (Internal a)
 reifyF = reifyTop . fromFeld . desugar
-
-instance Type a => Syntax (Data a)
 
 instance Type a => Eq (Data a)
   where

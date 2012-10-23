@@ -56,8 +56,6 @@ instance Syntax a => Syntactic (Future a)
     desugar = desugar . unFuture
     sugar   = Future . sugar
 
-instance Syntax a => Syntax (Future a)
-
 future :: Syntax a => a -> Future a
 future = sugarSymF MkFuture
 

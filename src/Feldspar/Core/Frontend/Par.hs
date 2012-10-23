@@ -62,5 +62,3 @@ instance Syntax a => Syntactic (IVar a)
     desugar = desugar . unIVar
     sugar   = IVar . sugar
 
-instance Syntax a => Syntax (IVar a)
-

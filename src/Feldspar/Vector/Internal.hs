@@ -85,8 +85,6 @@ instance Syntax a => Syntactic (Vector a)
     desugar = desugar . freezeVector . map resugar
     sugar   = map resugar . thawVector . sugar
 
-instance Syntax a => Syntax (Vector a)
-
 instance (Syntax a, Show (Internal a)) => Show (Vector a)
   where
     show = show . eval

@@ -7,11 +7,11 @@
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
--- 
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
--- 
---     * Redistributions of source code must retain the above copyright notice, 
+--
+--     * Redistributions of source code must retain the above copyright notice,
 --       this list of conditions and the following disclaimer.
 --     * Redistributions in binary form must reproduce the above copyright
 --       notice, this list of conditions and the following disclaimer in the
@@ -19,10 +19,10 @@
 --     * Neither the name of the ERICSSON AB nor the names of its contributors
 --       may be used to endorse or promote products derived from this software
 --       without specific prior written permission.
--- 
+--
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -67,8 +67,6 @@ thawPush :: Syntax a => Data [Internal a] -> PushVector a
 thawPush arr = Push f (getLength arr)
   where f k = forM (getLength arr) $ \ix ->
                 k ix (resugar (arr ! ix))
-
-instance Syntax a => Syntax (PushVector a)
 
 -- | Any kind of vector, push or pull, can cheaply be converted to a push vector
 class Pushy arr where
@@ -128,9 +126,9 @@ reverse arr = ixmap (\ix -> length arr - ix - 1) arr
 --   will be one element longer than the first.
 halve :: Syntax a => V.Vector a -> (V.Vector a, V.Vector a)
 halve v = (V.indexed (l `div` 2) ixf
-       	  ,V.indexed ((l+1) `div` 2) (\i -> ixf (i + (l `div` 2))))
+          ,V.indexed ((l+1) `div` 2) (\i -> ixf (i + (l `div` 2))))
   where l   = length v
-  	ixf = (v!)
+        ixf = (v!)
 
 -- | Split a vector in half and interleave the two two halves.
 riffle :: Syntax a => V.Vector a -> PushVector a
@@ -175,9 +173,9 @@ empty = Push (const (return ())) 0
 flatten :: Syntax a => V.Vector (PushVector a) -> PushVector a
 flatten v = Push f len
   where len = V.sum (V.map length v)
-  	f k = do l <- newRef 0
-	      	 forM (length v) $ \i ->
-		   do let (Push g m) = v ! i
-		      n <- getRef l
-		      g (\j a -> k (n + j) a)
-		      setRef l (n+m)
+        f k = do l <- newRef 0
+                 forM (length v) $ \i ->
+                   do let (Push g m) = v ! i
+                      n <- getRef l
+                      g (\j a -> k (n + j) a)
+                      setRef l (n+m)
