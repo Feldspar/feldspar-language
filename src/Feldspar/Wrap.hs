@@ -86,5 +86,3 @@ instance Type a => Syntactic (Data' s a)
     desugar = desugar . unData'
     sugar   = Data' . sugar
 
-instance Type a => Syntax (Data' s a)
-

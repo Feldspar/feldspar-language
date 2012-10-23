@@ -141,8 +141,6 @@ instance (Type a) => Syntactic (Fix a) where
   desugar = desugar . freezeFix
   sugar   = unfreezeFix . sugar
 
-instance (Type a) => Syntax (Fix a)
-
 -- | Converts an abstract real number to a pair of exponent and mantissa
 freezeFix :: (Type a) => Fix a -> (Data IntN,Data a)
 freezeFix (Fix e m) = (e,m)
