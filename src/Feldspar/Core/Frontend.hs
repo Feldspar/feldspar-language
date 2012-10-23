@@ -132,12 +132,12 @@ import Feldspar.Core.Frontend.Trace            as Frontend
 import Feldspar.Core.Frontend.Tuple            as Frontend
 
 
-prjDict :: PrjDict (Decor Info FeldDomain)
+prjDict :: PrjDict (Decor Info FeldDom)
 prjDict = PrjDict
     (prjVariable prjDictFO . decorExpr)
     (prjLambda   prjDictFO . decorExpr)
 
-mkId :: MkInjDict (Decor Info FeldDomain)
+mkId :: MkInjDict (Decor Info FeldDom)
 mkId a b | simpleMatch (const . sharable) a
          , Just Dict <- typeDict b
          , Just Dict <- typeDict a
@@ -154,7 +154,7 @@ mkId _ _ = Nothing
 reifyFeld :: SyntacticFeld a
     => BitWidth n
     -> a
-    -> ASTF (Decor Info FeldDomain) (Internal a)
+    -> ASTF (Decor Info FeldDom) (Internal a)
 reifyFeld n = flip evalState 0 .
     (   return
     <=< codeMotion prjDict mkId

@@ -124,7 +124,7 @@ type FeldSymbols
 --      `MutableToPure` (at least) have `Type` baked in. Note that `(MutableToPure :|| Type)` would
 --      currently not work, since `WithArray` has monadic result type.
 
-type FeldDomain = FODomain FeldSymbols Typeable Type
+type FeldDom = FODomain FeldSymbols Typeable Type
 
 newtype FeldDomainAll a = FeldDomainAll { getFeldDomainAll :: HODomain FeldSymbols Typeable Type a }
 
@@ -184,7 +184,7 @@ instance (SyntacticFeld a, Type (Internal a)) => Syntax a
   -- The type error is not very readable now either, but at least it fits on the
   -- screen.
 
-reifyF :: SyntacticFeld a => a -> ASTF FeldDomain (Internal a)
+reifyF :: SyntacticFeld a => a -> ASTF FeldDom (Internal a)
 reifyF = reifyTop . fromFeld . desugar
 
 instance Type a => Eq (Data a)
