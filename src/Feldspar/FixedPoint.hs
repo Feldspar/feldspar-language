@@ -136,12 +136,10 @@ fixfromRational inp = Fix e m
       e = negate $ value fracPartWith
 
 instance (Type a) => Syntactic (Fix a) where
-  type Domain (Fix a)   = FeldDomainAll
+  type Domain (Fix a)   = FeldDomain
   type Internal (Fix a) = (IntN, a)
   desugar = desugar . freezeFix
   sugar   = unfreezeFix . sugar
-
-instance (Type a) => Syntax (Fix a)
 
 -- | Converts an abstract real number to a pair of exponent and mantissa
 freezeFix :: (Type a) => Fix a -> (Data IntN,Data a)

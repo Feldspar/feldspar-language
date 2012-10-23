@@ -50,10 +50,8 @@ true = value True
 
 instance Syntactic ()
   where
-    type Domain ()   = FeldDomainAll
+    type Domain ()   = FeldDomain
     type Internal () = ()
     desugar = appSymC . c' . Literal
     sugar _ = ()
-
-instance Syntax ()
 

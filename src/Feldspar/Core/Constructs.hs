@@ -1,10 +1,12 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -122,65 +124,45 @@ type FeldSymbols
 --      `MutableToPure` (at least) have `Type` baked in. Note that `(MutableToPure :|| Type)` would
 --      currently not work, since `WithArray` has monadic result type.
 
-type FeldDomain    = FODomain FeldSymbols Typeable Type
+type FeldDom = FODomain FeldSymbols Typeable Type
 
-type FeldDomainAll = HODomain FeldSymbols Typeable Type
+newtype FeldDomain a = FeldDomain { getFeldDomain :: HODomain FeldSymbols Typeable Type a }
 
---newtype FeldDomain a = FeldDomain (FeldSymbols a)
+-- Note: `FeldDomain` is a newtype in order to hide the large `FeldSymbols` type to the user.
+-- Previously, we also had separate instances of the `Syntax` class for each type, but that doesn't
+-- seem to be needed anymore. Type errors seem to have improved since `Domain` was made an
+-- associated type of the `Syntactic` class rather than a functional dependency.
+--
+-- Here are some programs that have previously resulted in horribly long error messages:
+--
+--     drawAST map
+--     drawAST (map (+))
+--     drawAST (map (+1))
+--     drawAST (forLoop 10 0 (const (+id)))
 
-
---deriving instance (sym :<: FeldSymbols) => sym :<: FeldDomain
---deriving instance (Project sym FeldSymbols) => Project sym FeldDomain
-
-----instance (InjectC sym FeldSymbols a) => InjectC sym FeldDomain a
-----    where
-----      injC = injC . FeldDomain
-
-----instance Constrained FeldDomain
---    where
---        type Sat FeldDomain = Sat FeldSymbols
---        exprDict (FeldDomain a) = exprDict a
-
---deriving instance Equality FeldDomain
---deriving instance Render   FeldDomain
---deriving instance ToTree   FeldDomain
---deriving instance Eval     FeldDomain
---deriving instance EvalBind FeldDomain
-
---instance VarEqEnv env => AlphaEq
---    FeldDomain
---    FeldDomain
---    ((Lambda :+: (Variable :+: ((FeldDomain :|| Eq) :| Show))) :|| Typeable)
---    env
---  where
---    alphaEqSym (FeldDomain a) aArgs (FeldDomain b) bArgs =
---        alphaEqSym a aArgs b bArgs
-
---instance AlphaEq
---    FeldDomain
---    FeldDomain
---    ((Lambda :+: (Variable :+: ((FeldDomain :|| Eq) :| Show))) :|| Typeable)
---    [(VarId, VarId)]
---  where
---    alphaEqSym (FeldDomain a) aArgs (FeldDomain b) bArgs =
---        alphaEqSym a aArgs b bArgs
-
-{-
-instance Equality dom => AlphaEq dom dom (Decor Info (dom :|| Typeable)) [(VarId,VarId)]
+instance Constrained FeldDomain
   where
-    alphaEqSym = alphaEqSymDefault
--}
+    type Sat FeldDomain = Typeable
+    exprDict (FeldDomain s) = exprDict s
 
---deriving instance Sharable FeldDomain
+deriving instance (Project sym FeldSymbols) => Project sym FeldDomain
 
-{-
-instance Optimize FeldDomain (Lambda TypeCtx :+: (Variable TypeCtx :+: FeldDomain))
+instance (InjectC sym FeldSymbols a, Typeable a) => InjectC sym FeldDomain a
   where
-    optimizeFeat       (FeldDomain a) = optimizeFeat       a
-    constructFeatOpt   (FeldDomain a) = constructFeatOpt   a
-    constructFeatUnOpt (FeldDomain a) = constructFeatUnOpt a
--}
+    injC = FeldDomain . injC
 
+toFeld :: ASTF (HODomain FeldSymbols Typeable Type) a -> ASTF FeldDomain a
+toFeld = fold $ appArgs . Sym . FeldDomain
+  -- TODO Use unsafeCoerce?
+
+fromFeld :: ASTF FeldDomain a -> ASTF (HODomain FeldSymbols Typeable Type) a
+fromFeld = fold $ appArgs . Sym . getFeldDomain
+  -- TODO Use unsafeCoerce?
+
+instance IsHODomain FeldDomain Typeable Type
+  where
+    lambda f = case lambda (fromFeld . f . toFeld) of
+        Sym s -> Sym (FeldDomain s)
 
 
 
@@ -188,24 +170,22 @@ instance Optimize FeldDomain (Lambda TypeCtx :+: (Variable TypeCtx :+: FeldDomai
 -- * Front end
 --------------------------------------------------------------------------------
 
-newtype Data a = Data { unData :: ASTF FeldDomainAll a }
+newtype Data a = Data { unData :: ASTF FeldDomain a }
 
 deriving instance Typeable1 Data
 
 instance Type a => Syntactic (Data a)
   where
-    type Domain (Data a)   = FeldDomainAll
+    type Domain (Data a)   = FeldDomain
     type Internal (Data a) = a
     desugar = unData
     sugar   = Data
 
+type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomain, Typeable (Internal a))
+
 -- | Specialization of the 'Syntactic' class for the Feldspar domain
-class
-    ( Syntactic a
-    , Domain a ~ FeldDomainAll
-    , Type (Internal a)
-    ) =>
-      Syntax a
+class    (SyntacticFeld a, Type (Internal a)) => Syntax a
+instance (SyntacticFeld a, Type (Internal a)) => Syntax a
   -- It would be possible to let 'Syntax' be an alias instead of giving separate
   -- instances for all types. However, this leads to horrible error messages.
   -- For example, if 'Syntax' is an alias, the following expression gives a huge
@@ -216,24 +196,22 @@ class
   -- The type error is not very readable now either, but at least it fits on the
   -- screen.
 
-instance Type a => Syntax (Data a)
+reifyF :: SyntacticFeld a => a -> ASTF FeldDom (Internal a)
+reifyF = reifyTop . fromFeld . desugar
 
 instance Type a => Eq (Data a)
   where
-    Data a == Data b = alphaEq (reify a) (reify b)
+    Data a == Data b = alphaEq (reifyF a) (reifyF b)
 
 instance Type a => Show (Data a)
   where
-    show (Data a) = render $ reify a
+    show = render . reifyF . unData
 
---c' :: (Type (DenResult sig)) => feature sig -> (feature :|| Type) sig
---c' = C'
-
-sugarSymF :: ( ApplySym sig b dom
+sugarSymF :: ( ApplySym sig b FeldDomain
              , SyntacticN c b
-             , InjectC (feature :|| Type) dom (DenResult sig)
+             , InjectC (feature :|| Type) (HODomain FeldSymbols Typeable Type) (DenResult sig)
              , Type (DenResult sig)
              )
           => feature sig -> c
-sugarSymF sym = sugarSymC (c' sym)
+sugarSymF sym = sugarN $ appSym' $ Sym $ FeldDomain $ injC $ c' sym
 

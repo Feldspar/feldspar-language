@@ -42,10 +42,9 @@
 module Feldspar.Core.Frontend
     ( module Data.Patch
     , Syntactic
-    , SyntacticFeld
     , Internal
 
-    , FeldDomainAll
+    , FeldDomain
     , Data
     , Syntax
 
@@ -133,12 +132,12 @@ import Feldspar.Core.Frontend.Trace            as Frontend
 import Feldspar.Core.Frontend.Tuple            as Frontend
 
 
-prjDict :: PrjDict (Decor Info FeldDomain)
+prjDict :: PrjDict (Decor Info FeldDom)
 prjDict = PrjDict
     (prjVariable prjDictFO . decorExpr)
     (prjLambda   prjDictFO . decorExpr)
 
-mkId :: MkInjDict (Decor Info FeldDomain)
+mkId :: MkInjDict (Decor Info FeldDom)
 mkId a b | simpleMatch (const . sharable) a
          , Just Dict <- typeDict b
          , Just Dict <- typeDict a
@@ -151,20 +150,18 @@ mkId a b | simpleMatch (const . sharable) a
 mkId _ _ = Nothing
 
 
-type SyntacticFeld a = (Syntactic a, Domain a ~  FeldDomainAll, Typeable (Internal a))
-  -- TODO Typeable needed?
-
 -- | Reification and optimization of a Feldspar program
 reifyFeld :: SyntacticFeld a
     => BitWidth n
     -> a
-    -> ASTF (Decor Info FeldDomain) (Internal a)
+    -> ASTF (Decor Info FeldDom) (Internal a)
 reifyFeld n = flip evalState 0 .
     (   return
     <=< codeMotion prjDict mkId
     .   optimize
     .   targetSpecialization n
     <=< reifyM
+    .   fromFeld
     .   Syntactic.desugar
     )
   -- Note that it's important to do 'codeMotion' after 'optimize'. There may be
