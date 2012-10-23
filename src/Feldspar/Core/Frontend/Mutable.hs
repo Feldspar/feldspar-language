@@ -47,7 +47,7 @@ import Feldspar.Core.Constructs
 import Feldspar.Core.Frontend.Logic
 import qualified Feldspar.Core.Constructs.Mutable as Feature
 
-newtype M a = M { unM :: Mon FeldSymbols Type Mut a }
+newtype M a = M { unM :: Mon FeldDomainAll Mut a }
   deriving (Functor, Monad)
 
 instance Syntax a => Syntactic (M a)

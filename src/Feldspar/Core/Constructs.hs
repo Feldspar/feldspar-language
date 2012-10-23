@@ -126,7 +126,7 @@ type FeldSymbols
 
 type FeldDomain = FODomain FeldSymbols Typeable Type
 
-newtype FeldDomainAll a = FeldDomainAll (HODomain FeldSymbols Typeable Type a)
+newtype FeldDomainAll a = FeldDomainAll { getFeldDomainAll :: HODomain FeldSymbols Typeable Type a }
 
 instance Constrained FeldDomainAll
   where
@@ -136,12 +136,20 @@ instance Constrained FeldDomainAll
 deriving instance (Project sym FeldSymbols) => Project sym FeldDomainAll
 
 instance (InjectC sym FeldSymbols a, Typeable a) => InjectC sym FeldDomainAll a
-    where
-      injC = FeldDomainAll . injC
+  where
+    injC = FeldDomainAll . injC
+
+toFeld :: ASTF (HODomain FeldSymbols Typeable Type) a -> ASTF FeldDomainAll a
+toFeld = fold $ appArgs . Sym . FeldDomainAll
+  -- TODO Use unsafeCoerce?
+
+fromFeld :: ASTF FeldDomainAll a -> ASTF (HODomain FeldSymbols Typeable Type) a
+fromFeld = fold $ appArgs . Sym . getFeldDomainAll
+  -- TODO Use unsafeCoerce?
 
 instance IsHODomain FeldDomainAll Typeable Type
   where
-    lambda f = case lambda f :: of
+    lambda f = case lambda (fromFeld . f . toFeld) of
         Sym s -> Sym (FeldDomainAll s)
 
 
@@ -161,10 +169,10 @@ instance Type a => Syntactic (Data a)
     desugar = unData
     sugar   = Data
 
-type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomainAll, Type (Internal a))
+type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomainAll, Typeable (Internal a))
 
 -- | Specialization of the 'Syntactic' class for the Feldspar domain
-class SyntacticFeld a => Syntax a
+class (SyntacticFeld a, Type (Internal a)) => Syntax a
   -- It would be possible to let 'Syntax' be an alias instead of giving separate
   -- instances for all types. However, this leads to horrible error messages.
   -- For example, if 'Syntax' is an alias, the following expression gives a huge
@@ -177,22 +185,18 @@ class SyntacticFeld a => Syntax a
 
 -- TODO Think about difference between `SyntacticFeld` and `Syntax`
 
-re :: SyntacticFeld a => a -> ASTF FeldDomain (Internal a)
-re = reifyTop . f . desugar
-  where
-    f :: AST FeldDomainAll a -> AST (HODomain FeldSymbols Typeable Type) a
-    f (Sym (FeldDomainAll s)) = Sym s
-    f (s :$ a) = f s :$ f a
+reifyF :: SyntacticFeld a => a -> ASTF FeldDomain (Internal a)
+reifyF = reifyTop . fromFeld . desugar
 
 instance Type a => Syntax (Data a)
 
 instance Type a => Eq (Data a)
   where
-    Data a == Data b = alphaEq (re a) (re b)
+    Data a == Data b = alphaEq (reifyF a) (reifyF b)
 
 instance Type a => Show (Data a)
   where
-    show (Data a) = render $ re a
+    show = render . reifyF . unData
 
 sugarSymF :: ( ApplySym sig b FeldDomainAll
              , SyntacticN c b
@@ -200,12 +204,5 @@ sugarSymF :: ( ApplySym sig b FeldDomainAll
              , Type (DenResult sig)
              )
           => feature sig -> c
-sugarSymF sym = sugarN $ appSym' $ Sym $ FeldDomainAll $ injC (c' sym)
-
-sugarSymFF :: ( ApplySym sig b FeldDomainAll
-             , InjectC (feature :|| Type) (HODomain FeldSymbols Typeable Type) (DenResult sig)
-             , Type (DenResult sig)
-             )
-          => feature sig -> b
-sugarSymFF sym = appSym' $ Sym $ FeldDomainAll $ injC (c' sym)
+sugarSymF sym = sugarN $ appSym' $ Sym $ FeldDomainAll $ injC $ c' sym
 

@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -160,6 +161,7 @@ reifyFeld n = flip evalState 0 .
     .   optimize
     .   targetSpecialization n
     <=< reifyM
+    .   fromFeld
     .   Syntactic.desugar
     )
   -- Note that it's important to do 'codeMotion' after 'optimize'. There may be
