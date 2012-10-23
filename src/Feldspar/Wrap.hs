@@ -81,7 +81,7 @@ data Data' s a =
 
 instance Type a => Syntactic (Data' s a)
   where
-    type Domain (Data' s a)   = FeldDomainAll
+    type Domain (Data' s a)   = FeldDomain
     type Internal (Data' s a) = a
     desugar = desugar . unData'
     sugar   = Data' . sugar

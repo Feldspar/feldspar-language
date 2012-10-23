@@ -43,12 +43,12 @@ import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Frontend.Literal ()
 
-newtype P a = P { unP :: Mon FeldDomainAll Par a }
+newtype P a = P { unP :: Mon FeldDomain Par a }
   deriving (Functor, Monad)
 
 instance Syntax a => Syntactic (P a)
   where
-    type Domain (P a)   = FeldDomainAll
+    type Domain (P a)   = FeldDomain
     type Internal (P a) = Par (Internal a)
     desugar = desugar . unP
     sugar   = P . sugar
@@ -57,7 +57,7 @@ newtype IVar a = IVar { unIVar :: Data (IV (Internal a)) }
 
 instance Syntax a => Syntactic (IVar a)
   where
-    type Domain (IVar a)   = FeldDomainAll
+    type Domain (IVar a)   = FeldDomain
     type Internal (IVar a) = IV (Internal a)
     desugar = desugar . unIVar
     sugar   = IVar . sugar

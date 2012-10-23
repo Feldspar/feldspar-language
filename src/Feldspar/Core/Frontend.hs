@@ -44,7 +44,7 @@ module Feldspar.Core.Frontend
     , Syntactic
     , Internal
 
-    , FeldDomainAll
+    , FeldDomain
     , Data
     , Syntax
 

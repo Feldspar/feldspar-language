@@ -126,31 +126,31 @@ type FeldSymbols
 
 type FeldDom = FODomain FeldSymbols Typeable Type
 
-newtype FeldDomainAll a = FeldDomainAll { getFeldDomainAll :: HODomain FeldSymbols Typeable Type a }
+newtype FeldDomain a = FeldDomain { getFeldDomain :: HODomain FeldSymbols Typeable Type a }
 
-instance Constrained FeldDomainAll
+instance Constrained FeldDomain
   where
-    type Sat FeldDomainAll = Typeable
-    exprDict (FeldDomainAll s) = exprDict s
+    type Sat FeldDomain = Typeable
+    exprDict (FeldDomain s) = exprDict s
 
-deriving instance (Project sym FeldSymbols) => Project sym FeldDomainAll
+deriving instance (Project sym FeldSymbols) => Project sym FeldDomain
 
-instance (InjectC sym FeldSymbols a, Typeable a) => InjectC sym FeldDomainAll a
+instance (InjectC sym FeldSymbols a, Typeable a) => InjectC sym FeldDomain a
   where
-    injC = FeldDomainAll . injC
+    injC = FeldDomain . injC
 
-toFeld :: ASTF (HODomain FeldSymbols Typeable Type) a -> ASTF FeldDomainAll a
-toFeld = fold $ appArgs . Sym . FeldDomainAll
+toFeld :: ASTF (HODomain FeldSymbols Typeable Type) a -> ASTF FeldDomain a
+toFeld = fold $ appArgs . Sym . FeldDomain
   -- TODO Use unsafeCoerce?
 
-fromFeld :: ASTF FeldDomainAll a -> ASTF (HODomain FeldSymbols Typeable Type) a
-fromFeld = fold $ appArgs . Sym . getFeldDomainAll
+fromFeld :: ASTF FeldDomain a -> ASTF (HODomain FeldSymbols Typeable Type) a
+fromFeld = fold $ appArgs . Sym . getFeldDomain
   -- TODO Use unsafeCoerce?
 
-instance IsHODomain FeldDomainAll Typeable Type
+instance IsHODomain FeldDomain Typeable Type
   where
     lambda f = case lambda (fromFeld . f . toFeld) of
-        Sym s -> Sym (FeldDomainAll s)
+        Sym s -> Sym (FeldDomain s)
 
 
 
@@ -158,18 +158,18 @@ instance IsHODomain FeldDomainAll Typeable Type
 -- * Front end
 --------------------------------------------------------------------------------
 
-newtype Data a = Data { unData :: ASTF FeldDomainAll a }
+newtype Data a = Data { unData :: ASTF FeldDomain a }
 
 deriving instance Typeable1 Data
 
 instance Type a => Syntactic (Data a)
   where
-    type Domain (Data a)   = FeldDomainAll
+    type Domain (Data a)   = FeldDomain
     type Internal (Data a) = a
     desugar = unData
     sugar   = Data
 
-type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomainAll, Typeable (Internal a))
+type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomain, Typeable (Internal a))
 
 -- | Specialization of the 'Syntactic' class for the Feldspar domain
 class    (SyntacticFeld a, Type (Internal a)) => Syntax a
@@ -195,11 +195,11 @@ instance Type a => Show (Data a)
   where
     show = render . reifyF . unData
 
-sugarSymF :: ( ApplySym sig b FeldDomainAll
+sugarSymF :: ( ApplySym sig b FeldDomain
              , SyntacticN c b
              , InjectC (feature :|| Type) (HODomain FeldSymbols Typeable Type) (DenResult sig)
              , Type (DenResult sig)
              )
           => feature sig -> c
-sugarSymF sym = sugarN $ appSym' $ Sym $ FeldDomainAll $ injC $ c' sym
+sugarSymF sym = sugarN $ appSym' $ Sym $ FeldDomain $ injC $ c' sym
 

@@ -51,7 +51,7 @@ pval f x = await $ force $ future (f x)
 
 instance Syntax a => Syntactic (Future a)
   where
-    type Domain (Future a)   = FeldDomainAll
+    type Domain (Future a)   = FeldDomain
     type Internal (Future a) = FVal (Internal a)
     desugar = desugar . unFuture
     sugar   = Future . sugar

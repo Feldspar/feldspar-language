@@ -45,7 +45,7 @@ import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Tuple ()
 
-instance TupleSat FeldDomainAll Type
+instance TupleSat FeldDomain Type
 
 instance
     ( Annotatable a
