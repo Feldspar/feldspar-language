@@ -123,10 +123,10 @@ mapMonotonic2 f (Range l1 u1) (Range l2 u2) = Range (f l1 l2) (f u1 u2)
 
 instance BoundedInt a => Lattice (Range a)
   where
-    empty     = emptyRange
-    universal = fullRange
-    (\/)      = rangeUnion
-    (/\)      = rangeIntersection
+    bot  = emptyRange
+    top  = fullRange
+    (\/) = rangeUnion
+    (/\) = rangeIntersection
 
 -- | The range containing no elements
 emptyRange :: BoundedInt a => Range a
@@ -430,11 +430,12 @@ rangeMulUnsigned r1 r2
     | otherwise = universal
 
 -- | Returns the position of the highest bit set to 1. Counting starts at 1.
--- Beware! It doesn't terminate for negative numbers.
-bits :: (Num b, Bits b) => b -> Int
-bits b = loop b 0
-    where loop 0 c = c
-          loop n c = loop (n `shiftR` 1) (c+1)
+bits :: forall b. BoundedInt b => b -> Int
+bits b = loop (unsigned b) 0
+  where
+    loop :: UnsignedRep b -> Int -> Int
+    loop 0 c = c
+    loop n c = loop (n `shiftR` 1) (c+1)
 
 -- | Propagates range information through exponentiation.
 rangeExp :: BoundedInt a => Range a -> Range a -> Range a
@@ -533,10 +534,10 @@ maxXorUnsigned a b c d = maxOrUnsigned 0 x 0 y
 minOrSigned :: BoundedInt a => a -> a -> a -> a -> a
 minOrSigned a b c d = case (a<0,b<0,c<0,d<0) of
     (True ,True ,True ,True ) -> minOrUnsigned a b c d
-    (True ,True ,True ,False) -> a 
+    (True ,True ,True ,False) -> a
     (True ,True ,False,False) -> minOrUnsigned a b c d
-    (True ,False,True ,True ) -> c 
-    (True ,False,True ,False) -> min a c 
+    (True ,False,True ,True ) -> c
+    (True ,False,True ,False) -> min a c
     (True ,False,False,False) -> minOrUnsigned a (-1) c d
     (False,False,True ,True ) -> minOrUnsigned a b c d
     (False,False,True ,False) -> minOrUnsigned a b c (-1)
@@ -546,9 +547,9 @@ minOrSigned a b c d = case (a<0,b<0,c<0,d<0) of
 maxOrSigned :: BoundedInt a => a -> a -> a -> a -> a
 maxOrSigned a b c d = case (a<0,b<0,c<0,d<0) of
     (True ,True ,True ,True ) -> maxOrUnsigned a b c d
-    (True ,True ,True ,False) -> -1                   
+    (True ,True ,True ,False) -> -1
     (True ,True ,False,False) -> maxOrUnsigned a b c d
-    (True ,False,True ,True ) -> -1                   
+    (True ,False,True ,True ) -> -1
     (True ,False,True ,False) -> maxOrUnsigned 0 b 0 d
     (True ,False,False,False) -> maxOrUnsigned 0 b c d
     (False,False,True ,True ) -> maxOrUnsigned a b c d
@@ -602,7 +603,7 @@ rangeXorUnsignedAccurate :: BoundedInt a => Range a -> Range a -> Range a
 rangeXorUnsignedAccurate (Range a b) (Range c d) =
     range (minXorUnsigned a b c d) (maxXorUnsigned a b c d)
 
--- | 
+-- |
 -- | Propagating range information through 'shiftLU'.
 rangeShiftLU :: (BoundedInt a, BoundedInt b) => Range a -> Range b -> Range a
 rangeShiftLU = handleSign rangeShiftLUUnsigned (\_ _ -> universal)

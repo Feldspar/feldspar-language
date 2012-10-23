@@ -110,7 +110,7 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     bitSize'      :: Data a -> Index
     bitSize'      = const $ fromIntegral $ B.bitSize (undefined :: a)
     isSigned      :: Data a -> Data Bool
-    isSigned      = sugarSymF IsSigned
+    isSigned      = const $ value $ B.isSigned (undefined :: a)
 
 (⊕)    :: (Bits a) => Data a -> Data a -> Data a
 (⊕)    =  xor

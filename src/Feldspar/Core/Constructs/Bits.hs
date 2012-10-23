@@ -83,8 +83,6 @@ data BITS a
     BitScan       :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => BITS (a :-> Full Index)
     BitCount      :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => BITS (a :-> Full Index)
 
-    IsSigned      :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => BITS (a :-> Full Bool)
-
 instance Semantic BITS
   where
     semantics BAnd          = Sem "(.&.)"      (.&.)
@@ -110,8 +108,6 @@ instance Semantic BITS
 
     semantics BitScan       = Sem "bitScan"  evalBitScan
     semantics BitCount      = Sem "bitCount" evalBitCount
-
-    semantics IsSigned      = Sem "isSigned" isSigned
 
 liftIntWord :: (a -> Int -> b) -> (a -> WordN -> b)
 liftIntWord f x = f x . fromIntegral
