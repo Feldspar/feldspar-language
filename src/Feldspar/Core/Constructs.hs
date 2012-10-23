@@ -128,6 +128,18 @@ type FeldDom = FODomain FeldSymbols Typeable Type
 
 newtype FeldDomain a = FeldDomain { getFeldDomain :: HODomain FeldSymbols Typeable Type a }
 
+-- Note: `FeldDomain` is a newtype in order to hide the large `FeldSymbols` type to the user.
+-- Previously, we also had separate instances of the `Syntax` class for each type, but that doesn't
+-- seem to be needed anymore. Type errors seem to have improved since `Domain` was made an
+-- associated type of the `Syntactic` class rather than a functional dependency.
+--
+-- Here are some programs that have previously resulted in horribly long error messages:
+--
+--     drawAST map
+--     drawAST (map (+))
+--     drawAST (map (+1))
+--     drawAST (forLoop 10 0 (const (+id)))
+
 instance Constrained FeldDomain
   where
     type Sat FeldDomain = Typeable
