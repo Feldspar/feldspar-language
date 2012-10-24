@@ -49,12 +49,10 @@ data Option a = Option { isSome :: Data Bool, fromSome :: a }
 
 instance Syntax a => Syntactic (Option a)
   where
-    type Domain (Option a)   = FeldDomainAll
+    type Domain (Option a)   = FeldDomain
     type Internal (Option a) = (Bool, Internal a)
     desugar = desugar . desugarOption . fmap resugar
     sugar   = fmap resugar . sugarOption . sugar
-
-instance Syntax a => Syntax (Option a)
 
 instance Functor Option
   where
