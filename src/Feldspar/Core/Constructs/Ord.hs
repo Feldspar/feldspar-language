@@ -165,6 +165,18 @@ instance ( (ORD :|| Type) :<: dom
         | alphaEq a b
         = return a
 
+    constructFeatOpt s@(C' Min) (a :* (op :$ b :$ c) :* Nil)
+        | Just (C' Min) <- prjF op
+        , alphaEq a b = constructFeat s (a :* c :* Nil)
+        | Just (C' Min) <- prjF op
+        , alphaEq a c = constructFeat s (a :* b :* Nil)
+
+    constructFeatOpt s@(C' Min) ((op :$ b :$ c) :* a :* Nil)
+        | Just (C' Min) <- prjF op
+        , alphaEq a b = constructFeat s (c :* a :* Nil)
+        | Just (C' Min) <- prjF op
+        , alphaEq a c = constructFeat s (b :* a :* Nil)
+
     constructFeatOpt (C' Max) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
@@ -180,6 +192,18 @@ instance ( (ORD :|| Type) :<: dom
     constructFeatOpt (C' Max) (a :* b :* Nil)
         | alphaEq a b
         = return a
+
+    constructFeatOpt s@(C' Max) (a :* (op :$ b :$ c) :* Nil)
+        | Just (C' Max) <- prjF op
+        , alphaEq a b = constructFeat s (a :* c :* Nil)
+        | Just (C' Max) <- prjF op
+        , alphaEq a c = constructFeat s (a :* b :* Nil)
+
+    constructFeatOpt s@(C' Max) ((op :$ b :$ c) :* a :* Nil)
+        | Just (C' Max) <- prjF op
+        , alphaEq a b = constructFeat s (c :* a :* Nil)
+        | Just (C' Max) <- prjF op
+        , alphaEq a c = constructFeat s (b :* a :* Nil)
 
     constructFeatOpt a args = constructFeatUnOpt a args
 
