@@ -1,0 +1,86 @@
+html {
+  background-color: #ACF;
+}
+
+body {
+  margin: auto;
+  background-color: #FFF;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  padding-right: 1em;
+  padding-left: 1em;
+  border-right: 3px solid #8AC;
+  border-left: 3px solid #8AC;
+  border-bottom: 1px solid #888;
+  max-width: 60em;
+  font-family: verdana, sans-serif;
+  font-size: 85%;
+  line-height: 140%;
+  color: #222;
+}
+
+h1, h2, h3, h4, h5 {
+  font-weight: bold;
+  color: #3840B0;
+}
+
+h1 a, h2 a, h3 a, h4 a, h5 a {
+  color: #3840B0;
+}
+
+h1.title {
+  font-size: 150%;
+  text-align: center;
+  border-bottom: none;
+  margin-bottom: 2em;
+}
+
+h1 {
+  font-size: 130%;
+  border-bottom: 1px dotted #BBB;
+}
+
+h2 {
+  font-size: 110%;
+}
+
+h3 {
+  font-size: 95%;
+  margin-left: 2em;
+}
+
+h4 {
+  font-size: 90%;
+  font-style: italic;
+  margin-left: 3em;
+}
+
+h5 {
+  font-size: 85%;
+  font-style: italic;
+  margin-left: 4em;
+}
+
+a {
+  text-decoration: none;
+  color: #33F;
+}
+
+a:hover {
+  background-color: #CCC;
+  -moz-border-radius: 0.2em;
+  border-radius: 0.2em;
+}
+
+pre {
+  border: 1px dotted gray;
+  border-left: 3px solid gray;
+  background-color: #ececec;
+  color: #1111111;
+  padding: 0.5em;
+}
+
+code {
+  font-family: monospace;
+  font-size: 12px;
+}
