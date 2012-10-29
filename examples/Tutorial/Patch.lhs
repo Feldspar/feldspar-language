@@ -7,7 +7,7 @@
 This file demonstrates how to use [patches](http://hackage.haskell.org/package/patch-combinators) to constrain types and sizes of Feldspar expressions.
 
 \begin{code}
-module UsersGuide.Patch where
+module Tutorial.Patch where
 
 import qualified Prelude
 import Feldspar
@@ -22,7 +22,7 @@ Type patches
 Say we want to print the core expression resulting from the `scalarProd` function. Attempting this without giving any size constraints leads to an "ambiguous type" error:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Patch> printExpr scalarProd
+*Tutorial.Patch> printExpr scalarProd
 <interactive>:26:1:
     Couldn't match type `syntactic-1.5.0:Language.Syntactic.Sugar.Domain
                            a0'
@@ -36,7 +36,7 @@ Say we want to print the core expression resulting from the `scalarProd` functio
 The solution is to provide a type signature for `scalarProd`:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Patch> printExpr (scalarProd :: Vector1 Float -> Vector1 Float -> Data Float)
+*Tutorial.Patch> printExpr (scalarProd :: Vector1 Float -> Vector1 Float -> Data Float)
 ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -78,7 +78,7 @@ which simply sets the length of the second argument to the length of `a`.
 Size patches
 ============
 
-[`UsersGuide.Size`](Size.html) describes how size analysis works and how to provide size constraints to improve the analysis. Size constraints are often convenient to use as patches.
+[`Tutorial.Size`](Size.html) describes how size analysis works and how to provide size constraints to improve the analysis. Size constraints are often convenient to use as patches.
 
 The following example was used to demonstrate how the programmer can guide the analysis by providing guarantees about the ranges of values in the program:
 

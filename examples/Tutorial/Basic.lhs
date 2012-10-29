@@ -12,7 +12,7 @@ Getting started
 Feldspar is implemented as an embedded language in Haskell. To use Feldspar, simply import the `Feldspar` module in a Haskell source file:
 
 \begin{code}
-module UsersGuide.Basic where
+module Tutorial.Basic where
 
 import Feldspar
 \end{code}
@@ -33,9 +33,9 @@ GHCi, version 7.6.1: http://www.haskell.org/ghc/  :? for help
 Loading package ghc-prim ... linking ... done.
 Loading package integer-gmp ... linking ... done.
 Loading package base ... linking ... done.
-[1 of 1] Compiling UsersGuide.Basic ( Basic.lhs, interpreted )
-Ok, modules loaded: UsersGuide.Basic.
-*UsersGuide.Basic>
+[1 of 1] Compiling Tutorial.Basic   ( Basic.lhs, interpreted )
+Ok, modules loaded: Tutorial.Basic.
+*Tutorial.Basic>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We are now ready to define a simple program. The following function computes the length of the hypotenuse of a triangle, given the lengths of the two catheti:
@@ -52,14 +52,14 @@ Note that this code is *identical* to the corresponding code in ordinary Haskell
 What makes `hypotenuse` different from the corresponding Haskell function can be seen when we try to evaluate it:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Basic> hypotenuse 3 4
+*Tutorial.Basic> hypotenuse 3 4
 (sqrt ((3.0 * 3.0) + (4.0 * 4.0)))
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Hm... instead of computing a result, `hypotenuse` returned an unevaluated expression. In order to evaluate this expression, we have to use the function `eval`:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Basic> eval hypotenuse 3 4
+*Tutorial.Basic> eval hypotenuse 3 4
 5.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

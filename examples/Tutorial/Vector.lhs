@@ -9,7 +9,7 @@
 The vector library provides an interface for vector operations similar to Haskell's list library. It is available through the module `Feldspar.Vector`:
 
 \begin{code}
-module UsersGuide.Vector where
+module Tutorial.Vector where
 
 import qualified Prelude
 import Feldspar
@@ -32,14 +32,14 @@ scProdF = scProd :: Vector (Data Float) -> Vector (Data Float) -> Data Float
 Testing:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Vector> eval scProdF [1,2,3,4] [5,6,7,8::Float]
+*Tutorial.Vector> eval scProdF [1,2,3,4] [5,6,7,8::Float]
 70.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Resulting core expression (with inserted white space):
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Vector> printExpr scProdF
+*Tutorial.Vector> printExpr scProdF
 (\var0 -> (\var1 -> (
     forLoop (min (getLength var0) (getLength var1)) 0.0 (\var2 -> (\var3 ->
         (var3 + ((var0 ! var2) * (var1 ! var2)))

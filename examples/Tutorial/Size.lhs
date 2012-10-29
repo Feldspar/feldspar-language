@@ -5,7 +5,7 @@
 
 
 \begin{code}
-module UsersGuide.Size where
+module Tutorial.Size where
 
 import qualified Prelude
 import Feldspar
@@ -24,7 +24,7 @@ f a = min (a+2) 10
 To see the results of size inference, we use the function `drawDecor`, which draws the AST decorated with (among other things) size information:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Size> drawDecor f
+*Tutorial.Size> drawDecor f
 <<Word8 -> Word8 | Range {lowerBound = 0, upperBound = 10}>>
 |
 `- Lambda 0
@@ -58,7 +58,7 @@ Size constraints
 Imagine we want to generate code for the `drop` function in such a way that we can statically allocate the result. Let us see what size inference gives us:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Size> drawDecor (drop :: Data Index -> Vector (Data Word8) -> Vector (Data Word8))
+*Tutorial.Size> drawDecor (drop :: Data Index -> Vector (Data Word8) -> Vector (Data Word8))
 <<WordN -> [Word8] -> [Word8] | Range {lowerBound = 0, upperBound = 4294967295} :> Range {lowerBound = 0, upperBound = 255}>>
 ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,7 +78,7 @@ drop2 n v = drop n' v'
 This lets the analysis infer the range [0,100] for the length of the result, which means that it is safe for the back end to allocate a 100-element array.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Size> drawDecor drop2
+*Tutorial.Size> drawDecor drop2
 <<WordN -> [Word8] -> [Word8] | Range {lowerBound = 0, upperBound = 100} :> Range {lowerBound = 0, upperBound = 255}>>
 ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -108,7 +108,7 @@ Size-based optimization
 If we look at the core expression resulting from `drop3`, we see that it still contains a run-time check:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Size> printExpr drop3
+*Tutorial.Size> printExpr drop3
 (\var0 -> (\var1 -> (letBind (getLength var1) (\var3 -> (parallel (var3 - (min var3 var0)) (\var2 -> (var1 ! (var2 + var0))))))))
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -125,14 +125,14 @@ drop4 n v = drop n' v'
 This gives us a core expression without any run-time checks:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Size> printExpr drop4
+*Tutorial.Size> printExpr drop4
 (\var0 -> (\var1 -> (parallel ((getLength var1) - var0) (\var2 -> (var1 ! (var2 + var0))))))
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Curiously, size analysis also figures out that the resulting vector length is in the range [30..100]:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*UsersGuide.Size> drawDecor drop4
+*Tutorial.Size> drawDecor drop4
 <<WordN -> [Word8] -> [Word8] | Range {lowerBound = 30, upperBound = 100} :> Range {lowerBound = 0, upperBound = 255}>>
 ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
