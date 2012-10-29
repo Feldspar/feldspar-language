@@ -23,6 +23,7 @@ tested-with:    GHC==7.6.1, GHC==7.4.2
 
 extra-source-files:
   examples/Examples/Simple/Basics.hs
+  examples/UsersGuide/*.lhs
 
 source-repository head
   type:     git
