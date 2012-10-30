@@ -81,9 +81,11 @@ pre {
   background-color: #ececec;
   color: #1111111;
   padding: 0.5em;
+  white-space: pre-wrap;  /* to make long lines wrap */
 }
 
 code {
   font-family: monospace;
   font-size: 12px;
 }
+

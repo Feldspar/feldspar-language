@@ -36,7 +36,7 @@ Testing:
 70.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Resulting core expression (with inserted white space):
+Resulting core expression (with manually inserted white space):
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *Tutorial.Vector> printExpr scProdF
