@@ -51,6 +51,7 @@ module Feldspar.Core.Frontend
     , module Frontend
 
     , reifyFeld
+    , reifyFeldUnOpt
     , showExpr
     , printExpr
     , showAST
@@ -169,6 +170,19 @@ reifyFeld n = flip evalState 0 .
   -- where 'optimize' removes all but one occurrence. If 'codeMotion' was run
   -- first, these sub-expressions would be let bound, preventing subsequent
   -- optimizations.
+
+-- | Reification of a Feldspar program
+reifyFeldUnOpt :: SyntacticFeld a
+    => BitWidth n
+    -> a
+    -> ASTF FeldDom (Internal a)
+reifyFeldUnOpt n = flip evalState 0 .
+    (   return
+    .   targetSpecialization n
+    <=< reifyM
+    .   fromFeld
+    .   Syntactic.desugar
+    )
 
 showExpr :: SyntacticFeld a => a -> String
 showExpr = render . reifyFeld N32
