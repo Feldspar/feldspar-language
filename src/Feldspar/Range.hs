@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -227,6 +226,15 @@ rangeIntersection = rangeOp2 intersection
 disjoint :: BoundedInt a => Range a -> Range a -> Bool
 disjoint r1 r2 = isEmpty (r1 /\ r2)
 
+-- | @rangeByRange ra rb@: Computes the range of the following set
+--
+-- > {x | a <- ra, b <- rb, x <- Range a b}
+rangeByRange :: BoundedInt a => Range a -> Range a -> Range a
+rangeByRange r1 r2
+    | isEmpty r1 = emptyRange
+    | isEmpty r2 = emptyRange
+    | otherwise = Range (lowerBound r1) (upperBound r2)
+
 -- | @rangeGap r1 r2@ returns a range of all the elements between @r1@ and
 --   @r2@ including the boundary elements. If @r1@ and @r2@ have elements in
 --   common the result is an empty range.
@@ -260,15 +268,6 @@ rangeLessEq (Range _ u1) (Range l2 _) = u1 <= l2
 --------------------------------------------------------------------------------
 -- * Propagation
 --------------------------------------------------------------------------------
-
--- | @rangeByRange ra rb@: Computes the range of the following set
---
--- > {x | a <- ra, b <- rb, x <- Range a b}
-rangeByRange :: BoundedInt a => Range a -> Range a -> Range a
-rangeByRange r1 r2
-    | isEmpty r1 = emptyRange
-    | isEmpty r2 = emptyRange
-    | otherwise = Range (lowerBound r1) (upperBound r2)
 
 -- | Implements 'fromInteger' as a 'singletonRange', and implements correct
 -- range propagation for arithmetic operations.
