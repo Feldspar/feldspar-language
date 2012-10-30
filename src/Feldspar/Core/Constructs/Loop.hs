@@ -132,7 +132,7 @@ instance ( MonadType m
     optimizeFeat for@For (len :* step :* Nil) = do
         len' <- optimizeM len
         let szI     = infoSize (getInfo len')
-            ixRange = rangeByRange 0 (szI-1)
+            ixRange = rangeByRange 0 (rangeSubSat szI 1)
         step' <- optimizeFunction optimizeM (mkInfo ixRange) step
         case getInfo step' of
           Info{} -> constructFeat for (len' :* step' :* Nil)

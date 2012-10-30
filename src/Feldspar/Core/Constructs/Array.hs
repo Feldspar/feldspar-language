@@ -149,7 +149,7 @@ instance
     optimizeFeat sym@(C' Parallel) (len :* ixf :* Nil) = do
         len' <- optimizeM len
         let szI     = infoSize (getInfo len')
-            ixRange = rangeByRange 0 (szI-1)
+            ixRange = rangeByRange 0 (rangeSubSat szI 1)
         ixf' <- optimizeFunction optimizeM (mkInfo ixRange) ixf
         constructFeat sym (len' :* ixf' :* Nil)
 
@@ -157,7 +157,7 @@ instance
         len'  <- optimizeM len
         init' <- optimizeM inital
         let szI     = infoSize (getInfo len')
-            ixRange = rangeByRange 0 (szI-1)
+            ixRange = rangeByRange 0 (rangeSubSat szI 1)
         step' <- optimizeFunction
             optimizeM  -- TODO (optimizeFunctionFix optimizeM (mkInfo universal))
             (mkInfo ixRange)
