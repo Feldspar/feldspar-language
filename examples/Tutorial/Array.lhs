@@ -19,11 +19,11 @@ An array containing the powers of two:
 
 \begin{code}
 powsOfTwo :: Data Length -> Data [WordN]
-powsOfTwo l = parallel l (^2)
+powsOfTwo l = parallel l (2^)
 \end{code}
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *Tutorial.Array> eval powsOfTwo 10
-[0,1,4,9,16,25,36,49,64,81]
+[1,2,4,8,16,32,64,128,256,512]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
