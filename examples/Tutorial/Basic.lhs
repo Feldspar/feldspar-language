@@ -23,7 +23,7 @@ Since Feldspar redefines several standard Haskell identifiers, it is strongly re
 import qualified Prelude
 \end{code}
 
-(Certain usefule `Prelude` identifiers that are not used by Feldspar are reexported by the `Feldspar` module.)
+(Certain useful `Prelude` identifiers that are not used by Feldspar are reexported by the `Feldspar` module.)
 
 In order to try out the examples in this file, we just load the file in GHCi:
 
