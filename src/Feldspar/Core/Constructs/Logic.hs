@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -31,8 +32,6 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
-
-{-# LANGUAGE UndecidableInstances #-}
 
 -- | Implementation of Logic constructs
 --
@@ -69,7 +68,6 @@ instance Render   Logic where renderArgs = renderArgsDefault
 instance ToTree   Logic
 instance Eval     Logic where evaluate = evaluateDefault
 instance EvalBind Logic where evalBindSym = evalBindSymDefault
---instance SizeProp Logic where sizeProp = sizePropDefault
 instance Sharable Logic
 
 instance AlphaEq dom dom dom env => AlphaEq Logic Logic dom env

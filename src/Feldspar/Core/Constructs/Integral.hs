@@ -4,6 +4,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -33,8 +34,6 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
-
-{-# LANGUAGE UndecidableInstances #-}
 
 module Feldspar.Core.Constructs.Integral
     ( INTEGRAL (..)
@@ -124,7 +123,7 @@ instance
       -- TODO This rule should also fire when `b` is `2^l` but not a literal.
       -- TODO Make a case for `isNegative $ infoSize $ getInfo a`. Note that
       --      `isNegative /= (not . isNatural)`
-      -- TODO Or maybe both `isNegative` and ``isPositive` are handled by the
+      -- TODO Or maybe both `isNegative` and `isPositive` are handled by the
       --      size-based optimization of `Condition`?
 
     constructFeatOpt (C' Rem) (a :* b :* Nil)

@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -32,8 +33,6 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# LANGUAGE UndecidableInstances #-}
-
 module Feldspar.Core.Constructs.ConditionM
     ( ConditionM (..)
     ) where
@@ -49,7 +48,6 @@ data ConditionM m a
   where
     ConditionM :: (Monad m, Type a) =>
                   ConditionM m (Bool :-> m a :-> m a :-> Full (m a))
-    -- TODO Can't we just use `Condition` instead?
 
 instance Semantic (ConditionM m)
   where
@@ -63,7 +61,6 @@ instance ToTree   (ConditionM m)
 instance Eval     (ConditionM m) where evaluate = evaluateDefault
 instance EvalBind (ConditionM m) where evalBindSym = evalBindSymDefault
 instance Sharable (ConditionM m)
-  -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
 
 instance AlphaEq dom dom dom env =>
     AlphaEq (ConditionM m) (ConditionM m) dom env
@@ -97,9 +94,4 @@ instance ( ConditionM m :<: dom
     constructFeatUnOpt ConditionM args@(_ :* t :* _ :* Nil)
         | Info {infoType = tType} <- getInfo t
         = constructFeatUnOptDefaultTyp tType ConditionM args
-
-      -- TODO Propagate size information from the condition to the branches. For
-      --      example
-      --
-      --        condition (x<10) (min x 20) x  ==>  x
 

@@ -15,7 +15,6 @@ module Feldspar.Core.Interpretation.Typed
 where
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Binding.HigherOrder
 import Language.Syntactic.Constructs.Decoration
 
 import Feldspar.Core.Types (Type)

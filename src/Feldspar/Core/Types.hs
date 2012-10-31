@@ -57,10 +57,7 @@ import Test.QuickCheck
 import qualified Control.Monad.Par as MonadPar
 
 import Data.Patch
-
 import Data.Proxy
-
-import Language.Syntactic
 
 import Feldspar.Lattice
 import Feldspar.Range
@@ -570,7 +567,6 @@ class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a)) => Type a
     typeRep  :: TypeRep a
     sizeOf   :: a -> Size a
     toTarget :: BitWidth n -> a -> TargetType n a
-  -- TODO Typeable needed?
 
 instance Type ()      where typeRep = UnitType;          sizeOf _ = AnySize;      toTarget _ = id
 instance Type Bool    where typeRep = BoolType;          sizeOf _ = AnySize;      toTarget _ = id

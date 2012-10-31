@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -157,26 +156,6 @@ instance (BoundedInt a, Arbitrary a) => Arbitrary (Range a)
     shrink (Range x y) =
       [ Range x' y | x' <- shrink x ] ++
       [ Range x y' | y' <- shrink y ]
-
-#if __GLASGOW_HASKELL__ < 704
-instance Random Word32 where
-  random g = (fromIntegral i,g')
-   where (i :: Int,g') = random g
-  randomR (l,u) g = (fromIntegral i,g')
-    where (i :: Integer, g') = randomR (fromIntegral l,fromIntegral u) g
-
-instance Random Int8 where
-  random g = (fromIntegral i,g')
-   where (i :: Int,g') = random g
-  randomR (l,u) g = (fromIntegral i,g')
-    where (i :: Integer, g') = randomR (fromIntegral l,fromIntegral u) g
-
-instance Random Word8 where
-  random g = (fromIntegral i,g')
-   where (i :: Int,g') = random g
-  randomR (l,u) g = (fromIntegral i,g')
-    where (i :: Integer, g') = randomR (fromIntegral l,fromIntegral u) g
-#endif
 
 fromRange :: BoundedInt a => Random a => Range a -> Gen a
 fromRange r

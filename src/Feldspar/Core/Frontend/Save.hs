@@ -46,12 +46,6 @@ import Feldspar.Core.Constructs.Save
 -- Exception: Currently constant folding does not respect 'save'.
 save :: Syntax a => a -> a
 save = sugarSymF Save
-  -- TODO Make constant folding respect `save`. This could be done by adding a
-  --      field to `Info` saying whether or not each node contains `save`.
-
-  -- TODO It would be nice if `save` could take a `String` argument that would
-  --      be used in the back-end to identify the saved value (e.g. used as the
-  --      variable name).
 
 -- | Equivalent to 'save'. When applied to a lazy data structure, 'force' (and
 -- 'save') has the effect of forcing evaluation of the whole structure.

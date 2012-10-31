@@ -7,6 +7,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -37,8 +38,6 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# LANGUAGE UndecidableInstances #-}
-
 -- | Interpretation of binding constructs
 
 module Feldspar.Core.Constructs.Binding
@@ -46,8 +45,8 @@ module Feldspar.Core.Constructs.Binding
     , optimizeLambda
     , optimizeFunction
 --    , optimizeFunctionFix
-    , prjLambda
     , betaReduce
+    , prjLambda
     , cLambda
     ) where
 
@@ -56,8 +55,7 @@ import Data.Maybe
 import Data.Map
 import Data.Typeable (Typeable, gcast)
 
-import Data.Lens.Common
-import Data.Proxy
+--import Data.Lens.Common
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding hiding (subst,betaReduce)
@@ -71,16 +69,12 @@ instance Sharable Variable  -- `codeMotion` will not share variables anyway
 instance Sharable Lambda    -- Will not be shared anyway because we disallow variables of `->` type
 instance Sharable Let
 
--- | Should be a capture-avoiding substitution, but it is currently not correct.
---
--- Note: Variables with a different type than the new expression will be
--- silently ignored.
 subst :: forall constr dom a b
     .  ( Constrained dom
        , CLambda Type :<: dom
        , (Variable :|| Type) :<: dom
        )
-    => VarId       -- ^ Variable to be substituted
+    => VarId                      -- ^ Variable to be substituted
     -> ASTF (dom :|| Typeable) a  -- ^ Expression to substitute for
     -> ASTF (dom :|| Typeable) b  -- ^ Expression to substitute in
     -> ASTF (dom :|| Typeable) b
@@ -98,9 +92,7 @@ subst v new a = go a
         , Just new' <- gcast new
         = new'
     go a = a
-  -- TODO Make it correct (may need to alpha-convert `new` before inserting it)
-  -- TODO Should there be an error if `gcast` fails? (See note in Haddock
-  --      comment.)
+  -- TODO Should be possible to use the one in Syntactic instead
 
 betaReduce
     :: ( Constrained dom
@@ -112,6 +104,7 @@ betaReduce
     -> ASTF (dom :|| Typeable) b
 betaReduce new (lam :$ body)
     | Just (SubConstr2 (Lambda v)) <- prjLambda lam = subst v new body
+  -- TODO Should be possible to use the one in Syntactic instead
 
 optimizeLambda :: ( CLambda Type :<: dom
                   , OptimizeSuper dom)
@@ -179,7 +172,6 @@ optimizeFunctionFix opt info (lam :$ body)
               -- in very special cases.
 
         constructFeatUnOpt (Lambda v `withContext` typeCtx) (body' :* Nil)
-
 -}
 
 instance ( (Variable :|| Type) :<: dom

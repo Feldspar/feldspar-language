@@ -3,11 +3,12 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ConstraintKinds #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -36,8 +37,6 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
-
-{-# LANGUAGE UndecidableInstances #-}
 
 -- | Defines different interpretations of Feldspar programs
 
@@ -87,7 +86,6 @@ import Language.Syntactic
 import Language.Syntactic.Constructs.Decoration
 import Language.Syntactic.Constructs.Literal
 import Language.Syntactic.Constructs.Binding
-import Language.Syntactic.Constructs.Binding.HigherOrder
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
@@ -186,17 +184,12 @@ instance Render Info
     render i@(Info {}) = show (infoType i) ++ szStr ++ srcStr
       where
         szStr = case show (infoSize i) of
-          "()" -> ""  -- TODO AnySize
+          "AnySize" -> ""
           str  -> " | " ++ str
 
         srcStr = case infoSource i of
           ""  -> ""
           src -> " | " ++ src
-
-instance Eq (Size a) => Eq (Info a)
-  where
-    ia == ib = infoSize ia == infoSize ib
-      -- TODO
 
 mkInfo :: Type a => Size a -> Info a
 mkInfo sz = Info typeRep sz Map.empty ""
@@ -270,8 +263,10 @@ literalDecor = literalDecorSrc ""
 
 -- | Replaces an expression with a literal if the type permits, otherwise
 -- returns the expression unchanged.
-constFold :: (Typed dom, (Literal :|| Type) :<: dom) =>
-    SourceInfo -> ASTF (Decor Info (dom :|| Typeable)) a -> a -> ASTF (Decor Info (dom :|| Typeable)) a
+constFold :: (Typed dom, (Literal :|| Type) :<: dom)
+    => SourceInfo -> ASTF (Decor Info (dom :|| Typeable)) a
+    -> a
+    -> ASTF (Decor Info (dom :|| Typeable)) a
 constFold src expr a
     | Just Dict <- typeDict expr
     = literalDecorSrc src a
@@ -317,7 +312,6 @@ class Optimize feature dom
         => feature a
         -> Args (AST (Decor Info (dom :|| Typeable))) a
         -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
-
 
 instance Optimize Empty dom
   where
@@ -366,14 +360,6 @@ instance
     ) =>
       OptimizeSuper dom
 
-
-
--- TODO Optimization should throw an error when the size of a node is
---      over-constrained. It can only happen if there's a bug in the general
---      size inference, or if the user has stated invalid size constraints. In
---      both cases it may lead to incorrect optimizations, so throwing an error
---      seems preferable.
-
 -- | Optimized construction of an expression from a symbol and its optimized
 -- arguments
 constructFeat :: ( Typeable (DenResult a)
@@ -391,10 +377,6 @@ constructFeat a args = do
   -- `constructFeatUnOpt` for size propagation. This is because
   -- `constructFeatOpt` may produce less accurate size information than
   -- `constructFeatUnOpt`.
-
-  -- TODO It might be better to use `sizeProp` instead of `constructFeatUnOpt`
-  --      (but this changes class dependencies a bit). Is there any other use of
-  --      `constructFeatUnOpt`?
 
 instance
     ( Optimize sub1 dom
@@ -425,12 +407,9 @@ optimizeM a
         let vars  = infoVars $ getInfo aOpt
             value = evalBind aOpt
             src   = infoSource $ getInfo aOpt
-    --    return aOpt
         if Map.null vars
            then return $ constFold src aOpt value
            else return aOpt
-      -- TODO singleton range --> literal
-      --      literal         --> singleton range
 
 -- | Optimization of an expression. This function runs 'optimizeM' and extracts
 -- the result.

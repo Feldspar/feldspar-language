@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -35,21 +36,14 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE CPP #-}
-
 module Feldspar.Core.Constructs.MutableToPure
     ( MutableToPure (..)
     ) where
 
 import qualified Control.Exception as C
 import Data.Array.IArray
-#if __GLASGOW_HASKELL__>=704
 import Data.Array.MArray (freeze)
 import Data.Array.Unsafe (unsafeFreeze)
-#else
-import Data.Array.MArray (freeze, unsafeFreeze)
-#endif
 import System.IO.Unsafe
 
 import Language.Syntactic

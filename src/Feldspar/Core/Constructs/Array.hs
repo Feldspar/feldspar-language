@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -33,8 +34,6 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# LANGUAGE UndecidableInstances #-}
-
 module Feldspar.Core.Constructs.Array
 where
 
@@ -42,7 +41,6 @@ import Data.List
 import Data.Map (notMember)
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Binding hiding (betaReduce)
 import Language.Syntactic.Constructs.Binding.HigherOrder (CLambda)
 
 import Feldspar.Range

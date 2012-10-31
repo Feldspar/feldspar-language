@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -32,8 +33,6 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# LANGUAGE UndecidableInstances #-}
-
 module Feldspar.Core.Constructs.SourceInfo
     ( module Language.Syntactic.Constructs.Identity
     , module Language.Syntactic.Constructs.Decoration
@@ -50,17 +49,6 @@ import Feldspar.Core.Interpretation
 
 -- | Kind @* -> *@ version of 'SourceInfo'
 data SourceInfo1 a = SourceInfo1 SourceInfo
-
-{-
-instance AlphaEq dom dom dom env =>
-    AlphaEq
-        (Decor SourceInfo1 Identity)
-        (Decor SourceInfo1 Identity)
-        dom
-        env
-  where
-    alphaEqSym = alphaEqSymDefault
--}
 
 instance Sharable (Decor SourceInfo1 Identity)
   where

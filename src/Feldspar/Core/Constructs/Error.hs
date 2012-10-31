@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -32,8 +33,6 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# LANGUAGE UndecidableInstances #-}
-
 module Feldspar.Core.Constructs.Error where
 
 import Language.Syntactic
@@ -62,7 +61,6 @@ instance Equality Error where equal = equalDefault; exprHash = exprHashDefault
 instance ToTree   Error
 instance Eval     Error where evaluate = evaluateDefault
 instance EvalBind Error where evalBindSym = evalBindSymDefault
---instance SizeProp Error where sizeProp = sizePropDefault
 instance Sharable Error
 
 instance SizeProp (Error :|| Type)

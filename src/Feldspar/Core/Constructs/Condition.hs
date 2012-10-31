@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -32,8 +33,6 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
-
-{-# LANGUAGE UndecidableInstances #-}
 
 module Feldspar.Core.Constructs.Condition
     ( module Language.Syntactic.Constructs.Condition
@@ -74,9 +73,4 @@ instance ( (Condition :|| Type) :<: dom
     constructFeatOpt a args = constructFeatUnOpt a args
 
     constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
-
-      -- TODO Propagate size information from the condition to the branches. For
-      --      example
-      --
-      --        condition (x<10) (min x 20) x  ==>  x
 

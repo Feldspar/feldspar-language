@@ -35,7 +35,6 @@ import Feldspar.Core.Frontend.Condition
 import Feldspar.Core.Constructs
 
 -- | Select between the cases based on the value of the scrutinee.
--- TODO: This implementation should be replaces by a proper construct
 select :: (Eq a, Syntax b) => Data a -> [(Data a, b)] -> b -> b
 select scrutinee cases fallback = P.foldr (\(c,a) b -> c == scrutinee ? (a,b)) fallback cases
 

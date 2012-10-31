@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -32,8 +33,6 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
-
-{-# LANGUAGE UndecidableInstances #-}
 
 module Feldspar.Core.Constructs.Loop
 where
@@ -93,7 +92,6 @@ instance Monad m => ToTree   (LoopM m)
 instance Monad m => Eval     (LoopM m) where evaluate = evaluateDefault
 instance Monad m => EvalBind (LoopM m) where evalBindSym = evalBindSymDefault
 instance Sharable (LoopM m)
-  -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
 
 instance Equality Loop where equal = equalDefault; exprHash = exprHashDefault
 instance Render   Loop where renderArgs = renderArgsDefault

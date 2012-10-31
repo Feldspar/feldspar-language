@@ -214,8 +214,7 @@ evalTarget
        )
     => BitWidth n -> a -> Internal a
 evalTarget n = evalBind . reifyFeld n
-  -- TODO This doesn't work yet, because 'targetSpecialization' is not
-  --      implemented
+  -- TODO This doesn't work yet, because 'targetSpecialization' is not implemented
 
 desugar :: Syntax a => a -> Data (Internal a)
 desugar = Syntactic.resugar

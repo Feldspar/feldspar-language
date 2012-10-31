@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -33,13 +34,10 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# LANGUAGE UndecidableInstances #-}
-
 module Feldspar.Core.Constructs.Par where
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Monad
-import Language.Syntactic.Constructs.Binding
 import Language.Syntactic.Constructs.Binding.HigherOrder
 
 import qualified Control.Monad.Par as CMP
@@ -50,8 +48,8 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Binding
 
-import Data.Map
-import Data.Typeable
+import Data.Map (notMember)
+import Data.Typeable (gcast)
 
 data ParFeature a
   where
@@ -77,14 +75,12 @@ instance ToTree   ParFeature
 instance Eval     ParFeature where evaluate = evaluateDefault
 instance EvalBind ParFeature where evalBindSym = evalBindSymDefault
 instance Sharable ParFeature
-  -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
 
 instance AlphaEq dom dom dom env => AlphaEq ParFeature ParFeature dom env
   where
     alphaEqSym = alphaEqSymDefault
 
 instance Sharable (MONAD Par)
-  -- Will not be shared anyway, because 'maybeWitnessSat' returns 'Nothing'
 
 instance SizeProp ParFeature
   where
