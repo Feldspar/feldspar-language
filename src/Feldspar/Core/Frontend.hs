@@ -54,6 +54,7 @@ module Feldspar.Core.Frontend
     , reifyFeldUnOpt
     , showExpr
     , printExpr
+    , printExprUnOpt
     , showAST
     , drawAST
     , showDecor
@@ -187,8 +188,13 @@ reifyFeldUnOpt n = flip evalState 0 .
 showExpr :: SyntacticFeld a => a -> String
 showExpr = render . reifyFeld N32
 
+-- | Print an optimized expression
 printExpr :: SyntacticFeld a => a -> IO ()
 printExpr = Syntactic.printExpr . reifyFeld N32
+
+-- | Print an unoptimized expression
+printExprUnOpt :: SyntacticFeld a => a -> IO ()
+printExprUnOpt = Syntactic.printExpr . reifyFeldUnOpt N32
 
 showAST :: SyntacticFeld a => a -> String
 showAST = Syntactic.showAST . reifyFeld N32
