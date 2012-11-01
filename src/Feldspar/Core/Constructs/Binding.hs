@@ -220,9 +220,7 @@ instance
     optimizeFeat lt@(C' Let) (a :* f :* Nil) = do
         a' <- optimizeM a
         f' <- optimizeFunction optimizeM (getInfo a') f
-        case getInfo f' of
-          Info{} -> constructFeat lt (a' :* f' :* Nil)
-            -- TODO Why is this pattern match needed?
+        constructFeat lt (a' :* f' :* Nil)
 
     constructFeatOpt (C' Let) (a :* (lam :$ var) :* Nil)
         | Just (C' (Variable v2))       <- prjF var

@@ -107,7 +107,6 @@ flatten matr = Indexed (m*n) ixf Empty
       where
         y = i `div` n
         x = i `mod` n
-  -- TODO Should use linear indexing
 
 -- | The diagonal vector of a square matrix. It happens to work if the number of
 -- rows is less than the number of columns, but not the other way around (this

@@ -217,7 +217,7 @@ instance
         | Just (C' SetLength) <- prjF op = return a
 
     -- TODO remove this optimization when the singletonRange -> literal
-    -- optimization in Feldspar.Core.Interpretation has been implemented
+    -- optimization in Feldspar.Core.Interpretation has been implemented (issue #27)
     constructFeatOpt (C' GetLength) (arr :* Nil)
         | len :> _ <- infoSize $ getInfo arr
         , isSingleton len

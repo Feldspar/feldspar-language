@@ -39,13 +39,6 @@
 
 module Feldspar.Range.Test where
 
--- TODO This module should be broken up into smaller pieces. Since most
--- functions seem to be useful not only for Feldspar, it would probably be good
--- to make a separate package. In any case, the modules should go under
--- `Data.Range`. If there are functions that are very Feldspar specific, these
--- should go into `Feldspar.Core.Constructs.*` (or whereever suitable).
-
-
 import Feldspar.Range
 import System.Random -- Should maybe be exported from QuickCheck
 import Test.QuickCheck hiding ((.&.))
