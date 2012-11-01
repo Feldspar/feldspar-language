@@ -42,11 +42,9 @@ import qualified Prelude
 import Data.Word
 import Data.List (inits)
 import Data.Proxy
-import qualified Data.TypeLevel as TL
 
 import Language.Syntactic hiding (fold)
 
-import Feldspar.Wrap
 import Feldspar.Prelude
 import Feldspar hiding (sugar, desugar, resugar)
 import qualified Feldspar.Vector as Vec
@@ -367,15 +365,6 @@ boolFun2 f c =
         )
       )
     )
-
--- * Wrapping for bitvectors
-
-instance (Unit w) => Wrap (BitVector w) (Data [w]) where
-    wrap = freezeBitVector
-
-instance (Wrap t u, Unit w, TL.Nat s) => Wrap (BitVector w -> t) (Data' s [w] -> u) where
-    wrap f = \(Data' d) -> wrap $ f $ unfreezeBitVector $ setLength s' d where
-        s' = fromInteger $ toInteger $ TL.toInt (undefined :: s)
 
 -- * Patch combinators for bitvectors
 

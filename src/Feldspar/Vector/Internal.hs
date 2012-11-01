@@ -39,7 +39,6 @@ module Feldspar.Vector.Internal where
 
 import qualified Prelude
 import Control.Applicative
-import qualified Data.TypeLevel as TL
 import Test.QuickCheck
 
 import QuickAnnotate
@@ -48,7 +47,6 @@ import Language.Syntactic hiding (fold)
 
 import Feldspar.Range (rangeSubSat)
 import Feldspar hiding (sugar,desugar,resugar)
-import Feldspar.Wrap
 
 import Data.Tuple.Curry
 import Data.Tuple.Select
@@ -404,13 +402,6 @@ tVec2 _ = id
 instance (Arbitrary (Internal a), Syntax a) => Arbitrary (Vector a)
   where
     arbitrary = fmap value arbitrary
-
-instance (Type a) => Wrap (Vector (Data a)) (Data [a]) where
-    wrap = freezeVector
-
-instance (Wrap t u, Type a, TL.Nat s) => Wrap (Vector1 a -> t) (Data' s [a] -> u) where
-    wrap f = \(Data' d) -> wrap $ f $ thawVector $ setLength s' d where
-        s' = fromInteger $ toInteger $ TL.toInt (undefined :: s)
 
 instance Annotatable a => Annotatable (Vector a)
   where
