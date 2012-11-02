@@ -40,11 +40,9 @@
 module Feldspar.Matrix where
 
 import qualified Prelude as P
-import qualified Data.TypeLevel as TL
 
 import Feldspar.Prelude
 import Feldspar.Core
-import Feldspar.Wrap
 import Feldspar.Vector.Internal
 
 
@@ -207,14 +205,4 @@ instance (ElemWise a, Syntax (Vector a)) => ElemWise (Vector a)
 
 (.*) :: (ElemWise a, Num (Scalar a)) => a -> a -> a
 (.*) = elemWise (*)
-
--- * Wrapping for matrices
-
-instance (Type a) => Wrap (Matrix a) (Data [[a]]) where
-    wrap = freezeMatrix
-
-instance (Wrap t u, Type a, TL.Nat row, TL.Nat col) => Wrap (Matrix a -> t) (Data' (row,col) [[a]] -> u) where
-    wrap f = \(Data' d) -> wrap $ f $ thawMatrix' row' col' d where
-        row' = fromInteger $ toInteger $ TL.toInt (undefined :: row)
-        col' = fromInteger $ toInteger $ TL.toInt (undefined :: col)
 
