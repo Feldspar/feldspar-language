@@ -41,22 +41,28 @@ import Data.IORef
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding.HigherOrder
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
+import Feldspar.Core.Constructs.Binding
+import Feldspar.Core.Constructs.Mutable
+
 
 data MutableReference a
   where
     NewRef :: Type a => MutableReference (a :-> Full (Mut (IORef a)))
     GetRef :: Type a => MutableReference (IORef a :-> Full (Mut a))
     SetRef :: Type a => MutableReference (IORef a :-> a :-> Full (Mut ()))
+    ModRef :: Type a => MutableReference (IORef a :-> (a -> a) :-> Full (Mut ()))
 
 instance Semantic MutableReference
   where
     semantics NewRef = Sem "newRef" newIORef
     semantics GetRef = Sem "getRef" readIORef
     semantics SetRef = Sem "setRef" writeIORef
+    semantics ModRef = Sem "modRef" (\r f -> readIORef r >>= writeIORef r . f)
 
 instance Equality MutableReference where equal = equalDefault; exprHash = exprHashDefault
 instance Render   MutableReference where renderArgs = renderArgsDefault
@@ -75,11 +81,25 @@ instance SizeProp MutableReference
     sizeProp NewRef _ = universal
     sizeProp GetRef _ = universal
     sizeProp SetRef _ = universal
+    sizeProp ModRef _ = universal
 
-instance (MutableReference :<: dom, Optimize dom dom) =>
-    Optimize MutableReference dom
+instance ( MutableReference :<: dom
+         , MONAD Mut :<: dom
+         , Project (CLambda Type) dom
+         , Project (Variable :|| Type) dom
+         , OptimizeSuper dom
+         )
+      => Optimize MutableReference dom
   where
+    -- modifyRef _ id ==> return ()
+    constructFeatUnOpt ModRef (_ :* (lam :$ body) :* Nil)
+       | Just (SubConstr2 (Lambda v1)) <- prjLambda lam
+       , Just (C' (Variable v2)) <- prjF body
+       , v1 == v2
+       = constructFeatUnOptDefaultTyp (MutType UnitType) Return (literalDecor () :* Nil)
+
     constructFeatUnOpt NewRef args = constructFeatUnOptDefaultTyp (MutType $ RefType typeRep) NewRef args
     constructFeatUnOpt GetRef args = constructFeatUnOptDefaultTyp (MutType typeRep) GetRef args
     constructFeatUnOpt SetRef args = constructFeatUnOptDefaultTyp (MutType typeRep) SetRef args
+    constructFeatUnOpt ModRef args = constructFeatUnOptDefaultTyp (MutType typeRep) ModRef args
 

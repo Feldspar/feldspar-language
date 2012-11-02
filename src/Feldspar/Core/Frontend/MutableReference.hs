@@ -62,5 +62,5 @@ setRef :: Syntax a => Ref a -> a -> M ()
 setRef = sugarSymC SetRef
 
 modifyRef :: Syntax a => Ref a -> (a -> a) -> M ()
-modifyRef r f = getRef r >>= setRef r . f
+modifyRef = sugarSymC ModRef
 
