@@ -164,6 +164,18 @@ chunk c f g v = Push loop (noc * c)
                       do let (Push k _) = toPush $ f (V.take c (V.drop (c*i) v))
                          k (\j a -> func (c*i + j) a)
 
+-- | `scanl` is similar to `fold`, but returns a `PushVector` of successive
+-- reduced values from the left.
+scanl :: (Syntax a, Syntax b)
+      => (a -> b -> a) -> a -> V.Vector b -> PushVector a
+scanl f init v = Push g l
+  where
+    l   = length v
+    g k = do s <- newRef init
+             forM l $ \ix -> do
+               modifyRef s (`f` (v ! ix))
+               getRef s >>= k ix
+
 -- | The empty push vector.
 empty :: PushVector a
 empty = Push (const (return ())) 0
