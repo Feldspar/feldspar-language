@@ -44,6 +44,8 @@ import Language.Syntactic (Syntactic(..))
 data PushVector a where
   Push :: ((Data Index -> a -> M ()) -> M ()) -> Data Length -> PushVector a
 
+type PushVector1 a = PushVector (Data a)
+
 instance Syntax a => Syntactic (PushVector a)
   where
     type Domain (PushVector a)   = FeldDomain
