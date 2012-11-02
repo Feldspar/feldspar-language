@@ -113,7 +113,6 @@ library
     Feldspar.Vector.Internal
     Feldspar.Vector
     Feldspar.Vector.Push
-    Feldspar.Wrap
     Feldspar.Par
     Feldspar.Algorithm.CRC
     Feldspar.Algorithm.FFT
@@ -132,7 +131,6 @@ library
     syntactic                   >= 1.5    && < 1.6,
     tagged                      >= 0.4    && < 0.5,
     tuple                       >= 0.2    && < 0.3,
-    type-level                  >= 0.2.4  && < 0.3,
     monad-par                   >= 0.3    && < 0.4,
     QuickAnnotate               >= 0.6    && < 0.7
 
