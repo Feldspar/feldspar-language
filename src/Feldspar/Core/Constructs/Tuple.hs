@@ -42,6 +42,7 @@ import Data.Tuple.Select
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Condition
 import Language.Syntactic.Constructs.Tuple
 
 import Feldspar.Core.Types
@@ -269,8 +270,10 @@ instance
 
 instance
     ( (Select :|| Type) :<: dom
+    , (Condition :|| Type) :<: dom
     , (Tuple  :|| Type) :<: dom
-    , Optimize dom dom
+    , OptimizeSuper dom
+    , Optimize (Condition :|| Type) dom
     ) =>
       Optimize (Select :|| Type) dom
   where
@@ -282,6 +285,13 @@ instance
         | ((prjF -> Just (C' Tup6)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
 
+    -- Pushing select1 over condition.
+    constructFeatOpt (C' Sel1) (t :* Nil)
+        | ((prjF -> Just (C' Condition)) :$ c :$ t1 :$ f1) <- t = do
+            t' <- constructFeat (c' Sel1) (t1 :* Nil)
+            f' <- constructFeat (c' Sel1) (f1 :* Nil)
+            constructFeat (c' Condition) (c :* t' :* f' :* Nil)
+
     constructFeatOpt (C' Sel2) (t :* Nil)
         | ((prjF -> Just (C' Tup2)) :$ _ :$ a) <- t                          = return a
         | ((prjF -> Just (C' Tup3)) :$ _ :$ a :$ _) <- t                     = return a
@@ -290,6 +300,13 @@ instance
         | ((prjF -> Just (C' Tup6)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
 
+    -- Pushing select2 over condition.
+    constructFeatOpt (C' Sel2) (t :* Nil)
+        | ((prjF -> Just (C' Condition)) :$ c :$ t1 :$ f1) <- t = do
+            t' <- constructFeat (c' Sel2) (t1 :* Nil)
+            f' <- constructFeat (c' Sel2) (f1 :* Nil)
+            constructFeat (c' Condition) (c :* t' :* f' :* Nil)
+
     constructFeatOpt (C' Sel3) (t :* Nil)
         | ((prjF -> Just (C' Tup3)) :$ _ :$ _ :$ a) <- t                     = return a
         | ((prjF -> Just (C' Tup4)) :$ _ :$ _ :$ a :$ _) <- t                = return a
@@ -297,23 +314,58 @@ instance
         | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t = return a
 
+    -- Pushing select3 over condition.
+    constructFeatOpt (C' Sel3) (t :* Nil)
+        | ((prjF -> Just (C' Condition)) :$ c :$ t1 :$ f1) <- t = do
+            t' <- constructFeat (c' Sel3) (t1 :* Nil)
+            f' <- constructFeat (c' Sel3) (f1 :* Nil)
+            constructFeat (c' Condition) (c :* t' :* f' :* Nil)
+
     constructFeatOpt (C' Sel4) (t :* Nil)
         | ((prjF -> Just (C' Tup4)) :$ _ :$ _ :$ _ :$ a) <- t                = return a
         | ((prjF -> Just (C' Tup5)) :$ _ :$ _ :$ _ :$ a :$ _) <- t           = return a
         | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t = return a
 
+    -- Pushing select4 over condition.
+    constructFeatOpt (C' Sel4) (t :* Nil)
+        | ((prjF -> Just (C' Condition)) :$ c :$ t1 :$ f1) <- t = do
+            t' <- constructFeat (c' Sel4) (t1 :* Nil)
+            f' <- constructFeat (c' Sel4) (f1 :* Nil)
+            constructFeat (c' Condition) (c :* t' :* f' :* Nil)
+
     constructFeatOpt (C' Sel5) (t :* Nil)
         | ((prjF -> Just (C' Tup5)) :$ _ :$ _ :$ _ :$ _ :$ a) <- t           = return a
         | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t = return a
 
+    -- Pushing select5 over condition.
+    constructFeatOpt (C' Sel5) (t :* Nil)
+        | ((prjF -> Just (C' Condition)) :$ c :$ t1 :$ f1) <- t = do
+            t' <- constructFeat (c' Sel5) (t1 :* Nil)
+            f' <- constructFeat (c' Sel5) (f1 :* Nil)
+            constructFeat (c' Condition) (c :* t' :* f' :* Nil)
+
     constructFeatOpt (C' Sel6) (t :* Nil)
         | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t = return a
 
+    -- Pushing select6 over condition.
+    constructFeatOpt (C' Sel6) (t :* Nil)
+        | ((prjF -> Just (C' Condition)) :$ c :$ t1 :$ f1) <- t = do
+            t' <- constructFeat (c' Sel6) (t1 :* Nil)
+            f' <- constructFeat (c' Sel6) (f1 :* Nil)
+            constructFeat (c' Condition) (c :* t' :* f' :* Nil)
+
     constructFeatOpt (C' Sel7) (t :* Nil)
         | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t = return a
+
+    -- Pushing select7 over condition.
+    constructFeatOpt (C' Sel7) (t :* Nil)
+        | ((prjF -> Just (C' Condition)) :$ c :$ t1 :$ f1) <- t = do
+            t' <- constructFeat (c' Sel7) (t1 :* Nil)
+            f' <- constructFeat (c' Sel7) (f1 :* Nil)
+            constructFeat (c' Condition) (c :* t' :* f' :* Nil)
 
     constructFeatOpt feat args = constructFeatUnOpt feat args
 
