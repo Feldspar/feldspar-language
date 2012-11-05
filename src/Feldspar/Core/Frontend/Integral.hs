@@ -62,17 +62,12 @@ class (Ord a, Numeric a, BoundedInt a, P.Integral a, Size a ~ Range a) => Integr
     rem  :: Data a -> Data a -> Data a
     rem  = sugarSymF Rem
     div  :: Data a -> Data a -> Data a
-    div  = divSem
+    div  = divSem  -- sugarSymF Div
     mod  :: Data a -> Data a -> Data a
     mod  = sugarSymF Mod
     (^)  :: Data a -> Data a -> Data a
     (^)  = sugarSymF Exp
 
--- TODO: This is a short-term hack because the compiler doesn't compile
--- the Div construct correctly. So we give the semantics of div in terms of
--- quot directly, and never use the Div construct. In the long term the
--- compiler should be fixed, but it involves writing type corrector plugins
--- and this solution was quicker.
 divSem :: (Integral a)
        => Data a -> Data a -> Data a
 divSem x y = (x > 0 && y < 0 || x < 0 && y > 0) && rem x y /= 0 ?
