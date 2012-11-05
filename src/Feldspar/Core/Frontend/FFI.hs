@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 --
@@ -35,13 +34,12 @@ import Language.Syntactic
 
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs.FFI
+import Feldspar.Core.Constructs
 
 foreignImport :: ( Type (DenResult a)
---                 , Signature a
                  , SyntacticN c b
-                 , ApplySym a b dom
-                 , FFI :<: dom
+                 , ApplySym a b FeldDomain
                  )
               => String -> Denotation a -> c
-foreignImport name f = sugarSym (ForeignImport name f)
+foreignImport name f = sugarSymF (ForeignImport name f)
 
