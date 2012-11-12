@@ -57,6 +57,8 @@ tests = [ testGroup "Range Int"    $ typedTestsSigned   "Int"    (undefined :: I
         , testGroup "Range Int8"   $ typedTestsSigned   "Int8"   (undefined :: Int8)
         , testGroup "Range Word8"  $ typedTestsUnsigned "Word8"  (undefined :: Word8)
         , testGroup "Range Word32" $ typedTestsUnsigned "Word32" (undefined :: Word32)
+        , testGroup "Range Int8, Range Int8"   $ typedTestsTwo "Int8, Int8"   (undefined :: Int8)  (undefined :: Int8)
+        , testGroup "Range Word8, Range Word8" $ typedTestsTwo "Word8, Word8" (undefined :: Word8) (undefined :: Word8)
         ]
 
 typedTests name typ =
@@ -125,6 +127,11 @@ typedTestsSigned name typ = typedTests name typ ++
     , testProperty (unwords ["prop_rangeMod3"      , name]) (prop_rangeMod3 typ)
     , testProperty (unwords ["prop_rangeRem1"      , name]) (prop_rangeRem1 typ)
     , testProperty (unwords ["prop_rangeQuot1"     , name]) (prop_rangeQuot1 typ)
+    ]
+
+typedTestsTwo name t1 t2 =
+    [ testProperty (unwords ["prop_shiftLU"        , name]) (prop_shiftLU t1 t2)
+    , testProperty (unwords ["prop_shiftRU"        , name]) (prop_shiftRU t1 t2)
     ]
 
 --------------------------------------------------------------------------------
