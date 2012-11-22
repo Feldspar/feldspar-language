@@ -62,7 +62,7 @@ class (Ord a, Numeric a, BoundedInt a, P.Integral a, Size a ~ Range a) => Integr
     rem  :: Data a -> Data a -> Data a
     rem  = sugarSymF Rem
     div  :: Data a -> Data a -> Data a
-    div  = divSem  -- sugarSymF Div
+    div  = sugarSymF Div
     mod  :: Data a -> Data a -> Data a
     mod  = sugarSymF Mod
     (^)  :: Data a -> Data a -> Data a
