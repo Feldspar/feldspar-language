@@ -50,6 +50,8 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Binding
 import Feldspar.Core.Constructs.Literal
+import Feldspar.Core.Constructs.Mutable
+import Feldspar.Core.Constructs.MutableReference
 
 data LoopM m a
   where
@@ -120,12 +122,16 @@ instance SizeProp (Loop :|| Type)
     sizeProp (C' WhileLoop) (_ :* _ :* WrapFull step :* Nil) = infoSize step
 
 
-instance ( MonadType m
-         , LoopM m :<: dom
+instance ( LoopM Mut :<: dom
+         , (Variable :|| Type) :<: dom
          , CLambda Type :<: dom
+         , MONAD Mut :<: dom
+         , MutableReference :<: dom
+         , Optimize (CLambda Type) dom
+         , Optimize (MONAD Mut) dom
          , Optimize dom dom
          )
-      => Optimize (LoopM m) dom
+      => Optimize (LoopM Mut) dom
   where
     optimizeFeat for@For (len :* step :* Nil) = do
         len' <- optimizeM len
@@ -137,8 +143,27 @@ instance ( MonadType m
 
     optimizeFeat a args = optimizeFeatDefault a args
 
+    constructFeatOpt For (len :* (lam1 :$ (bnd :$ getRefV2@(grf :$ ref) :$ (lam3 :$ body))) :* Nil)
+      | Just (SubConstr2 (Lambda v1)) <- prjLambda lam1
+      , Just lam3'@(SubConstr2 (Lambda v3)) <- prjLambda lam3
+      , Just Bind <- prjMonad monadProxy bnd
+      , Just GetRef <- prj grf
+      , Just (C' (Variable v2)) <- prjF ref
+      , v1 /= v2
+      =  do
+          loop      <- constructFeat For (len :* (lam1 :$ body) :* Nil)
+          hoistedV3 <- constructFeat (reuseCLambda lam3') (loop :* Nil)
+          -- Do not optimize right now; the v3 binding gets lost.
+          constructFeatUnOpt Bind (getRefV2 :* hoistedV3 :* Nil)
+
+    constructFeatOpt feat args = constructFeatUnOpt feat args
+
     constructFeatUnOpt While args = constructFeatUnOptDefaultTyp voidTypeRep While args
     constructFeatUnOpt For   args = constructFeatUnOptDefaultTyp voidTypeRep For   args
+
+-- | Allow an existing binding to be used with a body of a different type
+reuseCLambda :: CLambda Type (b :-> Full (a -> b)) -> CLambda Type (c :-> Full (a -> c))
+reuseCLambda (SubConstr2 (Lambda v)) = SubConstr2 (Lambda v)
 
 instance ( (Literal  :|| Type) :<: dom
          , (Loop     :|| Type) :<: dom
