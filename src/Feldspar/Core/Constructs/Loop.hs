@@ -161,10 +161,6 @@ instance ( LoopM Mut :<: dom
     constructFeatUnOpt While args = constructFeatUnOptDefaultTyp voidTypeRep While args
     constructFeatUnOpt For   args = constructFeatUnOptDefaultTyp voidTypeRep For   args
 
--- | Allow an existing binding to be used with a body of a different type
-reuseCLambda :: CLambda Type (b :-> Full (a -> b)) -> CLambda Type (c :-> Full (a -> c))
-reuseCLambda (SubConstr2 (Lambda v)) = SubConstr2 (Lambda v)
-
 instance ( (Literal  :|| Type) :<: dom
          , (Loop     :|| Type) :<: dom
          , (Variable :|| Type) :<: dom
