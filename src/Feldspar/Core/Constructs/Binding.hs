@@ -48,6 +48,7 @@ module Feldspar.Core.Constructs.Binding
     , betaReduce
     , prjLambda
     , cLambda
+    , reuseCLambda
     ) where
 
 import Control.Monad.Reader
@@ -239,3 +240,6 @@ prjLambda = prj
 cLambda :: Type a => VarId -> CLambda Type (b :-> Full (a -> b))
 cLambda = SubConstr2 . Lambda
 
+-- | Allow an existing binding to be used with a body of a different type
+reuseCLambda :: CLambda Type (b :-> Full (a -> b)) -> CLambda Type (c :-> Full (a -> c))
+reuseCLambda (SubConstr2 (Lambda v)) = SubConstr2 (Lambda v)
