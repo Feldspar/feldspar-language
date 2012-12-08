@@ -42,10 +42,12 @@ import Data.Tuple.Select
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding.HigherOrder (CLambda)
 import Language.Syntactic.Constructs.Tuple
 
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
+import Feldspar.Core.Constructs.Binding
 
 instance Sharable Tuple
 
@@ -269,51 +271,93 @@ instance
 
 instance
     ( (Select :|| Type) :<: dom
+    , CLambda Type :<: dom
     , (Tuple  :|| Type) :<: dom
-    , Optimize dom dom
+    , (Let :|| Type) :<: dom
+    , (Variable :|| Type) :<: dom
+    , Project (Let :|| Type) dom
+    , Project (CLambda Type) dom
+    , OptimizeSuper dom
     ) =>
       Optimize (Select :|| Type) dom
   where
-    constructFeatOpt (C' Sel1) (t :* Nil)
+    constructFeatOpt s@(C' Sel1) (t :* Nil)
         | ((prjF -> Just (C' Tup2)) :$ a :$ _) <- t                          = return a
         | ((prjF -> Just (C' Tup3)) :$ a :$ _ :$ _) <- t                     = return a
         | ((prjF -> Just (C' Tup4)) :$ a :$ _ :$ _ :$ _) <- t                = return a
         | ((prjF -> Just (C' Tup5)) :$ a :$ _ :$ _ :$ _ :$ _) <- t           = return a
         | ((prjF -> Just (C' Tup6)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ a :$ _ :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
+        | ((prjF -> Just (C' Let)) :$ a :$ (lam :$ b)) <- t
+        , (Just v@(SubConstr2 (Lambda {}))) <- prjLambda lam
+         = do s' <- constructFeatOpt s (b :* Nil)
+              b' <- constructFeatOpt (reuseCLambda v) (s' :* Nil)
+              constructFeatOpt (c' Let) (a :* b' :* Nil)
 
-    constructFeatOpt (C' Sel2) (t :* Nil)
+
+    constructFeatOpt s@(C' Sel2) (t :* Nil)
         | ((prjF -> Just (C' Tup2)) :$ _ :$ a) <- t                          = return a
         | ((prjF -> Just (C' Tup3)) :$ _ :$ a :$ _) <- t                     = return a
         | ((prjF -> Just (C' Tup4)) :$ _ :$ a :$ _ :$ _) <- t                = return a
         | ((prjF -> Just (C' Tup5)) :$ _ :$ a :$ _ :$ _ :$ _) <- t           = return a
         | ((prjF -> Just (C' Tup6)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ _ :$ a :$ _ :$ _ :$ _ :$ _ :$ _) <- t = return a
+        | ((prjF -> Just (C' Let)) :$ a :$ (lam :$ b)) <- t
+        , (Just v@(SubConstr2 (Lambda {}))) <- prjLambda lam
+         = do s' <- constructFeatOpt s (b :* Nil)
+              b' <- constructFeatOpt (reuseCLambda v) (s' :* Nil)
+              constructFeatOpt (c' Let) (a :* b' :* Nil)
 
-    constructFeatOpt (C' Sel3) (t :* Nil)
+    constructFeatOpt s@(C' Sel3) (t :* Nil)
         | ((prjF -> Just (C' Tup3)) :$ _ :$ _ :$ a) <- t                     = return a
         | ((prjF -> Just (C' Tup4)) :$ _ :$ _ :$ a :$ _) <- t                = return a
         | ((prjF -> Just (C' Tup5)) :$ _ :$ _ :$ a :$ _ :$ _) <- t           = return a
         | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ a :$ _ :$ _ :$ _ :$ _) <- t = return a
+        | ((prjF -> Just (C' Let)) :$ a :$ (lam :$ b)) <- t
+        , (Just v@(SubConstr2 (Lambda {}))) <- prjLambda lam
+         = do s' <- constructFeatOpt s (b :* Nil)
+              b' <- constructFeatOpt (reuseCLambda v) (s' :* Nil)
+              constructFeatOpt (c' Let) (a :* b' :* Nil)
 
-    constructFeatOpt (C' Sel4) (t :* Nil)
+    constructFeatOpt s@(C' Sel4) (t :* Nil)
         | ((prjF -> Just (C' Tup4)) :$ _ :$ _ :$ _ :$ a) <- t                = return a
         | ((prjF -> Just (C' Tup5)) :$ _ :$ _ :$ _ :$ a :$ _) <- t           = return a
         | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ a :$ _ :$ _ :$ _) <- t = return a
+        | ((prjF -> Just (C' Let)) :$ a :$ (lam :$ b)) <- t
+        , (Just v@(SubConstr2 (Lambda {}))) <- prjLambda lam
+         = do s' <- constructFeatOpt s (b :* Nil)
+              b' <- constructFeatOpt (reuseCLambda v) (s' :* Nil)
+              constructFeatOpt (c' Let) (a :* b' :* Nil)
 
-    constructFeatOpt (C' Sel5) (t :* Nil)
+    constructFeatOpt s@(C' Sel5) (t :* Nil)
         | ((prjF -> Just (C' Tup5)) :$ _ :$ _ :$ _ :$ _ :$ a) <- t           = return a
         | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ a :$ _ :$ _) <- t = return a
+        | ((prjF -> Just (C' Let)) :$ a :$ (lam :$ b)) <- t
+        , (Just v@(SubConstr2 (Lambda {}))) <- prjLambda lam
+         = do s' <- constructFeatOpt s (b :* Nil)
+              b' <- constructFeatOpt (reuseCLambda v) (s' :* Nil)
+              constructFeatOpt (c' Let) (a :* b' :* Nil)
 
-    constructFeatOpt (C' Sel6) (t :* Nil)
+    constructFeatOpt s@(C' Sel6) (t :* Nil)
         | ((prjF -> Just (C' Tup6)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t      = return a
         | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ a :$ _) <- t = return a
+        | ((prjF -> Just (C' Let)) :$ a :$ (lam :$ b)) <- t
+        , (Just v@(SubConstr2 (Lambda {}))) <- prjLambda lam
+         = do s' <- constructFeatOpt s (b :* Nil)
+              b' <- constructFeatOpt (reuseCLambda v) (s' :* Nil)
+              constructFeatOpt (c' Let) (a :* b' :* Nil)
 
-    constructFeatOpt (C' Sel7) (t :* Nil)
+
+    constructFeatOpt s@(C' Sel7) (t :* Nil)
         | ((prjF -> Just (C' Tup7)) :$ _ :$ _ :$ _ :$ _ :$ _ :$ _ :$ a) <- t = return a
+        | ((prjF -> Just (C' Let)) :$ a :$ (lam :$ b)) <- t
+        , (Just v@(SubConstr2 (Lambda {}))) <- prjLambda lam
+         = do s' <- constructFeatOpt s (b :* Nil)
+              b' <- constructFeatOpt (reuseCLambda v) (s' :* Nil)
+              constructFeatOpt (c' Let) (a :* b' :* Nil)
 
     constructFeatOpt feat args = constructFeatUnOpt feat args
 
