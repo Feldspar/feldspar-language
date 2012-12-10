@@ -124,6 +124,24 @@ instance ( MONAD Mut :<: dom
       where
         vars = infoVars $ getInfo body
 
+       -- (bind e1 (\x -> e2) >> e3 ==> bind e1 (\x -> e2 >> e3)
+    constructFeatOpt Then ((Sym (Decor _ bnd) :$ x :$ (lam :$ bd)) :* y :* Nil)
+        | Just Bind <- prjMonad monadProxy bnd
+        , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
+        = do
+             bb <- constructFeat Then (bd :* y :* Nil)
+             bd' <- constructFeat (reuseCLambda lam') (bb :* Nil)
+             constructFeatUnOpt Bind (x :* bd' :* Nil)
+
+      -- (bind (bind e1 (\x -> e2)) (\y -> e3) => bind e1 (\x -> bind e2 (\y-> e3))
+    constructFeatOpt Bind ((Sym (Decor _ bnd) :$ x :$ (lam :$ bd)) :* y :* Nil)
+        | Just Bind <- prjMonad monadProxy bnd
+        , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
+        = do
+             bb <- constructFeat Bind (bd :* y :* Nil)
+             bd' <- constructFeat (reuseCLambda lam') (bb :* Nil)
+             constructFeatUnOpt Bind (x :* bd' :* Nil)
+
       -- return x >> mb ==> mb
     constructFeatOpt Then ((Sym (Decor _ ret) :$ _) :* mb :* Nil)
         | Just Return <- prjMonad monadProxy ret

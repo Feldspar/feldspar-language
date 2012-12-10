@@ -37,6 +37,7 @@
 module Feldspar.Core.Constructs.Loop
 where
 
+import Data.Map (notMember)
 import Data.Typeable
 
 import Control.Monad (forM_, when)
@@ -143,18 +144,21 @@ instance ( LoopM Mut :<: dom
 
     optimizeFeat a args = optimizeFeatDefault a args
 
-    constructFeatOpt For (len :* (lam1 :$ (bnd :$ getRefV2@(grf :$ ref) :$ (lam3 :$ body))) :* Nil)
+    constructFeatOpt For (len :* (lam1 :$ (bnd :$ getRefV2@(grf :$ ref) :$ bd@(lam3 :$ body))) :* Nil)
       | Just (SubConstr2 (Lambda v1)) <- prjLambda lam1
       , Just lam3'@(SubConstr2 (Lambda v3)) <- prjLambda lam3
       , Just Bind <- prjMonad monadProxy bnd
       , Just GetRef <- prj grf
       , Just (C' (Variable v2)) <- prjF ref
       , v1 /= v2
+      , v1 `notMember` fvars
       =  do
           loop      <- constructFeat For (len :* (lam1 :$ body) :* Nil)
           hoistedV3 <- constructFeat (reuseCLambda lam3') (loop :* Nil)
           -- Do not optimize right now; the v3 binding gets lost.
           constructFeatUnOpt Bind (getRefV2 :* hoistedV3 :* Nil)
+     where
+      fvars = infoVars $ getInfo bd
 
     constructFeatOpt feat args = constructFeatUnOpt feat args
 
