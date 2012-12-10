@@ -42,7 +42,11 @@ share = sugarSymF Let
 (.<) :: (Syntax b, Syntax c) => (b -> c) -> (a -> b) -> a -> c
 (.<) f g a = share (g a) f
 
+infixr 9 .<
+
 -- | Share an expression in the scope of a function
 ($<) :: (Syntax a, Syntax b) => (a -> b) -> a -> b
 ($<) = flip share
+
+infixr 0 $<
 
