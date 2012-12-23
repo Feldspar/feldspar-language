@@ -106,11 +106,11 @@ instance ( (Conversion :|| Type) :<: dom
          , OptimizeSuper dom)
       => Optimize (Conversion :|| Type) dom
   where
-    constructFeatOpt (C' i2n@I2N) (a :* Nil)
+    constructFeatOpt _ (C' i2n@I2N) (a :* Nil)
         | Just TypeEq <- typeEq (resultType i2n) (infoType $ getInfo a)
         = return a
 
-    constructFeatOpt a args = constructFeatUnOpt a args
+    constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
-    constructFeatUnOpt a@(C' _) = constructFeatUnOptDefault a
+    constructFeatUnOpt opts a@(C' _) = constructFeatUnOptDefault opts a
 

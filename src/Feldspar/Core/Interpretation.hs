@@ -61,6 +61,8 @@ module Feldspar.Core.Interpretation
     , SomeInfo (..)
     , SomeType (..)
     , Env (..)
+    , FeldOpts (..)
+    , defaultFeldOpts
     , localVar
     , localSource
     , Opt
@@ -222,6 +224,18 @@ data Env = Env
     , sourceEnv :: SourceInfo
     }
 
+-- | Possible compilation targets.
+data Target = RegionInf | SICS
+
+-- | A record with options for explicit passing in rewrite rules.
+data FeldOpts = FeldOpts
+    { targets    :: [Target]
+    }
+
+-- | Default options.
+defaultFeldOpts :: FeldOpts
+defaultFeldOpts = FeldOpts { targets = [] }
+
 -- | Initial environment
 initEnv :: Env
 initEnv = Env [] ""
@@ -288,7 +302,7 @@ class Optimize feature dom
         :: ( Typeable (DenResult a)
            , OptimizeSuper dom
            )
-        => feature a
+        => FeldOpts -> feature a
         -> Args (AST (dom :|| Typeable)) a
         -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
     optimizeFeat = optimizeFeatDefault
@@ -300,7 +314,7 @@ class Optimize feature dom
     -- 'constructFeat' which has more accurate propagation of 'Info'.
     constructFeatOpt
         :: ( Typeable (DenResult a))
-        => feature a
+        => FeldOpts -> feature a
         -> Args (AST (Decor Info (dom :|| Typeable))) a
         -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
     constructFeatOpt = constructFeatUnOpt
@@ -309,7 +323,7 @@ class Optimize feature dom
     -- optimized arguments
     constructFeatUnOpt
         :: ( Typeable (DenResult a))
-        => feature a
+        => FeldOpts -> feature a
         -> Args (AST (Decor Info (dom :|| Typeable))) a
         -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
 
@@ -364,12 +378,12 @@ instance
 -- arguments
 constructFeat :: ( Typeable (DenResult a)
                  , Optimize feature dom)
-    => feature a
+    => FeldOpts -> feature a
     -> Args (AST (Decor Info (dom :|| Typeable))) a
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
-constructFeat a args = do
-    aUnOpt <- constructFeatUnOpt a args
-    aOpt   <- constructFeatOpt a args
+constructFeat opts a args = do
+    aUnOpt <- constructFeatUnOpt opts a args
+    aOpt   <- constructFeatOpt opts a args
     return $ updateDecor
         (\info -> info {infoSize = infoSize (getInfo aUnOpt)})
         aOpt
@@ -384,14 +398,14 @@ instance
     ) =>
       Optimize (sub1 :+: sub2) dom
   where
-    optimizeFeat (InjL a) = optimizeFeat a
-    optimizeFeat (InjR a) = optimizeFeat a
+    optimizeFeat opts (InjL a) = optimizeFeat opts a
+    optimizeFeat opts (InjR a) = optimizeFeat opts a
 
-    constructFeatOpt (InjL a) = constructFeatOpt a
-    constructFeatOpt (InjR a) = constructFeatOpt a
+    constructFeatOpt opts (InjL a) = constructFeatOpt opts a
+    constructFeatOpt opts (InjR a) = constructFeatOpt opts a
 
-    constructFeatUnOpt (InjL a) = constructFeatUnOpt a
-    constructFeatUnOpt (InjR a) = constructFeatUnOpt a
+    constructFeatUnOpt opts (InjL a) = constructFeatUnOpt opts a
+    constructFeatUnOpt opts (InjR a) = constructFeatUnOpt opts a
 
 -- | Optimization of an expression
 --
@@ -399,11 +413,11 @@ instance
 -- folding on all closed expressions, provided that the type permits making a
 -- literal.
 optimizeM :: (OptimizeSuper dom)
-          => ASTF (dom :|| Typeable) a -> Opt (ASTF (Decor Info (dom :|| Typeable)) a)
-optimizeM a
+          => FeldOpts -> ASTF (dom :|| Typeable) a -> Opt (ASTF (Decor Info (dom :|| Typeable)) a)
+optimizeM opts a
     | Dict <- exprDict a
     = do
-        aOpt <- matchTrans (\(C' x) -> optimizeFeat x) a
+        aOpt <- matchTrans (\(C' x) -> optimizeFeat opts x) a
         let vars  = infoVars $ getInfo aOpt
             value = evalBind aOpt
             src   = infoSource $ getInfo aOpt
@@ -416,8 +430,8 @@ optimizeM a
 optimize :: ( Typeable a
             , OptimizeSuper dom
             )
-         => ASTF (dom :|| Typeable) a -> ASTF (Decor Info (dom :|| Typeable)) a
-optimize = flip runReader initEnv . optimizeM
+         => FeldOpts -> ASTF (dom :|| Typeable) a -> ASTF (Decor Info (dom :|| Typeable)) a
+optimize opts = flip runReader initEnv . optimizeM opts
 
 -- | Convenient default implementation of 'constructFeatUnOpt'. Uses 'sizeProp'
 -- to propagate size.
@@ -427,11 +441,11 @@ constructFeatUnOptDefaultTyp
        , Typeable (DenResult a)
        , Show (Size (DenResult a))
        )
-    => TypeRep (DenResult a)
+    => FeldOpts -> TypeRep (DenResult a)
     -> feature a
     -> Args (AST (Decor Info (dom :|| Typeable))) a
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
-constructFeatUnOptDefaultTyp typ feat args
+constructFeatUnOptDefaultTyp opts typ feat args
     = do
         src <- asks sourceEnv
         let sz   = sizeProp feat $ mapArgs (WrapFull . getInfo) args
@@ -444,10 +458,10 @@ constructFeatUnOptDefault
        , SizeProp feature
        , Type (DenResult a)
        )
-    => feature a
+    => FeldOpts -> feature a
     -> Args (AST (Decor Info (dom :|| Typeable))) a
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
-constructFeatUnOptDefault feat args
+constructFeatUnOptDefault opts feat args
     = do
         src <- asks sourceEnv
         let sz   = sizeProp feat $ mapArgs (WrapFull . getInfo) args
@@ -460,9 +474,9 @@ optimizeFeatDefault
        , Typeable (DenResult a)
        , OptimizeSuper dom
        )
-    => feature a
+    => FeldOpts -> feature a
     -> Args (AST (dom :|| Typeable)) a
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
-optimizeFeatDefault feat args
-    = constructFeat feat =<< mapArgsM optimizeM args
+optimizeFeatDefault opts feat args
+    = constructFeat opts feat =<< mapArgsM (optimizeM opts) args
 

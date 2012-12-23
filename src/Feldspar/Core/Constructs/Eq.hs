@@ -72,27 +72,27 @@ instance SizeProp (EQ :|| Type)
 
 instance ((EQ :|| Type) :<: dom, OptimizeSuper dom) => Optimize (EQ :|| Type) dom
   where
-    constructFeatOpt (C' Equal) (a :* b :* Nil)
+    constructFeatOpt _ (C' Equal) (a :* b :* Nil)
         | alphaEq a b
         = return $ literalDecor True
 
-    constructFeatOpt (C' Equal) (a :* b :* Nil)
+    constructFeatOpt _ (C' Equal) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , ra `disjoint` rb
         = return $ literalDecor False
 
-    constructFeatOpt (C' NotEqual) (a :* b :* Nil)
+    constructFeatOpt _ (C' NotEqual) (a :* b :* Nil)
         | alphaEq a b
         = return $ literalDecor False
 
-    constructFeatOpt (C' NotEqual) (a :* b :* Nil)
+    constructFeatOpt _ (C' NotEqual) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
         , ra `disjoint` rb
         = return $ literalDecor True
 
-    constructFeatOpt a args = constructFeatUnOpt a args
+    constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 

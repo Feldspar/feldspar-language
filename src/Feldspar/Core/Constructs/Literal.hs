@@ -59,5 +59,5 @@ instance SizeProp (Literal :|| Type)
 instance ((Literal :|| Type) :<: dom, OptimizeSuper dom) =>
     Optimize (Literal :|| Type) dom
   where
-    constructFeatUnOpt l@(C' _) = constructFeatUnOptDefault l
+    constructFeatUnOpt opts l@(C' _) = constructFeatUnOptDefault opts l
 
