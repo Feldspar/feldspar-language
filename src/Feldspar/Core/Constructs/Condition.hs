@@ -60,17 +60,17 @@ instance ( (Condition :|| Type) :<: dom
          )
       => Optimize (Condition :|| Type) dom
   where
-    constructFeatOpt (C' Condition) (c :* t :* f :* Nil)
+    constructFeatOpt _ (C' Condition) (c :* t :* f :* Nil)
         | Just c' <- viewLiteral c = return $ if c' then t else f
 
-    constructFeatOpt (C' Condition) (_ :* t :* f :* Nil)
+    constructFeatOpt _ (C' Condition) (_ :* t :* f :* Nil)
         | alphaEq t f = return t
 
-    constructFeatOpt cond@(C' Condition) ((op :$ c) :* t :* f :* Nil)
+    constructFeatOpt opts cond@(C' Condition) ((op :$ c) :* t :* f :* Nil)
         | Just (C' Not) <- prjF op
-        = constructFeat cond (c :* f :* t :* Nil)
+        = constructFeat opts cond (c :* f :* t :* Nil)
 
-    constructFeatOpt a args = constructFeatUnOpt a args
+    constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 

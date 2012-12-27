@@ -144,94 +144,94 @@ instance
     ) =>
       Optimize (Array :|| Type) dom
   where
-    optimizeFeat sym@(C' Parallel) (len :* ixf :* Nil) = do
-        len' <- optimizeM len
+    optimizeFeat opts sym@(C' Parallel) (len :* ixf :* Nil) = do
+        len' <- optimizeM opts len
         let szI     = infoSize (getInfo len')
             ixRange = rangeByRange 0 (rangeSubSat szI 1)
-        ixf' <- optimizeFunction optimizeM (mkInfo ixRange) ixf
-        constructFeat sym (len' :* ixf' :* Nil)
+        ixf' <- optimizeFunction opts (optimizeM opts) (mkInfo ixRange) ixf
+        constructFeat opts sym (len' :* ixf' :* Nil)
 
-    optimizeFeat sym@(C' Sequential) (len :* inital :* step :* Nil) = do
-        len'  <- optimizeM len
-        init' <- optimizeM inital
+    optimizeFeat opts sym@(C' Sequential) (len :* inital :* step :* Nil) = do
+        len'  <- optimizeM opts len
+        init' <- optimizeM opts inital
         let szI     = infoSize (getInfo len')
             ixRange = rangeByRange 0 (rangeSubSat szI 1)
-        step' <- optimizeFunction
-            optimizeM  -- TODO (optimizeFunctionFix optimizeM (mkInfo universal))
+        step' <- optimizeFunction opts
+            (optimizeM opts)  -- TODO (optimizeFunctionFix optimizeM (mkInfo universal))
             (mkInfo ixRange)
             step
-        constructFeat sym (len' :* init' :* step' :* Nil)
+        constructFeat opts sym (len' :* init' :* step' :* Nil)
       -- TODO Should use fixed-point iteration, but `optimizeFunctionFix` only
       --      works for functions of type `a -> a`.
 
-    optimizeFeat a args = optimizeFeatDefault a args
+    optimizeFeat opts a args = optimizeFeatDefault opts a args
 
-    constructFeatOpt (C' Parallel) (len :* _ :* Nil)
+    constructFeatOpt _ (C' Parallel) (len :* _ :* Nil)
         | Just 0 <- viewLiteral len
         = return $ literalDecor []
       -- TODO Optimize when length is one. This requires a way to create an
       --      uninitialized array of length one, and setting the first element.
       --      Use `betaReduce` to apply `ixf` to the literal 0.
 
-    constructFeatOpt (C' Parallel) (len :* (lam :$ (gix :$ arr2 :$ ix)) :* Nil)
+    constructFeatOpt opts (C' Parallel) (len :* (lam :$ (gix :$ arr2 :$ ix)) :* Nil)
         | Just (SubConstr2 (Lambda v1))   <- prjLambda lam
         , Just (C' GetIx)         <- prjF gix
         , Just (C' (Variable v2)) <- prjF ix
         , v1 == v2
         , v1 `notMember` infoVars (getInfo arr2)
-        = constructFeat (c' SetLength) (len :* arr2 :* Nil)
+        = constructFeat opts (c' SetLength) (len :* arr2 :* Nil)
 
-    constructFeatOpt (C' Sequential) (len :* _ :* _ :* Nil)
+    constructFeatOpt _ (C' Sequential) (len :* _ :* _ :* Nil)
         | Just 0 <- viewLiteral len
         = return $ literalDecor []
       -- TODO Optimize when length is one. This requires a way to create an
       --      uninitialized array of length one, and setting the first element.
       --      Use `betaReduce` to apply the step function.
 
-    constructFeatOpt (C' Append) (a :* b :* Nil)
+    constructFeatOpt _ (C' Append) (a :* b :* Nil)
         | Just [] <- viewLiteral a = return b
         | Just [] <- viewLiteral b = return a
 
-    constructFeatOpt (C' GetIx) ((op :$ _ :$ ixf) :* ix :* Nil)
+    constructFeatOpt opts (C' GetIx) ((op :$ _ :$ ixf) :* ix :* Nil)
         | Just (C' Parallel) <- prjF op
-        = optimizeM $ betaReduce (stripDecor ix) (stripDecor ixf)
+        = optimizeM opts $ betaReduce (stripDecor ix) (stripDecor ixf)
           -- TODO should not need to drop the decorations
 
-    constructFeatOpt s@(C' GetIx) ((op :$ _ :$ arr) :* ix :* Nil)
+    constructFeatOpt opts s@(C' GetIx) ((op :$ _ :$ arr) :* ix :* Nil)
         | Just (C' SetLength) <- prjF op
-        = constructFeat s (arr :* ix :* Nil)
+        = constructFeat opts s (arr :* ix :* Nil)
 
-    constructFeatOpt (C' GetLength) (arr :* Nil)
+    constructFeatOpt _ (C' GetLength) (arr :* Nil)
         | Just as <- viewLiteral arr = return $ literalDecor $ genericLength as
 
-    constructFeatOpt s@(C' GetLength) ((op :$ a :$ _ :$ _) :* Nil)
+    constructFeatOpt opts s@(C' GetLength) ((op :$ a :$ _ :$ _) :* Nil)
         | Just (C' Sequential) <- prjF op = return a
-        | Just (C' SetIx)      <- prjF op = constructFeat s (a :* Nil)
+        | Just (C' SetIx)      <- prjF op = constructFeat opts s (a :* Nil)
 
-    constructFeatOpt sym@(C' GetLength) ((op :$ a :$ b) :* Nil)
+    constructFeatOpt opts sym@(C' GetLength) ((op :$ a :$ b) :* Nil)
         | Just (C' Append) <- prjF op = do
-            aLen <- constructFeat sym (a :* Nil)
-            bLen <- constructFeat sym (b :* Nil)
-            constructFeatOpt (c' Add) (aLen :* bLen :* Nil)
+            aLen <- constructFeat opts sym (a :* Nil)
+            bLen <- constructFeat opts sym (b :* Nil)
+            constructFeatOpt opts (c' Add) (aLen :* bLen :* Nil)
         | Just (C' Parallel)  <- prjF op = return a
         | Just (C' SetLength) <- prjF op = return a
 
     -- TODO remove this optimization when the singletonRange -> literal
     -- optimization in Feldspar.Core.Interpretation has been implemented (issue #27)
-    constructFeatOpt (C' GetLength) (arr :* Nil)
+    constructFeatOpt _ (C' GetLength) (arr :* Nil)
         | len :> _ <- infoSize $ getInfo arr
         , isSingleton len
         = return $ literalDecor $ lowerBound len
 
-    constructFeatOpt (C' SetLength) (len :* _ :* Nil)
+    constructFeatOpt _ (C' SetLength) (len :* _ :* Nil)
         | Just 0 <- viewLiteral len = return $ literalDecor []
 
-    constructFeatOpt (C' SetLength) ((getLength :$ arr') :* arr :* Nil)
+    constructFeatOpt _ (C' SetLength) ((getLength :$ arr') :* arr :* Nil)
         | Just (C' GetLength) <- prjF getLength
         , alphaEq arr arr'
         = return arr
 
-    constructFeatOpt (C' SetLength) (len :* arr :* Nil)
+    constructFeatOpt _ (C' SetLength) (len :* arr :* Nil)
         | rlen      <- infoSize $ getInfo len
         , rarr :> _ <- infoSize $ getInfo arr
         , isSingleton rlen
@@ -239,7 +239,7 @@ instance
         , rlen == rarr
         = return arr
 
-    constructFeatOpt a args = constructFeatUnOpt a args
+    constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 

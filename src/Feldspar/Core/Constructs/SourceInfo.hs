@@ -65,11 +65,11 @@ instance SizeProp ((Decor SourceInfo1 Identity) :|| Type)
 instance ((Decor SourceInfo1 Identity :|| Type) :<: dom, Optimize dom dom) =>
     Optimize ((Decor SourceInfo1 Identity) :|| Type) dom
   where
-    optimizeFeat (C' (Decor (SourceInfo1 src) Id)) (a :* Nil) =
-        localSource src $ optimizeM a
+    optimizeFeat opts (C' (Decor (SourceInfo1 src) Id)) (a :* Nil) =
+        localSource src $ optimizeM opts a
 
-    constructFeatOpt (C' (Decor (SourceInfo1 _) Id)) (a :* Nil) = return a
+    constructFeatOpt _ (C' (Decor (SourceInfo1 _) Id)) (a :* Nil) = return a
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 
 

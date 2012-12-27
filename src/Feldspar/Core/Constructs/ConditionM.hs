@@ -79,19 +79,19 @@ instance ( ConditionM m :<: dom
          )
       => Optimize (ConditionM m) dom
   where
-    constructFeatOpt ConditionM (c :* t :* f :* Nil)
+    constructFeatOpt _ ConditionM (c :* t :* f :* Nil)
         | Just c' <- viewLiteral c = return $ if c' then t else f
 
-    constructFeatOpt ConditionM (_ :* t :* f :* Nil)
+    constructFeatOpt _ ConditionM (_ :* t :* f :* Nil)
         | alphaEq t f = return t
 
-    constructFeatOpt cond@ConditionM ((op :$ c) :* t :* f :* Nil)
+    constructFeatOpt opts cond@ConditionM ((op :$ c) :* t :* f :* Nil)
         | Just (C' Not) <- prjF op
-        = constructFeat cond (c :* f :* t :* Nil)
+        = constructFeat opts cond (c :* f :* t :* Nil)
 
-    constructFeatOpt a args = constructFeatUnOpt a args
+    constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
-    constructFeatUnOpt ConditionM args@(_ :* t :* _ :* Nil)
+    constructFeatUnOpt opts ConditionM args@(_ :* t :* _ :* Nil)
         | Info {infoType = tType} <- getInfo t
-        = constructFeatUnOptDefaultTyp tType ConditionM args
+        = constructFeatUnOptDefaultTyp opts tType ConditionM args
 

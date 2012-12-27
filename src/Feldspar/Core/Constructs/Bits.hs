@@ -172,49 +172,49 @@ instance ( (BITS  :|| Type) :<: dom
          )
       => Optimize (BITS :|| Type) dom
   where
-    constructFeatOpt (C' BAnd) (a :* b :* Nil)
+    constructFeatOpt _ (C' BAnd) (a :* b :* Nil)
         | Just 0 <- viewLiteral a              = return a
         | Just x <- viewLiteral a, isAllOnes x = return b
         | Just 0 <- viewLiteral b              = return b
         | Just x <- viewLiteral b, isAllOnes x = return a
 
-    constructFeatOpt (C' BOr) (a :* b :* Nil)
+    constructFeatOpt _ (C' BOr) (a :* b :* Nil)
         | Just 0 <- viewLiteral a              = return b
         | Just x <- viewLiteral a, isAllOnes x = return a
         | Just 0 <- viewLiteral b              = return a
         | Just x <- viewLiteral b, isAllOnes x = return b
 
-    constructFeatOpt (C' BXor) (a :* b :* Nil)
+    constructFeatOpt opts (C' BXor) (a :* b :* Nil)
         | Just 0 <- viewLiteral a              = return b
-        | Just x <- viewLiteral a, isAllOnes x = constructFeat (c' Complement) (b :* Nil)
+        | Just x <- viewLiteral a, isAllOnes x = constructFeat opts (c' Complement) (b :* Nil)
         | Just 0 <- viewLiteral b              = return a
-        | Just x <- viewLiteral b, isAllOnes x = constructFeat (c' Complement) (a :* Nil)
+        | Just x <- viewLiteral b, isAllOnes x = constructFeat opts (c' Complement) (a :* Nil)
 
-    constructFeatOpt (C' BXor) ((xo :$ v1 :$ v2) :* v3 :* Nil)
+    constructFeatOpt _ (C' BXor) ((xo :$ v1 :$ v2) :* v3 :* Nil)
         | Just (C' BXor) <- prjF xo
         , alphaEq v2 v3
         = return v1
 
-    constructFeatOpt (C' TestBit) ((xo :$ v1 :$ v2) :* v3 :* Nil)
+    constructFeatOpt opts (C' TestBit) ((xo :$ v1 :$ v2) :* v3 :* Nil)
         | Just (C' BXor) <- prjF xo
         , Just a <- viewLiteral v2
         , Just b <- viewLiteral v3
         , a == 2 ^ b
-        = do tb <- constructFeat (c' TestBit) (v1 :* v3 :* Nil)
-             constructFeat (c' Not) (tb :* Nil)
+        = do tb <- constructFeat opts (c' TestBit) (v1 :* v3 :* Nil)
+             constructFeat opts (c' Not) (tb :* Nil)
 
-    constructFeatOpt x@(C' ShiftLU)  args = optZero x args
-    constructFeatOpt x@(C' ShiftRU)  args = optZero x args
-    constructFeatOpt x@(C' ShiftL)   args = optZero x args
-    constructFeatOpt x@(C' ShiftR)   args = optZero x args
-    constructFeatOpt x@(C' RotateLU) args = optZero x args
-    constructFeatOpt x@(C' RotateRU) args = optZero x args
-    constructFeatOpt x@(C' RotateL)  args = optZero x args
-    constructFeatOpt x@(C' RotateR)  args = optZero x args
+    constructFeatOpt opts x@(C' ShiftLU)  args = optZero opts x args
+    constructFeatOpt opts x@(C' ShiftRU)  args = optZero opts x args
+    constructFeatOpt opts x@(C' ShiftL)   args = optZero opts x args
+    constructFeatOpt opts x@(C' ShiftR)   args = optZero opts x args
+    constructFeatOpt opts x@(C' RotateLU) args = optZero opts x args
+    constructFeatOpt opts x@(C' RotateRU) args = optZero opts x args
+    constructFeatOpt opts x@(C' RotateL)  args = optZero opts x args
+    constructFeatOpt opts x@(C' RotateR)  args = optZero opts x args
 
-    constructFeatOpt feat args = constructFeatUnOpt feat args
+    constructFeatOpt opts feat args = constructFeatUnOpt opts feat args
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 
 
 isAllOnes :: (Num a, Bits a) => a -> Bool
@@ -225,10 +225,10 @@ optZero :: ( Eq b, Num b
            , Typeable a
            , Optimize feature dom
            )
-        => feature (a :-> (b :-> Full a))
+        => FeldOpts -> feature (a :-> (b :-> Full a))
         -> Args (AST (Decor Info (dom :|| Typeable))) (a :-> (b :-> Full a))
         -> Opt (AST (Decor Info (dom :|| Typeable)) (Full a))
-optZero f (a :* b :* Nil)
+optZero opts f (a :* b :* Nil)
     | Just 0 <- viewLiteral b = return a
-    | otherwise               = constructFeatUnOpt f (a :* b :* Nil)
+    | otherwise               = constructFeatUnOpt opts f (a :* b :* Nil)
 

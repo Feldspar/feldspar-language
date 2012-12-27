@@ -109,28 +109,30 @@ betaReduce new (lam :$ body)
 
 optimizeLambda :: ( CLambda Type :<: dom
                   , OptimizeSuper dom)
-    => (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
+    => FeldOpts
+    -> (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
     -> Info a
     -> CLambda Type (b :-> Full (a -> b))
     -> Args (AST (dom :|| Typeable)) (b :-> Full (a -> b))
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b))
-optimizeLambda opt info lam@(SubConstr2 (Lambda v)) (body :* Nil)
+optimizeLambda opts opt info lam@(SubConstr2 (Lambda v)) (body :* Nil)
     | Dict <- exprDict body
     = do
         body' <- localVar v info $ opt body
-        constructFeatUnOpt lam (body' :* Nil)
+        constructFeatUnOpt opts lam (body' :* Nil)
 
 -- | Assumes that the expression is a 'Lambda'
 optimizeFunction :: ( CLambda Type :<: dom
                     , OptimizeSuper dom)
-    => (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
+    => FeldOpts
+    -> (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
     -> Info a
     -> (ASTF (dom :|| Typeable) (a -> b) -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b)))
-optimizeFunction opt info a@(sym :$ body)
+optimizeFunction opts opt info a@(sym :$ body)
     | Dict <- exprDict a
     , Dict <- exprDict body
     , Just (lam@(SubConstr2 (Lambda v))) <- prjLambda sym
-    = optimizeLambda opt info lam (body :* Nil)
+    = optimizeLambda opts opt info lam (body :* Nil)
 
 {-
 optimizeFunBody :: (Lambda TypeCtx :<: dom, Optimize dom dom, Typeable a)
@@ -179,7 +181,7 @@ instance ( (Variable :|| Type) :<: dom
          , OptimizeSuper dom)
       => Optimize (Variable :|| Type) dom
   where
-    constructFeatUnOpt var@(C' (Variable v)) Nil
+    constructFeatUnOpt _ var@(C' (Variable v)) Nil
         = reader $ \env -> case Prelude.lookup v (varEnv env) of
             Nothing -> error $
                 "optimizeFeat: can't get size of free variable: v" ++ show v
@@ -194,11 +196,11 @@ instance ( CLambda Type :<: dom
     -- | Assigns a 'universal' size to the bound variable. This only makes sense
     -- for top-level lambdas. For other uses, use 'optimizeLambda' instead.
 
-    optimizeFeat lam@(SubConstr2 (Lambda v))
+    optimizeFeat opts lam@(SubConstr2 (Lambda v))
         | Dict <- exprDict lam
-        = optimizeLambda optimizeM (mkInfo universal) lam
+        = optimizeLambda opts (optimizeM opts) (mkInfo universal) lam
 
-    constructFeatUnOpt lam@(SubConstr2 (Lambda v)) (body :* Nil)
+    constructFeatUnOpt _ lam@(SubConstr2 (Lambda v)) (body :* Nil)
         | Dict <- exprDict lam
         , Info t sz vars _ <- getInfo body
         = do
@@ -218,20 +220,20 @@ instance
     ) =>
       Optimize (Let :|| Type) dom
   where
-    optimizeFeat lt@(C' Let) (a :* f :* Nil) = do
-        a' <- optimizeM a
-        f' <- optimizeFunction optimizeM (getInfo a') f
-        constructFeat lt (a' :* f' :* Nil)
+    optimizeFeat opts lt@(C' Let) (a :* f :* Nil) = do
+        a' <- optimizeM opts a
+        f' <- optimizeFunction opts (optimizeM opts) (getInfo a') f
+        constructFeat opts lt (a' :* f' :* Nil)
 
-    constructFeatOpt (C' Let) (a :* (lam :$ var) :* Nil)
+    constructFeatOpt _ (C' Let) (a :* (lam :$ var) :* Nil)
         | Just (C' (Variable v2))       <- prjF var
         , Just (SubConstr2 (Lambda v1)) <- prjLambda lam
         , v1 == v2
         = return $ fromJust $ gcast a
 
-    constructFeatOpt a args = constructFeatUnOpt a args
+    constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 
 prjLambda :: (Project (CLambda Type) dom)
           => dom sig -> Maybe (CLambda Type sig)

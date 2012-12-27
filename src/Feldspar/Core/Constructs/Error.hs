@@ -74,5 +74,5 @@ instance AlphaEq dom dom dom env => AlphaEq Error Error dom env
 instance ((Error :|| Type) :<: dom, Optimize dom dom)
     => Optimize (Error :|| Type) dom
   where
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 

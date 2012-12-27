@@ -87,9 +87,9 @@ instance SizeProp MutableArray
 
 instance (MutableArray :<: dom, Optimize dom dom) => Optimize MutableArray dom
   where
-    constructFeatUnOpt NewArr    args = constructFeatUnOptDefaultTyp (MutType $ MArrType typeRep) NewArr args
-    constructFeatUnOpt NewArr_   args = constructFeatUnOptDefaultTyp (MutType $ MArrType typeRep) NewArr_ args
-    constructFeatUnOpt GetArr    args = constructFeatUnOptDefaultTyp (MutType typeRep) GetArr args
-    constructFeatUnOpt SetArr    args = constructFeatUnOptDefaultTyp (MutType typeRep) SetArr args
-    constructFeatUnOpt ArrLength args = constructFeatUnOptDefaultTyp (MutType typeRep) ArrLength args
+    constructFeatUnOpt opts NewArr    args = constructFeatUnOptDefaultTyp opts (MutType $ MArrType typeRep) NewArr args
+    constructFeatUnOpt opts NewArr_   args = constructFeatUnOptDefaultTyp opts (MutType $ MArrType typeRep) NewArr_ args
+    constructFeatUnOpt opts GetArr    args = constructFeatUnOptDefaultTyp opts (MutType typeRep) GetArr args
+    constructFeatUnOpt opts SetArr    args = constructFeatUnOptDefaultTyp opts (MutType typeRep) SetArr args
+    constructFeatUnOpt opts ArrLength args = constructFeatUnOptDefaultTyp opts (MutType typeRep) ArrLength args
 

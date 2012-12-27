@@ -72,21 +72,21 @@ instance ( (FRACTIONAL :|| Type) :<: dom
          , OptimizeSuper dom)
       => Optimize (FRACTIONAL :|| Type) dom
   where
-    constructFeatOpt (C' DivFrac) (a :* b :* Nil)
+    constructFeatOpt _ (C' DivFrac) (a :* b :* Nil)
         | Just 1 <- viewLiteral b = return a
         | alphaEq a b = return $ literalDecor 1
 
-    constructFeatOpt (C' DivFrac) ((op :$ a :$ b) :* c :* Nil)
+    constructFeatOpt _ (C' DivFrac) ((op :$ a :$ b) :* c :* Nil)
         | Just (C' Mul) <- prjF op
         , alphaEq b c
         = return a
 
-    constructFeatOpt (C' DivFrac) ((op :$ a :$ b) :* c :* Nil)
+    constructFeatOpt _ (C' DivFrac) ((op :$ a :$ b) :* c :* Nil)
         | Just (C' Mul) <- prjF op
         , alphaEq a c
         = return b
 
-    constructFeatOpt a args = constructFeatUnOpt a args
+    constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 

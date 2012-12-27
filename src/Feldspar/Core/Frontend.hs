@@ -154,15 +154,15 @@ mkId _ _ = Nothing
 
 -- | Reification and optimization of a Feldspar program
 reifyFeld :: SyntacticFeld a
-    => BitWidth n
+    => FeldOpts -> BitWidth n
     -> a
     -> ASTF (Decor Info FeldDom) (Internal a)
-reifyFeld n = flip evalState 0 .
+reifyFeld opts n = flip evalState 0 .
     (   return
     .   optimize
     .   stripDecor
     <=< codeMotion prjDict mkId
-    .   optimize
+    .   optimize opts
     .   targetSpecialization n
     <=< reifyM
     .   fromFeld
@@ -176,10 +176,10 @@ reifyFeld n = flip evalState 0 .
 
 -- | Reification of a Feldspar program
 reifyFeldUnOpt :: SyntacticFeld a
-    => BitWidth n
+    => FeldOpts -> BitWidth n
     -> a
     -> ASTF FeldDom (Internal a)
-reifyFeldUnOpt n = flip evalState 0 .
+reifyFeldUnOpt opts n = flip evalState 0 .
     (   return
     .   targetSpecialization n
     <=< reifyM
@@ -188,32 +188,32 @@ reifyFeldUnOpt n = flip evalState 0 .
     )
 
 showExpr :: SyntacticFeld a => a -> String
-showExpr = render . reifyFeld N32
+showExpr = render . reifyFeld defaultFeldOpts N32
 
 -- | Print an optimized expression
 printExpr :: SyntacticFeld a => a -> IO ()
-printExpr = Syntactic.printExpr . reifyFeld N32
+printExpr = Syntactic.printExpr . reifyFeld defaultFeldOpts N32
 
 -- | Print an unoptimized expression
 printExprUnOpt :: SyntacticFeld a => a -> IO ()
-printExprUnOpt = Syntactic.printExpr . reifyFeldUnOpt N32
+printExprUnOpt = Syntactic.printExpr . reifyFeldUnOpt defaultFeldOpts N32
 
 showAST :: SyntacticFeld a => a -> String
-showAST = Syntactic.showAST . reifyFeld N32
+showAST = Syntactic.showAST . reifyFeld defaultFeldOpts N32
 
 drawAST :: SyntacticFeld a => a -> IO ()
-drawAST = Syntactic.drawAST . reifyFeld N32
+drawAST = Syntactic.drawAST . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
 showDecor :: SyntacticFeld a => a -> String
-showDecor = Syntactic.showDecor . reifyFeld N32
+showDecor = Syntactic.showDecor . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
 drawDecor :: SyntacticFeld a => a -> IO ()
-drawDecor = Syntactic.drawDecor . reifyFeld N32
+drawDecor = Syntactic.drawDecor . reifyFeld defaultFeldOpts N32
 
 eval :: SyntacticFeld a => a -> Internal a
-eval = evalBind . reifyFeld N32
+eval = evalBind . reifyFeld defaultFeldOpts N32
 
 evalTarget
     :: ( SyntacticFeld a
@@ -221,7 +221,7 @@ evalTarget
        , BoundedInt (GenericInt S n)
        )
     => BitWidth n -> a -> Internal a
-evalTarget n = evalBind . reifyFeld n
+evalTarget n = evalBind . reifyFeld defaultFeldOpts n
   -- TODO This doesn't work yet, because 'targetSpecialization' is not implemented
 
 desugar :: Syntax a => a -> Data (Internal a)
