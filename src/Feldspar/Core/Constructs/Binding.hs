@@ -231,6 +231,22 @@ instance
         , v1 == v2
         = return $ fromJust $ gcast a
 
+      -- (letBind (letBind e1 (\x -> e2)) (\y -> e3) ==>
+      --           letBind e1 (\x -> letBind e2 (\y-> e3))
+      --
+      -- Test case:
+      --
+      -- stestL2 :: Data Index -> Data Length -> Data [[Index]]
+      -- stestL2 m x = parallel x (\x1 -> let z = let y = x `mod` m in (y, y) in parallel 2 (\x -> fst z))
+    constructFeatOpt opts lt1@(C' Let) ((lt2 :$ x :$ (lam :$ bd)) :* y :* Nil)
+        | Just (C' Let) <- prjF lt2
+        , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
+        , SICS `inTarget` opts
+        = do
+             bb <- constructFeat opts lt1 (bd :* y :* Nil)
+             bd' <- constructFeat opts (reuseCLambda lam') (bb :* Nil)
+             constructFeatUnOpt opts (c' Let) (x :* bd' :* Nil)
+
     constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
     constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x

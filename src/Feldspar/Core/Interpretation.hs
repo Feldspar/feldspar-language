@@ -62,6 +62,8 @@ module Feldspar.Core.Interpretation
     , SomeType (..)
     , Env (..)
     , FeldOpts (..)
+    , Target (..)
+    , inTarget
     , defaultFeldOpts
     , localVar
     , localSource
@@ -226,6 +228,7 @@ data Env = Env
 
 -- | Possible compilation targets.
 data Target = RegionInf | SICS
+  deriving Eq
 
 -- | A record with options for explicit passing in rewrite rules.
 data FeldOpts = FeldOpts
@@ -235,6 +238,10 @@ data FeldOpts = FeldOpts
 -- | Default options.
 defaultFeldOpts :: FeldOpts
 defaultFeldOpts = FeldOpts { targets = [] }
+
+-- | Decide whether a Target is enabled in FeldOpts.
+inTarget :: Target -> FeldOpts -> Bool
+inTarget t opts = t `elem` (targets opts)
 
 -- | Initial environment
 initEnv :: Env
