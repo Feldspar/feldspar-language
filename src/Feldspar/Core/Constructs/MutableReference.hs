@@ -92,14 +92,14 @@ instance ( MutableReference :<: dom
       => Optimize MutableReference dom
   where
     -- modifyRef _ id ==> return ()
-    constructFeatUnOpt ModRef (_ :* (lam :$ body) :* Nil)
+    constructFeatUnOpt opts ModRef (_ :* (lam :$ body) :* Nil)
        | Just (SubConstr2 (Lambda v1)) <- prjLambda lam
        , Just (C' (Variable v2)) <- prjF body
        , v1 == v2
-       = constructFeatUnOptDefaultTyp (MutType UnitType) Return (literalDecor () :* Nil)
+       = constructFeatUnOptDefaultTyp opts (MutType UnitType) Return (literalDecor () :* Nil)
 
-    constructFeatUnOpt NewRef args = constructFeatUnOptDefaultTyp (MutType $ RefType typeRep) NewRef args
-    constructFeatUnOpt GetRef args = constructFeatUnOptDefaultTyp (MutType typeRep) GetRef args
-    constructFeatUnOpt SetRef args = constructFeatUnOptDefaultTyp (MutType typeRep) SetRef args
-    constructFeatUnOpt ModRef args = constructFeatUnOptDefaultTyp (MutType typeRep) ModRef args
+    constructFeatUnOpt opts NewRef args = constructFeatUnOptDefaultTyp opts (MutType $ RefType typeRep) NewRef args
+    constructFeatUnOpt opts GetRef args = constructFeatUnOptDefaultTyp opts (MutType typeRep) GetRef args
+    constructFeatUnOpt opts SetRef args = constructFeatUnOptDefaultTyp opts (MutType typeRep) SetRef args
+    constructFeatUnOpt opts ModRef args = constructFeatUnOptDefaultTyp opts (MutType typeRep) ModRef args
 

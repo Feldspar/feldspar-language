@@ -134,17 +134,17 @@ instance ( LoopM Mut :<: dom
          )
       => Optimize (LoopM Mut) dom
   where
-    optimizeFeat for@For (len :* step :* Nil) = do
-        len' <- optimizeM len
+    optimizeFeat opts for@For (len :* step :* Nil) = do
+        len' <- optimizeM opts len
         let szI     = infoSize (getInfo len')
             ixRange = rangeByRange 0 (rangeSubSat szI 1)
-        step' <- optimizeFunction optimizeM (mkInfo ixRange) step
+        step' <- optimizeFunction opts (optimizeM opts) (mkInfo ixRange) step
         case getInfo step' of
-          Info{} -> constructFeat for (len' :* step' :* Nil)
+          Info{} -> constructFeat opts for (len' :* step' :* Nil)
 
-    optimizeFeat a args = optimizeFeatDefault a args
+    optimizeFeat opts a args = optimizeFeatDefault opts a args
 
-    constructFeatOpt For (len :* (lam1 :$ (bnd :$ getRefV2@(grf :$ ref) :$ bd@(lam3 :$ body))) :* Nil)
+    constructFeatOpt opts For (len :* (lam1 :$ (bnd :$ getRefV2@(grf :$ ref) :$ bd@(lam3 :$ body))) :* Nil)
       | Just (SubConstr2 (Lambda v1)) <- prjLambda lam1
       , Just lam3'@(SubConstr2 (Lambda v3)) <- prjLambda lam3
       , Just Bind <- prjMonad monadProxy bnd
@@ -153,17 +153,17 @@ instance ( LoopM Mut :<: dom
       , v1 /= v2
       , v1 `notMember` fvars
       =  do
-          loop      <- constructFeat For (len :* (lam1 :$ body) :* Nil)
-          hoistedV3 <- constructFeat (reuseCLambda lam3') (loop :* Nil)
+          loop      <- constructFeat opts For (len :* (lam1 :$ body) :* Nil)
+          hoistedV3 <- constructFeat opts (reuseCLambda lam3') (loop :* Nil)
           -- Do not optimize right now; the v3 binding gets lost.
-          constructFeatUnOpt Bind (getRefV2 :* hoistedV3 :* Nil)
+          constructFeatUnOpt opts Bind (getRefV2 :* hoistedV3 :* Nil)
      where
       fvars = infoVars $ getInfo bd
 
-    constructFeatOpt feat args = constructFeatUnOpt feat args
+    constructFeatOpt opts feat args = constructFeatUnOpt opts feat args
 
-    constructFeatUnOpt While args = constructFeatUnOptDefaultTyp voidTypeRep While args
-    constructFeatUnOpt For   args = constructFeatUnOptDefaultTyp voidTypeRep For   args
+    constructFeatUnOpt opts While args = constructFeatUnOptDefaultTyp opts voidTypeRep While args
+    constructFeatUnOpt opts For   args = constructFeatUnOptDefaultTyp opts voidTypeRep For   args
 
 instance ( (Literal  :|| Type) :<: dom
          , (Loop     :|| Type) :<: dom
@@ -173,13 +173,13 @@ instance ( (Literal  :|| Type) :<: dom
          )
       => Optimize (Loop :|| Type) dom
   where
-    optimizeFeat sym@(C' ForLoop) (len :* initial :* step :* Nil) = do
-        len'  <- optimizeM len
-        init' <- optimizeM initial
+    optimizeFeat opts sym@(C' ForLoop) (len :* initial :* step :* Nil) = do
+        len'  <- optimizeM opts len
+        init' <- optimizeM opts initial
         let szI     = infoSize (getInfo len')
             ixRange = Range 0 (upperBound szI-1)
-        step' <- optimizeFunction
-            (optimizeFunction optimizeM (mkInfoTy typeRep))
+        step' <- optimizeFunction opts
+            (optimizeFunction opts (optimizeM opts) (mkInfoTy typeRep))
             -- (optimizeFunctionFix optimizeM (getInfo init'))
             -- TODO The above optimization is unsound, as shown by the following
             --      program:
@@ -187,18 +187,18 @@ instance ( (Literal  :|| Type) :<: dom
             --        drawAST $ fold max (value minBound) -:: tVec1 tWordN >-> id
             (mkInfo ixRange)
             step
-        constructFeat sym (len' :* init' :* step' :* Nil)
+        constructFeat opts sym (len' :* init' :* step' :* Nil)
 
-    optimizeFeat sym@(C' WhileLoop) (initial :* cond :* body :* Nil) = do
-        init' <- optimizeM initial
-        body' <- optimizeFunction optimizeM (mkInfoTy typeRep) body
+    optimizeFeat opts sym@(C' WhileLoop) (initial :* cond :* body :* Nil) = do
+        init' <- optimizeM opts initial
+        body' <- optimizeFunction opts (optimizeM opts) (mkInfoTy typeRep) body
         -- body' <- optimizeFunctionFix optimizeM info body
         -- TODO See comment above
 
         let info  = getInfo init'
         let info' = info { infoSize = infoSize (getInfo body') }
-        cond' <- optimizeFunction optimizeM info' cond
-        constructFeat sym (init' :* cond' :* body' :* Nil)
+        cond' <- optimizeFunction opts (optimizeM opts) info' cond
+        constructFeat opts sym (init' :* cond' :* body' :* Nil)
 
 {-
     constructFeatOpt (C' ForLoop) (len :* initial :* step :* Nil)
@@ -220,7 +220,7 @@ instance ( (Literal  :|| Type) :<: dom
       -- TODO ForLoop len init (flip (const f)) ==> step (len - 1) init
       -- This optimization requires that the len > 0
 
-    constructFeatOpt feat args = constructFeatUnOpt feat args
+    constructFeatOpt opts feat args = constructFeatUnOpt opts feat args
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 

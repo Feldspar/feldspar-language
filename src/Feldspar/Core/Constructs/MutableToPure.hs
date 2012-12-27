@@ -97,6 +97,6 @@ instance SizeProp MutableToPure
 
 instance (MutableToPure :<: dom, Optimize dom dom) => Optimize MutableToPure dom
   where
-    constructFeatUnOpt RunMutableArray args = constructFeatUnOptDefaultTyp typeRep RunMutableArray args
-    constructFeatUnOpt WithArray args       = constructFeatUnOptDefaultTyp (MutType typeRep) WithArray args
+    constructFeatUnOpt opts RunMutableArray args = constructFeatUnOptDefaultTyp opts typeRep RunMutableArray args
+    constructFeatUnOpt opts WithArray args       = constructFeatUnOptDefaultTyp opts (MutType typeRep) WithArray args
 

@@ -85,39 +85,39 @@ instance ( (COMPLEX :|| Type) :<: dom
          , OptimizeSuper dom)
       => Optimize (COMPLEX :|| Type) dom
   where
-    constructFeatOpt (C' MkComplex) ((rp :$ a) :* (ip :$ b) :* Nil)
+    constructFeatOpt _ (C' MkComplex) ((rp :$ a) :* (ip :$ b) :* Nil)
         | Just (C' RealPart) <- prjF rp
         , Just (C' ImagPart) <- prjF ip
         , alphaEq a b
         = return a
 
-    constructFeatOpt (C' RealPart) ((mkc :$ r :$ _) :* Nil)
+    constructFeatOpt _ (C' RealPart) ((mkc :$ r :$ _) :* Nil)
         | Just (C' MkComplex) <- prjF mkc
         = return r
 
-    constructFeatOpt (C' ImagPart) ((mkc :$ _ :$ i) :* Nil)
+    constructFeatOpt _ (C' ImagPart) ((mkc :$ _ :$ i) :* Nil)
         | Just (C' MkComplex) <- prjF mkc
         = return i
 
-    constructFeatOpt (C' MkPolar) ((mag :$ a) :* (ph :$ b) :* Nil)
+    constructFeatOpt _ (C' MkPolar) ((mag :$ a) :* (ph :$ b) :* Nil)
         | Just (C' Magnitude) <- prjF mag
         , Just (C' Phase)     <- prjF ph
         , alphaEq a b
         = return a
 
-    constructFeatOpt (C' Magnitude) ((mkp :$ m :$ _) :* Nil)
+    constructFeatOpt _ (C' Magnitude) ((mkp :$ m :$ _) :* Nil)
         | Just (C' MkPolar) <- prjF mkp
         = return m
 
-    constructFeatOpt (C' Phase) ((mkp :$ _ :$ p) :* Nil)
+    constructFeatOpt _ (C' Phase) ((mkp :$ _ :$ p) :* Nil)
         | Just (C' MkPolar) <- prjF mkp
         = return p
 
-    constructFeatOpt (C' Conjugate) ((conj :$ a) :* Nil)
+    constructFeatOpt _ (C' Conjugate) ((conj :$ a) :* Nil)
         | Just (C' Conjugate) <- prjF conj
         = return a
 
-    constructFeatOpt sym args = constructFeatUnOpt sym args
+    constructFeatOpt opts sym args = constructFeatUnOpt opts sym args
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 

@@ -72,11 +72,11 @@ instance ( (PropSize :|| Type) :<: dom
          , OptimizeSuper dom)
       => Optimize (PropSize :|| Type) dom
   where
-    constructFeatOpt (C' (PropSize prop)) (a :* b :* Nil) =
+    constructFeatOpt _ (C' (PropSize prop)) (a :* b :* Nil) =
         return $ updateDecor (f (prop (infoSize $ getInfo a))) b
       where
         f :: Lattice (Size b) => Size b -> Info b -> Info b
         f newSize info = info {infoSize = infoSize info /\ newSize}
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 

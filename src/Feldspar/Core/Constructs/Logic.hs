@@ -85,32 +85,32 @@ instance ( (Logic :|| Type) :<: dom
          )
       => Optimize (Logic :|| Type) dom
   where
-    constructFeatOpt (C' And) (a :* b :* Nil)
+    constructFeatOpt _ (C' And) (a :* b :* Nil)
         | Just True  <- viewLiteral a = return b
         | Just False <- viewLiteral a = return a
         | Just True  <- viewLiteral b = return a
         | Just False <- viewLiteral b = return b
         | a `alphaEq` b               = return a
 
-    constructFeatOpt (C' Or) (a :* b :* Nil)
+    constructFeatOpt _ (C' Or) (a :* b :* Nil)
         | Just True  <- viewLiteral a = return a
         | Just False <- viewLiteral a = return b
         | Just True  <- viewLiteral b = return b
         | Just False <- viewLiteral b = return a
         | a `alphaEq` b               = return a
 
-    constructFeatOpt (C' Not) ((op :$ a) :* Nil)
+    constructFeatOpt _ (C' Not) ((op :$ a) :* Nil)
         | Just (C' Not) <- prjF op = return a
 
-    constructFeatOpt (C' Not) ((op :$ a :$ b) :* Nil)
-        | Just (C' Equal)    <- prjF op = constructFeat (c' NotEqual) (a :* b :* Nil)
-        | Just (C' NotEqual) <- prjF op = constructFeat (c' Equal)    (a :* b :* Nil)
-        | Just (C' LTH)      <- prjF op = constructFeat (c' GTE)      (a :* b :* Nil)
-        | Just (C' GTH)      <- prjF op = constructFeat (c' LTE)      (a :* b :* Nil)
-        | Just (C' LTE)      <- prjF op = constructFeat (c' GTH)      (a :* b :* Nil)
-        | Just (C' GTE)      <- prjF op = constructFeat (c' LTH)      (a :* b :* Nil)
+    constructFeatOpt opts (C' Not) ((op :$ a :$ b) :* Nil)
+        | Just (C' Equal)    <- prjF op = constructFeat opts (c' NotEqual) (a :* b :* Nil)
+        | Just (C' NotEqual) <- prjF op = constructFeat opts (c' Equal)    (a :* b :* Nil)
+        | Just (C' LTH)      <- prjF op = constructFeat opts (c' GTE)      (a :* b :* Nil)
+        | Just (C' GTH)      <- prjF op = constructFeat opts (c' LTE)      (a :* b :* Nil)
+        | Just (C' LTE)      <- prjF op = constructFeat opts (c' GTH)      (a :* b :* Nil)
+        | Just (C' GTE)      <- prjF op = constructFeat opts (c' LTH)      (a :* b :* Nil)
 
-    constructFeatOpt a args = constructFeatUnOpt a args
+    constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 

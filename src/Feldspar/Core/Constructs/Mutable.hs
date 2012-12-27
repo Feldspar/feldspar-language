@@ -99,17 +99,17 @@ instance ( MONAD Mut :<: dom
          , OptimizeSuper dom)
       => Optimize (MONAD Mut) dom
   where
-    optimizeFeat bnd@Bind (ma :* f :* Nil) = do
-        ma' <- optimizeM ma
+    optimizeFeat opts bnd@Bind (ma :* f :* Nil) = do
+        ma' <- optimizeM opts ma
         case getInfo ma' of
           Info (MutType ty) sz vs src -> do
-            f' <- optimizeFunction optimizeM (Info ty sz vs src) f
+            f' <- optimizeFunction opts (optimizeM opts) (Info ty sz vs src) f
             case getInfo f' of
-              Info{} -> constructFeat bnd (ma' :* f' :* Nil)
+              Info{} -> constructFeat opts bnd (ma' :* f' :* Nil)
 
-    optimizeFeat a args = optimizeFeatDefault a args
+    optimizeFeat opts a args = optimizeFeatDefault opts a args
 
-    constructFeatOpt Bind (ma :* (lam :$ (Sym (Decor _ ret) :$ var)) :* Nil)
+    constructFeatOpt _ Bind (ma :* (lam :$ (Sym (Decor _ ret) :$ var)) :* Nil)
       | Just (SubConstr2 (Lambda v1)) <- prjLambda lam
       , Just Return                   <- prjMonad monadProxy ret
       , Just (C' (Variable v2))       <- prjF var
@@ -117,53 +117,53 @@ instance ( MONAD Mut :<: dom
       , Just ma' <- gcast ma
       = return ma'
 
-    constructFeatOpt Bind (ma :* (lam :$ body) :* Nil)
+    constructFeatOpt opts Bind (ma :* (lam :$ body) :* Nil)
         | Just (SubConstr2 (Lambda v)) <- prjLambda lam
         , v `notMember` vars
-        = constructFeat Then (ma :* body :* Nil)
+        = constructFeat opts Then (ma :* body :* Nil)
       where
         vars = infoVars $ getInfo body
 
        -- (bind e1 (\x -> e2) >> e3 ==> bind e1 (\x -> e2 >> e3)
-    constructFeatOpt Then ((Sym (Decor _ bnd) :$ x :$ (lam :$ bd)) :* y :* Nil)
+    constructFeatOpt opts Then ((Sym (Decor _ bnd) :$ x :$ (lam :$ bd)) :* y :* Nil)
         | Just Bind <- prjMonad monadProxy bnd
         , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
         = do
-             bb <- constructFeat Then (bd :* y :* Nil)
-             bd' <- constructFeat (reuseCLambda lam') (bb :* Nil)
-             constructFeatUnOpt Bind (x :* bd' :* Nil)
+             bb <- constructFeat opts Then (bd :* y :* Nil)
+             bd' <- constructFeat opts (reuseCLambda lam') (bb :* Nil)
+             constructFeatUnOpt opts Bind (x :* bd' :* Nil)
 
       -- (bind (bind e1 (\x -> e2)) (\y -> e3) => bind e1 (\x -> bind e2 (\y-> e3))
-    constructFeatOpt Bind ((Sym (Decor _ bnd) :$ x :$ (lam :$ bd)) :* y :* Nil)
+    constructFeatOpt opts Bind ((Sym (Decor _ bnd) :$ x :$ (lam :$ bd)) :* y :* Nil)
         | Just Bind <- prjMonad monadProxy bnd
         , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
         = do
-             bb <- constructFeat Bind (bd :* y :* Nil)
-             bd' <- constructFeat (reuseCLambda lam') (bb :* Nil)
-             constructFeatUnOpt Bind (x :* bd' :* Nil)
+             bb <- constructFeat opts Bind (bd :* y :* Nil)
+             bd' <- constructFeat opts (reuseCLambda lam') (bb :* Nil)
+             constructFeatUnOpt opts Bind (x :* bd' :* Nil)
 
       -- return x >> mb ==> mb
-    constructFeatOpt Then ((Sym (Decor _ ret) :$ _) :* mb :* Nil)
+    constructFeatOpt _ Then ((Sym (Decor _ ret) :$ _) :* mb :* Nil)
         | Just Return <- prjMonad monadProxy ret
         = return mb
 
       -- ma >> return () ==> ma
-    constructFeatOpt Then (ma :* (Sym (Decor info ret) :$ u) :* Nil)
+    constructFeatOpt _ Then (ma :* (Sym (Decor info ret) :$ u) :* Nil)
         | Just Return <- prjMonad monadProxy ret
         , Just TypeEq <- typeEq (infoType $ getInfo ma) (MutType UnitType)
         , Just TypeEq <- typeEq (infoType info)         (MutType UnitType)
         , Just ()     <- viewLiteral u
         = return ma
 
-    constructFeatOpt a args = constructFeatUnOpt a args
+    constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
-    constructFeatUnOpt Return args@(a :* Nil)
+    constructFeatUnOpt opts Return args@(a :* Nil)
         | Info {infoType = t} <- getInfo a
-        = constructFeatUnOptDefaultTyp (MutType t) Return args
+        = constructFeatUnOptDefaultTyp opts (MutType t) Return args
 
-    constructFeatUnOpt Bind args@(_ :* f :* Nil)
+    constructFeatUnOpt opts Bind args@(_ :* f :* Nil)
         | Info {infoType = FunType _ t} <- getInfo f
-        = constructFeatUnOptDefaultTyp t Bind args
+        = constructFeatUnOptDefaultTyp opts t Bind args
       -- TODO The match on `FunType` is total with the current definition of
       --      `TypeRep`, but there's no guarantee this will remain true in the
       --      future. One way around that would be to match `f` against
@@ -171,16 +171,16 @@ instance ( MONAD Mut :<: dom
       --      the future). Another option would be to add a context parameter to
       --      `MONAD` to be able to add the constraint `Type a`.
 
-    constructFeatUnOpt Then args@(_ :* mb :* Nil)
+    constructFeatUnOpt opts Then args@(_ :* mb :* Nil)
         | Info {infoType = t} <- getInfo mb
-        = constructFeatUnOptDefaultTyp t Then args
+        = constructFeatUnOptDefaultTyp opts t Then args
 
-    constructFeatUnOpt When args =
-        constructFeatUnOptDefaultTyp voidTypeRep When args
+    constructFeatUnOpt opts When args =
+        constructFeatUnOptDefaultTyp opts voidTypeRep When args
 
 instance (Mutable :<: dom, MONAD Mut :<: dom, OptimizeSuper dom) => Optimize Mutable dom
   where
-    constructFeatUnOpt Run ((ret :$ a) :* Nil)
+    constructFeatUnOpt _ Run ((ret :$ a) :* Nil)
         | Just Return <- prjMonad monadProxy ret = return a
-    constructFeatUnOpt Run args = constructFeatUnOptDefault Run args
+    constructFeatUnOpt opts Run args = constructFeatUnOptDefault opts Run args
 

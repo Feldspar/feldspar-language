@@ -68,5 +68,5 @@ instance ( (NoInline :|| Type) :<: dom
          , OptimizeSuper dom)
       => Optimize (NoInline :|| Type) dom
   where
-    constructFeatUnOpt x@(C' _) = constructFeatUnOptDefault x
+    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
 

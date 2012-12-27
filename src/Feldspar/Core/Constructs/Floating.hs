@@ -104,5 +104,5 @@ instance ( (FLOATING :|| Type) :<: dom
          , OptimizeSuper dom)
       => Optimize (FLOATING :|| Type) dom
   where
-    constructFeatUnOpt a@(C' _) = constructFeatUnOptDefault a
+    constructFeatUnOpt opts a@(C' _) = constructFeatUnOptDefault opts a
 
