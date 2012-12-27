@@ -110,7 +110,7 @@ monadProxy = P
 instance SizeProp (MONAD Par)
   where
     sizeProp Return (WrapFull a :* Nil)      = infoSize a
-    sizeProp Bind   (_ :* WrapFull f :* Nil) = infoSize f
+    sizeProp Bind   (_ :* WrapFull f :* Nil) = snd $ infoSize f
     sizeProp Then   (_ :* WrapFull b :* Nil) = infoSize b
     sizeProp When   _                        = AnySize
 
@@ -164,10 +164,11 @@ instance ( MONAD Par :<: dom
     constructFeatUnOpt Return args@(a :* Nil)
         | Info {infoType = t} <- getInfo a
         = constructFeatUnOptDefaultTyp (ParType t) Return args
-
+{-
     constructFeatUnOpt Bind args@(_ :* f :* Nil)
         | Info {infoType = FunType _ t} <- getInfo f
         = constructFeatUnOptDefaultTyp t Bind args
+-}
       -- TODO The match on `FunType` is total with the current definition of
       --      `TypeRep`, but there's no guarantee this will remain true in the
       --      future. One way around that would be to match `f` against

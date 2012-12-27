@@ -111,9 +111,9 @@ instance Sharable Array
 instance SizeProp (Array :|| Type)
   where
     sizeProp (C' Parallel) (WrapFull len :* WrapFull ixf :* Nil) =
-        infoSize len :> infoSize ixf
+        infoSize len :> snd (infoSize ixf)
     sizeProp (C' Sequential) (WrapFull len :* _ :* WrapFull step :* Nil) =
-        infoSize len :> fst (infoSize step)
+        infoSize len :> fst (snd $ snd $ infoSize step)
     sizeProp (C' Append) (WrapFull arra :* WrapFull arrb :* Nil) =
         (alen + blen) :> (aelem \/ belem)
       where

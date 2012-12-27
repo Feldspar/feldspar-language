@@ -119,8 +119,8 @@ instance SizeProp (LoopM m)
 
 instance SizeProp (Loop :|| Type)
   where
-    sizeProp (C' ForLoop)   (_ :* _ :* WrapFull step :* Nil) = infoSize step
-    sizeProp (C' WhileLoop) (_ :* _ :* WrapFull step :* Nil) = infoSize step
+    sizeProp (C' ForLoop)   (_ :* _ :* WrapFull step :* Nil) = snd $ snd $ infoSize step
+    sizeProp (C' WhileLoop) (_ :* _ :* WrapFull step :* Nil) = snd $ infoSize step
 
 
 instance ( LoopM Mut :<: dom
@@ -196,7 +196,7 @@ instance ( (Literal  :|| Type) :<: dom
         -- TODO See comment above
 
         let info  = getInfo init'
-        let info' = info { infoSize = infoSize (getInfo body') }
+        let info' = info { infoSize = snd $ infoSize (getInfo body') }
         cond' <- optimizeFunction optimizeM info' cond
         constructFeat sym (init' :* cond' :* body' :* Nil)
 

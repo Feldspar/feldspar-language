@@ -82,7 +82,7 @@ instance Sharable (MONAD Mut)
 instance SizeProp (MONAD Mut)
   where
     sizeProp Return (WrapFull a :* Nil)      = infoSize a
-    sizeProp Bind   (_ :* WrapFull f :* Nil) = infoSize f
+    sizeProp Bind   (_ :* WrapFull f :* Nil) = snd $ infoSize f
     sizeProp Then   (_ :* WrapFull b :* Nil) = infoSize b
     sizeProp When   _                        = AnySize
 
@@ -160,7 +160,7 @@ instance ( MONAD Mut :<: dom
     constructFeatUnOpt Return args@(a :* Nil)
         | Info {infoType = t} <- getInfo a
         = constructFeatUnOptDefaultTyp (MutType t) Return args
-
+{-
     constructFeatUnOpt Bind args@(_ :* f :* Nil)
         | Info {infoType = FunType _ t} <- getInfo f
         = constructFeatUnOptDefaultTyp t Bind args
@@ -170,7 +170,7 @@ instance ( MONAD Mut :<: dom
       --      `Lambda`, but that is also a partial match (at least possibly, in
       --      the future). Another option would be to add a context parameter to
       --      `MONAD` to be able to add the constraint `Type a`.
-
+-}
     constructFeatUnOpt Then args@(_ :* mb :* Nil)
         | Info {infoType = t} <- getInfo mb
         = constructFeatUnOptDefaultTyp t Then args

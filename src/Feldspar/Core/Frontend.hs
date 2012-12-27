@@ -145,7 +145,7 @@ mkId a b | simpleMatch (const . sharable) a
          , Just Dict <- typeDict a
          = Just InjDict
              { injVariable = Decor (getInfo a) . injC . c' . Variable
-             , injLambda   = let info = ((mkInfoTy (FunType typeRep typeRep)) { infoSize = infoSize (getInfo b)})
+             , injLambda   = let info = ((mkInfoTy (FunType typeRep typeRep)) { infoSize = (infoSize (getInfo a), infoSize (getInfo b))})
                              in Decor info . injC . cLambda
              , injLet      = Decor (getInfo b) $ injC $ c' Let
              }
