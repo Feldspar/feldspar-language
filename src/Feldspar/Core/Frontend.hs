@@ -159,6 +159,8 @@ reifyFeld :: SyntacticFeld a
     -> ASTF (Decor Info FeldDom) (Internal a)
 reifyFeld n = flip evalState 0 .
     (   return
+    .   optimize
+    .   stripDecor
     <=< codeMotion prjDict mkId
     .   optimize
     .   targetSpecialization n
