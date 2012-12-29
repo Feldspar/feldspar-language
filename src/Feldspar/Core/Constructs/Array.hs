@@ -137,9 +137,11 @@ instance SizeProp (Array :|| Type)
 instance
     ( (Array :|| Type) :<: dom
     , (NUM   :|| Type) :<: dom
+    , (Let   :|| Type) :<: dom
     , (ORD   :|| Type) :<: dom
     , (Variable :|| Type) :<: dom
     , CLambda Type :<: dom
+    , Project (Let :|| Type) dom
     , OptimizeSuper dom
     ) =>
       Optimize (Array :|| Type) dom
@@ -165,6 +167,21 @@ instance
       --      works for functions of type `a -> a`.
 
     optimizeFeat opts a args = optimizeFeatDefault opts a args
+
+    -- parallel l (\x -> let y = e in e') => let y = e in parallel l (\x -> e')
+    --
+    -- Test case: nothing simple. Look at the index calculation in the
+    -- outer second loop in turboDecode.
+    constructFeatOpt opts sym@(C' Parallel) (len :* (lam1 :$ (lt :$ e1 :$ (lam2 :$ bd))) :* Nil)
+        | Just lam1'@(SubConstr2 (Lambda v1)) <- prjLambda lam1
+        , Just lam2'@(SubConstr2 (Lambda v2)) <- prjLambda lam2
+        , Just (C' Let) <- prjF lt
+        , v1 `notMember` infoVars (getInfo e1)
+        , SICS `inTarget` opts
+        = do
+             sym' <- constructFeat opts sym (len :* (lam1 :$ bd) :* Nil)
+             sym'' <- constructFeat opts (reuseCLambda lam2') (sym' :* Nil)
+             constructFeat opts (c' Let) (e1 :* sym'' :* Nil)
 
     constructFeatOpt _ (C' Parallel) (len :* _ :* Nil)
         | Just 0 <- viewLiteral len
