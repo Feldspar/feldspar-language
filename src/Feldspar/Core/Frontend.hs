@@ -50,6 +50,8 @@ module Feldspar.Core.Frontend
 
     , module Frontend
 
+    , FeldOpts
+    , defaultFeldOpts
     , reifyFeld
     , reifyFeldUnOpt
     , showExpr
@@ -154,7 +156,8 @@ mkId _ _ = Nothing
 
 -- | Reification and optimization of a Feldspar program
 reifyFeld :: SyntacticFeld a
-    => FeldOpts -> BitWidth n
+    => FeldOpts
+    -> BitWidth n
     -> a
     -> ASTF (Decor Info FeldDom) (Internal a)
 reifyFeld opts n = flip evalState 0 .
