@@ -54,9 +54,9 @@ not = sugarSymF Not
 
 -- | Lazy conjunction, second argument only evaluated if necessary
 (&&*) :: Data Bool -> Data Bool -> Data Bool
-a &&* b =  a ? (b,false)
+a &&* b =  a ? b $ false
 
 -- | Lazy disjunction, second argument only evaluated if necessary
 (||*) :: Data Bool -> Data Bool -> Data Bool
-a ||* b = a ? (true,b)
+a ||* b = a ? true $ b
 

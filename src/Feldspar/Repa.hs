@@ -329,12 +329,12 @@ stencil vec
     _ :. height :. width = extent vec
 
     update get d@(sh :. i :. j)
-      = isBoundary i j ?
-        (get d
-        , (get (sh :. (i-1) :. j)
-         + get (sh :. i     :. (j-1))
-         + get (sh :. (i+1) :. j)
-         + get (sh :. i     :. (j+1))) / 4)
+      = isBoundary i j
+        ? get d
+        $ ( get (sh :. (i-1) :. j)
+          + get (sh :. i     :. (j-1))
+          + get (sh :. (i+1) :. j)
+          + get (sh :. i     :. (j+1))) / 4
 
     isBoundary i j
       =  (i == 0) || (i >= width  - 1)
@@ -390,8 +390,8 @@ newLen l (Vector (Z :. _) ixf) = Vector (Z :. l) ixf
 
 (++) :: Syntax a => Vector DIM1 a -> Vector DIM1 a -> Vector DIM1 a
 Vector (Z :. l1) ixf1 ++ Vector (Z :. l2) ixf2
-    = Vector (Z :. l1 + l2) (\ (Z :. i) -> i < l1 ? (ixf1 (Z :. i)
-                                                    ,ixf2 (Z :. (i + l1))))
+    = Vector (Z :. l1 + l2) (\ (Z :. i) -> i < l1 ? ixf1 (Z :. i)
+                                                  $ ixf2 (Z :. (i + l1)))
 
 infixr 5 ++
 
@@ -450,7 +450,7 @@ enumFromTo :: Data Index -> Data Index -> Vector DIM1 (Data Index)
 enumFromTo 1 n = indexed n (+1)
 enumFromTo m n = indexed l (+m)
   where
-    l = (n<m) ? (0, n-m+1)
+    l = (n<m) ? 0 $ (n-m+1)
   -- TODO The first case avoids the comparison when `m` is 1. However, it
   --      cover the case when `m` is a complicated expression that is later
   --      optimized to the literal 1. The same holds for other such

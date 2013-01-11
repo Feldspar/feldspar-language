@@ -100,7 +100,7 @@ mapNth f n k (Stream next init) = Stream newNext newInit
     newNext (st,r) = do a <- next st
                         i <- getRef r
                         setRef r ((i+1) `mod` n)
-                        return (i==k?(f a,a))
+                        return (i==k ? f a $ a)
 
 -- | 'maps fs str' uses one of the functions from 'fs' successively to modify
 --   the elements of 'str'
@@ -119,7 +119,7 @@ maps fs (Stream next initial) = Stream newNext newInit
       setRef r ((i+1) `mod` P.fromIntegral (P.length fs))
       return $
         (P.foldr (\ (k,f) x ->
-                            i==(P.fromIntegral k)?(f a,x)))
+                            i==(P.fromIntegral k) ? f a $ x))
          a (P.zip [1..] fs)
 
 -- | 'intersperse a str' inserts an 'a' between each element of the stream

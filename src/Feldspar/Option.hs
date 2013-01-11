@@ -61,7 +61,7 @@ instance Functor Option
 instance Monad Option
   where
     return = some
-    a >>= f = b { isSome = isSome a ? (isSome b, false) }
+    a >>= f = b { isSome = isSome a ? isSome b $ false }
       where
         b = f (fromSome a)
 
@@ -82,13 +82,12 @@ none :: Syntax a => Option a
 none = Option false (err "fromSome: none")
 
 option :: Syntax b => b -> (a -> b) -> Option a -> b
-option noneCase someCase opt = isSome opt ?
-    ( someCase (fromSome opt)
-    , noneCase
-    )
+option noneCase someCase opt = isSome opt
+    ? someCase (fromSome opt)
+    $ noneCase
 
 oplus :: Syntax a => Option a -> Option a -> Option a
-oplus a b = isSome a ? (a,b)
+oplus a b = isSome a ? a $ b
 
 
 

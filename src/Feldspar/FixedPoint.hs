@@ -186,7 +186,7 @@ class (Splittable t) => Fixable t where
     getExp :: t -> Data IntN
 
 instance (Bits a) => Fixable (Fix a) where
-    fix e' (Fix e m) = Fix e' $ e' > e ? (m .>>. i2n (e' - e), m .<<. i2n (e - e'))
+    fix e' (Fix e m) = Fix e' $ e' > e ? (m .>>. i2n (e' - e)) $ (m .<<. i2n (e - e'))
     getExp = Feldspar.FixedPoint.exponent
 
 instance Fixable (Data Float) where
@@ -231,7 +231,7 @@ fixFold fun ini vec = retrieve (static, fold fun' ini' vec)
 -- | A version of branching for fixed point algorithms
 infix 1 ?!
 (?!) :: forall a . (Syntax a, Splittable a) => Data Bool -> (a,a) -> a
-cond ?! (x,y) = retrieve (comm, cond ? (x',y'))
+cond ?! (x,y) = retrieve (comm, cond ? x' $ y')
   where
     comm = common x y
     x' = snd $ store $ patch comm x

@@ -118,7 +118,7 @@ mergeSegments vec = Indexed (length vec) (ixFun (segments vec)) Empty
     ixFun (Empty : vs)           = ixFun vs
     ixFun (Indexed l ixf _ : vs) = case vs of
       [] -> ixf
-      _  -> \i -> (i<l) ? (ixf i, ixFun vs (i-l))
+      _  -> \i -> (i<l) ? ixf i $ ixFun vs (i-l)
 
 -- | Converts a non-nested vector to a core vector.
 freezeVector :: Type a => Vector (Data a) -> Data [a]
@@ -235,7 +235,7 @@ enumFromTo 1 n
     = indexed (i2n n) ((+1) . i2n)
 enumFromTo m n = indexed (i2n l) ((+m) . i2n)
   where
-    l = (n<m) ? (0, n-m+1)
+    l = (n<m) ? 0 $ (n-m+1)
   -- TODO The first case avoids the comparison when `m` is 1. However, it
   --      cover the case when `m` is a complicated expression that is later
   --      optimized to the literal 1. The same holds for other such

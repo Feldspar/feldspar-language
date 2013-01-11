@@ -36,8 +36,14 @@ import Feldspar.Core.Constructs
 condition :: (Syntax a) => Data Bool -> a -> a -> a
 condition c t f = sugarSymF Condition c t f
 
-(?) :: (Syntax a) => Data Bool -> (a, a) -> a
-c ? (t, e) = condition c t e
+-- | Condition operator. Use as follows:
+--
+-- > cond1 ? ex1 $
+-- > cond2 ? ex2 $
+-- > cond3 ? ex3 $
+-- >   exDefault
+(?) :: (Syntax a) => Data Bool -> a -> a -> a
+(?) = condition
 
-infix 1 ?
+infixl 1 ?
 

@@ -138,7 +138,7 @@ fromVector v = BitVector
     w = value $ width (Proxy :: Proxy w)
     wl = Vec.length v `div` w
     loop n ix = forLoop n 0 $ \i st ->
-        st `shiftLU` 1 .|. (v ! (w * ix + i) ? (1,0))
+        st `shiftLU` 1 .|. (v ! (w * ix + i) ? 1 $ 0)
 
 toVector :: forall w . (Unit w, Size w ~ Range w) => BitVector w -> Vec.Vector (Data Bool)
 toVector bv = Vec.indexed (length bv) (bv!)
@@ -150,10 +150,9 @@ instance (Unit w, Size w ~ Range w) => Indexed (BitVector w)
         help _      [] = false
             -- XXX Should be an error here...
         help accum [s] = ixf s accum i
-        help accum (s:ss) = i < accum + numUnits s * w ?
-            ( ixf s accum i
-            , help (accum + numUnits s * w) ss
-            )
+        help accum (s:ss) = (i < accum + numUnits s * w)
+            ? ixf s accum i
+            $ help (accum + numUnits s * w) ss
         w = value $ width (Proxy :: Proxy w)
         ixf s accum ix = testBit (elements s ((ix - accum) `div` w)) (w - 1 - ((ix - accum) `mod` w))
 
@@ -187,20 +186,18 @@ takeUnits :: forall w . (Unit w) =>
 takeUnits len bv = help len [] $ segments bv
   where
     help _ acc [] = BitVector acc
-    help n acc (s:ss) = n < numUnits s ?
-        ( BitVector (acc Prelude.++ [s{numUnits = n}])
-        , help (n - numUnits s) (acc Prelude.++ [s]) ss
-        )
+    help n acc (s:ss) = (n < numUnits s)
+        ? BitVector (acc Prelude.++ [s{numUnits = n}])
+        $ help (n - numUnits s) (acc Prelude.++ [s]) ss
 
 dropUnits :: forall w . (Unit w) =>
     Data Length -> BitVector w -> BitVector w
 dropUnits len bv = help len $ segments bv
   where
     help _ [] = BitVector []
-    help n (s:ss) = n < numUnits s ?
-        ( BitVector $ s':ss
-        , help (n - numUnits s) ss
-        )
+    help n (s:ss) = (n < numUnits s)
+        ? BitVector (s':ss)
+        $ help (n - numUnits s) ss
       where
         s' = Segment
             { numUnits = numUnits s - n
@@ -217,10 +214,9 @@ drop len end bv = dropSegments len $ segments bv
   where
     w = value $ width (Proxy :: Proxy w)
     dropSegments _ [] = BitVector []
-    dropSegments n (s:ss) = n < sLen ?
-        ( dropUnits n s ss
-        , dropSegments (n - sLen) ss
-        )
+    dropSegments n (s:ss) = (n < sLen)
+        ? dropUnits n s ss
+        $ dropSegments (n - sLen) ss
       where
         sLen = numUnits s * w
     dropUnits n s ss = dropBits bitsToDrop (s':ss)
@@ -232,10 +228,9 @@ drop len end bv = dropSegments len $ segments bv
         wordsToDrop = n `div` w
         bitsToDrop = n `mod` w
     dropBits _ [] = BitVector []
-    dropBits n (s:ss) = n > 0 ?
-        ( BitVector $ s' : segments bv'
-        , BitVector (s:ss)
-        )
+    dropBits n (s:ss) = (n > 0)
+        ? BitVector (s' : segments bv')
+        $ BitVector (s:ss)
       where
         s' = Segment
             { numUnits = numUnits s - 1
@@ -246,10 +241,9 @@ drop len end bv = dropSegments len $ segments bv
             }
         bv' = addBits (w - n) (elements s (numUnits s - 1) `shiftLU` n) ss
     addBits n bs [] = BitVector [Segment 1 $ const $ bs .|. (end `shiftRU` n)]
-    addBits n bs (s:ss) = numUnits s > 0 ?
-        ( BitVector $ s' : segments bv'
-        , addBits n bs ss
-        )
+    addBits n bs (s:ss) = (numUnits s > 0)
+        ? BitVector (s' : segments bv')
+        $ addBits n bs ss
       where
         s' = Segment
             { numUnits = 1
@@ -309,62 +303,61 @@ boolFun1 :: (Syntax t, Unit w, Size w ~ Range w) =>
     (Data Bool -> Data Bool)
     -> ((Data w -> Data w) -> t)
     -> t
-boolFun1 f c = f true ?
-        ( f false ? (c (const $ complement 0), c id)
-        , f false ? (c complement, c (const 0))
-        )
+boolFun1 f c = f true
+        ? (f false ? c (const $ complement 0) $ c id)
+        $ (f false ? c complement $ c (const 0))
 
 boolFun2 :: (Syntax t, Unit w, Size w ~ Range w) =>
     (Data Bool -> Data Bool -> Data Bool)
     -> ((Data w -> Data w -> Data w) -> t)
     -> t
 boolFun2 f c =
-    f true true ?
-    ( f true false ?
-      ( f false true ?
-        ( f false false ?
-          ( c $ \_ _ -> complement 0
-          , c $ (.|.)
+    f true true
+    ? ( f true false
+        ? ( f false true
+            ? ( f false false
+                ? (c $ \_ _ -> complement 0)
+                $ (c $ (.|.))
+              )
+            $ ( f false false
+                ? (c $ \x y -> x .|. complement y)
+                $ (c $ \x _ -> x)
+              )
           )
-        , f false false ?
-          ( c $ \x y -> x .|. complement y
-          , c $ \x _ -> x
+        $ ( f false true
+            ? ( f false false
+                ? (c $ \x y -> complement x .|. y)
+                $ (c $ \_ y -> y)
+              )
+            $ ( f false false
+                ? (c $ \x y -> complement (x `xor` y))
+                $ (c $ (.&.))
+              )
           )
-        )
-      , f false true ?
-        ( f false false ?
-          ( c $ \x y -> complement x .|. y
-          , c $ \_ y -> y
-          )
-        , f false false ?
-          ( c $ \x y -> complement (x `xor` y)
-          , c $ (.&.)
-          )
-        )
       )
-    , f true false ?
-      ( f false true ?
-        ( f false false ?
-          ( c $ \x y -> complement (x .&. y)
-          , c $ \x y -> x `xor` y
+    $ ( f true false
+        ? (f false true
+            ? ( f false false
+                ? (c $ \x y -> complement (x .&. y))
+                $ (c $ \x y -> x `xor` y)
+              )
+            $ ( f false false
+                ? (c $ \_ y -> complement y)
+                $ (c $ \x y -> x .&. complement y)
+              )
           )
-        , f false false ?
-          ( c $ \_ y -> complement y
-          , c $ \x y -> x .&. complement y
+        $ ( f false true
+            ? ( f false false
+                ? (c $ \x _ -> complement x)
+                $ (c $ \x y -> complement x .&. y)
+              )
+            $ ( f false false
+                ? (c $ \x y -> complement (x .|. y))
+                $ (c $ \_ _ -> 0)
+
+              )
           )
-        )
-      , f false true ?
-        ( f false false ?
-          ( c $ \x _ -> complement x
-          , c $ \x y -> complement x .&. y
-          )
-        , f false false ?
-          ( c $ \x y -> complement (x .|. y)
-          , c $ \_ _ -> 0
-          )
-        )
       )
-    )
 
 -- * Patch combinators for bitvectors
 

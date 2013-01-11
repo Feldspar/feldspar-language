@@ -70,8 +70,8 @@ class (Ord a, Numeric a, BoundedInt a, P.Integral a, Size a ~ Range a) => Integr
 
 divSem :: (Integral a)
        => Data a -> Data a -> Data a
-divSem x y = (x > 0 && y < 0 || x < 0 && y > 0) && rem x y /= 0 ?
-             (quot x y P.- 1,quot x y)
+divSem x y = (x > 0 && y < 0 || x < 0 && y > 0) && rem x y /= 0 ?   quot x y P.- 1
+                                                                P.$ quot x y
 
 instance Integral Word8
 instance Integral Word16

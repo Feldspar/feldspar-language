@@ -99,7 +99,7 @@ flatten :: Type a => Matrix a -> Vector (Data a)
 flatten matr = Indexed (m*n) ixf Empty
   where
     m = length matr
-    n = (m==0) ? (0, length (head matr))
+    n = (m==0) ? 0 $ length (head matr)
 
     ixf i = matr ! y ! x
       where
