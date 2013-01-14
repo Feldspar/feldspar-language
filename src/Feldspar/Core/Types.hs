@@ -424,7 +424,7 @@ defaultSize (Tup7Type ta tb tc td te tf tg) = ( defaultSize ta
                                               , defaultSize tf
                                               , defaultSize tg
                                               )
-defaultSize (FunType _ tb) = defaultSize tb
+defaultSize (FunType ta tb) = (defaultSize ta, defaultSize tb)
 defaultSize (MutType ta) = defaultSize ta
 defaultSize (RefType ta) = defaultSize ta
 defaultSize (MArrType ta) = universal :> defaultSize ta
@@ -800,7 +800,7 @@ type instance Size (a,b,c,d)       = (Size a, Size b, Size c, Size d)
 type instance Size (a,b,c,d,e)     = (Size a, Size b, Size c, Size d, Size e)
 type instance Size (a,b,c,d,e,f)   = (Size a, Size b, Size c, Size d, Size e, Size f)
 type instance Size (a,b,c,d,e,f,g) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g)
-type instance Size (a -> b)        = Size b
+type instance Size (a -> b)        = (Size a, Size b)
 type instance Size (Mut a)         = Size a
 type instance Size (IORef a)       = Size a
 type instance Size (MArr a)        = Range Length :> Size a

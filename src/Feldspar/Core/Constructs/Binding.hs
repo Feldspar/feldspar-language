@@ -205,12 +205,12 @@ instance ( CLambda Type :<: dom
         , Info t sz vars _ <- getInfo body
         = do
             src <- asks sourceEnv
-            let info = Info (FunType typeRep t) sz (delete v vars) src
+            let info = Info (FunType typeRep t) (universal, sz) (delete v vars) src
             return $ (Sym $ Decor info $ C' $ inj lam) :$ body
 
 instance SizeProp (Let :|| Type)
   where
-    sizeProp (C' Let) (_ :* WrapFull f :* Nil) = infoSize f
+    sizeProp (C' Let) (_ :* WrapFull f :* Nil) = snd $ infoSize f
 
 instance
     ( (Let      :|| Type) :<: dom

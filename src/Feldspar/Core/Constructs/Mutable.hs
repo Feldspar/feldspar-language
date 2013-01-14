@@ -82,7 +82,7 @@ instance Sharable (MONAD Mut)
 instance SizeProp (MONAD Mut)
   where
     sizeProp Return (WrapFull a :* Nil)      = infoSize a
-    sizeProp Bind   (_ :* WrapFull f :* Nil) = infoSize f
+    sizeProp Bind   (_ :* WrapFull f :* Nil) = snd $ infoSize f
     sizeProp Then   (_ :* WrapFull b :* Nil) = infoSize b
     sizeProp When   _                        = AnySize
 
@@ -161,15 +161,10 @@ instance ( MONAD Mut :<: dom
         | Info {infoType = t} <- getInfo a
         = constructFeatUnOptDefaultTyp opts (MutType t) Return args
 
-    constructFeatUnOpt opts Bind args@(_ :* f :* Nil)
-        | Info {infoType = FunType _ t} <- getInfo f
+    constructFeatUnOpt opts Bind args@(_ :* f@(lam :$ body) :* Nil)
+        | Just (SubConstr2 (Lambda _))  <- prjLambda lam
+        , Info {infoType = t} <- getInfo body
         = constructFeatUnOptDefaultTyp opts t Bind args
-      -- TODO The match on `FunType` is total with the current definition of
-      --      `TypeRep`, but there's no guarantee this will remain true in the
-      --      future. One way around that would be to match `f` against
-      --      `Lambda`, but that is also a partial match (at least possibly, in
-      --      the future). Another option would be to add a context parameter to
-      --      `MONAD` to be able to add the constraint `Type a`.
 
     constructFeatUnOpt opts Then args@(_ :* mb :* Nil)
         | Info {infoType = t} <- getInfo mb
