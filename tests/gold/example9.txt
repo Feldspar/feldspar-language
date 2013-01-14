@@ -1,4 +1,4 @@
-<<Int32 -> Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+<<Int32 -> Int32 | (Range {lowerBound = -2147483648, upperBound = 2147483647},Range {lowerBound = -2147483648, upperBound = 2147483647})>>
 |
 `- Lambda 0
    |
@@ -18,7 +18,7 @@
          |        |
          |        `- 20
          |
-         `- <<Int32 -> Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+         `- <<Int32 -> Int32 | (Range {lowerBound = -2147483648, upperBound = 2147483647},Range {lowerBound = -2147483648, upperBound = 2147483647})>>
             |
             `- Lambda 1
                |
