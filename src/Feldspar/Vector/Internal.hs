@@ -46,6 +46,7 @@ import QuickAnnotate
 import Language.Syntactic hiding (fold)
 
 import Feldspar.Range (rangeSubSat)
+import qualified Feldspar
 import Feldspar hiding (sugar,desugar,resugar)
 
 import Data.Tuple.Curry
@@ -383,6 +384,14 @@ eqVector a b = (length a == length b) && and (zipWith (==) a b)
 -- | Scalar product of two vectors
 scalarProd :: (Syntax a, Num a) => Vector a -> Vector a -> a
 scalarProd a b = sum (zipWith (*) a b)
+
+scan :: (Syntax a, Syntax b) => (a -> b -> a) -> a -> Vector b -> Vector a
+scan f init bs = Feldspar.sugar $ sequential (length bs) (Feldspar.desugar init) $ \i s ->
+    let s' = Feldspar.desugar $ f (Feldspar.sugar s) (bs!i)
+    in  (s',s')
+  -- Note: This function should not be exported by the `Vector` module, since it doesn't fuse with
+  --       other operations.
+  -- TODO Ideally, the `Stream` library should make this function superfluous.
 
 
 
