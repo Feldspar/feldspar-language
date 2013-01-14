@@ -160,17 +160,12 @@ instance ( MONAD Mut :<: dom
     constructFeatUnOpt Return args@(a :* Nil)
         | Info {infoType = t} <- getInfo a
         = constructFeatUnOptDefaultTyp (MutType t) Return args
-{-
-    constructFeatUnOpt Bind args@(_ :* f :* Nil)
-        | Info {infoType = FunType _ t} <- getInfo f
+
+    constructFeatUnOpt Bind args@(_ :* f@(lam :$ body) :* Nil)
+        | Just (SubConstr2 (Lambda _))  <- prjLambda lam
+        , Info {infoType = t} <- getInfo body
         = constructFeatUnOptDefaultTyp t Bind args
-      -- TODO The match on `FunType` is total with the current definition of
-      --      `TypeRep`, but there's no guarantee this will remain true in the
-      --      future. One way around that would be to match `f` against
-      --      `Lambda`, but that is also a partial match (at least possibly, in
-      --      the future). Another option would be to add a context parameter to
-      --      `MONAD` to be able to add the constraint `Type a`.
--}
+
     constructFeatUnOpt Then args@(_ :* mb :* Nil)
         | Info {infoType = t} <- getInfo mb
         = constructFeatUnOptDefaultTyp t Then args
