@@ -1,2 +1,5 @@
 language: haskell
 
+before-install:
+  - cabal update
+
