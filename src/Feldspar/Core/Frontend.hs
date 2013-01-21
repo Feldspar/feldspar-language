@@ -144,11 +144,12 @@ prjDict = PrjDict
 
 mkId :: MkInjDict (Decor Info FeldDom)
 mkId a b | simpleMatch (const . sharable) a
-         , Just Dict <- typeDict b
          , Just Dict <- typeDict a
+         , Dict <- exprDictSub pTypeable b
+         , Info {infoType = bType} <- getInfo b
          = Just InjDict
              { injVariable = Decor (getInfo a) . injC . c' . Variable
-             , injLambda   = let info = ((mkInfoTy (FunType typeRep typeRep)) { infoSize = (infoSize (getInfo a), infoSize (getInfo b))})
+             , injLambda   = let info = ((mkInfoTy (FunType typeRep bType)) {infoSize = (infoSize (getInfo a), infoSize (getInfo b))})
                              in Decor info . injC . cLambda
              , injLet      = Decor (getInfo b) $ injC $ Let
              }
