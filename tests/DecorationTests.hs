@@ -16,7 +16,7 @@ import Examples.Simple.Basics
 
 
 topLevelConsts :: Data Index -> Data Index -> Data Index
-topLevelConsts a b = condition (a<5) (d ! (b+5)) (c ! (b+5))
+topLevelConsts a b = condition (b<5) (d ! (a+5)) (c ! (a+5))
   where
     c = value [1,2,3,4,5] :: Data [Index]
     d = value [2,3,4,5,6] :: Data [Index]
