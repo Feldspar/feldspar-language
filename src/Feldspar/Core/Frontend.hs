@@ -136,6 +136,7 @@ import Feldspar.Core.Frontend.Trace            as Frontend
 import Feldspar.Core.Frontend.Tuple            as Frontend
 
 
+
 prjDict :: PrjDict (Decor Info FeldDom)
 prjDict = PrjDict
     (prjVariable prjDictFO . decorExpr)
@@ -149,7 +150,7 @@ mkId a b | simpleMatch (const . sharable) a
              { injVariable = Decor (getInfo a) . injC . c' . Variable
              , injLambda   = let info = ((mkInfoTy (FunType typeRep typeRep)) { infoSize = (infoSize (getInfo a), infoSize (getInfo b))})
                              in Decor info . injC . cLambda
-             , injLet      = Decor (getInfo b) $ injC $ c' Let
+             , injLet      = Decor (getInfo b) $ injC $ Let
              }
 mkId _ _ = Nothing
 

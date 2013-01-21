@@ -208,24 +208,24 @@ instance ( CLambda Type :<: dom
             let info = Info (FunType typeRep t) (universal, sz) (delete v vars) src
             return $ (Sym $ Decor info $ C' $ inj lam) :$ body
 
-instance SizeProp (Let :|| Type)
+instance SizeProp Let
   where
-    sizeProp (C' Let) (_ :* WrapFull f :* Nil) = snd $ infoSize f
+    sizeProp Let (_ :* WrapFull f :* Nil) = snd $ infoSize f
 
 instance
-    ( (Let      :|| Type) :<: dom
+    ( Let                 :<: dom
     , (Variable :|| Type) :<: dom
     , CLambda Type        :<: dom
     , OptimizeSuper dom
     ) =>
-      Optimize (Let :|| Type) dom
+      Optimize Let dom
   where
-    optimizeFeat opts lt@(C' Let) (a :* f :* Nil) = do
+    optimizeFeat opts lt@Let (a :* f :* Nil) = do
         a' <- optimizeM opts a
         f' <- optimizeFunction opts (optimizeM opts) (getInfo a') f
         constructFeat opts lt (a' :* f' :* Nil)
 
-    constructFeatOpt _ (C' Let) (a :* (lam :$ var) :* Nil)
+    constructFeatOpt _ Let (a :* (lam :$ var) :* Nil)
         | Just (C' (Variable v2))       <- prjF var
         , Just (SubConstr2 (Lambda v1)) <- prjLambda lam
         , v1 == v2
@@ -238,18 +238,21 @@ instance
       --
       -- stestL2 :: Data Index -> Data Length -> Data [[Index]]
       -- stestL2 m x = parallel x (\x1 -> let z = let y = x `mod` m in (y, y) in parallel 2 (\x -> fst z))
-    constructFeatOpt opts lt1@(C' Let) ((lt2 :$ x :$ (lam :$ bd)) :* y :* Nil)
-        | Just (C' Let) <- prjF lt2
+    constructFeatOpt opts lt1@Let ((lt2 :$ x :$ (lam :$ bd)) :* y :* Nil)
+        | Just Let <- prj lt2
         , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
         , SICS `inTarget` opts
         = do
              bb <- constructFeat opts lt1 (bd :* y :* Nil)
              bd' <- constructFeat opts (reuseCLambda lam') (bb :* Nil)
-             constructFeatUnOpt opts (c' Let) (x :* bd' :* Nil)
+             constructFeatUnOpt opts Let (x :* bd' :* Nil)
 
     constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
-    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
+    constructFeatUnOpt opts Let args@(_ :* (lam :$ body) :* Nil)
+        | Just (SubConstr2 (Lambda _)) <- prjLambda lam
+        , Info {infoType = t} <- getInfo body
+        = constructFeatUnOptDefaultTyp opts t Let args
 
 prjLambda :: (Project (CLambda Type) dom)
           => dom sig -> Maybe (CLambda Type sig)

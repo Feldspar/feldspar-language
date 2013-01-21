@@ -135,13 +135,12 @@ instance SizeProp (Array :|| Type)
         _ :> el = infoSize arr
 
 instance
-    ( (Array :|| Type) :<: dom
-    , (NUM   :|| Type) :<: dom
-    , (Let   :|| Type) :<: dom
-    , (ORD   :|| Type) :<: dom
+    ( (Array    :|| Type) :<: dom
+    , (NUM      :|| Type) :<: dom
+    , Let                 :<: dom
+    , (ORD      :|| Type) :<: dom
     , (Variable :|| Type) :<: dom
     , CLambda Type :<: dom
-    , Project (Let :|| Type) dom
     , OptimizeSuper dom
     ) =>
       Optimize (Array :|| Type) dom
@@ -175,13 +174,13 @@ instance
     constructFeatOpt opts sym@(C' Parallel) (len :* (lam1 :$ (lt :$ e1 :$ (lam2 :$ bd))) :* Nil)
         | Just lam1'@(SubConstr2 (Lambda v1)) <- prjLambda lam1
         , Just lam2'@(SubConstr2 (Lambda v2)) <- prjLambda lam2
-        , Just (C' Let) <- prjF lt
+        , Just Let <- prj lt
         , v1 `notMember` infoVars (getInfo e1)
         , SICS `inTarget` opts
         = do
              sym' <- constructFeat opts sym (len :* (lam1 :$ bd) :* Nil)
              sym'' <- constructFeat opts (reuseCLambda lam2') (sym' :* Nil)
-             constructFeat opts (c' Let) (e1 :* sym'' :* Nil)
+             constructFeat opts Let (e1 :* sym'' :* Nil)
 
     constructFeatOpt _ (C' Parallel) (len :* _ :* Nil)
         | Just 0 <- viewLiteral len

@@ -86,7 +86,6 @@ type FeldSymbols
     =   (Decor SourceInfo1 Identity :|| Type)
     :+: (Condition  :|| Type)
     :+: (FFI        :|| Type)
-    :+: (Let        :|| Type)
     :+: (Literal    :|| Type)
     :+: (Select     :|| Type)
     :+: (Tuple      :|| Type)
@@ -108,6 +107,7 @@ type FeldSymbols
     :+: (PropSize   :|| Type)
     :+: (Save       :|| Type)
     :+: (Trace      :|| Type)
+    :+: Let
     :+: ConditionM Mut
     :+: LoopM Mut
     :+: MONAD Mut

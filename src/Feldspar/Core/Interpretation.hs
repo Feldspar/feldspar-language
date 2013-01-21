@@ -175,7 +175,7 @@ type SourceInfo = String
 data Info a
   where
     Info
-      :: Show (Size a)
+      :: (Show (Size a), Lattice (Size a))
       => { infoType   :: TypeRep a
          , infoSize   :: Size a
          , infoVars   :: VarInfo
@@ -447,6 +447,7 @@ constructFeatUnOptDefaultTyp
        , SizeProp feature
        , Typeable (DenResult a)
        , Show (Size (DenResult a))
+       , Lattice (Size (DenResult a))
        )
     => FeldOpts -> TypeRep (DenResult a)
     -> feature a
