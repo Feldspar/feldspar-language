@@ -147,12 +147,14 @@ mkId a b | simpleMatch (const . sharable) a
          , Just Dict <- typeDict a
          , Dict <- exprDictSub pTypeable b
          , Info {infoType = bType} <- getInfo b
-         = Just InjDict
-             { injVariable = Decor (getInfo a) . injC . c' . Variable
-             , injLambda   = let info = ((mkInfoTy (FunType typeRep bType)) {infoSize = (infoSize (getInfo a), infoSize (getInfo b))})
-                             in Decor info . injC . cLambda
-             , injLet      = Decor (getInfo b) $ injC $ Let
-             }
+         = case bType of
+             FunType{} -> Nothing
+             _         -> Just InjDict
+                            { injVariable = Decor (getInfo a) . injC . c' . Variable
+                            , injLambda   = let info = ((mkInfoTy (FunType typeRep bType)) {infoSize = (infoSize (getInfo a), infoSize (getInfo b))})
+                                            in Decor info . injC . cLambda
+                            , injLet      = Decor (getInfo b) $ injC $ Let
+                            }
 mkId _ _ = Nothing
 
 
