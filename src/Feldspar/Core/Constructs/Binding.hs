@@ -133,6 +133,8 @@ optimizeFunction opts opt info a@(sym :$ body)
     , Dict <- exprDict body
     , Just (lam@(SubConstr2 (Lambda v))) <- prjLambda sym
     = optimizeLambda opts opt info lam (body :* Nil)
+optimizeFunction opts opt info a
+    = error $ "optimizeFunction: AST is not a function: " ++ show a ++ "\n" ++ show (infoType info)
 
 {-
 optimizeFunBody :: (Lambda TypeCtx :<: dom, Optimize dom dom, Typeable a)

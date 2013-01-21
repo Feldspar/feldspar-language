@@ -365,6 +365,7 @@ class
     , EvalBind dom
     , (Literal :|| Type) :<: dom
     , Typed dom
+    , Render dom -- For debug
     , Constrained dom
     , Optimize dom dom
     ) =>
@@ -376,6 +377,7 @@ instance
     , EvalBind dom
     , (Literal  :|| Type) :<: dom
     , Typed dom
+    , Render dom
     , Constrained dom
     , Optimize dom dom
     ) =>
