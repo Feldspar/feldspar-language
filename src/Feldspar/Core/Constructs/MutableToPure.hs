@@ -92,8 +92,8 @@ instance AlphaEq dom dom dom env => AlphaEq MutableToPure MutableToPure dom env
 
 instance SizeProp MutableToPure
   where
-    sizeProp RunMutableArray _ = universal
-    sizeProp WithArray       _ = universal
+    sizeProp RunMutableArray (WrapFull arr :* Nil) = infoSize arr
+    sizeProp WithArray _ = universal
 
 instance (MutableToPure :<: dom, Optimize dom dom) => Optimize MutableToPure dom
   where
