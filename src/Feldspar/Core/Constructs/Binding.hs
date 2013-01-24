@@ -49,6 +49,7 @@ module Feldspar.Core.Constructs.Binding
     , prjLambda
     , cLambda
     , reuseCLambda
+    , collectLetBinders
     ) where
 
 import Control.Monad.Reader
@@ -266,3 +267,31 @@ cLambda = SubConstr2 . Lambda
 -- | Allow an existing binding to be used with a body of a different type
 reuseCLambda :: CLambda Type (b :-> Full (a -> b)) -> CLambda Type (c :-> Full (a -> c))
 reuseCLambda (SubConstr2 (Lambda v)) = SubConstr2 (Lambda v)
+
+-- | Collects the immediate let bindings in a list and returns the first non-let expression
+--
+-- This function can be useful when let bindings get in the way of pattern matching on a
+-- sub-expressions.
+collectLetBinders :: forall dom a .
+                   ( Project Let dom
+                   , Project (CLambda Type) dom
+                   , ConstrainedBy dom Typeable
+                   ) => ASTF (Decor Info dom) a ->
+                   ( [(VarId, ASTB (Decor Info dom) Typeable)]
+                   , ASTF (Decor Info dom) a
+                   )
+collectLetBinders e = go [] e
+  where
+    go
+      :: [(VarId, ASTB (Decor Info dom) Typeable)]
+      -> ASTF (Decor Info dom) a
+      -> ( [(VarId, ASTB (Decor Info dom) Typeable)]
+         , ASTF (Decor Info dom) a
+         )
+    go bs (lt :$ e :$ (lam :$ body))
+      | Just (SubConstr2 (Lambda v)) <- prjLambda lam
+      , Just Let <- prj lt
+      , Dict <- exprDictSub pTypeable e
+      = go ((v, ASTB e):bs) body
+    go bs e = (reverse bs, e)
+
