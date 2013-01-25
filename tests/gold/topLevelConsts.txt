@@ -16,7 +16,7 @@
                |     |
                |     +- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
                |     |  |
-               |     |  `- var:1
+               |     |  `- var:0
                |     |
                |     `- <<WordN | Range {lowerBound = 5, upperBound = 5}>>
                |        |
@@ -36,7 +36,7 @@
                            |     |
                            |     +- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
                            |     |  |
-                           |     |  `- var:0
+                           |     |  `- var:1
                            |     |
                            |     `- <<WordN | Range {lowerBound = 5, upperBound = 5}>>
                            |        |
