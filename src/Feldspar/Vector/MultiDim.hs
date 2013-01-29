@@ -18,14 +18,16 @@ import QuickAnnotate
 
 -- | * Slices
 
-data All = All
+data All    = All
 data Any sh = Any
 
-data FullShape ss where
-  AllF :: FullShape All
-  AnyF :: FullShape (Any sh)
+data Slice ss where
+  SZ    :: Slice Z
+  (::.) :: Slice sl -> Data Length -> Slice (sl :. Data Length)
+  (:::) :: Slice sl -> All -> Slice (sl :. All)
+  SAny  :: Slice (Any sl)
 
-{-
+
 type family FullShape ss
 type instance FullShape Z                   = Z
 type instance FullShape (Any sh)            = sh
@@ -38,28 +40,18 @@ type instance SliceShape (Any sh)            = sh
 type instance SliceShape (sl :. Data Length) = SliceShape sl
 type instance SliceShape (sl :. All)         = SliceShape sl :. Data Length
 
-class Slice ss where
-  sliceOfFull :: Shape ss -> FullShape ss -> SliceShape ss
-  fullOfSlice :: Shape ss -> SliceShape ss -> FullShape ss
+sliceOfFull :: Slice ss -> Shape (FullShape ss) -> Shape (SliceShape ss)
+sliceOfFull SZ Z = Z
+sliceOfFull SAny sh = sh
+sliceOfFull (fsl ::. _) (ssl :. _) = sliceOfFull fsl ssl
+sliceOfFull (fsl ::: All) (ssl :. s) = sliceOfFull fsl ssl :. s
 
-instance Slice Z where
-  sliceOfFull Z Z = Z
-  fullOfSlice Z Z = Z
+fullOfSlice :: Slice ss -> Shape (SliceShape ss) -> Shape (FullShape ss)
+fullOfSlice SZ Z = Z
+fullOfSlice SAny sh = sh
+fullOfSlice (fsl ::. n) ssl = fullOfSlice fsl ssl :. n
+fullOfSlice (fsl ::: All) (ssl :. s) = fullOfSlice fsl ssl :. s
 
-instance Slice (Any sh) where
-  sliceOfFull Any sh = sh
-  fullOfSlice Any sh = sh
-
-instance Slice sl => Slice (sl :. Data Length) where
-  sliceOfFull (fsl :. _) (ssl :. _) = sliceOfFull fsl ssl
-  fullOfSlice (fsl :. n) ssl        = fullOfSlice fsl ssl :. n
-
-instance Slice sl => Slice (sl :. All) where
-  sliceOfFull (fsl :. All) (ssl :. s)
-   = sliceOfFull fsl ssl :. s
-  fullOfSlice (fsl :. All) (ssl :. s)
-   = fullOfSlice fsl ssl :. s
--}
 -- | * Vectors
 
 data Vector sh a = Vector (Shape sh) (Shape sh -> a)
@@ -139,26 +131,19 @@ traverse :: Vector sh  a -> (Shape sh -> Shape sh') ->
             Vector sh' a'
 traverse (Vector sh ixf) shf elemf
   = Vector (shf sh) (elemf ixf)
-{-
+
 -- | Duplicates part of a vector along a new dimension.
-replicate :: (Slice sl, Shape (FullShape sl)
-             ,Shape (SliceShape sl))
-            => sl -> Vector (SliceShape sl) a
-                  -> Vector (FullShape  sl) a
+replicate :: Slice ss -> Vector (SliceShape ss) a -> Vector (FullShape ss) a
 replicate sl vec
  = backpermute (fullOfSlice sl (extent vec))
                (sliceOfFull sl) vec
 
 -- | Extracts a slice from a vector.
-slice :: (Slice sl
-         ,Shape (FullShape sl)
-         ,Shape (SliceShape sl))
-        => Vector (FullShape sl) a
-            -> sl -> Vector (SliceShape sl) a
+slice :: Vector (FullShape ss) a -> Slice ss -> Vector (SliceShape ss) a
 slice vec sl
  = backpermute (sliceOfFull sl (extent vec))
                (fullOfSlice sl) vec
--}
+
 -- | Change the shape of a vector. This function is potentially unsafe, the
 --   new shape need to have fewer or equal number of elements compared to
 --   the old shape.
@@ -302,7 +287,7 @@ transpose vec
 
 transpose2D :: Vector DIM2 e -> Vector DIM2 e
 transpose2D = transpose
-{-
+
 -- | Matrix multiplication
 mmMult :: (Type e, Numeric e)
        => DVector DIM2 e -> DVector DIM2 e -> DVector DIM2 e
@@ -310,8 +295,7 @@ mmMult vA vB
   = sum (zipWith (*) vaRepl vbRepl)
   where
     tmp = transpose2D vB
-    vaRepl = replicate (Z :. All   :. colsB :. All) vA
-    vbRepl = replicate (Z :. rowsA :. All   :. All) vB
-    (Z :. colsA :. rowsA) = extent vA
-    (Z :. colsB :. rowsB) = extent vB
--}
+    vaRepl = replicate (SZ ::: All   ::. colsB ::: All) vA
+    vbRepl = replicate (SZ ::. rowsA ::: All   ::: All)  vB
+    [rowsA, colsA] = toList (extent vA) -- brain explosion hack
+    [rowsB, colsB] = toList (extent vB)
