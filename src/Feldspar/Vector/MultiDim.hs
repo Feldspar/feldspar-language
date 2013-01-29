@@ -1,9 +1,11 @@
-{-# LANGUAGE TypeOperators       #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts      #-}
 module Feldspar.Vector.MultiDim where
 
 import qualified Prelude as P
@@ -13,12 +15,17 @@ import Feldspar hiding (desugar,sugar,resugar)
 import Feldspar.Vector.Shape
 
 import QuickAnnotate
-{-
+
 -- | * Slices
 
 data All = All
 data Any sh = Any
 
+data FullShape ss where
+  AllF :: FullShape All
+  AnyF :: FullShape (Any sh)
+
+{-
 type family FullShape ss
 type instance FullShape Z                   = Z
 type instance FullShape (Any sh)            = sh
@@ -194,13 +201,12 @@ zipWith f arr1 arr2 = Vector (intersectDim (extent arr1) (extent arr2))
                       (\ix -> f (arr1 !: ix) (arr2 !: ix))
 
 -- | Reduce a vector along its last dimension
-{-
-fold :: (Shape sh, Syntax a) =>
+
+fold :: (Syntax a) =>
         (a -> a -> a)
      -> a
      -> Vector (sh :. Data Length) a
      -> Vector sh a
--}
 fold f x vec = Vector sh ixf
     where (sh, n) = uncons (extent vec) -- brain explosion hack
           ixf i = forLoop n x (\ix s -> f s (vec !: (i :. ix)))
@@ -224,15 +230,15 @@ sum :: (Type a, Numeric a) =>
        DVector (sh :. Data Length) a -> DVector sh a
 sum = fold (+) 0
 
-{-
+
 -- | Concatenating shapes.
-class Shape (ShapeConcT sh1 sh2) => ShapeConc sh1 sh2 where
+class ShapeConc sh1 sh2 where
   type ShapeConcT sh1 sh2
-  shapeConc :: sh1 -> sh2 -> ShapeConcT sh1 sh2
+  shapeConc :: Shape sh1 -> Shape sh2 -> Shape (ShapeConcT sh1 sh2)
 
-  splitIndex :: ShapeConcT sh1 sh2 -> sh1 -> (sh1,sh2)
+  splitIndex :: Shape (ShapeConcT sh1 sh2) -> Shape sh1 -> (Shape sh1,Shape sh2)
 
-instance Shape sh2 => ShapeConc Z sh2 where
+instance ShapeConc Z sh2 where
   type ShapeConcT Z sh2 = sh2
   shapeConc Z sh2 = sh2
 
@@ -247,16 +253,17 @@ instance ShapeConc sh1 sh2 => ShapeConc (sh1 :. Data Length) sh2 where
 
 -- | Flatten nested vectors.
 flatten :: forall a sh1 sh2.
+           Shapely (ShapeConcT sh1 sh2) =>
           ShapeConc sh1 sh2 => Vector sh1 (Vector sh2 a)
        -> Vector (ShapeConcT sh1 sh2) a
 flatten (Vector sh1 ixf1) = Vector sh ixf
   where ixf i = let (i1,i2) = splitIndex i sh1
   	       	    (Vector _ ixf2) = ixf1 i1
   	       	in ixf2 i2
-        sh = let (i1,_ :: sh2) = splitIndex fakeShape sh1
+        sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh1
 	         (Vector sh2 _) = ixf1 i1
 	     in shapeConc sh1 sh2
--}
+
 -- Laplace
 
 stencil :: DVector DIM2 Float -> DVector DIM2 Float
