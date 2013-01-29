@@ -38,12 +38,20 @@ length (Arr _ l)     = l
 length (Enum f t)    = t - f + 1
 length (Const l _)   = l
 length (v1 :++: v2)  = length v1 + length v2
+length (v1 :==: v2)  = 2 * (length v1)
 length (Concat vs)   = P.sum (P.map length vs)
 
--- TODO: Use monad stuff here. Perhaps translate to push vector
 freezeVector :: Type a => Vector (Data a) -> Data [a]
 freezeVector (Indexed l ixf) = parallel l ixf
-freezeVector _ = P.error "Unimplemented"
+freezeVector (Stretch s v)   = P.error "Unimplemented"
+freezeVector (Repeat  r v)   = P.error "Unimplemented"
+freezeVector (Arr arr _)     = arr
+freezeVector (Enum f t)      = parallel (t - f + 1) (\ix -> ix + f)
+freezeVector (Const l a)     = parallel l (\_ -> a)
+freezeVector (v1 :++: v2)    = freezeVector v1 `append` freezeVector v2
+freezeVector (v1 :==: v2)    = P.error "Unimplemented"
+freezeVector (Concat vs)
+  = P.foldr (\v as -> freezeVector v `append` as) (value []) vs
 
 thawVector :: Type a => Data Length -> Data [a] -> Vector (Data a)
 thawVector l arr = Arr arr l
@@ -86,8 +94,8 @@ index (Repeat  r vec) i = index vec (i `rem`  r)
 index (Arr arr _)     i = getIx arr i
 index (Enum from to)  i = from + i
 index (Const _ a)     _ = a
-index (v1 :++: v2)    i = (?) (i < length v1) (index v1 i) (index v2 (i - length v1))
-index (v1 :==: v2)    i = (?) (i < length v1) (index v1 i) (index v2 (i - length v1))
+index (v1 :++: v2)    i = i < length v1 ? index v1 i $ index v2 (i - length v1)
+index (v1 :==: v2)    i = i < length v1 ? index v1 i $ index v2 (i - length v1)
 index (Concat vecs)   i = indexVecs vecs i
 
 -- Perhaps this function should do a binary search instead of a linear search.
@@ -96,7 +104,7 @@ index (Concat vecs)   i = indexVecs vecs i
 indexVecs :: Syntax a => [Vector a] -> Data Index -> a
 indexVecs [] i = err "Index out of bounds"
 indexVecs (vec:vecs) i = share (length vec) $ \lv1 ->
-  (?) (i < lv1) (index vec i) (share (i - lv1) $ \newI -> (indexVecs vecs newI))
+  i < lv1 ? index vec i $ share (i - lv1) $ \newI -> (indexVecs vecs newI)
 
 newLen = P.error "Undefined"
 
@@ -148,11 +156,11 @@ take n vec            = indexed (min n (length vec)) (vec!)
 drop :: Syntax a => Data Length -> Vector a -> Vector a
 drop n (Enum from to) = Enum (min (from + n) to) to
 drop n (Const l a)    = Const (monus l n) a
-drop n vec            = indexed ((?) (length vec < n) 0 (length vec - n))
+drop n vec            = indexed (length vec < n ? 0 $ length vec - n)
                         (\ix -> vec ! (ix - n))
 
 monus :: Data Length -> Data Length -> Data Length
-monus a b = (?) (b > a) 0 (a-b)
+monus a b = b > a ? 0 $ a-b
 
 splitAt :: Syntax a => Data Length -> Vector a -> (Vector a, Vector a)
 splitAt n vec = (take n vec, drop n vec)
