@@ -1,3 +1,6 @@
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Feldspar.Vector.Shape where
 
 import qualified Prelude as P
@@ -31,12 +34,12 @@ toIndex (sh1 :. sh2) (sh1' :. sh2') = toIndex sh1 sh1' * sh2 + sh2'
 
 fromIndex :: Shape sh -> Data Index -> Shape sh
 fromIndex Z _ = Z
-fromIndex sh ix                     = fromIndexOne sh ix
+fromIndex sh@(_sh :. l) ix = fromIndexOne sh ix
 
 fromIndexOne :: Shape (sh :. Data Index) -> Data Index ->
                 Shape (sh :. Data Index)
 fromIndexOne (Z :. _) ix = Z :. ix
-fromIndexOne (ds :. d) ix
+fromIndexOne (ds@(_ :. _) :. d) ix
   = fromIndexOne ds (ix `quot` d) :. (ix `rem` d)
 
 intersectDim :: Shape sh -> Shape sh -> Shape sh
@@ -53,18 +56,28 @@ forShape :: Shape sh -> (Shape sh -> M ()) -> M ()
 forShape Z k = k Z
 forShape (sh :. l) k = forM l (\i -> forShape sh (\sh -> k (sh :. i)))
 
+toList :: Shape sh -> [Data Index]
+toList Z         = []
+toList (sh :. i) = i : toList sh
+
+uncons :: Shape (sh :. Data Length) -> (Shape sh, Data Length)
+uncons (sh :. i) = (sh,i)
+
 class Shapely sh where
-  zeroDim :: Shape sh
-  unitDim :: Shape sh
+  zeroDim   :: Shape sh
+  unitDim   :: Shape sh
   fakeShape :: Shape sh
+  toShape   :: Int -> Data [Length] -> Shape sh
 
 instance Shapely Z where
   zeroDim   = Z
   unitDim   = Z
   fakeShape = Z
+  toShape _ _ = Z
 
 instance Shapely sh => Shapely (sh :. Data Length) where
-  zeroDim   = zeroDim :. 0
-  unitDim   = unitDim :. 1
+  zeroDim   = zeroDim   :. 0
+  unitDim   = unitDim   :. 1
   fakeShape = fakeShape :. (P.error "You shall not inspect the syntax tree!")
+  toShape i arr = toShape (i+1) arr :. (arr ! (P.fromIntegral i))
 
