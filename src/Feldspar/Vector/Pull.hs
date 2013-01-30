@@ -1,14 +1,25 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module Feldspar.Vector.Pull where
 
-import qualified Prelude
+import qualified Prelude as P
 
 import Feldspar hiding (sugar,desugar)
+import qualified Feldspar as F
 
-import Lanugage.Syntactic (Syntactic(..))
+import Language.Syntactic (Syntactic(..))
+import Data.Tuple.Select
+
+import Test.QuickCheck
+
+import QuickAnnotate
+
 
 data PullVector a where
-  Pull :: (Data Index -> a) -> Data Length -> Pull a
+  Pull :: (Data Index -> a) -> Data Length -> PullVector a
 
 type PullVector1 a = PullVector (Data a)
 
@@ -21,11 +32,11 @@ instance Syntax a => Syntactic (PullVector a)
 
 -- | Store pull vectors in memory.
 freezePull :: Syntax a => PullVector a -> Data [Internal a]
-freezePull (Pull ixf l) = parallel l (desugar. ixf)
+freezePull (Pull ixf l) = parallel l (F.desugar. ixf)
 
 -- | Create a push vector from an array stored in memory.
 thawPull :: Syntax a => Data [Internal a] -> PullVector a
-thawPull arr = Pull (\i -> getIx arr i) (getLength arr)
+thawPull arr = Pull (\i -> F.sugar (getIx arr i)) (getLength arr)
 
 instance Functor PullVector where
   fmap f (Pull ixf l) = Pull (f . ixf) l
@@ -35,6 +46,10 @@ indexed l ixf = Pull ixf l
 
 length :: PullVector a -> Data Length
 length (Pull _ l) = l
+
+type instance Elem      (PullVector a) = a
+type instance CollIndex (PullVector a) = Data Index
+type instance CollSize  (PullVector a) = Data Length
 
 instance Indexed (PullVector a) where
   Pull ixf l ! i = ixf i
@@ -97,7 +112,7 @@ rotateVecR ix = reverse . rotateVecL ix . reverse
 replicate :: Data Length -> a -> PullVector a
 replicate n a = Pull (const a) n
 
-enumFromTo = error "FIXME"
+enumFromTo = P.error "FIXME"
 
 (...) = enumFromTo
 
@@ -111,9 +126,9 @@ zip3 :: PullVector a -> PullVector b -> PullVector c ->
 zip3 (Pull ixf1 l1) (Pull ixf2 l2) (Pull ixf3 l3)
   = Pull (\i -> (ixf1 i, ixf2 i, ixf3 i)) (min (min l1 l2) l3)
 
-zip4 = error "FIXME"
+zip4 = P.error "FIXME"
 
-zip5 = error "FIXME"
+zip5 = P.error "FIXME"
 
 unzip :: PullVector (a,b) -> (PullVector a, PullVector b)
 unzip vec = (map fst vec, map snd vec)
@@ -121,48 +136,52 @@ unzip vec = (map fst vec, map snd vec)
 unzip3 :: PullVector (a,b,c) -> (PullVector a, PullVector b, PullVector c)
 unzip3 vec = (map sel1 vec, map sel2 vec, map sel3 vec)
 
-unzip4 = error "FIXME"
+unzip4 = P.error "FIXME"
 
-unzip5 = error "FIXME"
+unzip5 = P.error "FIXME"
 
 zipWith :: (a -> b -> c) -> PullVector a -> PullVector b ->
            PullVector c
-zipWith f vecA vecB = map f (zip vecA vecB)
+zipWith f vecA vecB = map (P.uncurry f) (zip vecA vecB)
 
-zipWith3 = error "FIXME"
+zipWith3 = P.error "FIXME"
 
-zipWith4 = error "FIXME"
+zipWith4 = P.error "FIXME"
 
-zipWith5 = error "FIXME"
+zipWith5 = P.error "FIXME"
 
-fold :: (a -> b -> a) -> a -> PullVector b -> a
+fold :: Syntax a => (a -> b -> a) -> a -> PullVector b -> a
 fold f x (Pull ixf l) = forLoop l x $ \ix s ->
                           f s (ixf ix)
 
-fold1 :: (a -> a -> a) -> PullVector a -> a
+fold1 :: Syntax a => (a -> a -> a) -> PullVector a -> a
 fold1 f a = fold f (head a) (tail a)
 
+sum :: (Syntax a, Num a) => PullVector a -> a
 sum = fold (+) 0
 
+maximum, minimum :: (Syntax a, Ord a) => PullVector (Data a) -> (Data a)
 maximum = fold1 max
 
 minimum = fold1 min
 
+or, and :: PullVector (Data Bool) -> Data Bool
 or = fold (||) false
 
 and = fold (&&) true
 
+any, all :: (a -> Data Bool) -> PullVector a -> Data Bool
 any p = or . map p
 
 all p = and . map p
 
-eqVector :: Eq a => PullVector (Data a) -> PullVector (Data 1) -> Data Bool
+eqVector :: Eq a => PullVector (Data a) -> PullVector (Data a) -> Data Bool
 eqVector a b = length a == length b && and (zipWith (==) a b)
 
-scalarProd :: Num a => PullVector a -> PullVector a -> a
+scalarProd :: (Syntax a, Num a) => PullVector a -> PullVector a -> a
 scalarProd a b = sum (zipWith (*) a b)
 
-scan = error "FIXME"
+scan = P.error "FIXME"
 
 
 --------------------------------------------------------------------------------
@@ -184,6 +203,6 @@ instance (Arbitrary (Internal a), Syntax a) => Arbitrary (PullVector a)
 
 instance Annotatable a => Annotatable (PullVector a)
   where
-    annotate info (Pull len ixf = Pull
-        (annotate (info Prelude.++ " (vector element)") . ixf)
-        (annotate (info Prelude.++ " (vector length)") len)
+    annotate info (Pull ixf len) = Pull
+        (annotate (info P.++ " (vector element)") . ixf)
+        (annotate (info P.++ " (vector length)") len)
