@@ -124,6 +124,9 @@ extent (Vector sh _) = sh
 newExtent :: Shape sh -> Vector sh a -> Vector sh a
 newExtent sh (Vector _ ixf) = Vector sh ixf
 
+indexed :: (Shape sh -> a) -> Shape sh -> Vector sh a
+indexed ixf l = Vector l ixf
+
 -- | Change shape and transform elements of a vector. This function is the
 --   most general way of manipulating a vector.
 traverse :: Vector sh  a -> (Shape sh -> Shape sh') ->
