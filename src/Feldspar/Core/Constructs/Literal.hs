@@ -1,6 +1,8 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -37,6 +39,7 @@
 
 module Feldspar.Core.Constructs.Literal
     ( module Language.Syntactic.Constructs.Literal
+    , isLiteral
     ) where
 
 import Language.Syntactic
@@ -61,3 +64,8 @@ instance ((Literal :|| Type) :<: dom, OptimizeSuper dom) =>
   where
     constructFeatUnOpt opts l@(C' _) = constructFeatUnOptDefault opts l
 
+-- | Returns true if the expression is a literal.
+isLiteral :: (Project (Literal  :|| Type) dom) =>
+             AST (Decor info dom) a -> Bool
+isLiteral (prjF -> Just (C' (Literal{}))) = True
+isLiteral _                               = False
