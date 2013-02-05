@@ -247,13 +247,15 @@ instance
         , alphaEq arr arr'
         = return arr
 
-    constructFeatOpt opts (C' SetLength) (len1 :* (op :$ len2 :$ e1 :$ e2) :* Nil)
-        | Just o@(C' Sequential) <- prjF op
+    constructFeatOpt opts (C' SetLength) (len1 :* (par :$ len2 :$ ixf) :* Nil)
+        | Just p@(C' Parallel) <- prjF par
         , alphaEq len1 len2
-        = constructFeat opts o (len2 :* e1 :* e2 :* Nil)
-        | Just o@(C' Parallel) <- prjF op
+        = constructFeat opts p (len2 :* ixf :* Nil)
+
+    constructFeatOpt opts (C' SetLength) (len1 :* (seq :$ len2 :$ init :$ step) :* Nil)
+        | Just s@(C' Sequential) <- prjF seq
         , alphaEq len1 len2
-        = constructFeat opts o (len2 :* e1 :* e2 :* Nil)
+        = constructFeat opts s (len2 :* init :* step :* Nil)
 
     constructFeatOpt _ (C' SetLength) (len :* arr :* Nil)
         | rlen      <- infoSize $ getInfo len
