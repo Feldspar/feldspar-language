@@ -66,7 +66,6 @@ import Language.Syntactic.Constructs.Binding.HigherOrder (CLambda)
 import Feldspar.Lattice
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
-import Feldspar.Core.Constructs.Literal (isLiteral, Literal(..))
 
 instance Sharable Variable  -- `codeMotion` will not share variables anyway
 instance Sharable Lambda    -- Will not be shared anyway because we disallow variables of `->` type
@@ -257,8 +256,8 @@ instance
     --           letBind v (\y -> letBind e1 (\x-> e2))
     constructFeatOpt opts lt1@Let (e :* (lam1 :$ (lt2 :$ v :$ (lam2 :$ bd))) :* Nil)
         | Just Let <- prj lt2
-        , not (isLiteral e)
-        , Just (C' Literal{}) <- prjF v
+        , Nothing <- viewLiteral e
+        , Just _ <- viewLiteral v
         , Just lam1'@(SubConstr2 (Lambda{})) <- prjLambda lam1
         , Just lam2'@(SubConstr2 (Lambda{})) <- prjLambda lam2
         , SICS `inTarget` opts
