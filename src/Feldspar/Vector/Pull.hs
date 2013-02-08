@@ -1,8 +1,11 @@
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE UndecidableInstances      #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 module Feldspar.Vector.Pull where
 
 import qualified Prelude as P
@@ -12,6 +15,7 @@ import qualified Feldspar as F
 
 import Language.Syntactic (Syntactic(..))
 import Data.Tuple.Select
+import Data.Tuple.Curry
 
 import Test.QuickCheck
 
@@ -112,7 +116,14 @@ rotateVecR ix = reverse . rotateVecL ix . reverse
 replicate :: Data Length -> a -> PullVector a
 replicate n a = Pull (const a) n
 
-enumFromTo = P.error "FIXME"
+enumFromTo :: forall a. (Type a, Integral a)
+           => Data a -> Data a -> PullVector (Data a)
+enumFromTo 1 n
+    | IntType U _ <- typeRep :: TypeRep a
+    = indexed (i2n n) ((+1) . i2n)
+enumFromTo m n = indexed (i2n l) ((+m) . i2n)
+  where
+    l = (n<m) ? 0 $ (n-m+1)
 
 (...) = enumFromTo
 
@@ -126,29 +137,33 @@ zip3 :: PullVector a -> PullVector b -> PullVector c ->
 zip3 (Pull ixf1 l1) (Pull ixf2 l2) (Pull ixf3 l3)
   = Pull (\i -> (ixf1 i, ixf2 i, ixf3 i)) (min (min l1 l2) l3)
 
-zip4 = P.error "FIXME"
+zip4 (Pull ixf1 l1) (Pull ixf2 l2) (Pull ixf3 l3) (Pull ixf4 l4)
+  = Pull (\i -> (ixf1 i, ixf2 i, ixf3 i, ixf4 i)) (min (min l1 l2) (min l3 l4))
 
-zip5 = P.error "FIXME"
+zip5 (Pull ixf1 l1) (Pull ixf2 l2) (Pull ixf3 l3) (Pull ixf4 l4) (Pull ixf5 l5)
+  = Pull (\i -> (ixf1 i, ixf2 i, ixf3 i, ixf4 i, ixf5 i)) (min (min (min l1 l2) (min l3 l4)) l5)
 
 unzip :: PullVector (a,b) -> (PullVector a, PullVector b)
-unzip vec = (map fst vec, map snd vec)
+unzip v = (map sel1 v, map sel2 v)
 
 unzip3 :: PullVector (a,b,c) -> (PullVector a, PullVector b, PullVector c)
-unzip3 vec = (map sel1 vec, map sel2 vec, map sel3 vec)
+unzip3 v = (map sel1 v, map sel2 v, map sel3 v)
 
-unzip4 = P.error "FIXME"
+unzip4 :: PullVector (a,b,c,d) -> (PullVector a, PullVector b, PullVector c, PullVector d)
+unzip4 v = (map sel1 v, map sel2 v, map sel3 v, map sel4 v)
 
-unzip5 = P.error "FIXME"
+unzip5 :: PullVector (a,b,c,d,e) -> (PullVector a, PullVector b, PullVector c, PullVector d, PullVector e)
+unzip5 v = (map sel1 v, map sel2 v, map sel3 v, map sel4 v, map sel5 v)
 
 zipWith :: (a -> b -> c) -> PullVector a -> PullVector b ->
            PullVector c
-zipWith f vecA vecB = map (P.uncurry f) (zip vecA vecB)
+zipWith f a b = map (uncurryN f) $ zip a b
 
-zipWith3 = P.error "FIXME"
+zipWith3 f a b c = map (uncurryN f) $ zip3 a b c
 
-zipWith4 = P.error "FIXME"
+zipWith4 f a b c d = map (uncurryN f) $ zip4 a b c d
 
-zipWith5 = P.error "FIXME"
+zipWith5 f a b c d e = map (uncurryN f) $ zip5 a b c d e
 
 fold :: Syntax a => (a -> b -> a) -> a -> PullVector b -> a
 fold f x (Pull ixf l) = forLoop l x $ \ix s ->
