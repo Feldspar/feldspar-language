@@ -46,7 +46,7 @@ freezeVector (Indexed l ixf) = parallel l ixf
 freezeVector (Stretch s v)   = P.error "Unimplemented"
 freezeVector (Repeat  r v)   = P.error "Unimplemented"
 freezeVector (Arr arr _)     = arr
-freezeVector (Enum f t)      = parallel (t - f + 1) (\ix -> ix + f)
+freezeVector v@(Enum f t)    = parallel (length v) (\ix -> ix + f)
 freezeVector (Const l a)     = parallel l (\_ -> a)
 freezeVector (v1 :++: v2)    = freezeVector v1 `append` freezeVector v2
 freezeVector (v1 :==: v2)    = P.error "Unimplemented"
