@@ -71,6 +71,12 @@ type instance Elem      (Vector a) = a
 type instance CollIndex (Vector a) = Data Index
 type instance CollSize  (Vector a) = Data Length
 
+-- | Non-nested vector
+type Vector1 a = Vector (Data a)
+
+-- | Two-level nested vector
+type Vector2 a = Vector (Vector (Data a))
+
 instance Syntax a => Indexed (Vector a)
   where
     (!) = index
