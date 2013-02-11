@@ -193,6 +193,15 @@ monus a b = b > a ? 0 $ a-b
 splitAt :: Syntax a => Data Length -> Vector a -> (Vector a, Vector a)
 splitAt n vec = (take n vec, drop n vec)
 
+head :: Syntax a => Vector a -> a
+head = (!0)
+
+last :: Syntax a => Vector a -> a
+last vec = vec ! (length vec - 1)
+
+tail :: Syntax a => Vector a -> Vector a
+tail = drop 1
+
 replicate :: Data Length -> a -> Vector a
 replicate n a = Const n a
 
