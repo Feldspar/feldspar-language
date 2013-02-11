@@ -138,8 +138,30 @@ zipWith f (Const l1 a1) (Const l2 a2) = Const (min l1 l2) (f a1 a2)
 zipWith f vA vB = indexed (min (length vA) (length vB))
                   (\ix -> f (vA ! ix) (vB ! ix))
 
+zipWith3 :: (Syntax a, Syntax b, Syntax c) =>
+           (a -> b -> c -> d) -> Vector a -> Vector b -> Vector c -> Vector d
+zipWith3 f (Const l1 a1) (Const l2 a2) (Const l3 a3) = Const (min3 l1 l2 l3) (f a1 a2 a3)
+zipWith3 f vA vB vC = indexed (min3 (length vA) (length vB) (length vC))
+                  (\ix -> f (vA ! ix) (vB ! ix) (vC ! ix))
+
+zipWith4 :: (Syntax a, Syntax b, Syntax c, Syntax d) =>
+           (a -> b -> c -> d -> e) -> Vector a -> Vector b -> Vector c
+           -> Vector d -> Vector e
+zipWith4 f (Const l1 a1) (Const l2 a2) (Const l3 a3) (Const l4 a4)
+  = Const (min4 l1 l2 l3 l4) (f a1 a2 a3 a4)
+zipWith4 f vA vB vC vD = indexed (min4 (length vA) (length vB) (length vC) (length vD))
+                  (\ix -> f (vA ! ix) (vB ! ix) (vC ! ix) (vD ! ix))
+
 zip :: (Syntax a, Syntax b) => Vector a -> Vector b -> Vector (a,b)
 zip = zipWith (\a b -> (a,b))
+
+zip3 :: (Syntax a, Syntax b, Syntax c) =>
+        Vector a -> Vector b -> Vector c -> Vector (a,b,c)
+zip3 = zipWith3 (\a b c -> (a,b,c))
+
+zip4 :: (Syntax a, Syntax b, Syntax c, Syntax d) =>
+        Vector a -> Vector b -> Vector c -> Vector d -> Vector (a,b,c,d)
+zip4 = zipWith4 (\a b c d -> (a,b,c,d))
 
 unzip :: Vector (a,b) -> (Vector a, Vector b)
 unzip vec = (map sel1 vec, map sel2 vec)
@@ -283,3 +305,7 @@ instance Annotatable a => Annotatable (Vector a) where
   annotate info (Concat vecs) = Concat (P.zipWith ann vecs [0..])
     where ann v i = annotate (info P.++ " (concat " P.++ show i P.++ ")") v
 -}
+
+-- TODO: Remove.
+min3 a b c = min a (min b c)
+min4 a b c d = min (min a b) (min c d)
