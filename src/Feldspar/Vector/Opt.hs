@@ -232,8 +232,8 @@ fold f a (Indexed l ixf) = forLoop l a $ \ix s -> f s (ixf ix)
   Concat    :: [Vector a]                        -> Vector a
 -}
 
-fold1 :: (a -> a -> a) -> Vector a -> a
-fold1 = P.error "Unimplemented"
+fold1 :: Syntax a => (a -> a -> a) -> Vector a -> a
+fold1 f a = fold f (head a) (tail a)
 
 -- This one should be really efficiently implementable
 reduce :: Syntax a => (a -> a -> a) -> a -> Vector a -> a
