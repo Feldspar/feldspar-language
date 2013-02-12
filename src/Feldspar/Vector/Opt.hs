@@ -23,7 +23,7 @@ data Vector a where
   Stretch   :: Data Length -> Vector a           -> Vector a
   Repeat    :: Data Length -> Vector a           -> Vector a
   Arr       :: Type a => Data [a] -> Data Length -> Vector (Data a)
-  Enum      :: Data Index -> Data Index          -> Vector (Data Index)
+  Enum      :: Integral a => Data a -> Data a    -> Vector (Data a)
   Const     :: Data Length -> a                  -> Vector a
 
   (:++:)    :: Vector a -> Vector a              -> Vector a
@@ -35,7 +35,7 @@ length (Indexed l _) = l
 length (Stretch s v) = s * length v
 length (Repeat  r v) = r * length v
 length (Arr _ l)     = l
-length (Enum f t)    = t - f + 1
+length (Enum f t)    = i2n t - i2n f + 1
 length (Const l _)   = l
 length (v1 :++: v2)  = length v1 + length v2
 length (v1 :==: v2)  = 2 * (length v1)
@@ -46,7 +46,7 @@ freezeVector (Indexed l ixf) = parallel l ixf
 freezeVector (Stretch s v)   = P.error "Unimplemented"
 freezeVector (Repeat  r v)   = P.error "Unimplemented"
 freezeVector (Arr arr _)     = arr
-freezeVector v@(Enum f t)    = parallel (length v) (\ix -> ix + f)
+freezeVector v@(Enum f t)    = parallel (length v) (\ix -> i2n ix + i2n f)
 freezeVector (Const l a)     = parallel l (\_ -> a)
 freezeVector (v1 :++: v2)    = freezeVector v1 `append` freezeVector v2
 freezeVector (v1 :==: v2)    = P.error "Unimplemented"
@@ -102,7 +102,7 @@ index (Indexed _ ixf) i = ixf i
 index (Stretch s vec) i = index vec (i `quot` s)
 index (Repeat  r vec) i = index vec (i `rem`  r)
 index (Arr arr _)     i = getIx arr i
-index (Enum from to)  i = from + i
+index (Enum from to)  i = i2n from + i2n i
 index (Const _ a)     _ = a
 index (v1 :++: v2)    i = i < length v1 ? index v1 i $ index v2 (i - length v1)
 index (v1 :==: v2)    i = i < length v1 ? index v1 i $ index v2 (i - length v1)
@@ -130,10 +130,10 @@ map f (v1 :++: v2)    = map f v1 :++: map f v2
 map f (v1 :==: v2)    = map f v1 :==: map f v2
 map f (Concat vecs)   = Concat (P.map (map f) vecs)
 
-enumFromTo :: Data Index -> Data Index -> Vector (Data Index)
+enumFromTo :: Integral a => Data a -> Data a -> Vector1 a
 enumFromTo from to = Enum from to
 
-(...) :: Data Index -> Data Index -> Vector (Data Index)
+(...) :: Integral a => Data a -> Data a -> Vector1 a
 (...) = enumFromTo
 
 zipWith :: (Syntax a, Syntax b) =>
@@ -181,12 +181,12 @@ stretch n (Const l a)     = Const (n*l) a
 stretch n vec             = Stretch n vec
 
 take :: Syntax a => Data Length -> Vector a -> Vector a
-take n (Enum from to) = Enum from (min (from + n) to)
+take n (Enum from to) = Enum from (min (from + i2n n) to)
 take n (Const l a)    = Const (min l n) a
 take n vec            = indexed (min n (length vec)) (vec!)
 
 drop :: Syntax a => Data Length -> Vector a -> Vector a
-drop n (Enum from to) = Enum (min (from + n) to) to
+drop n (Enum from to) = Enum (min (i2n $ from + i2n n) to) to
 drop n (Const l a)    = Const (monus l n) a
 drop n vec            = indexed (length vec < n ? 0 $ length vec - n)
                         (\ix -> vec ! (ix - n))
