@@ -126,6 +126,8 @@ map :: (a -> b) -> Vector a -> Vector b
 map f (Indexed l ixf) = Indexed l (f . ixf)
 map f (Stretch s vec) = Stretch s (map f vec)
 map f (Repeat  r vec) = Repeat  r (map f vec)
+map f (Arr a l)       = P.error "map for Arr is not implemented yet."
+map f (Enum from to)  = P.error "map for Enum is not implemented yet."
 map f (Const l a)     = Const l (f a)
 map f (v1 :++: v2)    = map f v1 :++: map f v2
 map f (v1 :==: v2)    = map f v1 :==: map f v2
