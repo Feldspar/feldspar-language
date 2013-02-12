@@ -172,6 +172,10 @@ backpermute :: Shape sh' -> (Shape sh' -> Shape sh) ->
                Vector sh a -> Vector sh' a
 backpermute sh perm vec = traverse vec (const sh) (. perm)
 
+permute :: (Shape sh -> Shape sh -> Shape sh) ->
+           Vector sh a -> Vector sh a
+permute perm (Vector sh ixf) = Vector sh (ixf . (perm sh))
+
 -- | Map a function on all the elements of a vector
 map :: (a -> b) -> Vector sh a -> Vector sh b
 map f (Vector sh ixf) = Vector sh (f . ixf)
