@@ -8,6 +8,7 @@ module Feldspar.Vector.Opt where
 
 import qualified Prelude as P
 
+import qualified Feldspar
 import Feldspar hiding (sugar,desugar,resugar)
 
 import Language.Syntactic hiding (fold)
@@ -272,6 +273,11 @@ eqVector a b = (length a == length b) && and (zipWith (==) a b)
 
 scalarProd :: (Syntax a, Num a) => Vector a -> Vector a -> a
 scalarProd a b = sum (zipWith (*) a b)
+
+scan :: (Syntax a, Syntax b) => (a -> b -> a) -> a -> Vector b -> Vector a
+scan f init bs = Feldspar.sugar $ sequential (length bs) (Feldspar.desugar init) $ \i s ->
+    let s' = Feldspar.desugar $ f (Feldspar.sugar s) (bs!i)
+    in  (s',s')
 
 --------------------------------------------------------------------------------
 -- Misc.
