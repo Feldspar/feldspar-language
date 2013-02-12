@@ -53,9 +53,13 @@ freezeVector (v1 :==: v2)    = P.error "Unimplemented"
 freezeVector (Concat vs)
   = P.foldr (\v as -> freezeVector v `append` as) (value []) vs
 
-thawVector :: Type a => Data Length -> Data [a] -> Vector (Data a)
-thawVector l arr = Arr arr l
-{-
+-- | Converts a non-nested core array to a vector.
+thawVector :: Type a => Data [a] -> Vector (Data a)
+thawVector arr = thawVector' (getLength arr) arr
+
+thawVector' :: Type a => Data Length -> Data [a] -> Vector (Data a)
+thawVector' l arr = Arr arr l
+
 instance Syntax a => Syntactic (Vector a)
   where
     type Domain (Vector a)   = FeldDomain
@@ -66,7 +70,7 @@ instance Syntax a => Syntactic (Vector a)
 instance (Syntax a, Show (Internal a)) => Show (Vector a)
   where
     show = show . eval
--}
+
 type instance Elem      (Vector a) = a
 type instance CollIndex (Vector a) = Data Index
 type instance CollSize  (Vector a) = Data Length
