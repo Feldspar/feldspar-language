@@ -127,7 +127,7 @@ map f (Indexed l ixf) = Indexed l (f . ixf)
 map f (Stretch s vec) = Stretch s (map f vec)
 map f (Repeat  r vec) = Repeat  r (map f vec)
 map f (Arr a l)       = indexed l (\ix -> f (a ! ix))
-map f (Enum from to)  = indexed (to - from + 1) (\ix -> f (from + ix))
+map f v@(Enum from to)= indexed (length v) (\ix -> f (from + i2n ix))
 map f (Const l a)     = Const l (f a)
 map f (v1 :++: v2)    = map f v1 :++: map f v2
 map f (v1 :==: v2)    = map f v1 :==: map f v2
