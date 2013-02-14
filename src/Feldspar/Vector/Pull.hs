@@ -51,6 +51,9 @@ indexed l ixf = Pull ixf l
 length :: PullVector a -> Data Length
 length (Pull _ l) = l
 
+index :: PullVector a -> Data Index -> a
+index (Pull ixf _) i = ixf i
+
 type instance Elem      (PullVector a) = a
 type instance CollIndex (PullVector a) = Data Index
 type instance CollSize  (PullVector a) = Data Length
