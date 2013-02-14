@@ -20,6 +20,14 @@ class Elm a where
   length :: Vector a -> Data Index
   freezeVector :: Vector a -> Data (Repr a)
 
+instance Type a => Elm (Data a) where
+  data Vector (Data a) = Pull (Pl.PullVector (Data a))
+  type Repr   (Data a) = [a]
+  Pull v ! i = Pl.index v i
+  indexed ixf l = Pull (Pl.indexed l ixf)
+  length (Pull v) = Pl.length v
+  freezeVector (Pull v) = Pl.freezePull v
+
 instance (Elm a, Elm b, Type (Repr a), Type (Repr b)) => Elm (a,b) where
   data Vector (a,b) = Pair { fstP :: Vector a, sndP :: Vector b }
   type Repr (a,b) = (Repr a, Repr b)
