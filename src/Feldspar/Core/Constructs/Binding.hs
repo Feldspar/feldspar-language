@@ -234,6 +234,10 @@ instance
         , v1 == v2
         = return $ fromJust $ gcast a
 
+    constructFeatOpt opts Let (var :* f :* Nil)
+        | Just (C' (Variable v)) <- prjF var
+        = optimizeM opts $ betaReduce (stripDecor var) (stripDecor f)
+
       -- (letBind (letBind e1 (\x -> e2)) (\y -> e3) ==>
       --           letBind e1 (\x -> letBind e2 (\y-> e3))
       --
