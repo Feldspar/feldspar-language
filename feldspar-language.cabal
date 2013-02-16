@@ -131,7 +131,7 @@ library
     syntactic                   >= 1.5.2  && < 1.6,
     tagged                      >= 0.4    && < 0.5,
     tuple                       >= 0.2    && < 0.3,
-    monad-par                   >= 0.3    && < 0.4,
+    monad-par                   >= 0.3    && < 0.3.4,
     QuickAnnotate               >= 0.6    && < 0.7
 
   other-extensions:
