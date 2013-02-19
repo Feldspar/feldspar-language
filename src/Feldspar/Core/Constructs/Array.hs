@@ -104,8 +104,6 @@ instance AlphaEq dom dom dom env => AlphaEq Array Array dom env
     alphaEqSym = alphaEqSymDefault
 
 instance Sharable Array
-  where
-    sharable _     = True
 
 instance SizeProp (Array :|| Type)
   where
