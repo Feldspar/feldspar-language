@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE GADTs         #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Feldspar.Vector.Unbox where
 
 import qualified Prelude as P
@@ -12,7 +13,7 @@ import qualified Feldspar.Vector.MultiDim as M
 import Feldspar.Vector.MultiDim (Slice(..),Any,All)
 import Feldspar.Vector.Shape
 
-import Language.Syntactic hiding (fold,desugar,P)
+import Language.Syntactic hiding (fold,desugar,sugar,P)
 
 -- | Non-nested vector
 type Vector1 a = Vector (Data a)
@@ -51,6 +52,14 @@ instance (Elm a, Elm b, Elm c, Type (Repr a), Type (Repr b), Type (Repr c)) => E
   indexed ixf l = Triple (indexed (fst3 . ixf) l) (indexed (snd3 . ixf) l) (indexed (trd3 . ixf) l)
   length vec = length (fstT vec)
   freezeVector (Triple v1 v2 v3) = desugar (freezeVector v1, freezeVector v2, freezeVector v3)
+
+instance (Type (Repr a), Elm a) => Elm (Vector a) where
+  data Vector (Vector a) = Nest (Pl.PullVector (Vector a))
+  type Repr   (Vector a) = [Repr a]
+  Nest v ! i = Pl.index v i
+  indexed ixf l = Nest (Pl.indexed l ixf)
+  length (Nest v) = Pl.length v
+  freezeVector (Nest vec) = Pl.freezePull (fmap freezeVector vec)
 
 instance (Syntax a, Shapely sh) => Elm (M.Vector sh a) where
   data Vector (M.Vector sh a) = M (M.Vector (sh :. Data Length) a)
@@ -120,7 +129,7 @@ zip3 :: (Elm a, Elm b, Elm c, Type (Repr a), Type (Repr b), Type (Repr c)) =>
         Vector a -> Vector b -> Vector c -> Vector (a,b,c)
 zip3 = zipWith3 (\a b c -> (a,b,c))
 
-zipWith :: (Elm a, Elm b, Elm c, Type (Repr a), Type (Repr b), Type (Repr c)) =>
+zipWith :: (Elm a, Elm b, Elm c) =>
            (a -> b -> c) -> Vector a -> Vector b -> Vector c
 zipWith f vA vB = indexed (\ix -> f (vA ! ix) (vB ! ix))
                   (min (length vA) (length vB))
@@ -155,7 +164,11 @@ tail = drop 1
 
 (++) = P.error "++ not implemented"
 
+scan :: (Elm a, Elm b) => (a -> b -> a) -> a -> Vector b -> Vector a
 scan f init bs = P.error "scan not implemented"
+-- scan f init bs = sugar $ sequential (length bs) (desugar init) $ \i s ->
+--    let s' = desugar $ f (sugar s) (bs!i)
+--    in  (s',s')
 
 -- TODO: Remove.
 min3 a b c = min a (min b c)
