@@ -297,17 +297,17 @@ collectLetBinders :: forall dom a .
                    ( Project Let dom
                    , Project (CLambda Type) dom
                    , ConstrainedBy dom Typeable
-                   ) => ASTF (Decor Info dom) a ->
-                   ( [(VarId, ASTB (Decor Info dom) Typeable)]
-                   , ASTF (Decor Info dom) a
+                   ) => ASTF dom a ->
+                   ( [(VarId, ASTB dom Typeable)]
+                   , ASTF dom a
                    )
 collectLetBinders e = go [] e
   where
     go
-      :: [(VarId, ASTB (Decor Info dom) Typeable)]
-      -> ASTF (Decor Info dom) a
-      -> ( [(VarId, ASTB (Decor Info dom) Typeable)]
-         , ASTF (Decor Info dom) a
+      :: [(VarId, ASTB dom Typeable)]
+      -> ASTF dom a
+      -> ( [(VarId, ASTB dom Typeable)]
+         , ASTF dom a
          )
     go bs (lt :$ e :$ (lam :$ body))
       | Just (SubConstr2 (Lambda v)) <- prjLambda lam
