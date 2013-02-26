@@ -128,6 +128,7 @@ instance ( LoopM Mut :<: dom
          , CLambda Type :<: dom
          , MONAD Mut :<: dom
          , MutableReference :<: dom
+         , Let :<: dom
          , Optimize (CLambda Type) dom
          , Optimize (MONAD Mut) dom
          , Optimize dom dom
@@ -169,6 +170,7 @@ instance ( (Literal  :|| Type) :<: dom
          , (Loop     :|| Type) :<: dom
          , (Variable :|| Type) :<: dom
          , CLambda Type :<: dom
+         , Let :<: dom
          , OptimizeSuper dom
          )
       => Optimize (Loop :|| Type) dom

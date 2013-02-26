@@ -117,6 +117,7 @@ instance SizeProp (MONAD Par)
 instance ( MONAD Par :<: dom
          , (Variable :|| Type) :<: dom
          , CLambda Type :<: dom
+         , Let :<: dom
          , OptimizeSuper dom
          )
       => Optimize (MONAD Par) dom
