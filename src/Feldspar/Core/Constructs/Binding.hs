@@ -123,12 +123,19 @@ optimizeLambda opts opt info lam@(SubConstr2 (Lambda v)) (body :* Nil)
         constructFeatUnOpt opts lam (body' :* Nil)
 
 -- | Assumes that the expression is a 'Lambda'
-optimizeFunction :: ( CLambda Type :<: dom
-                    , OptimizeSuper dom)
+optimizeFunction :: ( (Variable :|| Type) :<: dom
+                    , CLambda Type :<: dom
+                    , Let :<: dom
+                    , OptimizeSuper dom
+                    )
     => FeldOpts
     -> (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
     -> Info a
     -> (ASTF (dom :|| Typeable) (a -> b) -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b)))
+optimizeFunction opts opt info e
+    | e'@(bs, _) <- collectLetBinders e
+    , not (Prelude.null bs)
+    = optimizeLet opts opt info e'
 optimizeFunction opts opt info a@(sym :$ body)
     | Dict <- exprDict a
     , Dict <- exprDict body
@@ -136,6 +143,27 @@ optimizeFunction opts opt info a@(sym :$ body)
     = optimizeLambda opts opt info lam (body :* Nil)
 optimizeFunction opts opt info a
     = error $ "optimizeFunction: AST is not a function: " ++ show a ++ "\n" ++ show (infoType info)
+
+optimizeLet
+    :: ( (Variable :|| Type) :<: dom
+       , CLambda Type :<: dom
+       , Let :<: dom
+       , OptimizeSuper dom
+       )
+    => FeldOpts
+    -> (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
+    -> Info a
+    -> ([(VarId, ASTB (dom :|| Typeable) Type)], ASTF (dom :|| Typeable) (a -> b))
+    -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b))
+optimizeLet opts opt info ((v, ASTB e):t, bd)
+    | Dict <- exprDict bd
+    , Dict <- exprDict e
+    = do
+      e'  <- optimizeM opts e
+      bd' <- localVar v (getInfo e') $ optimizeLet opts opt info (t, bd)
+      bd'' <- constructFeatUnOpt opts (cLambda v) (bd' :* Nil)
+      constructFeatUnOpt opts Let (e' :* bd'' :* Nil)
+optimizeLet opts opt info ([], e) = optimizeFunction opts opt info e
 
 {-
 optimizeFunBody :: (Lambda TypeCtx :<: dom, Optimize dom dom, Typeable a)
@@ -298,21 +326,21 @@ collectLetBinders :: forall dom a .
                    , Project (CLambda Type) dom
                    , ConstrainedBy dom Typeable
                    ) => ASTF dom a ->
-                   ( [(VarId, ASTB dom Typeable)]
+                   ( [(VarId, ASTB dom Type)]
                    , ASTF dom a
                    )
 collectLetBinders e = go [] e
   where
     go
-      :: [(VarId, ASTB dom Typeable)]
+      :: [(VarId, ASTB dom Type)]
       -> ASTF dom a
-      -> ( [(VarId, ASTB dom Typeable)]
+      -> ( [(VarId, ASTB dom Type)]
          , ASTF dom a
          )
     go bs (lt :$ e :$ (lam :$ body))
       | Just (SubConstr2 (Lambda v)) <- prjLambda lam
       , Just Let <- prj lt
-      , Dict <- exprDictSub pTypeable e
+      , Dict <- exprDict e
       = go ((v, ASTB e):bs) body
     go bs e = (reverse bs, e)
 
