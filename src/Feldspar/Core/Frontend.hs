@@ -142,20 +142,21 @@ prjDict = PrjDict
     (prjVariable prjDictFO . decorExpr)
     (prjLambda   prjDictFO . decorExpr)
 
-mkId :: MkInjDict (Decor Info FeldDom)
-mkId a b | simpleMatch (const . sharable) a
-         , Just Dict <- typeDict a
-         , Dict <- exprDictSub pTypeable b
-         , Info {infoType = bType} <- getInfo b
-         = case bType of
-             FunType{} -> Nothing
-             _         -> Just InjDict
+mkId :: FeldOpts -> MkInjDict (Decor Info FeldDom)
+mkId opts a b
+  | simpleMatch (const . sharable) a
+  , Just Dict <- typeDict a
+  , Dict <- exprDictSub pTypeable b
+  , Info {infoType = bType} <- getInfo b
+  = case bType of
+      FunType{} | P.not (SICS `inTarget` opts) -> Nothing
+      _         -> Just InjDict
                             { injVariable = Decor (getInfo a) . injC . c' . Variable
                             , injLambda   = let info = ((mkInfoTy (FunType typeRep bType)) {infoSize = (infoSize (getInfo a), infoSize (getInfo b))})
                                             in Decor info . injC . cLambda
                             , injLet      = Decor (getInfo b) $ injC $ Let
                             }
-mkId _ _ = Nothing
+mkId _ _ _ = Nothing
 
 
 -- | Reification and optimization of a Feldspar program
@@ -168,7 +169,7 @@ reifyFeld opts n = flip evalState 0 .
     (   return
     .   optimize opts
     .   stripDecor
-    <=< codeMotion prjDict mkId
+    <=< codeMotion prjDict (mkId opts)
     .   optimize opts
     .   targetSpecialization n
     <=< reifyM
