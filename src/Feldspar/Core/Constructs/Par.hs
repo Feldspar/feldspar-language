@@ -132,7 +132,7 @@ instance ( MONAD Par :<: dom
 
     optimizeFeat opts a args = optimizeFeatDefault opts a args
 
-    constructFeatOpt _ Bind (ma :* (lam :$ (Sym (Decor _ ret) :$ var)) :* Nil)
+    constructFeatOpt _ Bind (ma :* (lam :$ (ret :$ var)) :* Nil)
       | Just (SubConstr2 (Lambda v1)) <- prjLambda lam
       , Just Return                   <- prjMonad monadProxy ret
       , Just (C' (Variable v2))       <- prjF var
@@ -148,15 +148,15 @@ instance ( MONAD Par :<: dom
         vars = infoVars $ getInfo body
 
       -- return x >> mb ==> mb
-    constructFeatOpt _ Then ((Sym (Decor _ ret) :$ _) :* mb :* Nil)
+    constructFeatOpt _ Then ((ret :$ _) :* mb :* Nil)
         | Just Return <- prjMonad monadProxy ret
         = return mb
 
       -- ma >> return () ==> ma
-    constructFeatOpt _ Then (ma :* (Sym (Decor info ret) :$ u) :* Nil)
+    constructFeatOpt _ Then (ma :* (ret :$ u) :* Nil)
         | Just Return <- prjMonad monadProxy ret
-        , Just TypeEq <- typeEq (infoType $ getInfo ma) (ParType UnitType)
-        , Just TypeEq <- typeEq (infoType info)         (ParType UnitType)
+        , Just TypeEq <- typeEq (infoType $ getInfo ma)  (ParType UnitType)
+        , Just TypeEq <- typeEq (infoType $ getInfo ret) (ParType UnitType)
         , Just ()     <- viewLiteral u
         = return ma
 
