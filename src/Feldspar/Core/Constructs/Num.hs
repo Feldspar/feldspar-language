@@ -151,6 +151,34 @@ instance ( (NUM     :|| Type) :<: dom
         , alphaEq b d
         = constructFeat opts (c' Add) (a :* c :* Nil)
 
+    -- literal a - (b + literal c) ==> literal (a-c) - b
+    -- constructFeatOpt opts s@(C' Sub) (a :* (op :$ b :$ c) :* Nil)
+    --     | Just a'      <- viewLiteral a
+    --     , Just (C' Add) <- prjF op
+    --     , Just c'      <- viewLiteral c
+    --     = constructFeat opts s (literalDecor (a'-c') :* b :* Nil)
+
+    -- literal a - (b - literal c) ==> literal (a+c) - b
+    -- constructFeatOpt opts s@(C' Sub) (a :* (op :$ b :$ c) :* Nil)
+    --     | Just a'      <- viewLiteral a
+    --     , Just (C' Sub) <- prjF op
+    --     , Just c'      <- viewLiteral c
+    --     = constructFeat opts s (literalDecor (a'+c') :* b :* Nil)
+
+    -- (a + literal b) - literal c ==> a + literal (b - c)
+    constructFeatOpt opts (C' Sub) ((op :$ a :$ b) :* c :* Nil)
+        | Just c'      <- viewLiteral c
+        , Just s@(C' Add) <- prjF op
+        , Just b'      <- viewLiteral b
+        = constructFeat opts s (a :* literalDecor (b'-c') :* Nil)
+
+    -- (a - literal b) - literal c ==> a - literal (b + c)
+    constructFeatOpt opts s@(C' Sub) ((op :$ a :$ b) :* c :* Nil)
+        | Just c'      <- viewLiteral c
+        , Just (C' Sub) <- prjF op
+        , Just b'      <- viewLiteral b
+        = constructFeat opts s (a :* literalDecor (b'+c') :* Nil)
+
     constructFeatOpt opts (C' Sub) ((op1 :$ a :$ b) :* (op2 :$ c :$ d) :* Nil)
         | Just (C' Add) <- prjF op1
         , Just (C' Sub) <- prjF op2
