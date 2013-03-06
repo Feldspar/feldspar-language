@@ -195,6 +195,11 @@ instance ( (BITS  :|| Type) :<: dom
         , alphaEq v2 v3
         = return v1
 
+    -- complement . complement ==> id
+    constructFeatOpt opts (C' Complement) ((cmpl :$ a) :* Nil)
+        | Just (C' Complement) <- prjF cmpl
+        = return a
+
     constructFeatOpt opts (C' TestBit) ((xo :$ v1 :$ v2) :* v3 :* Nil)
         | Just (C' BXor) <- prjF xo
         , Just a <- viewLiteral v2
