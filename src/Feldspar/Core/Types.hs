@@ -808,27 +808,6 @@ type instance Size (Par a)         = Size a
 type instance Size (IV a)          = Size a
 type instance Size (FVal a)        = Size a
 
--- Note: The instance
---
---     Size (a -> b) = Size b
---
--- might seem strange. In general, the size of a function result depends on the
--- size of the argument, so it might be more natural to have
---
---     Size (a -> b) = Size a -> Size b
---
--- However, this doesn't really work with the `optimize` function, since
--- optimization is done simultaneously with size inference, and the two
--- influence each other. The result of optimization is an optimized expression
--- decorated with a size. If the expression is of function type, the size of the
--- argument has to be provided before optimizing the function body. Yet, the
--- result will be decorated by a value of type `Size a -> Size b`, which
--- suggests that we do not yet know the size of the argument.
---
--- So instead, we represent the size of a function as the size of its result,
--- which means that the size of a function is only valid in a given context.
-
-
 
 -- | A generalization of 'Range' that serves two purposes: (1) Adding an extra
 -- 'Universal' constructor to support unbounded types ('Range' can only
