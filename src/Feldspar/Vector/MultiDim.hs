@@ -218,8 +218,7 @@ fold' f x vec = Vector sh ixf
           ixf i = forLoop n (x!:i) (\ix s -> f s (vec !: (i :. ix)))
 
 -- | Summing a vector along its last dimension
-sum :: (Type a, Numeric a) =>
-       DVector (sh :. Data Length) a -> DVector sh a
+sum :: (Syntax a, Num a) => Vector (sh :. Data Length) a -> Vector sh a
 sum = fold (+) 0
 
 
@@ -296,8 +295,10 @@ transpose2D :: Vector DIM2 e -> Vector DIM2 e
 transpose2D = transpose
 
 -- | Matrix multiplication
-mmMult :: (Type e, Numeric e)
-       => DVector DIM2 e -> DVector DIM2 e -> DVector DIM2 e
+--mmMult :: (Type e, Numeric e)
+--       => DVector DIM2 e -> DVector DIM2 e -> DVector DIM2 e
+mmMult :: (Syntax e, Num e) =>
+          Vector DIM2 e -> Vector DIM2 e -> Vector DIM2 e
 mmMult vA vB
   = sum (zipWith (*) vaRepl vbRepl)
   where
