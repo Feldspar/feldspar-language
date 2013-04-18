@@ -43,10 +43,13 @@ module Feldspar.Core.Constructs.Num
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
 
+import Data.Complex (Complex(..))
+
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Literal
+import Feldspar.Core.Constructs.Complex
 
 
 data NUM a
@@ -87,6 +90,7 @@ instance SizeProp (NUM :|| Type)
 
 instance ( (NUM     :|| Type) :<: dom
          , (Literal :|| Type) :<: dom
+         , (COMPLEX :|| Type) :<: dom
          , OptimizeSuper dom
          )
       => Optimize (NUM :|| Type) dom
@@ -189,6 +193,19 @@ instance ( (NUM     :|| Type) :<: dom
     constructFeatOpt _ (C' Sub) (a :* b :* Nil)
         | Just 0 <- viewLiteral b = return a
         | alphaEq a b             = return $ literalDecor 0
+
+    -- (x + yi) * i ==> -y + xi; (x + yi) * (-i) ==> y - xi
+    constructFeatOpt opts (C' Mul) (a :* iunit :* Nil)
+        | ComplexType FloatType <- infoType (getInfo iunit)
+        , Just (0 :+ k)         <- viewLiteral iunit
+        , abs k == 1
+        = do
+             ra <- constructFeat opts (c' RealPart) (a :* Nil)
+             ia <- constructFeat opts (c' ImagPart) (a :* Nil)
+             iainv <- constructFeatOpt opts (c' Mul) (literalDecor (-k) :* ia :* Nil)
+             rainv <- constructFeatOpt opts (c' Mul) (literalDecor k :* ra :* Nil)
+             constructFeatOpt opts (c' MkComplex) (iainv :* rainv :* Nil)
+
 
     constructFeatOpt _ (C' Mul) (a :* b :* Nil)
         | Just 0 <- viewLiteral a = return a
