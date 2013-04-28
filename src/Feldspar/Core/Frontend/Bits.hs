@@ -104,11 +104,13 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
 
     bitSize       :: Data a -> Data Index
     bitSize       = value . bitSize'
-
     bitSize'      :: Data a -> Index
     bitSize'      = const $ fromIntegral $ B.bitSize (undefined :: a)
+
     isSigned      :: Data a -> Data Bool
-    isSigned      = const $ value $ B.isSigned (undefined :: a)
+    isSigned      = value . isSigned'
+    isSigned'     :: Data a -> Bool
+    isSigned'     = const $ B.isSigned (undefined :: a)
 
 (⊕)    :: (Bits a) => Data a -> Data a -> Data a
 (⊕)    =  xor
