@@ -41,8 +41,6 @@ import Prelude hiding (Integral(..))
 import Data.Int
 import Data.Word
 
-import Language.Syntactic
-
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs
