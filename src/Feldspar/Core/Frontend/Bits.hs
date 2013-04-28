@@ -113,13 +113,6 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     isSigned'     :: Data a -> Bool
     isSigned'     = const $ B.isSigned (undefined :: a)
 
-(⊕)    :: (Bits a) => Data a -> Data a -> Data a
-(⊕)    =  xor
-(.<<.) :: (Bits a) => Data a -> Data Index -> Data a
-(.<<.) =  shiftLU
-(.>>.) :: (Bits a) => Data a -> Data Index -> Data a
-(.>>.) =  shiftRU
-
 instance Bits Word8
 instance Bits Word16
 instance Bits Word32
@@ -130,4 +123,25 @@ instance Bits Int16
 instance Bits Int32
 instance Bits Int64
 instance Bits IntN
+
+-- * Combinators
+
+(⊕)    :: (Bits a) => Data a -> Data a -> Data a
+(⊕)    =  xor
+(.<<.) :: (Bits a) => Data a -> Data Index -> Data a
+(.<<.) =  shiftLU
+(.>>.) :: (Bits a) => Data a -> Data Index -> Data a
+(.>>.) =  shiftRU
+
+-- | Set all bits to one
+allOnes :: Bits a => Data a
+allOnes = complement 0
+
+-- | Set the `n` lowest bits to one
+oneBits :: Bits a => Data Index -> Data a
+oneBits n = complement (allOnes .<<. n)
+
+-- | Extract the `k` lowest bits
+lsbs :: Bits a => Data Index -> Data a -> Data a
+lsbs k i = i .&. oneBits k
 

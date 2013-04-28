@@ -91,12 +91,3 @@ rotBit k i = lefts .|. rights
     rights = ir .&. oneBits k
     lefts  = (((ir .>>. k) .<<. 1) .|. (i .&. 1)) .<<. k
 
-oneBits :: (Bits a) => Data Index -> Data a
-oneBits n = complement (allOnes .<<. n)
-
-allOnes :: (Bits a) => Data a
-allOnes = complement 0
-
-lsbs :: Bits a => Data Index -> Data a -> Data a
-lsbs k i = i .&. oneBits k
-
