@@ -329,6 +329,7 @@ data TypeRep a
                      ) =>
                        Signedness s -> BitWidth n -> TypeRep (GenericInt s n)
     FloatType     :: TypeRep Float
+    DoubleType    :: TypeRep Double
     ComplexType   :: RealFloat a => TypeRep a -> TypeRep (Complex a)
     ArrayType     :: TypeRep a -> TypeRep [a]
     TargetArrType :: BitWidth n -> TypeRep a -> TypeRep (TargetArr n a)
@@ -355,6 +356,7 @@ instance Show (TypeRep a)
     show BoolType            = "Bool"
     show (IntType s n)       = signedness s ++ bitWidth n
     show FloatType           = "Float"
+    show DoubleType          = "Double"
     show (ComplexType t)     = "(Complex " ++ show t ++ ")"
     show (ArrayType t)       = "[" ++ show t ++ "]"
     show (TargetArrType _ t) = "[" ++ show t ++ "]"
@@ -388,6 +390,7 @@ defaultSize UnitType = universal
 defaultSize BoolType = universal
 defaultSize (IntType _ _) = universal
 defaultSize FloatType = universal
+defaultSize DoubleType = universal
 defaultSize (ComplexType _) = universal
 defaultSize (ArrayType t) = universal :> defaultSize t
 --defaultSize (TargetArrType n t) = universal :> defaultSize t -- TODO
@@ -456,6 +459,7 @@ typeEq (IntType s1 n1) (IntType s2 n2) = do
     TypeEq <- widthEq n1 n2
     return TypeEq
 typeEq FloatType FloatType = Just TypeEq
+typeEq DoubleType DoubleType = Just TypeEq
 typeEq (ComplexType t1) (ComplexType t2) = do
     TypeEq <- typeEq t1 t2
     return TypeEq
@@ -547,6 +551,7 @@ type instance TargetType n Int64           = Int64
 type instance TargetType n WordN           = GenericInt U n
 type instance TargetType n IntN            = GenericInt S n
 type instance TargetType n Float           = Float
+type instance TargetType n Double          = Double
 type instance TargetType n (Complex a)     = Complex (TargetType n a)
 type instance TargetType n [a]             = TargetArr n (TargetType n a)
 type instance TargetType n (a,b)           = (TargetType n a, TargetType n b)
@@ -581,6 +586,7 @@ instance Type Int64   where typeRep = IntType S N64;     sizeOf = singletonRange
 instance Type WordN   where typeRep = IntType U NNative; sizeOf = singletonRange; toTarget = fromWordN
 instance Type IntN    where typeRep = IntType S NNative; sizeOf = singletonRange; toTarget = fromIntN
 instance Type Float   where typeRep = FloatType;         sizeOf _ = AnySize;      toTarget _ = id
+instance Type Double  where typeRep = DoubleType;        sizeOf _ = AnySize;      toTarget _ = id
 
 instance (Type a, RealFloat a) => Type (Complex a)
   where
@@ -791,6 +797,7 @@ type instance Size Int64           = Range Int64
 type instance Size WordN           = Range WordN
 type instance Size IntN            = Range IntN
 type instance Size Float           = AnySize
+type instance Size Double          = AnySize
 type instance Size (Complex a)     = AnySize
 type instance Size [a]             = Range Length :> Size a
 type instance Size (TargetArr n a) = Range (GenericInt U n) :> Size a

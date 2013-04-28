@@ -51,6 +51,7 @@ class (Fractional a, Numeric a) => Fraction a
     divFrac = sugarSymF DivFrac
 
 instance Fraction Float
+instance Fraction Double
 
 instance (Fraction a, RealFloat a) => Fraction (Complex a)
 
