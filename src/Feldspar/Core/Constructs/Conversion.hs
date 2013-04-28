@@ -55,7 +55,7 @@ data Conversion a
                ,Size a ~ Range a
                ) =>
                Conversion (a :-> Full b)
-    B2I     :: (Type a, Integral a, RealFloat b)
+    B2I     :: (Type a, Integral a)
             => Conversion (Bool  :-> Full a)
     Round   :: (Type a, Integral a, RealFloat b)
             => Conversion (b :-> Full a)
