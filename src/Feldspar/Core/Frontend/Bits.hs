@@ -55,7 +55,7 @@ infixl 4 ⊕
 
 class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
   where
-    -- Logical operations
+    -- * Logical operations
     (.&.)         :: Data a -> Data a -> Data a
     (.&.)         = sugarSymF BAnd
     (.|.)         :: Data a -> Data a -> Data a
@@ -65,7 +65,7 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     complement    :: Data a -> Data a
     complement    = sugarSymF Complement
 
-    -- Bitwise operations
+    -- * Bitwise operations
     bit           :: Data Index -> Data a
     bit           = sugarSymF Bit
     setBit        :: Data a -> Data Index -> Data a
@@ -77,7 +77,7 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     testBit       :: Data a -> Data Index -> Data Bool
     testBit       = sugarSymF TestBit
 
-    -- Movement operations
+    -- * Movement operations
     shiftLU       :: Data a -> Data Index -> Data a
     shiftLU       = sugarSymF ShiftLU
     shiftRU       :: Data a -> Data Index -> Data a
@@ -97,6 +97,7 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     reverseBits   :: Data a -> Data a
     reverseBits   = sugarSymF ReverseBits
 
+    -- * Query operations
     bitScan       :: Data a -> Data Index
     bitScan       = sugarSymF BitScan
     bitCount      :: Data a -> Data Index
