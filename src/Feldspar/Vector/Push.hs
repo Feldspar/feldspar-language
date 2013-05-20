@@ -96,7 +96,12 @@ v1 ++ v2 = Push (\func -> f func >>
 -- | Given an array of pairs, flatten the array so that the elements of the
 --   pairs end up next to each other in the resulting vector.
 unpair :: (Pushy arr, Syntax a) => arr (a,a) -> PushVector a
-unpair arr = Push (\k -> f (everyOther k)) (2 * l)
+unpair = unpairWith everyOther
+
+unpairWith :: (Pushy arr, Syntax a)
+           => ((Data Index -> a -> M ()) -> Data Index -> (a,a) -> M ())
+           -> arr (a,a) -> PushVector a
+unpairWith spread arr = Push (f . spread) (2*l)
   where
     Push f l = toPush arr
 
