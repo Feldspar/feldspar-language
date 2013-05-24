@@ -56,6 +56,7 @@ module Feldspar.Core.Frontend
     , reifyFeldUnOpt
     , showExpr
     , printExpr
+    , printExprWith
     , printExprUnOpt
     , showAST
     , drawAST
@@ -201,6 +202,10 @@ showExpr = render . reifyFeld defaultFeldOpts N32
 -- | Print an optimized expression
 printExpr :: SyntacticFeld a => a -> IO ()
 printExpr = Syntactic.printExpr . reifyFeld defaultFeldOpts N32
+
+-- | Print an optimized expression with options
+printExprWith :: SyntacticFeld a => FeldOpts -> a -> IO ()
+printExprWith opts = Syntactic.printExpr . reifyFeld opts N32
 
 -- | Print an unoptimized expression
 printExprUnOpt :: SyntacticFeld a => a -> IO ()
