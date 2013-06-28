@@ -38,3 +38,9 @@ import Feldspar.Core.Frontend.Mutable
 ifM :: Syntax a => Data Bool -> M a -> M a -> M a
 ifM = sugarSymC ConditionM
 
+whenM :: Data Bool -> M () -> M ()
+whenM c ma = ifM c ma (return ())
+
+unlessM :: Data Bool -> M () -> M ()
+unlessM c mb = ifM c (return ()) mb
+
