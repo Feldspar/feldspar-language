@@ -107,6 +107,7 @@ library
     Feldspar.FixedPoint
     Feldspar.Future
     Feldspar.Matrix
+    Feldspar.Memoize
     Feldspar.Option
     Feldspar.Repa
     Feldspar.Stream
