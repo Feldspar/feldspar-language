@@ -59,6 +59,8 @@ module Feldspar.Stream
 
 import qualified Prelude as P
 
+import Control.Applicative
+
 import Feldspar
 import Feldspar.Vector.Internal
          (Vector, Vector1
@@ -267,6 +269,16 @@ zipWith f (Stream next1 init1) (Stream next2 init2) = Stream next init
 -- | Given a stream of pairs, split it into two stream.
 unzip :: (Syntax a, Syntax b) => Stream (a,b) -> (Stream a, Stream b)
 unzip stream = (map fst stream, map snd stream)
+
+app :: Stream (a -> b) -> Stream a -> Stream b
+app = zipWith ($)
+
+instance Functor Stream where
+  fmap f = map f
+
+instance Applicative Stream where
+  pure = repeat
+  (<*>) = app
 
 instance Syntax a => Indexed (Stream a) where
   (Stream next init) ! n = runMutable $ do
