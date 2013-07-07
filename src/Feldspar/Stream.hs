@@ -82,8 +82,7 @@ tail (Stream next init) = Stream next (init >>= \st -> next st >> return st)
 
 -- | 'map f str' transforms every element of the stream 'str' using the
 --   function 'f'
-map :: (Syntax a, Syntax b) =>
-       (a -> b) -> Stream a -> Stream b
+map :: (a -> b) -> Stream a -> Stream b
 map f (Stream next init) = Stream newNext init
   where newNext st = do a <- next st
                         return (f a)
@@ -228,8 +227,8 @@ iterate f a = Stream next init
 -- | Repeat an element indefinitely.
 --
 -- @repeat a = [a, a, a, ...]@
-repeat :: Syntax a => a -> Stream a
-repeat a = Stream return (return a)
+repeat :: a -> Stream a
+repeat a = Stream (const (return a)) (return ())
 
 -- | @unfold f acc@ creates a new stream by successively applying 'f' to
 --   to the accumulator 'acc'.
