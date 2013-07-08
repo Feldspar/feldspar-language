@@ -101,7 +101,7 @@ instance SizeProp (Conversion :|| Type)
     sizeProp (C' F2I)     _ = universal
     sizeProp (C' i2n@I2N) (WrapFull a :* Nil)
         = rangeToSize (resultType i2n) (mapMonotonic toInteger (infoSize a))
-    sizeProp (C' B2I)     _ = universal
+    sizeProp (C' b2i@B2I) _ = rangeToSize (resultType b2i) $ range 0 1
     sizeProp (C' Round)   _ = universal
     sizeProp (C' Ceiling) _ = universal
     sizeProp (C' Floor)   _ = universal
