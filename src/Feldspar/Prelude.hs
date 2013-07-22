@@ -68,6 +68,7 @@ import Prelude
   , putStrLn
   , readFile
   , snd
+  , subtract
   , toInteger
   , toRational
   , uncurry
