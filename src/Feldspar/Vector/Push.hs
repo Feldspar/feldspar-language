@@ -38,6 +38,7 @@ import qualified Prelude
 
 import Feldspar hiding (sugar,desugar)
 import qualified Feldspar.Vector as V
+import qualified Feldspar.Vector.Pull as P
 
 import Language.Syntactic (Syntactic(..))
 
@@ -79,6 +80,9 @@ instance Pushy PushVector where
   toPush = id
 
 instance Pushy V.Vector where
+  toPush vec = Push (\k -> forM (length vec) (\i -> k i (vec!i))) (length vec)
+
+instance Pushy P.PullVector where
   toPush vec = Push (\k -> forM (length vec) (\i -> k i (vec!i))) (length vec)
 
 instance Functor PushVector where
@@ -123,6 +127,11 @@ reverse :: (Ixmap arr, Len arr, Syntax a) =>
            arr a -> arr a
 reverse arr = ixmap (\ix -> length arr - ix - 1) arr
 
+permute :: (Data Length -> Data Index -> Data Index) ->
+           PushVector a -> PushVector a
+permute ixp (Push f l) = Push g l
+  where g k = f (\i a -> k (ixp l i) a)
+
 -- | Split a pull vector in half.
 --
 --   If the input vector has an odd length the second result vector
@@ -143,6 +152,9 @@ class Len arr where
 
 instance Len V.Vector where
   length = V.length
+
+instance Len P.PullVector where
+  length = P.length
 
 instance Len PushVector where
   length (Push _ l) = l
