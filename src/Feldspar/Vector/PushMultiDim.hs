@@ -1,11 +1,17 @@
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE GADTs                  #-}
 module Feldspar.Vector.PushMultiDim where
 
 import Feldspar hiding (desugar,sugar,resugar)
 import qualified Feldspar.Vector.MultiDim as R
 import Feldspar.Vector.Shape
-import Language.Syntactic.Syntax
+import Language.Syntactic hiding (size)
 
 import Prelude hiding (div)
 import qualified Prelude as P
@@ -17,9 +23,9 @@ import Control.Monad (zipWithM_)
 import Feldspar.Stream hiding (map)
 
 -- | Multidimentional push vectors
-data Vector sh a = Push ((sh -> a -> M ()) -> M ()) sh
+data Vector sh a = Push ((Shape sh -> a -> M ()) -> M ()) (Shape sh)
 
-shape :: Vector sh a -> sh
+shape :: Vector sh a -> Shape sh
 shape (Push _ sh) = sh
 
 instance Functor (Vector sh) where
@@ -38,8 +44,7 @@ instance Functor (Vector sh) where
 
 -- | Concatenation along the last dimension where the two vectors have the same
 --   length. There is no check that the lengths are equal.
-(+=+) :: Shape sh
-      => R.Vector (sh :. Data Length) a
+(+=+) :: R.Vector (sh :. Data Length) a
       -> R.Vector (sh :. Data Length) a
       -> Vector (sh :. Data Length) a
 (R.Vector (sh1 :. l1) ixf1) +=+ (R.Vector (sh2 :. l2) ixf2)
@@ -50,23 +55,24 @@ instance Functor (Vector sh) where
 
 -- | Flattens an array of pairs such that the elements of a pair end up next
 --   to each other in the resulting array.
-unpair :: (Shape sh, Pushy arr)
+unpair :: Pushy arr
        => arr (sh :. Data Length) (a,a)
        -> Vector (sh :. Data Length) a
 unpair v = Push k' (sh :. (l * 2))
-  where (Push k (sh :. l)) = toPush v
+  where (Push k ex) = toPush v
+        (sh,l) = case ex of sh :. l -> (sh,l)
         k' func = k (\ (sh :. i) (a,b) -> func (sh :. (2 * i)) a
                                        >> func (sh :. (2 * i + 1)) b)
 
 -- | Transform the indices of a vector.
-ixmap :: (sh -> sh) -> Vector sh a -> Vector sh a
+ixmap :: (Shape sh -> Shape sh) -> Vector sh a -> Vector sh a
 ixmap ixf (Push k l) = Push k' l
   where k' func = k (\sh a -> func (ixf sh) a)
 
 -- | Reverse a vector along its last dimension
 rev1 ::  Vector (sh :. Data Length) a -> Vector (sh :. Data Length) a
-rev1 v = ixmap (\ (sh :. l1) -> sh :. (l - l1 - 1)) v
-  where (_ :. l) = shape v
+rev1 (Push f ex@(sh :. l)) = Push f' ex
+  where f' k = f (\(shi :. ix) a -> k (shi :. (l - ix - 1)) a)
 
 -- | Transpose a two dimensional vector.
 transpose :: Vector DIM2 a -> Vector DIM2 a
@@ -81,12 +87,11 @@ halve (R.Vector (sh :. l) ixf) = (R.Vector (sh :. (l `div` 2)) ixf
   where ixf' (sh :. i) = ixf (sh :. (i + (l `div` 2)))
 
 
-riffle :: Shape sh =>
-          R.Vector (sh :. Data Length) a -> Vector (sh :. Data Length) a
+riffle :: R.Vector (sh :. Data Length) a -> Vector (sh :. Data Length) a
 riffle =  unpair . uncurry R.zip . halve
 
 -- Pinpointing one particular dimension
-
+{-
 data NotThis = NotThis
 data This = This
 
@@ -121,11 +126,11 @@ conc s (Push k1 sh1) (Push k2 sh2)
 rev :: Selector sel sh =>
        sel -> Vector sh a -> Vector sh a
 rev s (Push k sh) = Push k' sh
-  where k' func = k (\ sh a -> func (adjustLength s (selectLength s sh -) sh) a)
-
+  where k' func = k (\sh a -> func (adjustLength s (selectLength s sh -) sh) a)
+-}
 -- | Both pull vectors and push vectors can be cheaply converted to push vectors
 class Pushy arr where
-  toPush :: Shape sh => arr sh a -> Vector sh a
+  toPush :: arr sh a -> Vector sh a
 
 instance Pushy Vector where
   toPush = id
@@ -137,14 +142,14 @@ instance Pushy R.Vector where
 	        )
 
 -- | Store a vector in memory as a flat array
-fromVector :: (Type a, Shape sh) =>
+fromVector :: Type a =>
 	      Vector sh (Data a) -> Data [a]
 fromVector (Push ixf l) = runMutableArray $
 	   	   	  do marr <- newArr_ (size l)
 			     ixf (\ix a -> setArr marr (toIndex l ix) a)
 			     return marr
 
-freezeVector :: (Shape sh, Type a) => Vector sh (Data a) -> (Data [Length], Data [a])
+freezeVector :: Type a => Vector sh (Data a) -> (Data [Length], Data [a])
 freezeVector v   = (shapeArr, fromVector v)
   where shapeArr = fromList (toList $ shape v)
 
@@ -155,23 +160,24 @@ fromList ls = loop 1 (parallel (value len) (const (P.head ls)))
             | otherwise = arr
         len  = P.fromIntegral $ P.length ls
 
-thawVector :: (Shape sh, Type a) => (Data [Length], Data [a]) -> Vector sh (Data a)
+thawVector :: (Type a, Shapely sh) =>
+              (Data [Length], Data [a]) -> Vector sh (Data a)
 thawVector (l,arr) = toVector (toShape 0 l) arr
 
-toVector :: (Type a, Shape sh) => sh -> Data [a] -> Vector sh (Data a)
+toVector :: Type a => Shape sh -> Data [a] -> Vector sh (Data a)
 toVector sh arr = Push f sh
   where f k = forShape sh $ \i ->
                 k i (arr ! (toIndex sh i))
 
-instance  (Shape sh, Syntax a) => Syntactic (Vector sh a) FeldDomainAll
+instance (Syntax a, Shapely sh) => Syntactic (Vector sh a)
   where
+    type Domain (Vector sh a) = FeldDomain
     type Internal (Vector sh a) = ([Length],[Internal a])
     desugar = desugar . freezeVector . fmap resugar
     sugar   = fmap resugar . thawVector . sugar
 
 -- | Flatten a pull vector of lists so that the lists become an extra dimension
-flattenList :: Shape sh =>
-	   R.Vector sh [a] -> Vector (sh :. Data Length) a
+flattenList :: Shapely sh => R.Vector sh [a] -> Vector (sh :. Data Length) a
 flattenList (R.Vector sh ixf) = Push f sz
   where f k = forShape sh $ \i ->
   	      	do let indices = map (\j -> i :. j) $
