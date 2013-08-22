@@ -59,7 +59,8 @@ data MutableArray a
 instance Semantic MutableArray
   where
     semantics NewArr    = Sem "newMArr"   (\l -> newArray  (0,l-1))
-    semantics NewArr_   = Sem "newMArr_"  (\l -> newArray_ (0,l-1))
+    semantics NewArr_   = Sem "newMArr_"  (\l -> newListArray (0,l-1)
+        [error $ "Undefined element at index " ++ show i | i <- [0..l-1]])
     semantics GetArr    = Sem "getMArr"   readArray
     semantics SetArr    = Sem "setMArr"   writeArray
     semantics ArrLength = Sem "arrLength" (getBounds >=> \(l,u) -> return (u-l+1))
