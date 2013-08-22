@@ -2,7 +2,7 @@ module Main where
 
 import Feldspar.Range.Test
 
-import Test.Framework
+import Test.Tasty
 
-main = defaultMain tests
+main = defaultMain $ testGroup "Tests" tests
 

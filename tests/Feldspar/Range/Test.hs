@@ -43,15 +43,18 @@ import Feldspar.Range
 import System.Random -- Should maybe be exported from QuickCheck
 import Test.QuickCheck hiding ((.&.))
 import qualified Test.QuickCheck as QC
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
+import Test.Tasty
+import Test.Tasty.QuickCheck hiding ((.&.))
 
+import Control.Applicative
 import Data.Bits
 import Data.Int
 import Data.Word
 import Data.Typeable
 
 import Feldspar.Lattice
+
+import Debug.Trace
 
 tests = [ testGroup "Range Int"    $ typedTestsSigned   "Int"    (undefined :: Int)
         , testGroup "Range Int8"   $ typedTestsSigned   "Int8"   (undefined :: Int8)
@@ -101,14 +104,16 @@ typedTests name typ =
     , testProperty (unwords ["prop_rangeMax2"      , name]) (prop_rangeMax2 typ)
     , testProperty (unwords ["prop_rangeMax3"      , name]) (prop_rangeMax3 typ)
     , testProperty (unwords ["prop_rangeMax4"      , name]) (prop_rangeMax4 typ)
-    , testProperty (unwords ["prop_rangeMax5"      , name]) (prop_rangeMax5 typ)
+    , testProperty (unwords ["prop_rangeMax5_1"    , name]) (prop_rangeMax5_1 typ)
+    , testProperty (unwords ["prop_rangeMax5_2"    , name]) (prop_rangeMax5_2 typ)
     , testProperty (unwords ["prop_rangeMax6"      , name]) (prop_rangeMax6 typ)
     , testProperty (unwords ["prop_rangeMax7"      , name]) (prop_rangeMax7 typ)
     , testProperty (unwords ["prop_rangeMin1"      , name]) (prop_rangeMin1 typ)
     , testProperty (unwords ["prop_rangeMin2"      , name]) (prop_rangeMin2 typ)
     , testProperty (unwords ["prop_rangeMin3"      , name]) (prop_rangeMin3 typ)
     , testProperty (unwords ["prop_rangeMin4"      , name]) (prop_rangeMin4 typ)
-    , testProperty (unwords ["prop_rangeMin5"      , name]) (prop_rangeMin5 typ)
+    , testProperty (unwords ["prop_rangeMin5_1"    , name]) (prop_rangeMin5_1 typ)
+    , testProperty (unwords ["prop_rangeMin5_2"    , name]) (prop_rangeMin5_2 typ)
     , testProperty (unwords ["prop_rangeMin6"      , name]) (prop_rangeMin6 typ)
     , testProperty (unwords ["prop_rangeMin7"      , name]) (prop_rangeMin7 typ)
     , testProperty (unwords ["prop_rangeMod1"      , name]) (prop_rangeMod1 typ)
@@ -157,7 +162,42 @@ instance (BoundedInt a, Arbitrary a) => Arbitrary (Range a)
       [ Range x' y | x' <- shrink x ] ++
       [ Range x y' | y' <- shrink y ]
 
-fromRange :: BoundedInt a => Random a => Range a -> Gen a
+newtype EmptyRange a = EmptyRange {getEmpty :: Range a}
+  deriving (Eq, Show)
+
+instance (Arbitrary a, Random a, Ord a, Bounded a) => Arbitrary (EmptyRange a) where
+    arbitrary = do
+      l <- arbitrary `suchThat` (>(minBound :: a))
+      return $ EmptyRange $ Range l minBound
+
+newtype NonEmptyRange a = NonEmptyRange {getNonEmpty :: Range a}
+  deriving (Eq, Show)
+
+instance (Arbitrary a, Random a, Ord a, Bounded a) => Arbitrary (NonEmptyRange a) where
+    arbitrary = do
+      l <- arbitrary `suchThat` (<(maxBound :: a))
+      u <- choose (l,maxBound)
+      return $ NonEmptyRange $ Range l u
+
+-- | Generate a range guaranteed to include the element
+aroundRange :: (Bounded a, Random a) => a -> Gen (Range a)
+aroundRange x = do
+    l <- choose (minBound,x)
+    u <- choose (x,maxBound)
+    return $ Range l u
+
+disjointRanges :: (Arbitrary a, Num a, Ord a, Bounded a, Random a) => Gen (Range a, Range a)
+disjointRanges = do
+    NonEmptyRange r <- arbitrary
+    u1 <- choose (minBound,lowerBound r)
+    l1 <- choose (minBound,u1)
+    l2 <- choose (upperBound r,maxBound)
+    u2 <- choose (l2,maxBound)
+    return (Range l1 u1, Range l2 u2)
+
+prop_disjointGen t = forAll disjointRanges $ \(r1,r2) -> disjoint r1 (r2 `rangeTy`t)
+
+fromRange :: (BoundedInt a, Random a) => Range a -> Gen a
 fromRange r
     | isEmpty r = error "fromRange: empty range"
     | otherwise = choose (lowerBound r, upperBound r)
@@ -180,7 +220,7 @@ atAllTypes test = sequence_ [test (undefined :: Int)
                             ]
 
 -- | Test if a operation is "strict" wrt. empty ranges
-prop_isStrict1 t op ra = isEmpty ra ==> isEmpty (op ra)
+prop_isStrict1 t op (EmptyRange ra) = isEmpty (op ra)
   where _ = ra `rangeTy` t
 
 -- | Test if an operation is "strict" wrt. empty ranges
@@ -207,18 +247,17 @@ prop_empty t = isEmpty (emptyRange `rangeTy` t)
 
 prop_full t = isFull (fullRange `rangeTy` t)
 
-prop_isEmpty t r = isEmpty r ==> (upperBound r < lowerBound (r `rangeTy` t))
+prop_isEmpty t (EmptyRange r) = isEmpty (r `rangeTy` t)
 
 prop_singletonRange t a = isSingleton (singletonRange (a `asTypeOf` t))
 
 prop_singletonSize t r = isSingleton (r `rangeTy` t) ==> (rangeSize r == 1)
 
-prop_emptySubRange1 t r1 r2 =
-    isEmpty (r1 `rangeTy` t) ==> (not (isEmpty r2) ==>
-                                      not (r2 `isSubRangeOf` r1))
+prop_emptySubRange1 t (EmptyRange r1) (NonEmptyRange r2) =
+    not (r2 `isSubRangeOf` (r1 `rangeTy` t))
 
-prop_emptySubRange2 t r1 r2 =
-    isEmpty (r1 `rangeTy` t) ==> (not (isEmpty r2) ==> (r1 `isSubRangeOf` r2))
+prop_emptySubRange2 t (EmptyRange r1) (NonEmptyRange r2) =
+    r1 `isSubRangeOf` (r2 `rangeTy` t)
 
 prop_rangeGap t r1 r2 =
     (isEmpty gap1 && isEmpty gap2) || (gap1 == gap2)
@@ -240,11 +279,14 @@ prop_union3 t r1 r2 = (r1 `rangeTy` t) `isSubRangeOf` (r1\/r2)
 prop_union4 t r1 r2 = (r2 `rangeTy` t) `isSubRangeOf` (r1\/r2)
 
 
-prop_intersect1 t x r1 r2 =
-    ((x `inRange` r1) && (x `inRange` r2)) ==> (x `inRange` (r1/\r2))
+prop_intersect1 t x = forAll (aroundRange x) $ \r1 ->
+                        forAll (aroundRange x) $ \r2 ->
+                           x `inRange` (r1/\r2)
   where _ = x `asTypeOf` t
-prop_intersect2 t x r1 r2 =
-    (x `inRange` (r1/\r2)) ==> ((x `inRange` r1) && (x `inRange` r2))
+prop_intersect2 t x =
+    forAll (aroundRange x) $ \r1 ->
+      forAll (aroundRange x) $ \r2 ->
+        (x `inRange` (r1/\r2)) ==> ((x `inRange` r1) && (x `inRange` r2))
   where _ = x `asTypeOf` t
 
 prop_intersect3 t r1 r2 = (r1/\r2) `isSubRangeOf` (r1 `rangeTy` t)
@@ -254,9 +296,9 @@ prop_intersect5 t r1 r2 =
     isEmpty r1 || isEmpty r2 ==> isEmpty (r1/\r2)
   where _ = r1 `rangeTy` t
 
-prop_disjoint t x r1 r2 =
-    disjoint r1 r2 ==> (x `inRange` r1) ==> not (x `inRange` r2)
-  where _ = x `asTypeOf` t
+prop_disjoint t = forAll disjointRanges $ \(r1,r2) ->
+                    forAll (fromRange r1) $ \x ->
+                      not (x `inRange` (r2 `rangeTy` t))
 
 
 prop_rangeLess1 t r1 r2 =
@@ -402,13 +444,10 @@ prop_rangeMax4 t r1 r2 =
     rangeMax r1 r2 == rangeMax r2 r1
   where _ = r1 `rangeTy` t
 
-prop_rangeMax5 t r1 r2 =
-    (isEmpty r1 && not (isEmpty r2) ==>
-    rangeMax r1 r2 == r2)
-    QC..&.
-    (isEmpty r2 && not (isEmpty r1) ==>
-    rangeMax r1 r2 == r1)
-  where _ = r1 `rangeTy` t
+prop_rangeMax5_1 t (EmptyRange r1) (NonEmptyRange r2) =
+    rangeMax r1 r2 == (r2 `rangeTy` t)
+prop_rangeMax5_2 t (NonEmptyRange r1) (EmptyRange r2) =
+    rangeMax r1 r2 == (r1 `rangeTy` t)
 
 prop_rangeMax6 t v1 v2 =
     max v1 v2 `inRange` rangeMax (singletonRange v1) (singletonRange v2)
@@ -441,6 +480,11 @@ prop_rangeMin5 t r1 r2 =
     (isEmpty r2 && not (isEmpty r1) ==>
     rangeMin r1 r2 == r1)
   where _ = r1 `rangeTy` t
+
+prop_rangeMin5_1 t (EmptyRange r1) (NonEmptyRange r2) =
+    rangeMin r1 r2 == (r2 `rangeTy` t)
+prop_rangeMin5_2 t (NonEmptyRange r1) (EmptyRange r2) =
+    rangeMin r1 r2 == (r1 `rangeTy` t)
 
 prop_rangeMin6 t v1 v2 =
     min v1 v2 `inRange` rangeMin (singletonRange v1) (singletonRange v2)

@@ -9,9 +9,9 @@ import Feldspar
 import Feldspar.Prelude
 import Feldspar.Vector.Internal
 
-import Test.Framework
-import Test.Framework.TH
-import Test.Framework.Providers.QuickCheck2
+import Test.Tasty
+import Test.Tasty.TH
+import Test.Tasty.QuickCheck
 
 tests = $(testGroupGenerator)
 
