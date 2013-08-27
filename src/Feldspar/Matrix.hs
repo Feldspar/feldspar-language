@@ -85,12 +85,12 @@ matrix = value
 indexedMat
     :: Data Length
     -> Data Length
-    -> (Data Index -> Data Index -> Data a)
-    -> Matrix a
+    -> (Data Index -> Data Index -> a)
+    -> Vector (Vector a)
 indexedMat m n idx = indexed m $ \k -> indexed n $ \l -> idx k l
 
 -- | Transpose of a matrix. Assumes that the number of rows is > 0.
-transpose :: Type a => Matrix a -> Matrix a
+transpose :: Syntax a => Vector (Vector a) -> Vector (Vector a)
 transpose a = indexedMat (length $ head a) (length a) $ \y x -> a ! x ! y
   -- TODO This assumes that (head a) can be used even if a is empty.
 
