@@ -386,13 +386,18 @@ scalarProd :: (Syntax a, Num a) => Vector a -> Vector a -> a
 scalarProd a b = sum (zipWith (*) a b)
 
 scan :: (Syntax a, Syntax b) => (a -> b -> a) -> a -> Vector b -> Vector a
-scan f init bs = Feldspar.sugar $ sequential (length bs) (Feldspar.desugar init) $ \i s ->
-    let s' = Feldspar.desugar $ f (Feldspar.sugar s) (bs!i)
-    in  (s',s')
+scan f init bs = Feldspar.sugar $ runMutableArray $ do
+    let l = 1 + length bs
+    arr <- newArr_ l
+    s   <- newRef init
+    forM l $ \i -> do
+      x <- getRef s
+      setArr arr i $ Feldspar.desugar x
+      modifyRef s $ \y -> f y $ bs ! i
+    return arr
   -- Note: This function should not be exported by the `Vector` module, since it doesn't fuse with
   --       other operations.
   -- TODO Ideally, the `Stream` library should make this function superfluous.
-
 
 
 --------------------------------------------------------------------------------
