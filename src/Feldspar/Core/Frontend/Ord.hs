@@ -83,4 +83,4 @@ instance Ord Int64
 instance Ord WordN
 instance Ord IntN
 instance Ord Float
-
+instance Ord Double
