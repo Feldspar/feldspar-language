@@ -56,6 +56,7 @@ class (Type a) => Eq a
 instance Eq ()
 instance Eq Bool
 instance Eq Float
+instance Eq Double
 instance Eq Word8
 instance Eq Word16
 instance Eq Word32
