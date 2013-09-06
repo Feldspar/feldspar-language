@@ -48,7 +48,7 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Eq
 import Feldspar.Core.Constructs.Ord
-
+import Feldspar.Core.Constructs.Bits
 
 -- | Logic constructs
 data Logic a

@@ -148,6 +148,18 @@ instance ( (ORD :|| Type) :<: dom
         | alphaEq a b
         = return $ literalDecor True
 
+    constructFeatOpt opts s@(C' Min) (a :* a'@(op :$ b :$ c) :* Nil)
+        | Just (C' Min) <- prjF op
+        , alphaEq a b = constructFeat opts s (a :* c :* Nil)
+        | Just (C' Min) <- prjF op
+        , alphaEq a c = constructFeat opts s (a :* b :* Nil)
+
+    constructFeatOpt opts s@(C' Min) (a'@(op :$ b :$ c) :* a :* Nil)
+        | Just (C' Min) <- prjF op
+        , alphaEq a b = constructFeat opts s (c :* a :* Nil)
+        | Just (C' Min) <- prjF op
+        , alphaEq a c = constructFeat opts s (b :* a :* Nil)
+
     constructFeatOpt _ (C' Min) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)
         , RangeSet rb <- infoRange (getInfo b)
@@ -163,18 +175,6 @@ instance ( (ORD :|| Type) :<: dom
     constructFeatOpt _ (C' Min) (a :* b :* Nil)
         | alphaEq a b
         = return a
-
-    constructFeatOpt opts s@(C' Min) (a :* (op :$ b :$ c) :* Nil)
-        | Just (C' Min) <- prjF op
-        , alphaEq a b = constructFeat opts s (a :* c :* Nil)
-        | Just (C' Min) <- prjF op
-        , alphaEq a c = constructFeat opts s (a :* b :* Nil)
-
-    constructFeatOpt opts s@(C' Min) ((op :$ b :$ c) :* a :* Nil)
-        | Just (C' Min) <- prjF op
-        , alphaEq a b = constructFeat opts s (c :* a :* Nil)
-        | Just (C' Min) <- prjF op
-        , alphaEq a c = constructFeat opts s (b :* a :* Nil)
 
     constructFeatOpt _ (C' Max) (a :* b :* Nil)
         | RangeSet ra <- infoRange (getInfo a)

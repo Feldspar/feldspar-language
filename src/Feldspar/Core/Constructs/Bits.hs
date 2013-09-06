@@ -49,9 +49,7 @@ import Language.Syntactic.Constructs.Binding
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
-import Feldspar.Core.Constructs.Logic
 import Feldspar.Core.Constructs.Eq
-import Feldspar.Core.Constructs.Ord
 
 import Data.Bits
 
@@ -165,9 +163,7 @@ instance SizeProp (BITS :|| Type)
 
 
 instance ( (BITS  :|| Type) :<: dom
-         , (Logic :|| Type) :<: dom
          , (EQ    :|| Type) :<: dom
-         , (ORD   :|| Type) :<: dom
          , OptimizeSuper dom
          )
       => Optimize (BITS :|| Type) dom
@@ -200,13 +196,13 @@ instance ( (BITS  :|| Type) :<: dom
         | Just (C' Complement) <- prjF cmpl
         = return a
 
-    constructFeatOpt opts (C' TestBit) ((xo :$ v1 :$ v2) :* v3 :* Nil)
-        | Just (C' BXor) <- prjF xo
-        , Just a <- viewLiteral v2
-        , Just b <- viewLiteral v3
-        , a == 2 ^ b
-        = do tb <- constructFeat opts (c' TestBit) (v1 :* v3 :* Nil)
-             constructFeat opts (c' Not) (tb :* Nil)
+    -- constructFeatOpt opts (C' TestBit) ((xo :$ v1 :$ v2) :* v3 :* Nil)
+    --     | Just (C' BXor) <- prjF xo
+    --     , Just a <- viewLiteral v2
+    --     , Just b <- viewLiteral v3
+    --     , a == 2 ^ b
+    --     = do tb <- constructFeat opts (c' TestBit) (v1 :* v3 :* Nil)
+    --          constructFeat opts (c' Not) (tb :* Nil)
 
     constructFeatOpt opts x@(C' ShiftLU)  args = optZero opts x args
     constructFeatOpt opts x@(C' ShiftRU)  args = optZero opts x args
