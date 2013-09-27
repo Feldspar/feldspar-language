@@ -96,6 +96,7 @@ monadProxy = P
 instance ( MONAD Mut :<: dom
          , (Variable :|| Type) :<: dom
          , CLambda Type :<: dom
+         , Let :<: dom
          , OptimizeSuper dom)
       => Optimize (MONAD Mut) dom
   where
@@ -109,7 +110,7 @@ instance ( MONAD Mut :<: dom
 
     optimizeFeat opts a args = optimizeFeatDefault opts a args
 
-    constructFeatOpt _ Bind (ma :* (lam :$ (Sym (Decor _ ret) :$ var)) :* Nil)
+    constructFeatOpt _ Bind (ma :* (lam :$ (ret :$ var)) :* Nil)
       | Just (SubConstr2 (Lambda v1)) <- prjLambda lam
       , Just Return                   <- prjMonad monadProxy ret
       , Just (C' (Variable v2))       <- prjF var
@@ -125,7 +126,7 @@ instance ( MONAD Mut :<: dom
         vars = infoVars $ getInfo body
 
        -- (bind e1 (\x -> e2) >> e3 ==> bind e1 (\x -> e2 >> e3)
-    constructFeatOpt opts Then ((Sym (Decor _ bnd) :$ x :$ (lam :$ bd)) :* y :* Nil)
+    constructFeatOpt opts Then ((bnd :$ x :$ (lam :$ bd)) :* y :* Nil)
         | Just Bind <- prjMonad monadProxy bnd
         , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
         = do
@@ -134,7 +135,7 @@ instance ( MONAD Mut :<: dom
              constructFeatUnOpt opts Bind (x :* bd' :* Nil)
 
       -- (bind (bind e1 (\x -> e2)) (\y -> e3) => bind e1 (\x -> bind e2 (\y-> e3))
-    constructFeatOpt opts Bind ((Sym (Decor _ bnd) :$ x :$ (lam :$ bd)) :* y :* Nil)
+    constructFeatOpt opts Bind ((bnd :$ x :$ (lam :$ bd)) :* y :* Nil)
         | Just Bind <- prjMonad monadProxy bnd
         , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
         = do
@@ -143,15 +144,15 @@ instance ( MONAD Mut :<: dom
              constructFeatUnOpt opts Bind (x :* bd' :* Nil)
 
       -- return x >> mb ==> mb
-    constructFeatOpt _ Then ((Sym (Decor _ ret) :$ _) :* mb :* Nil)
+    constructFeatOpt _ Then ((ret :$ _) :* mb :* Nil)
         | Just Return <- prjMonad monadProxy ret
         = return mb
 
       -- ma >> return () ==> ma
-    constructFeatOpt _ Then (ma :* (Sym (Decor info ret) :$ u) :* Nil)
+    constructFeatOpt _ Then (ma :* (ret :$ u) :* Nil)
         | Just Return <- prjMonad monadProxy ret
-        , Just TypeEq <- typeEq (infoType $ getInfo ma) (MutType UnitType)
-        , Just TypeEq <- typeEq (infoType info)         (MutType UnitType)
+        , Just TypeEq <- typeEq (infoType $ getInfo ma)  (MutType UnitType)
+        , Just TypeEq <- typeEq (infoType $ getInfo ret) (MutType UnitType)
         , Just ()     <- viewLiteral u
         = return ma
 

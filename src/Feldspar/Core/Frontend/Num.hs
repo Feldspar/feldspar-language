@@ -72,6 +72,7 @@ instance Numeric Int64
 instance Numeric IntN
 
 instance Numeric Float
+instance Numeric Double
 
 instance (Type a, RealFloat a) => Numeric (Complex a)
 

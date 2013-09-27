@@ -41,8 +41,6 @@ import Prelude hiding (Integral(..))
 import Data.Int
 import Data.Word
 
-import Language.Syntactic
-
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs
@@ -57,7 +55,7 @@ infixl 4 ⊕
 
 class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
   where
-    -- Logical operations
+    -- * Logical operations
     (.&.)         :: Data a -> Data a -> Data a
     (.&.)         = sugarSymF BAnd
     (.|.)         :: Data a -> Data a -> Data a
@@ -67,7 +65,7 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     complement    :: Data a -> Data a
     complement    = sugarSymF Complement
 
-    -- Bitwise operations
+    -- * Bitwise operations
     bit           :: Data Index -> Data a
     bit           = sugarSymF Bit
     setBit        :: Data a -> Data Index -> Data a
@@ -79,7 +77,7 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     testBit       :: Data a -> Data Index -> Data Bool
     testBit       = sugarSymF TestBit
 
-    -- Movement operations
+    -- * Movement operations
     shiftLU       :: Data a -> Data Index -> Data a
     shiftLU       = sugarSymF ShiftLU
     shiftRU       :: Data a -> Data Index -> Data a
@@ -99,6 +97,7 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     reverseBits   :: Data a -> Data a
     reverseBits   = sugarSymF ReverseBits
 
+    -- * Query operations
     bitScan       :: Data a -> Data Index
     bitScan       = sugarSymF BitScan
     bitCount      :: Data a -> Data Index
@@ -106,18 +105,13 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
 
     bitSize       :: Data a -> Data Index
     bitSize       = value . bitSize'
-
     bitSize'      :: Data a -> Index
     bitSize'      = const $ fromIntegral $ B.bitSize (undefined :: a)
-    isSigned      :: Data a -> Data Bool
-    isSigned      = const $ value $ B.isSigned (undefined :: a)
 
-(⊕)    :: (Bits a) => Data a -> Data a -> Data a
-(⊕)    =  xor
-(.<<.) :: (Bits a) => Data a -> Data Index -> Data a
-(.<<.) =  shiftLU
-(.>>.) :: (Bits a) => Data a -> Data Index -> Data a
-(.>>.) =  shiftRU
+    isSigned      :: Data a -> Data Bool
+    isSigned      = value . isSigned'
+    isSigned'     :: Data a -> Bool
+    isSigned'     = const $ B.isSigned (undefined :: a)
 
 instance Bits Word8
 instance Bits Word16
@@ -129,4 +123,25 @@ instance Bits Int16
 instance Bits Int32
 instance Bits Int64
 instance Bits IntN
+
+-- * Combinators
+
+(⊕)    :: (Bits a) => Data a -> Data a -> Data a
+(⊕)    =  xor
+(.<<.) :: (Bits a) => Data a -> Data Index -> Data a
+(.<<.) =  shiftLU
+(.>>.) :: (Bits a) => Data a -> Data Index -> Data a
+(.>>.) =  shiftRU
+
+-- | Set all bits to one
+allOnes :: Bits a => Data a
+allOnes = complement 0
+
+-- | Set the `n` lowest bits to one
+oneBits :: Bits a => Data Index -> Data a
+oneBits n = complement (allOnes .<<. n)
+
+-- | Extract the `k` lowest bits
+lsbs :: Bits a => Data Index -> Data a -> Data a
+lsbs k i = i .&. oneBits k
 

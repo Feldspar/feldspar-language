@@ -50,15 +50,19 @@ import Feldspar.Core.Interpretation
 
 data Conversion a
   where
-    F2I     :: (Type a, Integral a) => Conversion (Float :-> Full a)
+    F2I     :: (Type a, Integral a, RealFloat b) => Conversion (b :-> Full a)
     I2N     :: (Type a, Type b, Integral a, Num b
                ,Size a ~ Range a
                ) =>
                Conversion (a :-> Full b)
-    B2I     :: (Type a, Integral a) => Conversion (Bool  :-> Full a)
-    Round   :: (Type a, Integral a) => Conversion (Float :-> Full a)
-    Ceiling :: (Type a, Integral a) => Conversion (Float :-> Full a)
-    Floor   :: (Type a, Integral a) => Conversion (Float :-> Full a)
+    B2I     :: (Type a, Integral a)
+            => Conversion (Bool  :-> Full a)
+    Round   :: (Type a, Integral a, RealFloat b)
+            => Conversion (b :-> Full a)
+    Ceiling :: (Type a, Integral a, RealFloat b)
+            => Conversion (b :-> Full a)
+    Floor   :: (Type a, Integral a, RealFloat b)
+            => Conversion (b :-> Full a)
 
 rangeToSize :: Lattice (Size a) => TypeRep a -> Range Integer -> Size a
 rangeToSize (IntType _ _) r = rangeProp r
@@ -97,7 +101,7 @@ instance SizeProp (Conversion :|| Type)
     sizeProp (C' F2I)     _ = universal
     sizeProp (C' i2n@I2N) (WrapFull a :* Nil)
         = rangeToSize (resultType i2n) (mapMonotonic toInteger (infoSize a))
-    sizeProp (C' B2I)     _ = universal
+    sizeProp (C' b2i@B2I) _ = rangeToSize (resultType b2i) $ range 0 1
     sizeProp (C' Round)   _ = universal
     sizeProp (C' Ceiling) _ = universal
     sizeProp (C' Floor)   _ = universal

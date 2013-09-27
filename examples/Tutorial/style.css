@@ -76,12 +76,12 @@ a:hover {
 }
 
 pre {
-  border: 1px dotted gray;
+  border: 1px solid #CCC;
   border-left: 3px solid gray;
   background-color: #ececec;
   color: #1111111;
   padding: 0.5em;
-  white-space: pre-wrap;  /* to make long lines wrap */
+  white-space: pre-wrap;
 }
 
 code {

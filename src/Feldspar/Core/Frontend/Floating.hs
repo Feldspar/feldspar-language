@@ -29,7 +29,7 @@
 module Feldspar.Core.Frontend.Floating where
 
 import qualified Prelude
-import Prelude (Float)
+import Prelude (Float,Double)
 import Data.Complex
 
 import Language.Syntactic
@@ -81,5 +81,7 @@ class (Fraction a, Prelude.Floating a) => Floating a where
   acosh     =  sugarSymF Acosh
 
 instance Floating Float
+instance Floating Double
+
 instance (Fraction a, Prelude.RealFloat a) => Floating (Complex a)
 

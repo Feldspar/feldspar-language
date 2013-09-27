@@ -47,8 +47,10 @@ import Feldspar.Core.Constructs
 import Feldspar.Core.Frontend.Logic
 import qualified Feldspar.Core.Constructs.Mutable as Feature
 
+import Control.Applicative
+
 newtype M a = M { unM :: Mon FeldDomain Mut a }
-  deriving (Functor, Monad)
+  deriving (Functor, Applicative, Monad)
 
 instance Syntax a => Syntactic (M a)
   where

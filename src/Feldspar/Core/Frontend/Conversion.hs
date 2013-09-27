@@ -46,10 +46,10 @@ import Feldspar.Core.Constructs.Conversion
 import Feldspar.Core.Frontend.Integral
 import Feldspar.Core.Frontend.Num
 
-i2f :: (Integral a) => Data a -> Data Float
+i2f :: (Integral a, Numeric b, RealFloat b) => Data a -> Data b
 i2f = i2n
 
-f2i :: Integral a => Data Float -> Data a
+f2i :: (Integral a, Numeric b, RealFloat b) => Data b -> Data a
 f2i = sugarSymF F2I
 
 i2n :: (Integral a, Numeric b) => Data a -> Data b
@@ -58,15 +58,15 @@ i2n = sugarSymF I2N
 b2i :: Integral a => Data Bool -> Data a
 b2i = sugarSymF B2I
 
-truncate :: Integral a => Data Float -> Data a
+truncate :: (Integral a, Numeric b, RealFloat b) => Data b -> Data a
 truncate = f2i
 
-round :: Integral a => Data Float -> Data a
+round :: (Integral a, Numeric b, RealFloat b) => Data b -> Data a
 round = sugarSymF Round
 
-ceiling :: Integral a => Data Float -> Data a
+ceiling :: (Integral a, Numeric b, RealFloat b) => Data b -> Data a
 ceiling = sugarSymF Ceiling
 
-floor :: Integral a => Data Float -> Data a
+floor :: (Integral a, Numeric b, RealFloat b) => Data b -> Data a
 floor = sugarSymF Floor
 

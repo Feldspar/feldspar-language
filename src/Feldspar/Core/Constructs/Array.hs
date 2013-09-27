@@ -48,6 +48,7 @@ import Feldspar.Lattice
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Binding
+import Feldspar.Core.Constructs.Complex
 import Feldspar.Core.Constructs.Num
 import Feldspar.Core.Constructs.Ord
 
@@ -104,9 +105,6 @@ instance AlphaEq dom dom dom env => AlphaEq Array Array dom env
     alphaEqSym = alphaEqSymDefault
 
 instance Sharable Array
-  where
-    sharable GetIx = False
-    sharable _     = True
 
 instance SizeProp (Array :|| Type)
   where
@@ -139,6 +137,7 @@ instance
     , (NUM      :|| Type) :<: dom
     , Let                 :<: dom
     , (ORD      :|| Type) :<: dom
+    , (COMPLEX  :|| Type) :<: dom
     , (Variable :|| Type) :<: dom
     , CLambda Type :<: dom
     , OptimizeSuper dom
@@ -246,6 +245,16 @@ instance
         | Just (C' GetLength) <- prjF getLength
         , alphaEq arr arr'
         = return arr
+
+    constructFeatOpt opts (C' SetLength) (len1 :* (par :$ len2 :$ ixf) :* Nil)
+        | Just p@(C' Parallel) <- prjF par
+        , alphaEq len1 len2
+        = constructFeat opts p (len2 :* ixf :* Nil)
+
+    constructFeatOpt opts (C' SetLength) (len1 :* (seq :$ len2 :$ init :$ step) :* Nil)
+        | Just s@(C' Sequential) <- prjF seq
+        , alphaEq len1 len2
+        = constructFeat opts s (len2 :* init :* step :* Nil)
 
     constructFeatOpt _ (C' SetLength) (len :* arr :* Nil)
         | rlen      <- infoSize $ getInfo len

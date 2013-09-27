@@ -53,6 +53,7 @@ import Feldspar.Core.Constructs.Eq
 import Feldspar.Core.Constructs.Ord
 import Feldspar.Core.Constructs.Num
 import Feldspar.Core.Constructs.Logic
+import Feldspar.Core.Constructs.Complex
 
 data INTEGRAL a
   where
@@ -95,6 +96,7 @@ instance
     , (NUM       :||Type) :<: dom
     , (EQ        :||Type) :<: dom
     , (ORD       :||Type) :<: dom
+    , (COMPLEX :|| Type) :<: dom
     , (Condition :||Type) :<: dom
     , (Logic     :||Type) :<: dom
     , OptimizeSuper dom

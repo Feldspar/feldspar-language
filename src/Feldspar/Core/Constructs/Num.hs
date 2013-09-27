@@ -43,10 +43,13 @@ module Feldspar.Core.Constructs.Num
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
 
+import Data.Complex (Complex(..))
+
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Literal
+import Feldspar.Core.Constructs.Complex
 
 
 data NUM a
@@ -87,6 +90,7 @@ instance SizeProp (NUM :|| Type)
 
 instance ( (NUM     :|| Type) :<: dom
          , (Literal :|| Type) :<: dom
+         , (COMPLEX :|| Type) :<: dom
          , OptimizeSuper dom
          )
       => Optimize (NUM :|| Type) dom
@@ -151,6 +155,34 @@ instance ( (NUM     :|| Type) :<: dom
         , alphaEq b d
         = constructFeat opts (c' Add) (a :* c :* Nil)
 
+    -- literal a - (b + literal c) ==> literal (a-c) - b
+    -- constructFeatOpt opts s@(C' Sub) (a :* (op :$ b :$ c) :* Nil)
+    --     | Just a'      <- viewLiteral a
+    --     , Just (C' Add) <- prjF op
+    --     , Just c'      <- viewLiteral c
+    --     = constructFeat opts s (literalDecor (a'-c') :* b :* Nil)
+
+    -- literal a - (b - literal c) ==> literal (a+c) - b
+    -- constructFeatOpt opts s@(C' Sub) (a :* (op :$ b :$ c) :* Nil)
+    --     | Just a'      <- viewLiteral a
+    --     , Just (C' Sub) <- prjF op
+    --     , Just c'      <- viewLiteral c
+    --     = constructFeat opts s (literalDecor (a'+c') :* b :* Nil)
+
+    -- (a + literal b) - literal c ==> a + literal (b - c)
+    constructFeatOpt opts (C' Sub) ((op :$ a :$ b) :* c :* Nil)
+        | Just c'      <- viewLiteral c
+        , Just s@(C' Add) <- prjF op
+        , Just b'      <- viewLiteral b
+        = constructFeat opts s (a :* literalDecor (b'-c') :* Nil)
+
+    -- (a - literal b) - literal c ==> a - literal (b + c)
+    constructFeatOpt opts s@(C' Sub) ((op :$ a :$ b) :* c :* Nil)
+        | Just c'      <- viewLiteral c
+        , Just (C' Sub) <- prjF op
+        , Just b'      <- viewLiteral b
+        = constructFeat opts s (a :* literalDecor (b'+c') :* Nil)
+
     constructFeatOpt opts (C' Sub) ((op1 :$ a :$ b) :* (op2 :$ c :$ d) :* Nil)
         | Just (C' Add) <- prjF op1
         , Just (C' Sub) <- prjF op2
@@ -161,6 +193,19 @@ instance ( (NUM     :|| Type) :<: dom
     constructFeatOpt _ (C' Sub) (a :* b :* Nil)
         | Just 0 <- viewLiteral b = return a
         | alphaEq a b             = return $ literalDecor 0
+
+    -- (x + yi) * i ==> -y + xi; (x + yi) * (-i) ==> y - xi
+    constructFeatOpt opts (C' Mul) (a :* iunit :* Nil)
+        | ComplexType FloatType <- infoType (getInfo iunit)
+        , Just (0 :+ k)         <- viewLiteral iunit
+        , abs k == 1
+        = do
+             ra <- constructFeat opts (c' RealPart) (a :* Nil)
+             ia <- constructFeat opts (c' ImagPart) (a :* Nil)
+             iainv <- constructFeatOpt opts (c' Mul) (literalDecor (-k) :* ia :* Nil)
+             rainv <- constructFeatOpt opts (c' Mul) (literalDecor k :* ra :* Nil)
+             constructFeatOpt opts (c' MkComplex) (iainv :* rainv :* Nil)
+
 
     constructFeatOpt _ (C' Mul) (a :* b :* Nil)
         | Just 0 <- viewLiteral a = return a

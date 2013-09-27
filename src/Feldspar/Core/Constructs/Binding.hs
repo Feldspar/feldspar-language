@@ -123,12 +123,19 @@ optimizeLambda opts opt info lam@(SubConstr2 (Lambda v)) (body :* Nil)
         constructFeatUnOpt opts lam (body' :* Nil)
 
 -- | Assumes that the expression is a 'Lambda'
-optimizeFunction :: ( CLambda Type :<: dom
-                    , OptimizeSuper dom)
+optimizeFunction :: ( (Variable :|| Type) :<: dom
+                    , CLambda Type :<: dom
+                    , Let :<: dom
+                    , OptimizeSuper dom
+                    )
     => FeldOpts
     -> (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
     -> Info a
     -> (ASTF (dom :|| Typeable) (a -> b) -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b)))
+optimizeFunction opts opt info e
+    | e'@(bs, _) <- collectLetBinders e
+    , not (Prelude.null bs)
+    = optimizeLet opts opt info e'
 optimizeFunction opts opt info a@(sym :$ body)
     | Dict <- exprDict a
     , Dict <- exprDict body
@@ -136,6 +143,27 @@ optimizeFunction opts opt info a@(sym :$ body)
     = optimizeLambda opts opt info lam (body :* Nil)
 optimizeFunction opts opt info a
     = error $ "optimizeFunction: AST is not a function: " ++ show a ++ "\n" ++ show (infoType info)
+
+optimizeLet
+    :: ( (Variable :|| Type) :<: dom
+       , CLambda Type :<: dom
+       , Let :<: dom
+       , OptimizeSuper dom
+       )
+    => FeldOpts
+    -> (ASTF (dom :|| Typeable) b -> Opt (ASTF (Decor Info (dom :|| Typeable)) b))  -- ^ Optimization of the body
+    -> Info a
+    -> ([(VarId, ASTB (dom :|| Typeable) Type)], ASTF (dom :|| Typeable) (a -> b))
+    -> Opt (ASTF (Decor Info (dom :|| Typeable)) (a -> b))
+optimizeLet opts opt info ((v, ASTB e):t, bd)
+    | Dict <- exprDict bd
+    , Dict <- exprDict e
+    = do
+      e'  <- optimizeM opts e
+      bd' <- localVar v (getInfo e') $ optimizeLet opts opt info (t, bd)
+      bd'' <- constructFeatUnOpt opts (cLambda v) (bd' :* Nil)
+      constructFeatUnOpt opts Let (e' :* bd'' :* Nil)
+optimizeLet opts opt info ([], e) = optimizeFunction opts opt info e
 
 {-
 optimizeFunBody :: (Lambda TypeCtx :<: dom, Optimize dom dom, Typeable a)
@@ -234,6 +262,10 @@ instance
         , v1 == v2
         = return $ fromJust $ gcast a
 
+    constructFeatOpt opts Let (var :* f :* Nil)
+        | Just (C' (Variable v)) <- prjF var
+        = optimizeM opts $ betaReduce (stripDecor var) (stripDecor f)
+
       -- (letBind (letBind e1 (\x -> e2)) (\y -> e3) ==>
       --           letBind e1 (\x -> letBind e2 (\y-> e3))
       --
@@ -249,6 +281,23 @@ instance
              bb <- constructFeat opts lt1 (bd :* y :* Nil)
              bd' <- constructFeat opts (reuseCLambda lam') (bb :* Nil)
              constructFeatUnOpt opts Let (x :* bd' :* Nil)
+
+    -- Hoist let-bound constants upwards.
+    --
+    -- (letBind e1 (\x -> letBind v (\y -> e2)) ==>
+    --           letBind v (\y -> letBind e1 (\x-> e2))
+    constructFeatOpt opts lt1@Let (e :* (lam1 :$ (lt2 :$ v :$ (lam2 :$ bd))) :* Nil)
+        | Just Let <- prj lt2
+        , Nothing <- viewLiteral e
+        , Just _ <- viewLiteral v
+        , Just lam1'@(SubConstr2 (Lambda{})) <- prjLambda lam1
+        , Just lam2'@(SubConstr2 (Lambda{})) <- prjLambda lam2
+        , SICS `inTarget` opts
+        = do
+             bb  <- constructFeat opts (reuseCLambda lam1') (bd :* Nil)
+             bb' <- constructFeat opts lt1 (e :* bb :* Nil)
+             bd' <- constructFeat opts (reuseCLambda lam2') (bb' :* Nil)
+             constructFeatUnOpt opts Let (v :* bd' :* Nil)
 
     constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
@@ -276,22 +325,22 @@ collectLetBinders :: forall dom a .
                    ( Project Let dom
                    , Project (CLambda Type) dom
                    , ConstrainedBy dom Typeable
-                   ) => ASTF (Decor Info dom) a ->
-                   ( [(VarId, ASTB (Decor Info dom) Typeable)]
-                   , ASTF (Decor Info dom) a
+                   ) => ASTF dom a ->
+                   ( [(VarId, ASTB dom Type)]
+                   , ASTF dom a
                    )
 collectLetBinders e = go [] e
   where
     go
-      :: [(VarId, ASTB (Decor Info dom) Typeable)]
-      -> ASTF (Decor Info dom) a
-      -> ( [(VarId, ASTB (Decor Info dom) Typeable)]
-         , ASTF (Decor Info dom) a
+      :: [(VarId, ASTB dom Type)]
+      -> ASTF dom a
+      -> ( [(VarId, ASTB dom Type)]
+         , ASTF dom a
          )
     go bs (lt :$ e :$ (lam :$ body))
       | Just (SubConstr2 (Lambda v)) <- prjLambda lam
       , Just Let <- prj lt
-      , Dict <- exprDictSub pTypeable e
+      , Dict <- exprDict e
       = go ((v, ASTB e):bs) body
     go bs e = (reverse bs, e)
 
