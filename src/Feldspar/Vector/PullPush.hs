@@ -275,6 +275,13 @@ unpair arr = Push (\k -> f (everyOther k)) (2 * l)
   where
     Push f l = toPush arr
 
+unpairWith :: (Pushy arr, Syntax a)
+           => ((Data Index -> a -> M ()) -> Data Index -> (a,a) -> M ())
+           -> arr (a,a) -> PushVector a
+unpairWith spread arr = Push (f . spread) (2*l)
+  where
+    Push f l = toPush arr
+
 everyOther :: (Data Index -> a -> M b)
            -> Data Index -> (a,a) -> M b
 everyOther f = \ix (a1,a2) -> f (ix * 2) a1 >> f (ix * 2 + 1) a2

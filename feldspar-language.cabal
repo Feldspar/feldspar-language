@@ -113,7 +113,14 @@ library
     Feldspar.Stream
     Feldspar.Vector.Internal
     Feldspar.Vector
-    Feldspar.Vector.Push
+    Feldspar.Vector.PullPush
+    Feldspar.Vector.Opt
+    Feldspar.Vector.Opt2
+    Feldspar.Vector.MultiDim
+    Feldspar.Vector.PushMultiDim
+    Feldspar.Vector.Sequential
+    Feldspar.Vector.Shape
+    Feldspar.Vector.Unbox
     Feldspar.Par
     Feldspar.Algorithm.CRC
     Feldspar.Algorithm.FFT

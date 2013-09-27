@@ -8,7 +8,7 @@ module Feldspar.Vector.Unbox where
 import qualified Prelude as P
 
 import Feldspar hiding ((!),M,P)
-import qualified Feldspar.Vector.Pull as Pl
+import qualified Feldspar.Vector.PullPush as Pl
 import qualified Feldspar.Vector.MultiDim as M
 import Feldspar.Vector.MultiDim (Slice(..),Any,All)
 import Feldspar.Vector.Shape
@@ -30,7 +30,7 @@ class Elm a where
   freezeVector :: Vector a -> Data (Repr a)
 
 instance Type a => Elm (Data a) where
-  data Vector (Data a) = Pull (Pl.PullVector (Data a))
+  data Vector (Data a) = Pull (Pl.Pull (Data a))
   type Repr   (Data a) = [a]
   Pull v ! i = Pl.index v i
   indexed ixf l = Pull (Pl.indexed l ixf)
@@ -54,7 +54,7 @@ instance (Elm a, Elm b, Elm c, Type (Repr a), Type (Repr b), Type (Repr c)) => E
   freezeVector (Triple v1 v2 v3) = desugar (freezeVector v1, freezeVector v2, freezeVector v3)
 
 instance (Type (Repr a), Elm a) => Elm (Vector a) where
-  data Vector (Vector a) = Nest (Pl.PullVector (Vector a))
+  data Vector (Vector a) = Nest (Pl.Pull (Vector a))
   type Repr   (Vector a) = [Repr a]
   Nest v ! i = Pl.index v i
   indexed ixf l = Nest (Pl.indexed l ixf)
@@ -69,18 +69,18 @@ instance (Syntax a, Shapely sh) => Elm (M.Vector sh a) where
   length (M (M.Vector (_ :. l) _)) = l
   freezeVector (M vec) = snd (M.freezeVector (fmap desugar vec))
 
-instance Syntax a => Elm (Pl.PullVector a) where
-  data Vector (Pl.PullVector a) = P (M.Vector DIM2 a)
-  type Repr (Pl.PullVector a) = [Internal a]
+instance Syntax a => Elm (Pl.Pull a) where
+  data Vector (Pl.Pull a) = P (M.Vector DIM2 a)
+  type Repr (Pl.Pull a) = [Internal a]
   (P vec) ! i = dim1ToPull $ M.slice vec (SAny ::. i)
   indexed ixf l = P $ M.flatten $ M.indexed (\(Z :. ix) -> pullToDIM1 $ ixf ix) (Z :. l)
   length (P (M.Vector (_ :. l) _)) = l
   freezeVector (P vec) = snd (M.freezeVector (fmap desugar vec))
 
-dim1ToPull :: M.Vector DIM1 a -> Pl.PullVector a
+dim1ToPull :: M.Vector DIM1 a -> Pl.Pull a
 dim1ToPull (M.Vector (Z :. l) ixf) = Pl.Pull (\i -> ixf (Z :. i)) l
 
-pullToDIM1 :: Pl.PullVector a -> M.Vector DIM1 a
+pullToDIM1 :: Pl.Pull a -> M.Vector DIM1 a
 pullToDIM1 (Pl.Pull ixf l) = M.Vector (Z :. l) (\(Z :. ix) -> ixf ix)
 
 -- | @enumFromTo m n@: Enumerate the integers from @m@ to @n@
