@@ -277,7 +277,7 @@ unpair arr = Push (\k -> f (everyOther k)) (2 * l)
 
 unpairWith :: (Pushy arr, Syntax a)
            => ((Data Index -> a -> M ()) -> Data Index -> (a,a) -> M ())
-           -> arr (a,a) -> PushVector a
+           -> arr (a,a) -> Push a
 unpairWith spread arr = Push (f . spread) (2*l)
   where
     Push f l = toPush arr
