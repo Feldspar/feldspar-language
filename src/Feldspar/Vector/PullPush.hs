@@ -196,7 +196,7 @@ fold1 f a = fold f (head a) (tail a)
 sum :: (Syntax a, Num a) => Pull a -> a
 sum = fold (+) 0
 
-maximum, minimum :: (Syntax a, Ord a) => Pull (Data a) -> (Data a)
+maximum, minimum :: Ord a => Pull (Data a) -> (Data a)
 maximum = fold1 max
 
 minimum = fold1 min
