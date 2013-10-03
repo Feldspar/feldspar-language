@@ -62,9 +62,9 @@ import qualified Prelude as P
 import Control.Applicative
 
 import Feldspar
-import Feldspar.Vector.Internal
-         (Vector, Vector1
-         ,freezeVector,indexed
+import Feldspar.Vector.PullPush
+         (Pull, Pull1
+         ,freezePull,indexed
          ,sum,length,replicate,scalarProd)
 
 -- | Infinite streams.
@@ -306,7 +306,7 @@ splitAt :: (Syntax a) =>
 splitAt n stream = (take n stream,drop n stream)
 
 -- | Loops through a vector indefinitely to produce a stream.
-cycle :: Syntax a => Vector a -> Stream a
+cycle :: Syntax a => Pull a -> Stream a
 cycle vec = Stream next init
   where
     init = newRef (0 :: Data Index)
@@ -314,7 +314,7 @@ cycle vec = Stream next init
                 setRef r ((i + 1) `rem` length vec)
                 return (vec ! i)
 
-unsafeVectorToStream :: Syntax a => Vector a -> Stream a
+unsafeVectorToStream :: Syntax a => Pull a -> Stream a
 unsafeVectorToStream vec = Stream next init
   where
     init = newRef (0 :: Data Index)
@@ -330,14 +330,14 @@ unsafeVectorToStream vec = Stream next init
 --   This function allocates memory for the output vector.
 streamAsVector :: (Syntax a, Syntax b) =>
                   (Stream a -> Stream b)
-               -> (Vector a -> Vector b)
+               -> (Pull a -> Pull b)
 streamAsVector f v = sugar $ take (length v) $ f $ unsafeVectorToStream v
 
 -- | Similar to 'streamAsVector' except the size of the output array is computed by the second argument
 --   which is given the size of the input vector as a result.
 streamAsVectorSize :: (Syntax a, Syntax b) =>
                       (Stream a -> Stream b) -> (Data Length -> Data Length)
-                   -> (Vector a -> Vector b)
+                   -> (Pull a -> Pull b)
 streamAsVectorSize f s v = sugar $ take (s $ length v) $ f $ cycle v
 
 -- | A combinator for descibing recurrence equations, or feedback loops.
@@ -352,14 +352,14 @@ streamAsVectorSize f s v = sugar $ take (s $ length v) $ f $ cycle v
 -- The expressions @fib!0@ and @fib!1@ refer to previous elements in the
 -- stream defined one step back and two steps back respectively.
 recurrenceO :: Type a =>
-               Vector1 a ->
-               (Vector1 a -> Data a) ->
+               Pull1 a ->
+               (Pull1 a -> Data a) ->
                Stream (Data a)
 recurrenceO initV mkExpr = Stream next init
   where
     len  = length initV
     init = do
-      buf <- thawArray (freezeVector initV)
+      buf <- thawArray (freezePull initV)
       r   <- newRef (0 :: Data Index)
       return (buf,r)
 
@@ -385,8 +385,8 @@ recurrenceO initV mkExpr = Stream next init
 -- > slidingAvg n str = recurrenceI (replicate n 0) str
 -- >                    (\input -> sum input `quot` n)
 recurrenceI :: (Type a, Type b) =>
-               Vector1 a -> Stream (Data a) ->
-               (Vector1 a -> Data b) ->
+               Pull1 a -> Stream (Data a) ->
+               (Pull1 a -> Data b) ->
                Stream (Data b)
 recurrenceI ii stream mkExpr
     = recurrenceIO ii stream (value []) (\i _ -> mkExpr i)
@@ -397,8 +397,8 @@ recurrenceI ii stream mkExpr
 --
 --   'recurrenceIO' is used when defining the 'iir' filter.
 recurrenceIO :: (Type a, Type b) =>
-                Vector1 a -> Stream (Data a) -> Vector1 b ->
-                (Vector1 a -> Vector1 b -> Data b) ->
+                Pull1 a -> Stream (Data a) -> Pull1 b ->
+                (Pull1 a -> Pull1 b -> Data b) ->
                 Stream (Data b)
 recurrenceIO ii (Stream nxt int) io mkExpr
     = Stream next init
@@ -406,8 +406,8 @@ recurrenceIO ii (Stream nxt int) io mkExpr
     lenI = length ii
     lenO = length io
     init = do
-      ibuf <- thawArray (freezeVector ii)
-      obuf <- thawArray (freezeVector io)
+      ibuf <- thawArray (freezePull ii)
+      obuf <- thawArray (freezePull io)
       st   <- int
       r    <- newRef (0 :: Data Index)
       return (ibuf,obuf,st,r)
@@ -430,9 +430,9 @@ recurrenceIO ii (Stream nxt int) io mkExpr
 
 -- | Similar to 'recurrenceIO' but takes two input streams.
 recurrenceIIO :: (Type a, Type b, Type c) =>
-                 Vector1 a -> Stream (Data a) -> Vector1 b -> Stream (Data b) ->
-                 Vector1 c ->
-                 (Vector1 a -> Vector1 b -> Vector1 c -> Data c) ->
+                 Pull1 a -> Stream (Data a) -> Pull1 b -> Stream (Data b) ->
+                 Pull1 c ->
+                 (Pull1 a -> Pull1 b -> Pull1 c -> Data c) ->
                  Stream (Data c)
 recurrenceIIO i1 (Stream next1 init1) i2 (Stream next2 init2) io mkExpr
     = Stream next init
@@ -441,11 +441,11 @@ recurrenceIIO i1 (Stream next1 init1) i2 (Stream next2 init2) io mkExpr
     len2 = length i2
     lenO = length io
     init = do
-      ibuf1 <- thawArray (freezeVector i1)
+      ibuf1 <- thawArray (freezePull i1)
       st1   <- init1
-      ibuf2 <- thawArray (freezeVector i2)
+      ibuf2 <- thawArray (freezePull i2)
       st2   <- init2
-      obuf  <- thawArray (freezeVector io)
+      obuf  <- thawArray (freezePull io)
       c     <- newRef (0 :: Data Index)
       return (ibuf1,st1,ibuf2,st2,obuf,c)
     next (ibuf1,st1,ibuf2,st2,obuf,c) = do
@@ -473,14 +473,14 @@ slidingAvg n str = recurrenceI (replicate n 0) str
                    (\input -> sum input `quot` n)
 
 -- | A fir filter on streams
-fir :: Vector1 Float ->
+fir :: Pull1 Float ->
        Stream (Data Float) -> Stream (Data Float)
 fir b inp =
     recurrenceI (replicate (length b) 0) inp
                 (scalarProd b)
 
 -- | An iir filter on streams
-iir :: Data Float -> Vector1 Float -> Vector1 Float ->
+iir :: Data Float -> Pull1 Float -> Pull1 Float ->
        Stream (Data Float) -> Stream (Data Float)
 iir a0 a b inp =
     recurrenceIO (replicate (length b) 0) inp
