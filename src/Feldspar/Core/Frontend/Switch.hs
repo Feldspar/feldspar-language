@@ -31,9 +31,9 @@
 
 module Feldspar.Core.Frontend.Switch where
 
-import qualified Prelude as P
+import Prelude (($),foldr)
 
-import Language.Syntactic (resugar)
+import Language.Syntactic (resugar,Syntactic(..))
 
 import Feldspar.Core.Types
 import Feldspar.Core.Frontend.Eq (Eq((==)))
@@ -45,13 +45,15 @@ import Feldspar.Core.Constructs.Switch
 
 -- | Select between the cases based on the value of the scrutinee.
 select :: (Eq a, Syntax b) => Data a -> [(Data a, b)] -> b -> b
-select s cs def = P.foldr (\(c,a) b -> c == s ? a P.$ b) def cs
+select s cs def = foldr (\(c,a) b -> c == s ? a $ b) def cs
 
 {-# DEPRECATED select "select will generate a tree of if-statements. Use switch instead" #-}
 
 -- | Select between the cases based on the value of the scrutinee.
-switch :: (Eq a, Syntax b)
-       => Data a -> b -> [(Data a, b)] -> b
-switch s def [] = def
-switch s def cs = sugarSymF Switch (P.foldr (\(c,a) b -> c == s ? a P.$ b) def cs)
+-- If no match is found return the first argument
+switch :: (Eq (Internal a), Syntax a, Syntax b)
+       => b -> [(a, b)] -> a -> b
+switch def [] _ = def
+switch def cs s = let s' = resugar s
+                  in sugarSymF Switch (foldr (\(c,a) b -> resugar c == s' ? a $ b) def cs)
 
