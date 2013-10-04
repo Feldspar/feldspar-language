@@ -73,6 +73,7 @@ import Feldspar.Core.Constructs.Par
 import Feldspar.Core.Constructs.Num
 import Feldspar.Core.Constructs.Ord
 import Feldspar.Core.Constructs.Save
+import Feldspar.Core.Constructs.Switch
 import Feldspar.Core.Constructs.SizeProp
 import Feldspar.Core.Constructs.SourceInfo
 import Feldspar.Core.Constructs.Trace
@@ -106,6 +107,7 @@ type FeldSymbols
     :+: (ORD        :|| Type)
     :+: (PropSize   :|| Type)
     :+: (Save       :|| Type)
+    :+: (Switch     :|| Type)
     :+: (Trace      :|| Type)
     :+: Let
     :+: ConditionM Mut

@@ -26,15 +26,32 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-module Feldspar.Core.Frontend.Select where
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+
+module Feldspar.Core.Frontend.Switch where
 
 import qualified Prelude as P
 
-import Feldspar.Core.Frontend.Eq
-import Feldspar.Core.Frontend.Condition
+import Language.Syntactic (resugar)
+
+import Feldspar.Core.Types
+import Feldspar.Core.Frontend.Eq (Eq((==)))
+import Feldspar.Core.Frontend.Array (parallel,append)
+import Feldspar.Core.Frontend.Literal (value)
+import Feldspar.Core.Frontend.Condition ((?))
 import Feldspar.Core.Constructs
+import Feldspar.Core.Constructs.Switch
 
 -- | Select between the cases based on the value of the scrutinee.
 select :: (Eq a, Syntax b) => Data a -> [(Data a, b)] -> b -> b
-select scrutinee cases fallback = P.foldr (\(c,a) b -> c == scrutinee ? a P.$ b) fallback cases
+select s cs def = P.foldr (\(c,a) b -> c == s ? a P.$ b) def cs
+
+{-# DEPRECATED select "select will generate a tree of if-statements. Use switch instead" #-}
+
+-- | Select between the cases based on the value of the scrutinee.
+switch :: (Eq a, Syntax b)
+       => Data a -> b -> [(Data a, b)] -> b
+switch s def [] = def
+switch s def cs = sugarSymF Switch (P.foldr (\(c,a) b -> c == s ? a P.$ b) def cs)
 

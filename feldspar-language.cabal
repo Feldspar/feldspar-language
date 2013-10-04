@@ -63,6 +63,7 @@ library
     Feldspar.Core.Constructs.Ord
     Feldspar.Core.Constructs.SizeProp
     Feldspar.Core.Constructs.SourceInfo
+    Feldspar.Core.Constructs.Switch
     Feldspar.Core.Constructs.Trace
     Feldspar.Core.Constructs.Tuple
     Feldspar.Core.Constructs.FFI
@@ -92,9 +93,9 @@ library
     Feldspar.Core.Frontend.Par
     Feldspar.Core.Frontend.Num
     Feldspar.Core.Frontend.Ord
-    Feldspar.Core.Frontend.Select
     Feldspar.Core.Frontend.SizeProp
     Feldspar.Core.Frontend.SourceInfo
+    Feldspar.Core.Frontend.Switch
     Feldspar.Core.Frontend.Trace
     Feldspar.Core.Frontend.Tuple
     Feldspar.Core.Frontend.FFI
