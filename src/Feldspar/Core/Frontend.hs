@@ -130,9 +130,9 @@ import Feldspar.Core.Frontend.Num              as Frontend
 import Feldspar.Core.Frontend.Ord              as Frontend
 import Feldspar.Core.Frontend.Par              as Frontend
 import Feldspar.Core.Frontend.Save             as Frontend
-import Feldspar.Core.Frontend.Select           as Frontend
 import Feldspar.Core.Frontend.SizeProp         as Frontend
 import Feldspar.Core.Frontend.SourceInfo       as Frontend
+import Feldspar.Core.Frontend.Switch           as Frontend
 import Feldspar.Core.Frontend.Trace            as Frontend
 import Feldspar.Core.Frontend.Tuple            as Frontend
 
