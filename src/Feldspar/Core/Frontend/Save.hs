@@ -34,8 +34,6 @@
 
 module Feldspar.Core.Frontend.Save where
 
-import Language.Syntactic
-
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Save
 

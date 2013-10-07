@@ -31,8 +31,6 @@ where
 
 import Data.Complex
 
-import Language.Syntactic
-
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Fractional
 

@@ -35,8 +35,6 @@ import Feldspar.Core.Constructs.Logic
 import Feldspar.Core.Frontend.Literal
 import Feldspar.Core.Frontend.Condition
 
-import Language.Syntactic
-
 infixr 3 &&
 infixr 3 &&*
 infixr 2 ||

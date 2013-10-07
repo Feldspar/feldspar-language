@@ -9,7 +9,6 @@ module Feldspar.Core.Constructs.Switch where
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
 
-import Feldspar.Lattice
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 

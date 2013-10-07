@@ -166,7 +166,7 @@ instance ( MONAD Par :<: dom
         | Info {infoType = t} <- getInfo a
         = constructFeatUnOptDefaultTyp opts (ParType t) Return args
 
-    constructFeatUnOpt opts Bind args@(_ :* f@(lam :$ body) :* Nil)
+    constructFeatUnOpt opts Bind args@(_ :* (lam :$ body) :* Nil)
         | Just (SubConstr2 (Lambda _))  <- prjLambda lam
         , Info {infoType = t} <- getInfo body
         = constructFeatUnOptDefaultTyp opts t Bind args

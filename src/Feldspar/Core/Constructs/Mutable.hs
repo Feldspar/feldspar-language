@@ -128,7 +128,7 @@ instance ( MONAD Mut :<: dom
        -- (bind e1 (\x -> e2) >> e3 ==> bind e1 (\x -> e2 >> e3)
     constructFeatOpt opts Then ((bnd :$ x :$ (lam :$ bd)) :* y :* Nil)
         | Just Bind <- prjMonad monadProxy bnd
-        , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
+        , Just lam'@(SubConstr2 (Lambda _)) <- prjLambda lam
         = do
              bb <- constructFeat opts Then (bd :* y :* Nil)
              bd' <- constructFeat opts (reuseCLambda lam') (bb :* Nil)
@@ -137,7 +137,7 @@ instance ( MONAD Mut :<: dom
       -- (bind (bind e1 (\x -> e2)) (\y -> e3) => bind e1 (\x -> bind e2 (\y-> e3))
     constructFeatOpt opts Bind ((bnd :$ x :$ (lam :$ bd)) :* y :* Nil)
         | Just Bind <- prjMonad monadProxy bnd
-        , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
+        , Just lam'@(SubConstr2 (Lambda _)) <- prjLambda lam
         = do
              bb <- constructFeat opts Bind (bd :* y :* Nil)
              bd' <- constructFeat opts (reuseCLambda lam') (bb :* Nil)
@@ -162,7 +162,7 @@ instance ( MONAD Mut :<: dom
         | Info {infoType = t} <- getInfo a
         = constructFeatUnOptDefaultTyp opts (MutType t) Return args
 
-    constructFeatUnOpt opts Bind args@(_ :* f@(lam :$ body) :* Nil)
+    constructFeatUnOpt opts Bind args@(_ :* (lam :$ body) :* Nil)
         | Just (SubConstr2 (Lambda _))  <- prjLambda lam
         , Info {infoType = t} <- getInfo body
         = constructFeatUnOptDefaultTyp opts t Bind args

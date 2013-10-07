@@ -36,7 +36,7 @@ instance Typed sub => Typed (sub :| pred)
   where typeDictSym (C s) = typeDictSym s
 
 instance Typed (SubConstr2 c sub Type Top)
-  where typeDictSym (SubConstr2 s) = Nothing
+  where typeDictSym (SubConstr2 _) = Nothing
 
 instance (Typed sub, Typed sup) => Typed (sub :+: sup)
   where typeDictSym (InjL s) = typeDictSym s

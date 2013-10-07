@@ -35,8 +35,6 @@ module Feldspar.Core.Frontend.SourceInfo where
 
 import QuickAnnotate
 
-import Language.Syntactic
-
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs.SourceInfo
 import Feldspar.Core.Constructs

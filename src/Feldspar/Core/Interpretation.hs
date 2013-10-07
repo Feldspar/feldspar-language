@@ -455,7 +455,7 @@ constructFeatUnOptDefaultTyp
     -> feature a
     -> Args (AST (Decor Info (dom :|| Typeable))) a
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
-constructFeatUnOptDefaultTyp opts typ feat args
+constructFeatUnOptDefaultTyp _ typ feat args
     = do
         src <- asks sourceEnv
         let sz   = sizeProp feat $ mapArgs (WrapFull . getInfo) args
@@ -471,7 +471,7 @@ constructFeatUnOptDefault
     => FeldOpts -> feature a
     -> Args (AST (Decor Info (dom :|| Typeable))) a
     -> Opt (ASTF (Decor Info (dom :|| Typeable)) (DenResult a))
-constructFeatUnOptDefault opts feat args
+constructFeatUnOptDefault _ feat args
     = do
         src <- asks sourceEnv
         let sz   = sizeProp feat $ mapArgs (WrapFull . getInfo) args

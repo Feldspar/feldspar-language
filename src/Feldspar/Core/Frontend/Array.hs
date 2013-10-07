@@ -43,8 +43,6 @@ import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Array
 import Feldspar.Core.Frontend.Tuple ()
 
-import Language.Syntactic
-
 parallel :: Type a => Data Length -> (Data Index -> Data a) -> Data [a]
 parallel = sugarSymF Parallel
 

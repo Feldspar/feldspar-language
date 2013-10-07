@@ -37,7 +37,6 @@ module Feldspar.Core.Frontend.Tuple where
 
 import QuickAnnotate
 
-import Language.Syntactic
 import Language.Syntactic.Frontend.TupleConstrained
 
 import Feldspar.Core.Types

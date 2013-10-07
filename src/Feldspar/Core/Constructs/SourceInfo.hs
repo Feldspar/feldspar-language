@@ -40,7 +40,6 @@ module Feldspar.Core.Constructs.SourceInfo
     ) where
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Binding
 import Language.Syntactic.Constructs.Decoration
 import Language.Syntactic.Constructs.Identity
 

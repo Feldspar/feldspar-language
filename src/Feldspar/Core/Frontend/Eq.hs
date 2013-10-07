@@ -35,8 +35,6 @@ import Data.Int
 import Data.Word
 import Data.Complex
 
-import Language.Syntactic
-
 import Feldspar.Prelude
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs

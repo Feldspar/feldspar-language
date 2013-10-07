@@ -89,7 +89,6 @@ import Control.Monad.State
 import Test.QuickCheck
 
 import Data.Patch
-import Data.Typeable
 
 import Language.Syntactic hiding
     (desugar, sugar, resugar, printExpr, showAST, drawAST)
@@ -155,7 +154,7 @@ mkId opts a b
                             { injVariable = Decor (getInfo a) . injC . c' . Variable
                             , injLambda   = let info = ((mkInfoTy (FunType typeRep bType)) {infoSize = (infoSize (getInfo a), infoSize (getInfo b))})
                                             in Decor info . injC . cLambda
-                            , injLet      = Decor (getInfo b) $ injC $ Let
+                            , injLet      = Decor (getInfo b) $ injC Let
                             }
 mkId _ _ _ = Nothing
 
@@ -188,7 +187,7 @@ reifyFeldUnOpt :: SyntacticFeld a
     => FeldOpts -> BitWidth n
     -> a
     -> ASTF FeldDom (Internal a)
-reifyFeldUnOpt opts n = flip evalState 0 .
+reifyFeldUnOpt _ n = flip evalState 0 .
     (   return
     .   targetSpecialization n
     <=< reifyM

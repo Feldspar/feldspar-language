@@ -149,7 +149,7 @@ instance
         | sameSign (infoSize (getInfo a)) (infoSize (getInfo b))
         = constructFeat opts (c' Quot) (a :* b :* Nil)
 
-    constructFeatOpt opts (C' Mod) (a :* b :* Nil)
+    constructFeatOpt _ (C' Mod) (a :* b :* Nil)
         | rangeLess sza szb
         , isNatural sza
         = return a

@@ -38,7 +38,6 @@ module Feldspar.Core.Constructs.Loop
 where
 
 import Data.Map (notMember)
-import Data.Typeable
 
 import Control.Monad (forM_, when)
 
