@@ -240,6 +240,10 @@ freezePush (Push k l) = runMutableArray $ do
                           k (\i a -> setArr arr i (resugar a))
                           return arr
 
+-- | Freeze a vector and return a new Pull vector
+freezeToPull :: (Pushy arr, Syntax a) => arr a -> Pull a
+freezeToPull = thawPull . freezePush . toPush
+
 -- | Create a push vector from an array stored in memory.
 thawPush :: Syntax a => Data [Internal a] -> Push a
 thawPush arr = Push f (getLength arr)
