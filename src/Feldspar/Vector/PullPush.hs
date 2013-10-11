@@ -234,7 +234,7 @@ instance Syntax a => Syntactic (Push a)
 
 -- | Store push vectors in memory.
 freezePush :: Syntax a => Push a -> Data [Internal a]
-freezePush (Push _ 0) = parallel 0 $ P.error "freezePush: indexing empty array"
+freezePush (Push _ 0) = parallel 0 (\i -> err "freezePush: indexing empty array")
 freezePush (Push k l) = runMutableArray $ do
                           arr <- newArr_ l
                           k (\i a -> setArr arr i (resugar a))
