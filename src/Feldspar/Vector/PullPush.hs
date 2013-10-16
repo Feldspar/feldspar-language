@@ -266,7 +266,7 @@ instance Functor Push where
   fmap f (Push g l) = Push (\k -> g (\i a -> k i (f a))) l
 
 -- | Concatenating two arrays.
-(++) :: (Pushy arr, Syntax a) => arr a -> arr a -> Push a
+(++) :: (Pushy arr1, Pushy arr2, Syntax a) => arr1 a -> arr2 a -> Push a
 v1 ++ v2 = Push (\func -> f func >>
                           g (\i a -> func (l1 + i) a))
                 (l1 + l2)
