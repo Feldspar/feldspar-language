@@ -45,6 +45,19 @@ seq l i next = Seq l init step
                       setRef rc (c+1)
                       return a
 
+iterate :: Syntax s => Data Length s -> (Data Index -> s -> s) -> Seq s
+iterate l i next = Seq l init step
+  where
+    init = do rc <- newRef (0 :: Data WordN)
+              rs <- newRef i
+              return (rs,rc)
+    step (rs,rc) = do c <- getRef rc
+                      s <- getRef rs
+                      let s' = next c s
+                      setRef rs s'
+                      setRef rc (c+1)
+                      return s'
+
 zipWith :: (a -> b -> c) -> Seq a -> Seq b -> Seq c
 zipWith f (Seq l1 i1 n1) (Seq l2 i2 n2) = Seq (min l1 l2) i next
   where
