@@ -82,6 +82,17 @@ head (Stream next init) = runMutable (init >>= next)
 tail :: Syntax a => Stream a -> Stream a
 tail (Stream next init) = Stream next (init >>= \st -> next st >> return st)
 
+-- | The stream 'pre v s' first returns 'v' and then behaves like 's'.
+pre :: Syntax a => a -> Stream a -> Stream a
+pre v (Stream next init) = Stream newNext newInit
+  where newInit = do i <- init
+                     r <- newRef v
+                     return (r,i)
+        newNext (r,s) = do a <- next s
+                           b <- getRef r
+                           setRef r a
+                           return b                           
+
 -- | 'map f str' transforms every element of the stream 'str' using the
 --   function 'f'
 map :: (a -> b) -> Stream a -> Stream b
@@ -285,6 +296,15 @@ instance Syntax a => Indexed (Stream a) where
                              st <- init
                              forM (n-1) (\_ -> next st)
                              next st
+
+instance Num a => Num (Stream a) where
+  (+) = liftA2 (+)
+  (-) = liftA2 (-)
+  (*) = liftA2 (*)
+  negate a = fmap negate a
+  abs    a = fmap abs    a
+  signum a = fmap signum a
+  fromInteger a = repeat (fromInteger a)
 
 -- | 'take n str' allocates 'n' elements from the stream 'str' into a
 --   core array.
