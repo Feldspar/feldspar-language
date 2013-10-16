@@ -202,9 +202,11 @@ maximum = fold1 max
 minimum = fold1 min
 
 or, and :: Pull (Data Bool) -> Data Bool
-or = fold (||) false
+or (Pull ixf l) = snd (whileLoop (0,false) (\(i,b) -> not b && i < l) body)
+  where body (i,b) = (i+1,ixf i)
 
-and = fold (&&) true
+and (Pull ixf l) = snd (whileLoop (0,true) (\(i,b) -> b && i < l) body)
+  where body (i,b) = (i+1,ixf i)
 
 any, all :: (a -> Data Bool) -> Pull a -> Data Bool
 any p = or . map p
