@@ -71,7 +71,7 @@ instance Functor (Vector sh)
   where
     fmap = map
 
--- | * Fuctions
+-- | * Functions
 
 -- | Store a vector in an array.
 fromVector :: (Type a) => DVector sh a -> Data [a]
