@@ -1,5 +1,2 @@
 language: haskell
 
-before_install:
-  - cabal install tasty --constraint="stm > 2.3"
-
