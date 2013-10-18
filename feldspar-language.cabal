@@ -131,7 +131,7 @@ library
     QuickCheck                  >= 2.5    && < 3,
     patch-combinators           >= 0.2    && < 0.3,
     syntactic                   >= 1.6    && < 1.8,
-    tagged                      >= 0.4    && < 0.5,
+    tagged                      >= 0.4    && < 0.8,
     tuple                       >= 0.2    && < 0.3,
     monad-par                   >= 0.3    && < 0.3.4,
     QuickAnnotate               >= 0.6    && < 0.7
@@ -175,8 +175,8 @@ test-suite range
     base             >= 4   && < 4.7,
     random           >= 1   && < 2,
     QuickCheck       >= 2.4 && < 3,
-    tasty            >= 0.2 && < 0.3,
-    tasty-quickcheck >= 0.2 && < 0.3
+    tasty            >= 0.2 && < 0.4,
+    tasty-quickcheck >= 0.2 && < 0.4
 
 test-suite semantics
   type: exitcode-stdio-1.0
@@ -195,9 +195,9 @@ test-suite semantics
     feldspar-language,
     base             >= 4   && < 4.7,
     QuickCheck       >= 2.4 && < 3,
-    tasty            >= 0.2 && < 0.3,
+    tasty            >= 0.2 && < 0.4,
     tasty-th         >= 0.1 && < 0.2,
-    tasty-quickcheck >= 0.2 && < 0.3
+    tasty-quickcheck >= 0.2 && < 0.4
 
 test-suite decoration
   type: exitcode-stdio-1.0
@@ -212,8 +212,8 @@ test-suite decoration
     feldspar-language,
     base                  >= 4   && < 4.7,
     bytestring            >= 0.9 && < 0.11,
-    tasty                 >= 0.2 && < 0.3,
-    tasty-golden          >= 2.0 && < 2.1
+    tasty                 >= 0.2 && < 0.4,
+    tasty-golden          >= 2.0 && < 2.2
 
 test-suite tutorial
   type: exitcode-stdio-1.0
