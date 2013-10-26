@@ -33,8 +33,6 @@
 module Feldspar.Core.Frontend.SourceInfo where
 
 
-import QuickAnnotate
-
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs.SourceInfo
 import Feldspar.Core.Constructs
@@ -42,8 +40,3 @@ import Feldspar.Core.Constructs
 -- | Annotate an expression with information about its source code
 sourceData :: Type a => SourceInfo1 a -> Data a -> Data a
 sourceData info = sugarSymF (Decor info Id)
-
-instance Type a => Annotatable (Data a)
-  where
-    annotate = sourceData . SourceInfo1
-
