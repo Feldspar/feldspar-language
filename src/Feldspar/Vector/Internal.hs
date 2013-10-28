@@ -41,8 +41,6 @@ import qualified Prelude
 import Control.Applicative
 import Test.QuickCheck
 
-import QuickAnnotate
-
 import Language.Syntactic hiding (fold)
 
 import Feldspar.Range (rangeSubSat)
@@ -411,12 +409,3 @@ tVec2 _ = id
 instance (Arbitrary (Internal a), Syntax a) => Arbitrary (Vector a)
   where
     arbitrary = fmap value arbitrary
-
-instance Annotatable a => Annotatable (Vector a)
-  where
-    annotate _    Empty                  = Empty
-    annotate info (Indexed len ixf cont) = Indexed
-        (annotate (info Prelude.++ " (vector length)") len)
-        (annotate (info Prelude.++ " (vector element)") . ixf)
-        (annotate info cont)
-
