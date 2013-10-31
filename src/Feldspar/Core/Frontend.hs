@@ -308,5 +308,6 @@ ilog2 x = bitSize x - 1 - nlz x
 nlz :: (Bits a) => Data a -> Data Index
 nlz x = bitCount $ complement $ foldl go x $ takeWhile (P.< bitSize' x) $ P.map (2 P.^) [(0::Integer)..]
   where
-    go b s = b .|. (b .>>. value s)
+    go b s = share b $ \b' -> b' .|. (b' .>>. value s)
+      -- TODO share is probably not needed when observable sharing is implemented
 
