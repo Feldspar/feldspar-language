@@ -169,7 +169,7 @@ reifyFeld opts n = flip evalState 0 .
     (   return
     .   optimize opts
     .   stripDecor
-    <=< codeMotion prjDict (mkId opts)
+    <=< codeMotion (simpleMatch (const . hoistOver)) prjDict (mkId opts)
     .   optimize opts
     .   targetSpecialization n
     <=< reifyM

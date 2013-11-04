@@ -130,7 +130,7 @@ library
     mtl                         >= 2.0    && < 2.2,
     QuickCheck                  >= 2.5    && < 3,
     patch-combinators           >= 0.2    && < 0.3,
-    syntactic                   >= 1.6    && < 1.8,
+    syntactic                   >= 1.8    && < 1.9,
     tagged                      >= 0.4    && < 0.8,
     tuple                       >= 0.2    && < 0.3,
     monad-par                   >= 0.3    && < 0.3.4
