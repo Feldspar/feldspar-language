@@ -34,7 +34,6 @@
 module Feldspar.Core.Frontend.Literal where
 
 import Language.Syntactic
-import Feldspar.Core.Types
 import Feldspar.Core.Constructs.Literal
 import Feldspar.Core.Constructs
 import Feldspar.Core.Interpretation

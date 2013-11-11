@@ -40,8 +40,6 @@ import qualified Prelude
 import Data.Int
 import Data.Word
 
-import Language.Syntactic
-
 import Feldspar.Prelude
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs
@@ -83,4 +81,4 @@ instance Ord Int64
 instance Ord WordN
 instance Ord IntN
 instance Ord Float
-
+instance Ord Double

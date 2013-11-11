@@ -35,9 +35,6 @@
 
 module Feldspar.Core.Frontend.Tuple where
 
-import QuickAnnotate
-
-import Language.Syntactic
 import Language.Syntactic.Frontend.TupleConstrained
 
 import Feldspar.Core.Types
@@ -45,100 +42,4 @@ import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Tuple ()
 
 instance TupleSat FeldDomain Type
-
-instance
-    ( Annotatable a
-    , Annotatable b
-    ) =>
-      Annotatable (a,b)
-  where
-    annotate info (a,b) =
-        ( annotate (info ++ " (tuple element 1)") a
-        , annotate (info ++ " (tuple element 2)") b
-        )
-
-instance
-    ( Annotatable a
-    , Annotatable b
-    , Annotatable c
-    ) =>
-      Annotatable (a,b,c)
-  where
-    annotate info (a,b,c) =
-        ( annotate (info ++ " (tuple element 1)") a
-        , annotate (info ++ " (tuple element 2)") b
-        , annotate (info ++ " (tuple element 3)") c
-        )
-
-instance
-    ( Annotatable a
-    , Annotatable b
-    , Annotatable c
-    , Annotatable d
-    ) =>
-      Annotatable (a,b,c,d)
-  where
-    annotate info (a,b,c,d) =
-        ( annotate (info ++ " (tuple element 1)") a
-        , annotate (info ++ " (tuple element 2)") b
-        , annotate (info ++ " (tuple element 3)") c
-        , annotate (info ++ " (tuple element 4)") d
-        )
-
-instance
-    ( Annotatable a
-    , Annotatable b
-    , Annotatable c
-    , Annotatable d
-    , Annotatable e
-    ) =>
-      Annotatable (a,b,c,d,e)
-  where
-    annotate info (a,b,c,d,e) =
-        ( annotate (info ++ " (tuple element 1)") a
-        , annotate (info ++ " (tuple element 2)") b
-        , annotate (info ++ " (tuple element 3)") c
-        , annotate (info ++ " (tuple element 4)") d
-        , annotate (info ++ " (tuple element 5)") e
-        )
-
-instance
-    ( Annotatable a
-    , Annotatable b
-    , Annotatable c
-    , Annotatable d
-    , Annotatable e
-    , Annotatable f
-    ) =>
-      Annotatable (a,b,c,d,e,f)
-  where
-    annotate info (a,b,c,d,e,f) =
-        ( annotate (info ++ " (tuple element 1)") a
-        , annotate (info ++ " (tuple element 2)") b
-        , annotate (info ++ " (tuple element 3)") c
-        , annotate (info ++ " (tuple element 4)") d
-        , annotate (info ++ " (tuple element 5)") e
-        , annotate (info ++ " (tuple element 6)") f
-        )
-
-instance
-    ( Annotatable a
-    , Annotatable b
-    , Annotatable c
-    , Annotatable d
-    , Annotatable e
-    , Annotatable f
-    , Annotatable g
-    ) =>
-      Annotatable (a,b,c,d,e,f,g)
-  where
-    annotate info (a,b,c,d,e,f,g) =
-        ( annotate (info ++ " (tuple element 1)") a
-        , annotate (info ++ " (tuple element 2)") b
-        , annotate (info ++ " (tuple element 3)") c
-        , annotate (info ++ " (tuple element 4)") d
-        , annotate (info ++ " (tuple element 5)") e
-        , annotate (info ++ " (tuple element 6)") f
-        , annotate (info ++ " (tuple element 7)") g
-        )
 

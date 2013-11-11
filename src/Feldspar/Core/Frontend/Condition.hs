@@ -28,8 +28,6 @@
 
 module Feldspar.Core.Frontend.Condition where
 
-import Language.Syntactic
-
 import Feldspar.Core.Constructs.Condition
 import Feldspar.Core.Constructs
 

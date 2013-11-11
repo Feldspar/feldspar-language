@@ -5,8 +5,8 @@ module Main where
 
 import qualified Prelude
 
-import Test.Framework
-import Test.Golden
+import Test.Tasty
+import Test.Tasty.Golden
 
 import qualified Data.ByteString.Lazy.Char8 as B
 
@@ -35,5 +35,5 @@ tests = testGroup "DecorationTests"
     , goldenVsFile "monadicSharing" "tests/gold/monadicSharing.txt" "tests/monadicSharing.txt" $ B.writeFile "tests/monadicSharing.txt" $ B.pack $ showDecor monadicSharing
     ]
 
-main = defaultMain [tests]
+main = defaultMain $ testGroup "Tests" [tests]
 

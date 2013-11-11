@@ -63,6 +63,7 @@ library
     Feldspar.Core.Constructs.Ord
     Feldspar.Core.Constructs.SizeProp
     Feldspar.Core.Constructs.SourceInfo
+    Feldspar.Core.Constructs.Switch
     Feldspar.Core.Constructs.Trace
     Feldspar.Core.Constructs.Tuple
     Feldspar.Core.Constructs.FFI
@@ -92,9 +93,9 @@ library
     Feldspar.Core.Frontend.Par
     Feldspar.Core.Frontend.Num
     Feldspar.Core.Frontend.Ord
-    Feldspar.Core.Frontend.Select
     Feldspar.Core.Frontend.SizeProp
     Feldspar.Core.Frontend.SourceInfo
+    Feldspar.Core.Frontend.Switch
     Feldspar.Core.Frontend.Trace
     Feldspar.Core.Frontend.Tuple
     Feldspar.Core.Frontend.FFI
@@ -135,12 +136,11 @@ library
     data-lens                   >= 2.10   && < 2.11,
     mtl                         >= 2.0    && < 2.2,
     QuickCheck                  >= 2.5    && < 3,
-    patch-combinators           >= 0.1    && < 0.2,
-    syntactic                   >= 1.6    && < 1.7,
-    tagged                      >= 0.4    && < 0.5,
+    patch-combinators           >= 0.2    && < 0.3,
+    syntactic                   >= 1.6    && < 1.8,
+    tagged                      >= 0.4    && < 0.8,
     tuple                       >= 0.2    && < 0.3,
-    monad-par                   >= 0.3    && < 0.3.4,
-    QuickAnnotate               >= 0.6    && < 0.7
+    monad-par                   >= 0.3    && < 0.3.4
 
   other-extensions:
     DeriveDataTypeable
@@ -178,11 +178,11 @@ test-suite range
 
   build-depends:
     feldspar-language,
-    base >= 4 && < 4.7,
-    random >= 1 && <2,
-    QuickCheck >= 2.4 && <3,
-    test-framework >= 0.6 && < 0.9,
-    test-framework-quickcheck2 >= 0.2 && < 0.4
+    base             >= 4   && < 4.7,
+    random           >= 1   && < 2,
+    QuickCheck       >= 2.4 && < 3,
+    tasty            >= 0.3 && < 0.4,
+    tasty-quickcheck >= 0.2 && < 0.4
 
 test-suite semantics
   type: exitcode-stdio-1.0
@@ -199,11 +199,11 @@ test-suite semantics
 
   build-depends:
     feldspar-language,
-    base                       >= 4   && < 4.7,
-    QuickCheck                 >= 2.4 && < 3,
-    test-framework             >= 0.6 && < 0.9,
-    test-framework-th          >= 0.2 && < 0.3,
-    test-framework-quickcheck2 >= 0.2 && < 0.4
+    base             >= 4   && < 4.7,
+    QuickCheck       >= 2.4 && < 3,
+    tasty            >= 0.3 && < 0.4,
+    tasty-th         >= 0.1 && < 0.2,
+    tasty-quickcheck >= 0.2 && < 0.4
 
 test-suite decoration
   type: exitcode-stdio-1.0
@@ -218,8 +218,8 @@ test-suite decoration
     feldspar-language,
     base                  >= 4   && < 4.7,
     bytestring            >= 0.9 && < 0.11,
-    test-framework        >= 0.6 && < 0.9,
-    test-framework-golden >= 1.1 && < 1.1.2
+    tasty                 >= 0.3 && < 0.4,
+    tasty-golden          >= 2.0 && < 2.2
 
 test-suite tutorial
   type: exitcode-stdio-1.0

@@ -42,8 +42,6 @@ import qualified Prelude as P
 import Data.Int
 import Data.Word
 
-import Language.Syntactic
-
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs

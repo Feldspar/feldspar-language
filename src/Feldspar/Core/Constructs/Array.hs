@@ -171,8 +171,8 @@ instance
     -- Test case: nothing simple. Look at the index calculation in the
     -- outer second loop in turboDecode.
     constructFeatOpt opts sym@(C' Parallel) (len :* (lam1 :$ (lt :$ e1 :$ (lam2 :$ bd))) :* Nil)
-        | Just lam1'@(SubConstr2 (Lambda v1)) <- prjLambda lam1
-        , Just lam2'@(SubConstr2 (Lambda v2)) <- prjLambda lam2
+        | Just       (SubConstr2 (Lambda v1)) <- prjLambda lam1
+        , Just lam2'@(SubConstr2 (Lambda _ )) <- prjLambda lam2
         , Just Let <- prj lt
         , v1 `notMember` infoVars (getInfo e1)
         , SICS `inTarget` opts
@@ -251,10 +251,10 @@ instance
         , alphaEq len1 len2
         = constructFeat opts p (len2 :* ixf :* Nil)
 
-    constructFeatOpt opts (C' SetLength) (len1 :* (seq :$ len2 :$ init :$ step) :* Nil)
-        | Just s@(C' Sequential) <- prjF seq
+    constructFeatOpt opts (C' SetLength) (len1 :* (sq :$ len2 :$ ini :$ step) :* Nil)
+        | Just s@(C' Sequential) <- prjF sq
         , alphaEq len1 len2
-        = constructFeat opts s (len2 :* init :* step :* Nil)
+        = constructFeat opts s (len2 :* ini :* step :* Nil)
 
     constructFeatOpt _ (C' SetLength) (len :* arr :* Nil)
         | rlen      <- infoSize $ getInfo len

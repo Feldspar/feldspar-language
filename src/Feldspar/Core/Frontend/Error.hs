@@ -28,8 +28,6 @@
 
 module Feldspar.Core.Frontend.Error where
 
-import Language.Syntactic
-
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Error
 import Feldspar.Core.Frontend.Literal

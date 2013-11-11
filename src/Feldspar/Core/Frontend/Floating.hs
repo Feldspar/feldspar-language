@@ -32,8 +32,6 @@ import qualified Prelude
 import Prelude (Float,Double)
 import Data.Complex
 
-import Language.Syntactic
-
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Floating
 import Feldspar.Core.Frontend.Fractional

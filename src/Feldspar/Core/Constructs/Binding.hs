@@ -71,7 +71,7 @@ instance Sharable Variable  -- `codeMotion` will not share variables anyway
 instance Sharable Lambda    -- Will not be shared anyway because we disallow variables of `->` type
 instance Sharable Let
 
-subst :: forall constr dom a b
+subst :: forall dom a b
     .  ( Constrained dom
        , CLambda Type :<: dom
        , (Variable :|| Type) :<: dom
@@ -80,7 +80,7 @@ subst :: forall constr dom a b
     -> ASTF (dom :|| Typeable) a  -- ^ Expression to substitute for
     -> ASTF (dom :|| Typeable) b  -- ^ Expression to substitute in
     -> ASTF (dom :|| Typeable) b
-subst v new a = go a
+subst v new = go
   where
     go :: AST (dom :|| Typeable) c -> AST (dom :|| Typeable) c
     go a@((prjLambda -> Just (SubConstr2 (Lambda w))) :$ _)
@@ -139,9 +139,9 @@ optimizeFunction opts opt info e
 optimizeFunction opts opt info a@(sym :$ body)
     | Dict <- exprDict a
     , Dict <- exprDict body
-    , Just (lam@(SubConstr2 (Lambda v))) <- prjLambda sym
+    , Just (lam@(SubConstr2 (Lambda _))) <- prjLambda sym
     = optimizeLambda opts opt info lam (body :* Nil)
-optimizeFunction opts opt info a
+optimizeFunction _ _ info a
     = error $ "optimizeFunction: AST is not a function: " ++ show a ++ "\n" ++ show (infoType info)
 
 optimizeLet
@@ -212,7 +212,7 @@ instance ( (Variable :|| Type) :<: dom
          , OptimizeSuper dom)
       => Optimize (Variable :|| Type) dom
   where
-    constructFeatUnOpt _ var@(C' (Variable v)) Nil
+    constructFeatUnOpt _ (C' (Variable v)) Nil
         = reader $ \env -> case Prelude.lookup v (varEnv env) of
             Nothing -> error $
                 "optimizeFeat: can't get size of free variable: v" ++ show v
@@ -227,7 +227,7 @@ instance ( CLambda Type :<: dom
     -- | Assigns a 'universal' size to the bound variable. This only makes sense
     -- for top-level lambdas. For other uses, use 'optimizeLambda' instead.
 
-    optimizeFeat opts lam@(SubConstr2 (Lambda v))
+    optimizeFeat opts lam@(SubConstr2 (Lambda _))
         | Dict <- exprDict lam
         = optimizeLambda opts (optimizeM opts) (mkInfo universal) lam
 
@@ -263,7 +263,7 @@ instance
         = return $ fromJust $ gcast a
 
     constructFeatOpt opts Let (var :* f :* Nil)
-        | Just (C' (Variable v)) <- prjF var
+        | Just (C' (Variable _)) <- prjF var
         = optimizeM opts $ betaReduce (stripDecor var) (stripDecor f)
 
       -- (letBind (letBind e1 (\x -> e2)) (\y -> e3) ==>
@@ -275,7 +275,7 @@ instance
       -- stestL2 m x = parallel x (\x1 -> let z = let y = x `mod` m in (y, y) in parallel 2 (\x -> fst z))
     constructFeatOpt opts lt1@Let ((lt2 :$ x :$ (lam :$ bd)) :* y :* Nil)
         | Just Let <- prj lt2
-        , Just lam'@(SubConstr2 (Lambda v1)) <- prjLambda lam
+        , Just lam'@(SubConstr2 (Lambda _)) <- prjLambda lam
         , SICS `inTarget` opts
         = do
              bb <- constructFeat opts lt1 (bd :* y :* Nil)
@@ -329,7 +329,7 @@ collectLetBinders :: forall dom a .
                    ( [(VarId, ASTB dom Type)]
                    , ASTF dom a
                    )
-collectLetBinders e = go [] e
+collectLetBinders = go []
   where
     go
       :: [(VarId, ASTB dom Type)]

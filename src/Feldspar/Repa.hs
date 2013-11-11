@@ -40,8 +40,6 @@ import qualified Prelude as P
 import Language.Syntactic.Sugar
 import Feldspar hiding (desugar,sugar,resugar)
 
-import QuickAnnotate
-
 -- | * Shapes
 
 infixl 3 :.
@@ -502,10 +500,3 @@ tVec1 _ = id
 
 tVec2 :: Patch a a -> Patch (Vector DIM2 (Data a)) (Vector DIM2 (Data a))
 tVec2 _ = id
-
-instance Annotatable a => Annotatable (Vector s a)
-  where
-    annotate info (Vector len ixf) = Vector
-        (annotate (info P.++ " (vector length)") len)
-        (annotate (info P.++ " (vector element)") . ixf)
-

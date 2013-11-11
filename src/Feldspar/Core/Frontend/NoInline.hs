@@ -28,8 +28,6 @@
 
 module Feldspar.Core.Frontend.NoInline where
 
-import Language.Syntactic
-
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.NoInline
 

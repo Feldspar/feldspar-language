@@ -89,7 +89,6 @@ import Control.Monad.State
 import Test.QuickCheck
 
 import Data.Patch
-import Data.Typeable
 
 import Language.Syntactic hiding
     (desugar, sugar, resugar, printExpr, showAST, drawAST)
@@ -130,9 +129,9 @@ import Feldspar.Core.Frontend.Num              as Frontend
 import Feldspar.Core.Frontend.Ord              as Frontend
 import Feldspar.Core.Frontend.Par              as Frontend
 import Feldspar.Core.Frontend.Save             as Frontend
-import Feldspar.Core.Frontend.Select           as Frontend
 import Feldspar.Core.Frontend.SizeProp         as Frontend
 import Feldspar.Core.Frontend.SourceInfo       as Frontend
+import Feldspar.Core.Frontend.Switch           as Frontend
 import Feldspar.Core.Frontend.Trace            as Frontend
 import Feldspar.Core.Frontend.Tuple            as Frontend
 
@@ -155,7 +154,7 @@ mkId opts a b
                             { injVariable = Decor (getInfo a) . injC . c' . Variable
                             , injLambda   = let info = ((mkInfoTy (FunType typeRep bType)) {infoSize = (infoSize (getInfo a), infoSize (getInfo b))})
                                             in Decor info . injC . cLambda
-                            , injLet      = Decor (getInfo b) $ injC $ Let
+                            , injLet      = Decor (getInfo b) $ injC Let
                             }
 mkId _ _ _ = Nothing
 
@@ -188,7 +187,7 @@ reifyFeldUnOpt :: SyntacticFeld a
     => FeldOpts -> BitWidth n
     -> a
     -> ASTF FeldDom (Internal a)
-reifyFeldUnOpt opts n = flip evalState 0 .
+reifyFeldUnOpt _ n = flip evalState 0 .
     (   return
     .   targetSpecialization n
     <=< reifyM
@@ -309,5 +308,6 @@ ilog2 x = bitSize x - 1 - nlz x
 nlz :: (Bits a) => Data a -> Data Index
 nlz x = bitCount $ complement $ foldl go x $ takeWhile (P.< bitSize' x) $ P.map (2 P.^) [(0::Integer)..]
   where
-    go b s = b .|. (b .>>. value s)
+    go b s = share b $ \b' -> b' .|. (b' .>>. value s)
+      -- TODO share is probably not needed when observable sharing is implemented
 

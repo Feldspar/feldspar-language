@@ -87,11 +87,10 @@ forArr :: Syntax a => Data Length -> (Data Index -> M a) -> M ()
 forArr = sugarSymC For
 
 -- | Swap two elements
-swap :: Syntax a
-     => Data (MArr (Internal a)) -> Data Index -> Data Index -> M ()
+swap :: Type a
+     => Data (MArr a) -> Data Index -> Data Index -> M ()
 swap a i1 i2 = do
-    tmp1 <- getArr a i1
-    tmp2 <- getArr a i2
-    setArr a i1 tmp2 :: M ()
-    setArr a i2 tmp1 :: M ()
+    tmp <- getArr a i1
+    getArr a i2 >>= setArr a i1
+    setArr a i2 tmp
 

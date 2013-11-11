@@ -30,7 +30,6 @@ module Feldspar.Core.Frontend.Binding where
 
 import Language.Syntactic
 
-import Feldspar.Core.Types
 import Feldspar.Core.Constructs.Binding
 import Feldspar.Core.Constructs
 

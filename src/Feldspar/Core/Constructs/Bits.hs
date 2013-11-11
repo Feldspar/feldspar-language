@@ -196,7 +196,7 @@ instance ( (BITS  :|| Type) :<: dom
         = return v1
 
     -- complement . complement ==> id
-    constructFeatOpt opts (C' Complement) ((cmpl :$ a) :* Nil)
+    constructFeatOpt _ (C' Complement) ((cmpl :$ a) :* Nil)
         | Just (C' Complement) <- prjF cmpl
         = return a
 

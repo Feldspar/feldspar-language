@@ -38,7 +38,6 @@ module Feldspar.Core.Constructs.Loop
 where
 
 import Data.Map (notMember)
-import Data.Typeable
 
 import Control.Monad (forM_, when)
 
@@ -53,6 +52,7 @@ import Feldspar.Core.Constructs.Binding
 import Feldspar.Core.Constructs.Literal
 import Feldspar.Core.Constructs.Mutable
 import Feldspar.Core.Constructs.MutableReference
+
 
 data LoopM m a
   where
@@ -152,8 +152,8 @@ instance ( LoopM Mut :<: dom
       , Just GetRef <- prj grf
       , Just (C' (Variable v2)) <- prjF ref
       , v1 /= v2
-      , v1 `notMember` fvars
-      =  do
+      , v2 `notMember` fvars
+      = do
           loop      <- constructFeat opts For (len :* (lam1 :$ body) :* Nil)
           hoistedV3 <- constructFeat opts (reuseCLambda lam3') (loop :* Nil)
           -- Do not optimize right now; the v3 binding gets lost.

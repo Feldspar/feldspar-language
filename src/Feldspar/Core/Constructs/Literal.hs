@@ -46,7 +46,6 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 
 import Data.Typeable
-import Debug.Trace
 
 instance Sharable Literal
   where
@@ -54,7 +53,7 @@ instance Sharable Literal
 
 instance SizeProp (Literal :|| Type)
   where
-    sizeProp lit@(C' (Literal a)) Nil = sizeOf a
+    sizeProp (C' (Literal a)) Nil = sizeOf a
 
 instance ((Literal :|| Type) :<: dom, OptimizeSuper dom) =>
     Optimize (Literal :|| Type) dom

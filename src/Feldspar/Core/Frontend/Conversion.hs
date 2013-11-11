@@ -37,10 +37,6 @@ where
 
 import Prelude hiding (Integral)
 
-import Language.Syntactic
-
-import Feldspar.Range
-import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Conversion
 import Feldspar.Core.Frontend.Integral

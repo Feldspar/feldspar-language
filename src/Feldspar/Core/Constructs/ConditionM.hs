@@ -80,7 +80,7 @@ instance ( ConditionM m :<: dom
       => Optimize (ConditionM m) dom
   where
     constructFeatOpt _ ConditionM (c :* t :* f :* Nil)
-        | Just c' <- viewLiteral c = return $ if c' then t else f
+        | Just cl <- viewLiteral c = return $ if cl then t else f
 
     constructFeatOpt _ ConditionM (_ :* t :* f :* Nil)
         | alphaEq t f = return t

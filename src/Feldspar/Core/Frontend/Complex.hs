@@ -35,8 +35,6 @@ import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Complex
 import Feldspar.Core.Frontend.Num
 
-import Language.Syntactic
-
 complex :: (Numeric a, RealFloat a) => Data a -> Data a -> Data (Complex a)
 complex = sugarSymF MkComplex
 
