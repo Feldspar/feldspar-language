@@ -404,9 +404,3 @@ tPull2 _ = id
 instance (Arbitrary (Internal a), Syntax a) => Arbitrary (Pull a)
   where
     arbitrary = fmap value arbitrary
-
-instance Annotatable a => Annotatable (Pull a)
-  where
-    annotate info (Pull ixf len) = Pull
-        (annotate (info P.++ " (vector element)") . ixf)
-        (annotate (info P.++ " (vector length)") len)
