@@ -51,7 +51,6 @@ import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Bits
 import Feldspar.Core.Constructs.Eq
 import Feldspar.Core.Constructs.Ord
-import Feldspar.Core.Constructs.Num
 import Feldspar.Core.Constructs.Logic
 import Feldspar.Core.Constructs.Complex
 
@@ -93,7 +92,6 @@ instance SizeProp (INTEGRAL :|| Type)
 instance
     ( (INTEGRAL  :||Type) :<: dom
     , (BITS      :||Type) :<: dom
-    , (NUM       :||Type) :<: dom
     , (EQ        :||Type) :<: dom
     , (ORD       :||Type) :<: dom
     , (COMPLEX :|| Type) :<: dom
@@ -106,7 +104,8 @@ instance
   where
     constructFeatOpt _ (C' Quot) (a :* b :* Nil)
         | Just 1 <- viewLiteral b = return a
-
+{-
+    -- TODO: Rule disabled because of cyclic imports.
     constructFeatOpt opts (C' Quot) (a :* b :* Nil)
         | Just b' <- viewLiteral b
         , b' > 0
@@ -127,7 +126,7 @@ instance
       --      `isNegative /= (not . isNatural)`
       -- TODO Or maybe both `isNegative` and `isPositive` are handled by the
       --      size-based optimization of `Condition`?
-
+-}
     constructFeatOpt _ (C' Rem) (a :* b :* Nil)
         | rangeLess sza szb
         , isNatural sza
