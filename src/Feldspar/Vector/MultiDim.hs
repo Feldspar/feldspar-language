@@ -295,8 +295,6 @@ transpose2D :: Vector DIM2 e -> Vector DIM2 e
 transpose2D = transpose
 
 -- | Matrix multiplication
---mmMult :: (Type e, Numeric e)
---       => DVector DIM2 e -> DVector DIM2 e -> DVector DIM2 e
 mmMult :: (Syntax e, Num e) =>
           Vector DIM2 e -> Vector DIM2 e -> Vector DIM2 e
 mmMult vA vB
