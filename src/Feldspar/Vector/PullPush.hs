@@ -404,3 +404,10 @@ tPull2 _ = id
 instance (Arbitrary (Internal a), Syntax a) => Arbitrary (Pull a)
   where
     arbitrary = fmap value arbitrary
+
+slidingWindow w arr = ledge ++ center
+  where
+    l = length arr
+    center = indexed (l - w + 1) (\i -> sum (indexed w (\j -> arr ! (i + j))))
+    ledge  = indexed (w-1) (\i -> sum (indexed (i+1) (arr !)))
+
