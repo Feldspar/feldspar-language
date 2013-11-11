@@ -91,43 +91,47 @@ riffle :: R.Vector (sh :. Data Length) a -> Vector (sh :. Data Length) a
 riffle =  unpair . uncurry R.zip . halve
 
 -- Pinpointing one particular dimension
-{-
-data NotThis = NotThis
-data This = This
+
+data NotThis
+data This
 
 -- | In many functions it is desirable to perform an operation along one
 --   particular dimension, such as concatenating two vectors along a particular
 --   dimension or reversing a vector along another dimension. The `Selector`
 --   typeclass enables selecting a specific dimension in a shape.
-class Selector a sh | a -> sh where
-  selectLength :: a -> sh -> Data Length
-  adjustLength :: a -> (Data Length -> Data Length) -> sh -> sh
+data Select ss where
+  NotThis :: Select ss -> Select (ss :. NotThis)
+  This    :: Select This
 
-instance Selector a sh => Selector (a :. NotThis) (sh :. Data Length) where
-  selectLength (s :. _) (sh :. _) = selectLength s sh
-  adjustLength (s :. _) f (sh :. l) = sh' :. l
-   where sh' = adjustLength s f sh
+class Selector ss sh where
+  selectDimension :: Select ss -> Shape sh -> Data Length
+  adjustDimension :: Select ss -> (Data Length -> Data Length) ->
+                  Shape sh -> Shape sh
+
+instance Selector ss sh => Selector (ss :. NotThis) (sh :. Data Length) where
+  selectDimension (NotThis ss) (sh :. _) = selectDimension ss sh
+  adjustDimension (NotThis ss) f (sh :. l) = adjustDimension ss f sh :. l
 
 instance Selector This (sh :. Data Length) where
-  selectLength This (_ :. l) = l
-  adjustLength This f (sh :. l) = sh :. f l
+  selectDimension This (_ :. l) = l
+  adjustDimension This f (sh :. l) = sh :. f l
 
 -- | Concatenating vectors along a particular dimension
 conc :: Selector sel sh =>
-         sel -> Vector sh a -> Vector sh a -> Vector sh a
+         Select sel -> Vector sh a -> Vector sh a -> Vector sh a
 conc s (Push k1 sh1) (Push k2 sh2)
-     = Push k (adjustLength s (+ selectLength s sh2) sh1)
+     = Push k (adjustDimension s (+ selectDimension s sh2) sh1)
   where k func = k1 func
   	       	 >>
-		 k2 (\ sh a -> func (adjustLength s (+ selectLength s sh1) sh) a)
+		 k2 (\ sh a -> func (adjustDimension s (+ selectDimension s sh1) sh) a)
 -- Assumption sh1 == sh2
 
 -- | Reverse a vector along a particular dimension.
 rev :: Selector sel sh =>
-       sel -> Vector sh a -> Vector sh a
+       Select sel -> Vector sh a -> Vector sh a
 rev s (Push k sh) = Push k' sh
-  where k' func = k (\sh a -> func (adjustLength s (selectLength s sh -) sh) a)
--}
+  where k' func = k (\sh a -> func (adjustDimension s (selectDimension s sh -) sh) a)
+
 -- | Both pull vectors and push vectors can be cheaply converted to push vectors
 class Pushy arr where
   toPush :: arr sh a -> Vector sh a
