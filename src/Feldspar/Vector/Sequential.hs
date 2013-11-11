@@ -45,7 +45,7 @@ seq l i next = Seq l init step
                       setRef rc (c+1)
                       return a
 
-iterate :: Syntax s => Data Length s -> (Data Index -> s -> s) -> Seq s
+iterate :: Syntax s => Data Length -> s -> (Data Index -> s -> s) -> Seq s
 iterate l i next = Seq l init step
   where
     init = do rc <- newRef (0 :: Data WordN)
