@@ -14,7 +14,6 @@ import Language.Syntactic hiding (fold,size)
 import Feldspar hiding (desugar,sugar,resugar)
 import Feldspar.Vector.Shape
 
-import QuickAnnotate
 
 -- | * Slices
 

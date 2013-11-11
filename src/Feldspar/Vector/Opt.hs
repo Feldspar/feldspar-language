@@ -15,8 +15,6 @@ import Language.Syntactic hiding (fold)
 
 import Test.QuickCheck
 
-import QuickAnnotate
-
 import Data.Tuple.Select
 
 data Vector a where

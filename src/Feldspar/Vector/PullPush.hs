@@ -21,8 +21,6 @@ import Data.Tuple.Curry
 
 import Test.QuickCheck
 
-import QuickAnnotate
-
 -- * Pull Vectors
 
 data Pull a where
