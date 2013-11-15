@@ -81,3 +81,21 @@ instance Shapely sh => Shapely (sh :. Data Length) where
   fakeShape = fakeShape :. (P.error "You shall not inspect the syntax tree!")
   toShape i arr = toShape (i+1) arr :. (arr ! (P.fromIntegral i))
 
+-- KFFs extensions
+
+peelLeft :: Shape (sh :. Data Length) -> (Data Length, Shape sh)
+peelLeft (Z :. n) = (n, Z)
+peelLeft (sh :. n :. n') = (m, sh' :. n')   -- The extra (leftmost and below) ':.' is necessary for type checking the recursive call
+  where (m, sh') = peelLeft (sh :. n)
+
+peelLeft2 :: Shape (sh :. Data Length :. Data Length) -> (Data Length, Data Length, Shape sh)
+peelLeft2 sh = (m, n, sh'')
+  where (m, sh') = peelLeft sh
+        (n, sh'') = peelLeft sh'
+
+insLeft :: Data Length -> Shape sh -> Shape (sh :. Data Length)
+insLeft m Z = Z :. m
+insLeft m (sh :. n) = insLeft m sh :. n
+
+
+
