@@ -202,11 +202,15 @@ inits1 :: Vector a -> Vector (Vector a)
 inits1 = tail . inits
 
 -- | Permute a single-segment vector
+-- The result of the @perm@ function is passed through @mod l@ to ensure
+-- that the new index is within bounds
 permute' :: (Data Length -> Data Index -> Data Index) -> (Vector a -> Vector a)
 permute' _    Empty                 = Empty
-permute' perm (Indexed l ixf Empty) = indexed l (ixf . perm l)
+permute' perm (Indexed l ixf Empty) = indexed l (ixf . (`mod` l) . perm l)
 
 -- | Permute a vector
+-- The result of the @perm@ function is passed through @mod l@ to ensure
+-- that the new index is within bounds
 permute :: Syntax a =>
     (Data Length -> Data Index -> Data Index) -> (Vector a -> Vector a)
 permute perm = permute' perm . mergeSegments
