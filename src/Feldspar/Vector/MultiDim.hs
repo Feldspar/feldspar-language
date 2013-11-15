@@ -304,3 +304,76 @@ mmMult vA vB
     vbRepl = replicate (SZ ::. rowsA ::: All   ::: All)  vB
     [rowsA, colsA] = toList (extent vA) -- brain explosion hack
     [rowsB, colsB] = toList (extent vB)
+
+
+-- KFFs combinators
+
+expandL :: Data Length -> Vector (sh :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
+expandL n (Vector ext ixf) = Vector (insLeft n $ insLeft p $ ext') ixf'
+  where (m, ext') = peelLeft ext
+        p = m `div` n
+        ixf' ix = let (i,ix') = peelLeft ix; (j,ix'') = peelLeft ix' in ixf $ insLeft (i*p + j) ix''
+
+contractL :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length) a
+contractL (Vector ext ixf) = Vector (insLeft (m*n) ext') ixf'
+  where (m, n, ext') = peelLeft2 ext
+        ixf' ix = let (i,ix') = peelLeft ix in ixf $ insLeft (i `div` n) $ insLeft (i `mod` n) $ ix'
+
+transL :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
+transL (Vector ext ixf) = Vector (insLeft n $ insLeft m $ ext') ixf'
+  where (m, n, ext') = peelLeft2 ext
+        ixf' ix = let (i, j, ix') = peelLeft2 ix in ixf $ insLeft j $ insLeft i $ ix'
+
+
+-- Note: curry is unsafe in that it produces an index function that does not check that its leftmost argument is in range
+curryL :: Vector (sh :. Data Length) a -> (Data Length, Data Length -> Vector sh a)
+curryL (Vector sh ixf) = (n, \ i -> Vector sh' (\ ix -> ixf $ insLeft i ix))
+  where (n, sh') = peelLeft sh
+
+uncurryL :: Data Length -> (Data Length -> Vector sh a) -> Vector (sh :. Data Length) a
+uncurryL m f = Vector (insLeft m ext) ixf
+  where Vector ext _ = f (undefined :: Data Length)
+        ixf ix = let (i, ix') = peelLeft ix; Vector _ ixf' = f i in ixf' ix'
+
+dmapL :: (Vector sh1 a1 -> Vector sh2 a2) -> Vector (sh1 :. Data Length) a1 -> Vector (sh2 :. Data Length) a2
+dmapL f a = uncurryL n $ f . g
+  where (n,g) = curryL a
+
+dzipWithL :: (Vector sh1 a1 -> Vector sh2 a2 -> Vector sh3 a3) -> Vector (sh1 :. Data Length) a1 -> Vector (sh2 :. Data Length) a2
+          -> Vector (sh3 :. Data Length) a3
+dzipWithL f a1 a2 = uncurryL (min m n) $ \ i -> f (g i) (h i)
+  where (m,g) = curryL a1
+        (n,h) = curryL a2
+
+-- Convenience functions that maybe should not be in the lib
+
+expandLT :: Data Length -> Vector (sh :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
+expandLT n a = transL $ expandL n $ a
+
+contractLT :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length) a
+contractLT a = contractL $ transL $ a
+
+
+
+{-
+
+Here is some functions that use both pull and push vectors (pull in, push out). Hence they do not build in the current module structure,
+so I include them in the form of comments. Should be uncommentable in a joint module, modulo renaming ;-)
+
+Only difference to the pure pull variants is the use of uncurryS instead of uncurryL.
+
+By the way: S.Vector is push vector and L.Vector is pull vector.
+
+dmapS :: (L.Vector sh1 a1 -> S.Vector sh2 a2) -> L.Vector (sh1 :. Data Length) a1 -> S.Vector (sh2 :. Data Length) a2
+dmapS f a = uncurryS n $ f . g
+  where (n,g) = curryL a
+
+dzipWithS :: (L.Vector sh1 a1 -> L.Vector sh2 a2 -> S.Vector sh3 a3) -> L.Vector (sh1 :. Data Length) a1 -> L.Vector (sh2 :. Data Length) a2
+          -> S.Vector (sh3 :. Data Length) a3
+dzipWithS f a1 a2 = uncurryS (min m n) $ \ i -> f (g i) (h i)
+  where (m,g) = curryL a1
+        (n,h) = curryL a2
+
+-}
+
+

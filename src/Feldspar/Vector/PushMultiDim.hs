@@ -190,3 +190,38 @@ flattenList (R.Vector sh ixf) = Push f sz
         sz  = sh :. value l
         l   = P.fromIntegral $
 	      P.length (ixf fakeShape)
+
+
+-- KFFs extensions
+
+expandS :: Data Length -> Vector (sh :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
+expandS n (Push k ext) = Push k' $ insLeft n $ insLeft p $ ext' 
+  where (m, ext') = peelLeft ext
+        p = m `div` n
+        k' wtf = k $ \ ix v -> let (i,ix') = peelLeft ix in wtf (insLeft (i `div` p) $ insLeft (i `Feldspar.mod` p) $ ix') v
+
+contractS :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length) a
+contractS (Push k ext) = Push k' $ insLeft (m*n) $ ext'
+  where (m, n, ext') = peelLeft2 ext
+        k' wtf = k $ \ ix v -> let (i, j, ix') = peelLeft2 ix in wtf (insLeft (i*n + j) ix') v
+
+transS :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
+transS (Push k ext) = Push k' $ insLeft n $ insLeft m $ ext'
+  where (m, n, ext') = peelLeft2 ext
+        k' wtf = k $ \ ix v -> let (i, j, ix') = peelLeft2 ix in wtf (insLeft j $ insLeft i $ ix') v
+
+uncurryS :: Data Length -> (Data Length -> Vector sh a) -> Vector (sh :. Data Length) a
+uncurryS m f = Push k' (insLeft m ext)
+  where Push _ ext = f (undefined :: Data Length)
+        k' wtf = forM m $ \ i -> let Push k _ = f i in k (\ ix v -> wtf (insLeft i ix) v)
+
+-- Convenience functions that maybe should not be in the lib
+
+expandST :: Data Length -> Vector (sh :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
+expandST n a = transS $ expandS n $ a
+
+contractST :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length) a
+contractST a = contractS $ transS $ a
+
+
+
