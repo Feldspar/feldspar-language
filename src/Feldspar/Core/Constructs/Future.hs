@@ -57,6 +57,9 @@ instance ToTree   FUTURE
 instance Eval     FUTURE where evaluate = evaluateDefault
 instance EvalBind FUTURE where evalBindSym = evalBindSymDefault
 instance Sharable FUTURE
+  where
+    hoistOver MkFuture = False
+    hoistOver _        = True
 
 instance AlphaEq dom dom dom env => AlphaEq FUTURE FUTURE dom env
   where

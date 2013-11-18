@@ -43,8 +43,10 @@ import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Frontend.Literal ()
 
+import Control.Applicative
+
 newtype P a = P { unP :: Mon FeldDomain Par a }
-  deriving (Functor, Monad)
+  deriving (Functor, Applicative, Monad)
 
 instance Syntax a => Syntactic (P a)
   where
