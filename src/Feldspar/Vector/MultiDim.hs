@@ -53,36 +53,36 @@ fullOfSlice (fsl ::: All) (ssl :. s) = fullOfSlice fsl ssl :. s
 
 -- | * Vectors
 
-data Vector sh a = Vector (Shape sh) (Shape sh -> a)
+data Pull sh a = Pull (Shape sh) (Shape sh -> a)
 
-type DVector sh a = Vector sh (Data a)
+type DPull sh a = Pull sh (Data a)
 
 
-instance (Syntax a, Shapely sh) => Syntactic (Vector sh a) where
-    type Domain   (Vector sh a) = FeldDomain
-    type Internal (Vector sh a) = ([Length],[Internal a])
-    desugar = desugar . freezeVector . map resugar
-    sugar   = map resugar . thawVector . sugar
+instance (Syntax a, Shapely sh) => Syntactic (Pull sh a) where
+    type Domain   (Pull sh a) = FeldDomain
+    type Internal (Pull sh a) = ([Length],[Internal a])
+    desugar = desugar . freezePull . map resugar
+    sugar   = map resugar . thawPull . sugar
 
--- instance (Syntax a, Shapely sh) => Syntax (Vector sh a)
+-- instance (Syntax a, Shapely sh) => Syntax (Pull sh a)
 
-instance Functor (Vector sh)
+instance Functor (Pull sh)
   where
     fmap = map
 
 -- | * Functions
 
 -- | Store a vector in an array.
-fromVector :: (Type a) => DVector sh a -> Data [a]
-fromVector vec = parallel (size ext) (\ix -> vec !: fromIndex ext ix)
+fromPull :: (Type a) => DPull sh a -> Data [a]
+fromPull vec = parallel (size ext) (\ix -> vec !: fromIndex ext ix)
   where ext = extent vec
 
 -- | Restore a vector from an array
-toVector :: (Type a) => Shape sh -> Data [a] -> DVector sh a
-toVector sh arr = Vector sh (\ix -> arr ! toIndex sh ix)
+toPull :: (Type a) => Shape sh -> Data [a] -> DPull sh a
+toPull sh arr = Pull sh (\ix -> arr ! toIndex sh ix)
 
-freezeVector :: (Type a) => DVector sh a -> (Data [Length], Data [a])
-freezeVector v   = (shapeArr, fromVector v) -- TODO should be fromVector' to remove div and mod
+freezePull :: (Type a) => DPull sh a -> (Data [Length], Data [a])
+freezePull v   = (shapeArr, fromPull v) -- TODO should be fromPull' to remove div and mod
   where shapeArr = fromList (toList $ extent v)
 
 fromList :: Type a => [Data a] -> Data [a]
@@ -92,13 +92,13 @@ fromList ls = loop 1 (parallel (value len) (const (P.head ls)))
             | otherwise = arr
         len  = P.fromIntegral $ P.length ls
 
-thawVector :: (Type a, Shapely sh) => (Data [Length], Data [a]) -> DVector sh a
-thawVector (l,arr) = toVector (toShape 0 l) arr
+thawPull :: (Type a, Shapely sh) => (Data [Length], Data [a]) -> DPull sh a
+thawPull (l,arr) = toPull (toShape 0 l) arr
 
 -- | Store a vector in memory. Use this function instead of 'force' if
 --   possible as it is both much more safe and faster.
-memorize :: (Type a) => DVector sh a -> DVector sh a
-memorize vec = toVector (extent vec) (fromVector vec)
+memorize :: (Type a) => DPull sh a -> DPull sh a
+memorize vec = toPull (extent vec) (fromPull vec)
 
 -- | A shape-aware version of parallel (though this implementation is
 --   sequental).
@@ -110,38 +110,38 @@ parShape sh ixf = runMutableArray $ do
                    return arr
 
 -- | An alternative version of `fromVector` which uses `parShape`
-fromVector' :: (Type a) => DVector sh a -> Data [a]
-fromVector' (Vector sh ixf) = parShape sh ixf
+fromVector' :: (Type a) => DPull sh a -> Data [a]
+fromVector' (Pull sh ixf) = parShape sh ixf
 
 -- | The shape and size of the vector
-extent :: Vector sh a -> Shape sh
-extent (Vector sh _) = sh
+extent :: Pull sh a -> Shape sh
+extent (Pull sh _) = sh
 
 -- | Change the extent of the vector to the supplied value. If the supplied
 -- extent will contain more elements than the old extent, the new elements 
 -- will have undefined value.
-newExtent :: Shape sh -> Vector sh a -> Vector sh a
-newExtent sh (Vector _ ixf) = Vector sh ixf
+newExtent :: Shape sh -> Pull sh a -> Pull sh a
+newExtent sh (Pull _ ixf) = Pull sh ixf
 
-indexed :: (Shape sh -> a) -> Shape sh -> Vector sh a
-indexed ixf l = Vector l ixf
+indexed :: (Shape sh -> a) -> Shape sh -> Pull sh a
+indexed ixf l = Pull l ixf
 
 -- | Change shape and transform elements of a vector. This function is the
 --   most general way of manipulating a vector.
-traverse :: Vector sh  a -> (Shape sh -> Shape sh') ->
+traverse :: Pull sh  a -> (Shape sh -> Shape sh') ->
             ((Shape sh -> a) -> Shape sh' -> a') ->
-            Vector sh' a'
-traverse (Vector sh ixf) shf elemf
-  = Vector (shf sh) (elemf ixf)
+            Pull sh' a'
+traverse (Pull sh ixf) shf elemf
+  = Pull (shf sh) (elemf ixf)
 
 -- | Duplicates part of a vector along a new dimension.
-replicate :: Slice ss -> Vector (SliceShape ss) a -> Vector (FullShape ss) a
+replicate :: Slice ss -> Pull (SliceShape ss) a -> Pull (FullShape ss) a
 replicate sl vec
  = backpermute (fullOfSlice sl (extent vec))
                (sliceOfFull sl) vec
 
 -- | Extracts a slice from a vector.
-slice :: Vector (FullShape ss) a -> Slice ss -> Vector (SliceShape ss) a
+slice :: Pull (FullShape ss) a -> Slice ss -> Pull (SliceShape ss) a
 slice vec sl
  = backpermute (sliceOfFull sl (extent vec))
                (fullOfSlice sl) vec
@@ -149,46 +149,46 @@ slice vec sl
 -- | Change the shape of a vector. This function is potentially unsafe, the
 --   new shape need to have fewer or equal number of elements compared to
 --   the old shape.
-reshape :: Shape sh -> Vector sh' a -> Vector sh a
-reshape sh' (Vector sh ixf)
- = Vector sh' (ixf . fromIndex sh . toIndex sh')
+reshape :: Shape sh -> Pull sh' a -> Pull sh a
+reshape sh' (Pull sh ixf)
+ = Pull sh' (ixf . fromIndex sh . toIndex sh')
 
 -- | A scalar (zero dimensional) vector
-unit :: a -> Vector Z a
-unit a = Vector Z (const a)
+unit :: a -> Pull Z a
+unit a = Pull Z (const a)
 
 -- | Index into a vector
-(!:) :: Vector sh a -> Shape sh -> a
-(Vector _ ixf) !: ix = ixf ix
+(!:) :: Pull sh a -> Shape sh -> a
+(Pull _ ixf) !: ix = ixf ix
 
 -- | Extract the diagonal of a two dimensional vector
-diagonal :: Vector DIM2 a -> Vector DIM1 a
+diagonal :: Pull DIM2 a -> Pull DIM1 a
 diagonal vec = backpermute (Z :. width) (\ (_ :. x) -> Z :. x :. x) vec
   where (width : height : _) = toList (extent vec) -- brain explosion hack
 
 -- | Change the shape of a vector.
 backpermute :: Shape sh' -> (Shape sh' -> Shape sh) ->
-               Vector sh a -> Vector sh' a
+               Pull sh a -> Pull sh' a
 backpermute sh perm vec = traverse vec (const sh) (. perm)
 
 permute :: (Shape sh -> Shape sh -> Shape sh) ->
-           Vector sh a -> Vector sh a
-permute perm (Vector sh ixf) = Vector sh (ixf . (perm sh))
+           Pull sh a -> Pull sh a
+permute perm (Pull sh ixf) = Pull sh (ixf . (perm sh))
 
 -- | Map a function on all the elements of a vector
-map :: (a -> b) -> Vector sh a -> Vector sh b
-map f (Vector sh ixf) = Vector sh (f . ixf)
+map :: (a -> b) -> Pull sh a -> Pull sh b
+map f (Pull sh ixf) = Pull sh (f . ixf)
 
 -- | Combines the elements of two vectors. The size of the resulting vector
 --   will be the intersection of the two argument vectors.
-zip :: Vector sh a -> Vector sh b -> Vector sh (a,b)
+zip :: Pull sh a -> Pull sh b -> Pull sh (a,b)
 zip = zipWith (\a b -> (a,b))
 
 -- | Combines the elements of two vectors pointwise using a function.
 --   The size of the resulting vector will be the intersection of the
 --   two argument vectors.
-zipWith :: (a -> b -> c) -> Vector sh a -> Vector sh b -> Vector sh c
-zipWith f arr1 arr2 = Vector (intersectDim (extent arr1) (extent arr2))
+zipWith :: (a -> b -> c) -> Pull sh a -> Pull sh b -> Pull sh c
+zipWith f arr1 arr2 = Pull (intersectDim (extent arr1) (extent arr2))
                       (\ix -> f (arr1 !: ix) (arr2 !: ix))
 
 -- | Reduce a vector along its last dimension
@@ -196,9 +196,9 @@ zipWith f arr1 arr2 = Vector (intersectDim (extent arr1) (extent arr2))
 fold :: (Syntax a) =>
         (a -> a -> a)
      -> a
-     -> Vector (sh :. Data Length) a
-     -> Vector sh a
-fold f x vec = Vector sh ixf
+     -> Pull (sh :. Data Length) a
+     -> Pull sh a
+fold f x vec = Pull sh ixf
     where (sh, n) = uncons (extent vec) -- brain explosion hack
           ixf i = forLoop n x (\ix s -> f s (vec !: (i :. ix)))
 
@@ -209,15 +209,15 @@ fold f x vec = Vector sh ixf
 --   values when starting to fold.
 fold' :: (Syntax a)
       => (a -> a -> a)
-      -> Vector sh a
-      -> Vector (sh :. Data Length) a
-      -> Vector sh a
-fold' f x vec = Vector sh ixf
+      -> Pull sh a
+      -> Pull (sh :. Data Length) a
+      -> Pull sh a
+fold' f x vec = Pull sh ixf
     where (sh, n) = uncons (extent vec) -- brain explosion hack
           ixf i = forLoop n (x!:i) (\ix s -> f s (vec !: (i :. ix)))
 
 -- | Summing a vector along its last dimension
-sum :: (Syntax a, Num a) => Vector (sh :. Data Length) a -> Vector sh a
+sum :: (Syntax a, Num a) => Pull (sh :. Data Length) a -> Pull sh a
 sum = fold (+) 0
 
 
@@ -244,19 +244,19 @@ instance ShapeConc sh1 sh2 => ShapeConc (sh1 :. Data Length) sh2 where
 -- | Flatten nested vectors.
 flatten :: forall a sh1 sh2.
            Shapely (ShapeConcT sh1 sh2) =>
-          ShapeConc sh1 sh2 => Vector sh1 (Vector sh2 a)
-       -> Vector (ShapeConcT sh1 sh2) a
-flatten (Vector sh1 ixf1) = Vector sh ixf
+          ShapeConc sh1 sh2 => Pull sh1 (Pull sh2 a)
+       -> Pull (ShapeConcT sh1 sh2) a
+flatten (Pull sh1 ixf1) = Pull sh ixf
   where ixf i = let (i1,i2) = splitIndex i sh1
-  	       	    (Vector _ ixf2) = ixf1 i1
+  	       	    (Pull _ ixf2) = ixf1 i1
   	       	in ixf2 i2
         sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh1
-	         (Vector sh2 _) = ixf1 i1
+	         (Pull sh2 _) = ixf1 i1
 	     in shapeConc sh1 sh2
 
 -- Laplace
 
-stencil :: DVector DIM2 Float -> DVector DIM2 Float
+stencil :: DPull DIM2 Float -> DPull DIM2 Float
 stencil vec
   = traverse vec id update
   where
@@ -274,28 +274,28 @@ stencil vec
       =  (i == 0) || (i >= width  - 1)
       || (j == 0) || (j >= height - 1)
 
-laplace :: Data Length -> DVector DIM2 Float -> DVector DIM2 Float
-laplace steps vec = toVector (extent vec) $
-                    forLoop steps (fromVector vec) (\ix ->
-                       fromVector . stencil . toVector (extent vec)
+laplace :: Data Length -> DPull DIM2 Float -> DPull DIM2 Float
+laplace steps vec = toPull (extent vec) $
+                    forLoop steps (fromPull vec) (\ix ->
+                       fromPull . stencil . toPull (extent vec)
                     )
 
 
 -- Matrix Multiplication
 
-transpose :: forall sh e. Vector (sh :. Data Length :. Data Length) e 
-                       -> Vector (sh :. Data Length :. Data Length) e
+transpose :: forall sh e. Pull (sh :. Data Length :. Data Length) e
+                       -> Pull (sh :. Data Length :. Data Length) e
 transpose vec
   = backpermute new_extent swap vec
   where swap ((tail :: Shape sh) :. i :. j) = tail :. j :. i
         new_extent         = swap (extent vec)
 
-transpose2D :: Vector DIM2 e -> Vector DIM2 e
+transpose2D :: Pull DIM2 e -> Pull DIM2 e
 transpose2D = transpose
 
 -- | Matrix multiplication
 mmMult :: (Syntax e, Num e) =>
-          Vector DIM2 e -> Vector DIM2 e -> Vector DIM2 e
+          Pull DIM2 e -> Pull DIM2 e -> Pull DIM2 e
 mmMult vA vB
   = sum (zipWith (*) vaRepl vbRepl)
   where
@@ -308,49 +308,49 @@ mmMult vA vB
 
 -- KFFs combinators
 
-expandL :: Data Length -> Vector (sh :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
-expandL n (Vector ext ixf) = Vector (insLeft n $ insLeft p $ ext') ixf'
+expandL :: Data Length -> Pull (sh :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
+expandL n (Pull ext ixf) = Pull (insLeft n $ insLeft p $ ext') ixf'
   where (m, ext') = peelLeft ext
         p = m `div` n
         ixf' ix = let (i,ix') = peelLeft ix; (j,ix'') = peelLeft ix' in ixf $ insLeft (i*p + j) ix''
 
-contractL :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length) a
-contractL (Vector ext ixf) = Vector (insLeft (m*n) ext') ixf'
+contractL :: Pull (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length) a
+contractL (Pull ext ixf) = Pull (insLeft (m*n) ext') ixf'
   where (m, n, ext') = peelLeft2 ext
         ixf' ix = let (i,ix') = peelLeft ix in ixf $ insLeft (i `div` n) $ insLeft (i `mod` n) $ ix'
 
-transL :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
-transL (Vector ext ixf) = Vector (insLeft n $ insLeft m $ ext') ixf'
+transL :: Pull (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
+transL (Pull ext ixf) = Pull (insLeft n $ insLeft m $ ext') ixf'
   where (m, n, ext') = peelLeft2 ext
         ixf' ix = let (i, j, ix') = peelLeft2 ix in ixf $ insLeft j $ insLeft i $ ix'
 
 
 -- Note: curry is unsafe in that it produces an index function that does not check that its leftmost argument is in range
-curryL :: Vector (sh :. Data Length) a -> (Data Length, Data Length -> Vector sh a)
-curryL (Vector sh ixf) = (n, \ i -> Vector sh' (\ ix -> ixf $ insLeft i ix))
+curryL :: Pull (sh :. Data Length) a -> (Data Length, Data Length -> Pull sh a)
+curryL (Pull sh ixf) = (n, \ i -> Pull sh' (\ ix -> ixf $ insLeft i ix))
   where (n, sh') = peelLeft sh
 
-uncurryL :: Data Length -> (Data Length -> Vector sh a) -> Vector (sh :. Data Length) a
-uncurryL m f = Vector (insLeft m ext) ixf
-  where Vector ext _ = f (undefined :: Data Length)
-        ixf ix = let (i, ix') = peelLeft ix; Vector _ ixf' = f i in ixf' ix'
+uncurryL :: Data Length -> (Data Length -> Pull sh a) -> Pull (sh :. Data Length) a
+uncurryL m f = Pull (insLeft m ext) ixf
+  where Pull ext _ = f (undefined :: Data Length)
+        ixf ix = let (i, ix') = peelLeft ix; Pull _ ixf' = f i in ixf' ix'
 
-dmapL :: (Vector sh1 a1 -> Vector sh2 a2) -> Vector (sh1 :. Data Length) a1 -> Vector (sh2 :. Data Length) a2
+dmapL :: (Pull sh1 a1 -> Pull sh2 a2) -> Pull (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2
 dmapL f a = uncurryL n $ f . g
   where (n,g) = curryL a
 
-dzipWithL :: (Vector sh1 a1 -> Vector sh2 a2 -> Vector sh3 a3) -> Vector (sh1 :. Data Length) a1 -> Vector (sh2 :. Data Length) a2
-          -> Vector (sh3 :. Data Length) a3
+dzipWithL :: (Pull sh1 a1 -> Pull sh2 a2 -> Pull sh3 a3) -> Pull (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2
+          -> Pull (sh3 :. Data Length) a3
 dzipWithL f a1 a2 = uncurryL (min m n) $ \ i -> f (g i) (h i)
   where (m,g) = curryL a1
         (n,h) = curryL a2
 
 -- Convenience functions that maybe should not be in the lib
 
-expandLT :: Data Length -> Vector (sh :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
+expandLT :: Data Length -> Pull (sh :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
 expandLT n a = transL $ expandL n $ a
 
-contractLT :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length) a
+contractLT :: Pull (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length) a
 contractLT a = contractL $ transL $ a
 
 
@@ -362,13 +362,13 @@ so I include them in the form of comments. Should be uncommentable in a joint mo
 
 Only difference to the pure pull variants is the use of uncurryS instead of uncurryL.
 
-By the way: S.Vector is push vector and L.Vector is pull vector.
+By the way: S.Vector is push vector
 
-dmapS :: (L.Vector sh1 a1 -> S.Vector sh2 a2) -> L.Vector (sh1 :. Data Length) a1 -> S.Vector (sh2 :. Data Length) a2
+dmapS :: (Pull sh1 a1 -> S.Vector sh2 a2) -> Pull (sh1 :. Data Length) a1 -> S.Vector (sh2 :. Data Length) a2
 dmapS f a = uncurryS n $ f . g
   where (n,g) = curryL a
 
-dzipWithS :: (L.Vector sh1 a1 -> L.Vector sh2 a2 -> S.Vector sh3 a3) -> L.Vector (sh1 :. Data Length) a1 -> L.Vector (sh2 :. Data Length) a2
+dzipWithS :: (Pull sh1 a1 -> L.Vector sh2 a2 -> S.Vector sh3 a3) -> L.Vector (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2
           -> S.Vector (sh3 :. Data Length) a3
 dzipWithS f a1 a2 = uncurryS (min m n) $ \ i -> f (g i) (h i)
   where (m,g) = curryL a1

@@ -44,10 +44,10 @@ instance Functor (Vector sh) where
 
 -- | Concatenation along the last dimension where the two vectors have the same
 --   length. There is no check that the lengths are equal.
-(+=+) :: R.Vector (sh :. Data Length) a
-      -> R.Vector (sh :. Data Length) a
+(+=+) :: R.Pull (sh :. Data Length) a
+      -> R.Pull (sh :. Data Length) a
       -> Vector (sh :. Data Length) a
-(R.Vector (sh1 :. l1) ixf1) +=+ (R.Vector (sh2 :. l2) ixf2)
+(R.Pull (sh1 :. l1) ixf1) +=+ (R.Pull (sh2 :. l2) ixf2)
 	  = Push f (sh1 :. (l1 + l2))
   where f k = forShape (sh1 :. l1) $ \ (shi :. i) ->
                 do k (shi :. i)      (ixf1 (shi :. i))
@@ -80,14 +80,14 @@ transpose = ixmap (\ (Z :. x :. y) -> (Z :. y :. x))
 
 -- Some helper functions in Repa to help us define riffle
 
-halve :: R.Vector (sh :. Data Length) a
-      -> (R.Vector (sh :. Data Length) a, R.Vector (sh :. Data Length) a)
-halve (R.Vector (sh :. l) ixf) = (R.Vector (sh :. (l `div` 2)) ixf
-      		    	       	 ,R.Vector (sh :. ((l+1) `div` 2)) ixf')
+halve :: R.Pull (sh :. Data Length) a
+      -> (R.Pull (sh :. Data Length) a, R.Pull (sh :. Data Length) a)
+halve (R.Pull (sh :. l) ixf) = (R.Pull (sh :. (l `div` 2)) ixf
+      		    	       	 ,R.Pull (sh :. ((l+1) `div` 2)) ixf')
   where ixf' (sh :. i) = ixf (sh :. (i + (l `div` 2)))
 
 
-riffle :: R.Vector (sh :. Data Length) a -> Vector (sh :. Data Length) a
+riffle :: R.Pull (sh :. Data Length) a -> Vector (sh :. Data Length) a
 riffle =  unpair . uncurry R.zip . halve
 
 -- Pinpointing one particular dimension
@@ -139,8 +139,8 @@ class Pushy arr where
 instance Pushy Vector where
   toPush = id
 
-instance Pushy R.Vector where
-  toPush (R.Vector l ixf) = Push f l
+instance Pushy R.Pull where
+  toPush (R.Pull l ixf) = Push f l
     where f k = forShape l (\i ->
     	    	  k i (ixf i)
 	        )
@@ -181,8 +181,8 @@ instance (Syntax a, Shapely sh) => Syntactic (Vector sh a)
     sugar   = fmap resugar . thawVector . sugar
 
 -- | Flatten a pull vector of lists so that the lists become an extra dimension
-flattenList :: Shapely sh => R.Vector sh [a] -> Vector (sh :. Data Length) a
-flattenList (R.Vector sh ixf) = Push f sz
+flattenList :: Shapely sh => R.Pull sh [a] -> Vector (sh :. Data Length) a
+flattenList (R.Pull sh ixf) = Push f sz
   where f k = forShape sh $ \i ->
   	      	do let indices = map (\j -> i :. j) $
 				 map value [0..l-1]
