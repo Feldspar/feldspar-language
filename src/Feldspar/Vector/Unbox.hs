@@ -61,27 +61,27 @@ instance (Type (Repr a), Elm a) => Elm (Vector a) where
   length (Nest v) = Pl.length v
   freezeVector (Nest vec) = Pl.freezePull (fmap freezeVector vec)
 
-instance (Syntax a, Shapely sh) => Elm (M.Vector sh a) where
-  data Vector (M.Vector sh a) = M (M.Vector (sh :. Data Length) a)
-  type Repr (M.Vector sh a) = [Internal a]
+instance (Syntax a, Shapely sh) => Elm (M.Pull sh a) where
+  data Vector (M.Pull sh a) = M (M.Pull (sh :. Data Length) a)
+  type Repr (M.Pull sh a) = [Internal a]
   (M vec) ! i = M.slice vec (SAny ::. i)
   indexed ixf l = M $ M.flatten $ M.indexed (\(Z :. ix) -> ixf ix) (Z :. l)
-  length (M (M.Vector (_ :. l) _)) = l
-  freezeVector (M vec) = snd (M.freezeVector (fmap desugar vec))
+  length (M (M.Pull (_ :. l) _)) = l
+  freezeVector (M vec) = snd (M.freezePull (fmap desugar vec))
 
 instance Syntax a => Elm (Pl.Pull a) where
-  data Vector (Pl.Pull a) = P (M.Vector DIM2 a)
+  data Vector (Pl.Pull a) = P (M.Pull DIM2 a)
   type Repr (Pl.Pull a) = [Internal a]
   (P vec) ! i = dim1ToPull $ M.slice vec (SAny ::. i)
   indexed ixf l = P $ M.flatten $ M.indexed (\(Z :. ix) -> pullToDIM1 $ ixf ix) (Z :. l)
-  length (P (M.Vector (_ :. l) _)) = l
-  freezeVector (P vec) = snd (M.freezeVector (fmap desugar vec))
+  length (P (M.Pull (_ :. l) _)) = l
+  freezeVector (P vec) = snd (M.freezePull (fmap desugar vec))
 
-dim1ToPull :: M.Vector DIM1 a -> Pl.Pull a
-dim1ToPull (M.Vector (Z :. l) ixf) = Pl.Pull (\i -> ixf (Z :. i)) l
+dim1ToPull :: M.Pull DIM1 a -> Pl.Pull a
+dim1ToPull (M.Pull (Z :. l) ixf) = Pl.Pull (\i -> ixf (Z :. i)) l
 
-pullToDIM1 :: Pl.Pull a -> M.Vector DIM1 a
-pullToDIM1 (Pl.Pull ixf l) = M.Vector (Z :. l) (\(Z :. ix) -> ixf ix)
+pullToDIM1 :: Pl.Pull a -> M.Pull DIM1 a
+pullToDIM1 (Pl.Pull ixf l) = M.Pull (Z :. l) (\(Z :. ix) -> ixf ix)
 
 -- | @enumFromTo m n@: Enumerate the integers from @m@ to @n@
 --

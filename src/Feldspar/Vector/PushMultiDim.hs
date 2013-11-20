@@ -23,19 +23,19 @@ import Control.Monad (zipWithM_)
 import Feldspar.Stream hiding (map)
 
 -- | Multidimentional push vectors
-data Vector sh a = Push ((Shape sh -> a -> M ()) -> M ()) (Shape sh)
+data Push sh a = Push ((Shape sh -> a -> M ()) -> M ()) (Shape sh)
 
-shape :: Vector sh a -> Shape sh
+shape :: Push sh a -> Shape sh
 shape (Push _ sh) = sh
 
-instance Functor (Vector sh) where
+instance Functor (Push sh) where
   fmap f (Push k l) = Push k' l
     where k' func   = k (\sh a -> func sh (f a))
 
 -- | Concatenation along the the last dimension
-(++) :: Vector (sh :. Data Length) a
-     -> Vector (sh :. Data Length) a
-     -> Vector (sh :. Data Length) a
+(++) :: Push (sh :. Data Length) a
+     -> Push (sh :. Data Length) a
+     -> Push (sh :. Data Length) a
 (Push k1 (sh1 :. l1)) ++ (Push k2 (sh2 :. l2)) = Push k (sh1 :. (l1 + l2))
   where k func = k1 func
   	       	 >>
@@ -46,7 +46,7 @@ instance Functor (Vector sh) where
 --   length. There is no check that the lengths are equal.
 (+=+) :: R.Pull (sh :. Data Length) a
       -> R.Pull (sh :. Data Length) a
-      -> Vector (sh :. Data Length) a
+      -> Push (sh :. Data Length) a
 (R.Pull (sh1 :. l1) ixf1) +=+ (R.Pull (sh2 :. l2) ixf2)
 	  = Push f (sh1 :. (l1 + l2))
   where f k = forShape (sh1 :. l1) $ \ (shi :. i) ->
@@ -57,7 +57,7 @@ instance Functor (Vector sh) where
 --   to each other in the resulting array.
 unpair :: Pushy arr
        => arr (sh :. Data Length) (a,a)
-       -> Vector (sh :. Data Length) a
+       -> Push (sh :. Data Length) a
 unpair v = Push k' (sh :. (l * 2))
   where (Push k ex) = toPush v
         (sh,l) = case ex of sh :. l -> (sh,l)
@@ -65,17 +65,17 @@ unpair v = Push k' (sh :. (l * 2))
                                        >> func (sh :. (2 * i + 1)) b)
 
 -- | Transform the indices of a vector.
-ixmap :: (Shape sh -> Shape sh) -> Vector sh a -> Vector sh a
+ixmap :: (Shape sh -> Shape sh) -> Push sh a -> Push sh a
 ixmap ixf (Push k l) = Push k' l
   where k' func = k (\sh a -> func (ixf sh) a)
 
 -- | Reverse a vector along its last dimension
-rev1 ::  Vector (sh :. Data Length) a -> Vector (sh :. Data Length) a
+rev1 ::  Push (sh :. Data Length) a -> Push (sh :. Data Length) a
 rev1 (Push f ex@(sh :. l)) = Push f' ex
   where f' k = f (\(shi :. ix) a -> k (shi :. (l - ix - 1)) a)
 
 -- | Transpose a two dimensional vector.
-transpose :: Vector DIM2 a -> Vector DIM2 a
+transpose :: Push DIM2 a -> Push DIM2 a
 transpose = ixmap (\ (Z :. x :. y) -> (Z :. y :. x))
 
 -- Some helper functions in Repa to help us define riffle
@@ -87,7 +87,7 @@ halve (R.Pull (sh :. l) ixf) = (R.Pull (sh :. (l `div` 2)) ixf
   where ixf' (sh :. i) = ixf (sh :. (i + (l `div` 2)))
 
 
-riffle :: R.Pull (sh :. Data Length) a -> Vector (sh :. Data Length) a
+riffle :: R.Pull (sh :. Data Length) a -> Push (sh :. Data Length) a
 riffle =  unpair . uncurry R.zip . halve
 
 -- Pinpointing one particular dimension
@@ -118,7 +118,7 @@ instance Selector This (sh :. Data Length) where
 
 -- | Concatenating vectors along a particular dimension
 conc :: Selector sel sh =>
-         Select sel -> Vector sh a -> Vector sh a -> Vector sh a
+         Select sel -> Push sh a -> Push sh a -> Push sh a
 conc s (Push k1 sh1) (Push k2 sh2)
      = Push k (adjustDimension s (+ selectDimension s sh2) sh1)
   where k func = k1 func
@@ -128,15 +128,15 @@ conc s (Push k1 sh1) (Push k2 sh2)
 
 -- | Reverse a vector along a particular dimension.
 rev :: Selector sel sh =>
-       Select sel -> Vector sh a -> Vector sh a
+       Select sel -> Push sh a -> Push sh a
 rev s (Push k sh) = Push k' sh
   where k' func = k (\sh a -> func (adjustDimension s (selectDimension s sh -) sh) a)
 
 -- | Both pull vectors and push vectors can be cheaply converted to push vectors
 class Pushy arr where
-  toPush :: arr sh a -> Vector sh a
+  toPush :: arr sh a -> Push sh a
 
-instance Pushy Vector where
+instance Pushy Push where
   toPush = id
 
 instance Pushy R.Pull where
@@ -146,15 +146,15 @@ instance Pushy R.Pull where
 	        )
 
 -- | Store a vector in memory as a flat array
-fromVector :: Type a =>
-	      Vector sh (Data a) -> Data [a]
-fromVector (Push ixf l) = runMutableArray $
+fromPush :: Type a =>
+	      Push sh (Data a) -> Data [a]
+fromPush (Push ixf l) = runMutableArray $
 	   	   	  do marr <- newArr_ (size l)
 			     ixf (\ix a -> setArr marr (toIndex l ix) a)
 			     return marr
 
-freezeVector :: Type a => Vector sh (Data a) -> (Data [Length], Data [a])
-freezeVector v   = (shapeArr, fromVector v)
+freezePush :: Type a => Push sh (Data a) -> (Data [Length], Data [a])
+freezePush v   = (shapeArr, fromPush v)
   where shapeArr = fromList (toList $ shape v)
 
 fromList :: Type a => [Data a] -> Data [a]
@@ -164,24 +164,22 @@ fromList ls = loop 1 (parallel (value len) (const (P.head ls)))
             | otherwise = arr
         len  = P.fromIntegral $ P.length ls
 
-thawVector :: (Type a, Shapely sh) =>
-              (Data [Length], Data [a]) -> Vector sh (Data a)
-thawVector (l,arr) = toVector (toShape 0 l) arr
-
-toVector :: Type a => Shape sh -> Data [a] -> Vector sh (Data a)
-toVector sh arr = Push f sh
-  where f k = forShape sh $ \i ->
+thawPush :: (Type a, Shapely sh) =>
+              (Data [Length], Data [a]) -> Push sh (Data a)
+thawPush (l,arr) = Push f sh
+  where sh = toShape 0 l
+        f k = forShape sh $ \i ->
                 k i (arr ! (toIndex sh i))
 
-instance (Syntax a, Shapely sh) => Syntactic (Vector sh a)
+instance (Syntax a, Shapely sh) => Syntactic (Push sh a)
   where
-    type Domain (Vector sh a) = FeldDomain
-    type Internal (Vector sh a) = ([Length],[Internal a])
-    desugar = desugar . freezeVector . fmap resugar
-    sugar   = fmap resugar . thawVector . sugar
+    type Domain (Push sh a) = FeldDomain
+    type Internal (Push sh a) = ([Length],[Internal a])
+    desugar = desugar . freezePush . fmap resugar
+    sugar   = fmap resugar . thawPush . sugar
 
 -- | Flatten a pull vector of lists so that the lists become an extra dimension
-flattenList :: Shapely sh => R.Pull sh [a] -> Vector (sh :. Data Length) a
+flattenList :: Shapely sh => R.Pull sh [a] -> Push (sh :. Data Length) a
 flattenList (R.Pull sh ixf) = Push f sz
   where f k = forShape sh $ \i ->
   	      	do let indices = map (\j -> i :. j) $
@@ -194,33 +192,33 @@ flattenList (R.Pull sh ixf) = Push f sz
 
 -- KFFs extensions
 
-expandS :: Data Length -> Vector (sh :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
+expandS :: Data Length -> Push (sh :. Data Length) a -> Push (sh :. Data Length :. Data Length) a
 expandS n (Push k ext) = Push k' $ insLeft n $ insLeft p $ ext' 
   where (m, ext') = peelLeft ext
         p = m `div` n
         k' wtf = k $ \ ix v -> let (i,ix') = peelLeft ix in wtf (insLeft (i `div` p) $ insLeft (i `Feldspar.mod` p) $ ix') v
 
-contractS :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length) a
+contractS :: Push (sh :. Data Length :. Data Length) a -> Push (sh :. Data Length) a
 contractS (Push k ext) = Push k' $ insLeft (m*n) $ ext'
   where (m, n, ext') = peelLeft2 ext
         k' wtf = k $ \ ix v -> let (i, j, ix') = peelLeft2 ix in wtf (insLeft (i*n + j) ix') v
 
-transS :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
+transS :: Push (sh :. Data Length :. Data Length) a -> Push (sh :. Data Length :. Data Length) a
 transS (Push k ext) = Push k' $ insLeft n $ insLeft m $ ext'
   where (m, n, ext') = peelLeft2 ext
         k' wtf = k $ \ ix v -> let (i, j, ix') = peelLeft2 ix in wtf (insLeft j $ insLeft i $ ix') v
 
-uncurryS :: Data Length -> (Data Length -> Vector sh a) -> Vector (sh :. Data Length) a
+uncurryS :: Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
 uncurryS m f = Push k' (insLeft m ext)
   where Push _ ext = f (undefined :: Data Length)
         k' wtf = forM m $ \ i -> let Push k _ = f i in k (\ ix v -> wtf (insLeft i ix) v)
 
 -- Convenience functions that maybe should not be in the lib
 
-expandST :: Data Length -> Vector (sh :. Data Length) a -> Vector (sh :. Data Length :. Data Length) a
+expandST :: Data Length -> Push (sh :. Data Length) a -> Push (sh :. Data Length :. Data Length) a
 expandST n a = transS $ expandS n $ a
 
-contractST :: Vector (sh :. Data Length :. Data Length) a -> Vector (sh :. Data Length) a
+contractST :: Push (sh :. Data Length :. Data Length) a -> Push (sh :. Data Length) a
 contractST a = contractS $ transS $ a
 
 
