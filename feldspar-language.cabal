@@ -118,7 +118,6 @@ library
     Feldspar.Vector.Opt
     Feldspar.Vector.Deep
     Feldspar.Vector.MultiDim
-    Feldspar.Vector.PushMultiDim
     Feldspar.Vector.Sequential
     Feldspar.Vector.Shape
     Feldspar.Vector.Unbox
