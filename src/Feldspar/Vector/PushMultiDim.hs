@@ -193,7 +193,7 @@ flattenList (R.Pull sh ixf) = Push f sz
 -- KFFs extensions
 
 expandS :: Data Length -> Push (sh :. Data Length) a -> Push (sh :. Data Length :. Data Length) a
-expandS n (Push k ext) = Push k' $ insLeft n $ insLeft p $ ext' 
+expandS n (Push k ext) = Push k' $ insLeft n $ insLeft p $ ext'
   where (m, ext') = peelLeft ext
         p = m `div` n
         k' wtf = k $ \ ix v -> let (i,ix') = peelLeft ix in wtf (insLeft (i `div` p) $ insLeft (i `Feldspar.mod` p) $ ix') v

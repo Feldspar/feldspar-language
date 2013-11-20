@@ -118,7 +118,7 @@ extent :: Pull sh a -> Shape sh
 extent (Pull sh _) = sh
 
 -- | Change the extent of the vector to the supplied value. If the supplied
--- extent will contain more elements than the old extent, the new elements 
+-- extent will contain more elements than the old extent, the new elements
 -- will have undefined value.
 newExtent :: Shape sh -> Pull sh a -> Pull sh a
 newExtent sh (Pull _ ixf) = Pull sh ixf
@@ -362,14 +362,12 @@ so I include them in the form of comments. Should be uncommentable in a joint mo
 
 Only difference to the pure pull variants is the use of uncurryS instead of uncurryL.
 
-By the way: S.Vector is push vector
-
-dmapS :: (Pull sh1 a1 -> S.Vector sh2 a2) -> Pull (sh1 :. Data Length) a1 -> S.Vector (sh2 :. Data Length) a2
+dmapS :: (Pull sh1 a1 -> Push sh2 a2) -> Pull (sh1 :. Data Length) a1 -> Push (sh2 :. Data Length) a2
 dmapS f a = uncurryS n $ f . g
   where (n,g) = curryL a
 
-dzipWithS :: (Pull sh1 a1 -> L.Vector sh2 a2 -> S.Vector sh3 a3) -> L.Vector (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2
-          -> S.Vector (sh3 :. Data Length) a3
+dzipWithS :: (Pull sh1 a1 -> Pull sh2 a2 -> Push sh3 a3) -> Pull (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2
+          -> Push (sh3 :. Data Length) a3
 dzipWithS f a1 a2 = uncurryS (min m n) $ \ i -> f (g i) (h i)
   where (m,g) = curryL a1
         (n,h) = curryL a2
