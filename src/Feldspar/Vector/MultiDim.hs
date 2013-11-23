@@ -12,8 +12,11 @@ import qualified Prelude as P
 
 import Language.Syntactic hiding (fold,size)
 import Feldspar hiding (desugar,sugar,resugar)
+import qualified Feldspar as F
 import Feldspar.Vector.Shape
 
+import Data.Tuple.Select
+import Data.Tuple.Curry
 
 -- | * Slices
 
@@ -76,6 +79,7 @@ instance Functor (Vector sh)
 fromVector :: (Type a) => DVector sh a -> Data [a]
 fromVector vec = parallel (size ext) (\ix -> vec !: fromIndex ext ix)
   where ext = extent vec
+
 
 -- | Restore a vector from an array
 toVector :: (Type a) => Shape sh -> Data [a] -> DVector sh a
@@ -191,6 +195,34 @@ zipWith :: (a -> b -> c) -> Vector sh a -> Vector sh b -> Vector sh c
 zipWith f arr1 arr2 = Vector (intersectDim (extent arr1) (extent arr2))
                       (\ix -> f (arr1 !: ix) (arr2 !: ix))
 
+zip3 :: Vector sh a -> Vector sh b -> Vector sh c ->
+        Vector sh (a,b,c)
+zip3 (Vector l1 ixf1) (Vector l2 ixf2) (Vector l3 ixf3)
+  = Vector (intersectDim (intersectDim l1 l2) l3) (\i -> (ixf1 i, ixf2 i, ixf3 i))
+
+-- | Zipping four pull vectors
+zip4 (Vector l1 ixf1) (Vector l2 ixf2) (Vector l3 ixf3) (Vector l4 ixf4)
+  = Vector (intersectDim (intersectDim l1 l2) (intersectDim l3 l4)) (\i -> (ixf1 i, ixf2 i, ixf3 i, ixf4 i))
+
+zip5 (Vector l1 ixf1) (Vector l2 ixf2) (Vector l3 ixf3) (Vector l4 ixf4) (Vector l5 ixf5)
+  = Vector  (intersectDim (intersectDim (intersectDim l1 l2) (intersectDim l3 l4)) l5) (\i -> (ixf1 i, ixf2 i, ixf3 i, ixf4 i, ixf5 i))
+
+-- | Unzipping two pull vectors
+unzip :: Vector sh (a,b) -> (Vector sh a, Vector sh b)
+unzip v = (map sel1 v, map sel2 v)
+
+-- | Unzipping three pull vectors
+unzip3 :: Vector sh (a,b,c) -> (Vector sh a, Vector sh b, Vector sh c)
+unzip3 v = (map sel1 v, map sel2 v, map sel3 v)
+
+-- | Unzipping four pull vectors
+unzip4 :: Vector sh (a,b,c,d) -> (Vector sh a, Vector sh b, Vector sh c, Vector sh d)
+unzip4 v = (map sel1 v, map sel2 v, map sel3 v, map sel4 v)
+
+-- | Unzipping five pull vectors
+unzip5 :: Vector sh (a,b,c,d,e) -> (Vector sh a, Vector sh b, Vector sh c, Vector sh d, Vector sh e)
+unzip5 v = (map sel1 v, map sel2 v, map sel3 v, map sel4 v, map sel5 v)
+
 -- | Reduce a vector along its last dimension
 
 fold :: (Syntax a) =>
@@ -219,7 +251,6 @@ fold' f x vec = Vector sh ixf
 -- | Summing a vector along its last dimension
 sum :: (Syntax a, Num a) => Vector (sh :. Data Length) a -> Vector sh a
 sum = fold (+) 0
-
 
 -- | Concatenating shapes.
 class ShapeConc sh1 sh2 where
@@ -377,3 +408,118 @@ dzipWithS f a1 a2 = uncurryS (min m n) $ \ i -> f (g i) (h i)
 -}
 
 
+-- | * Functions on one dimensional Pull vectors
+
+indexed1 :: Data Length -> (Data Index -> a) -> Vector DIM1 a
+indexed1 l ixf = Vector (Z :. l) (\(Z :. i) -> ixf i)
+
+length :: Vector DIM1 a -> Data Length
+length (Vector (Z :. l) _) = l
+
+take :: Data Length -> Vector DIM1 a -> Vector DIM1 a
+take n (Vector (Z :. l) ixf) = Vector (Z :. (min n l)) ixf
+
+-- | `drop n vec` removes the first `n` elements of `vec`
+drop :: Data Length -> Vector DIM1 a -> Vector DIM1 a
+drop n (Vector (Z :. l) ixf) = Vector (Z :. (l-n)) (\(Z :. i) -> ixf (Z :. i+n))
+
+-- | Splits a pull vector in two at a particular index
+splitAt :: Data Index -> Vector DIM1 a -> (Vector DIM1 a, Vector DIM1 a)
+splitAt n vec = (take n vec, drop n vec)
+
+-- | Take the first element of a pull vector
+head :: Vector DIM1 a -> a
+head (Vector _ ixf) = ixf (Z :. 0)
+
+-- | Take the last element of a pull vector
+last :: Vector DIM1 a -> a
+last (Vector (Z :. l) ixf) = ixf (Z :. (l-1))
+
+-- | Remove the first element of a pull vector
+tail :: Vector DIM1 a -> Vector DIM1 a
+tail = drop 1
+
+-- | Remove the last element of a pull vector
+init :: Vector DIM1 a -> Vector DIM1 a
+init vec = take (length vec - 1) vec
+
+-- | Create a vector containing all the suffixes of the input vector
+tails :: Vector DIM1 a -> Vector DIM1 (Vector DIM1 a)
+tails vec = indexed1 (length vec + 1) (`drop` vec)
+
+-- | Create a vector containing all the prefixes of the input vector
+inits :: Vector DIM1 a -> Vector DIM1 (Vector DIM1 a)
+inits vec = indexed1 (length vec + 1) (`take` vec)
+
+-- | Similar to `inits` but without the empty vector
+inits1 :: Vector DIM1 a -> Vector DIM1 (Vector DIM1 a)
+inits1 = tail . inits
+
+-- | `roteateVecL n vec` rotates the elements of `vec` `n` steps to the left 
+rotateVecL :: Data Index -> Vector DIM1 a -> Vector DIM1 a
+rotateVecL ix = permute1 (\l i -> (i + ix) `rem` l)
+
+-- | `roteateVecR n vec` rotates the elements of `vec` `n` steps to the right 
+rotateVecR :: Data Index -> Vector DIM1 a -> Vector DIM1 a
+rotateVecR ix = reverse . rotateVecL ix . reverse
+
+-- | `replicate n a` creates a pull array containing `n` copies of `a`
+replicate1 :: Data Length -> a -> Vector DIM1 a
+replicate1 n a = Vector (Z :. n) (const a)
+
+-- | A vector which enumerates numbers consecutively
+enumFromTo :: forall a. (Type a, Integral a)
+           => Data a -> Data a -> Vector DIM1 (Data a)
+enumFromTo 1 n
+    | IntType U _ <- typeRep :: TypeRep a
+    = indexed1 (i2n n) ((+1) . i2n)
+enumFromTo m n = indexed1 (i2n l) ((+m) . i2n)
+  where
+    l = (n<m) ? 0 $ (n-m+1)
+
+(...) :: forall a. (Type a, Integral a)
+      => Data a -> Data a -> Vector DIM1 (Data a)
+
+(...) = enumFromTo
+
+-- | An overloaded function for reordering elements of a vector.
+class Permute vec where
+  permute1 :: (Data Length -> Data Index -> Data Index) -> vec a -> vec a
+
+instance Permute (Vector DIM1) where
+  permute1 perm (Vector sh@(Z :. l) ixf)
+    = Vector sh (\(Z :. i) -> ixf (Z :. perm l i))
+{-
+instance Permute Push where
+  permute perm (Push f l) = Push (\k -> f (\i a -> k (perm l i) a)) l
+-}
+-- | Permute the indexes of a vector
+ixmap :: Permute vec =>
+         (Data Index -> Data Index) -> vec a -> vec a
+ixmap perm  = permute1 (const perm)
+
+-- | Reverse a vector.
+reverse :: Vector DIM1 a -> Vector DIM1 a
+reverse arr = ixmap (\ix -> length arr - ix - 1) arr
+
+-- | * Manifest arrays
+
+data Manifest sh a = Syntax a => Manifest (Data [Internal a]) (Shape sh)
+
+class Storable vec where
+  store :: Syntax a => vec sh a -> Manifest sh a
+
+instance Storable Manifest where
+  store m = m
+
+instance Storable Vector where
+  store vec@(Vector sh ixf) = Manifest (fromVector' (fmap F.desugar vec)) sh
+
+class Pully vec where
+  toPull :: vec sh a -> Vector sh a
+
+instance Pully Manifest where
+  toPull (Manifest arr sh) = Vector sh (\i -> F.sugar $ arr ! toIndex sh i)
+
+instance Pully Vector where
+  toPull vec = vec
