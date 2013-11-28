@@ -87,11 +87,7 @@ freezePull v   = (shapeArr, fromPull v) -- TODO should be fromPull' to remove di
   where shapeArr = fromList (toList $ extent v)
 
 fromList :: Type a => [Data a] -> Data [a]
-fromList ls = loop 1 (parallel (value len) (const (P.head ls)))
-  where loop i arr
-            | i P.< len = loop (i+1) (setIx arr (value i) (ls P.!! (P.fromIntegral i)))
-            | otherwise = arr
-        len  = P.fromIntegral $ P.length ls
+fromList ls = runMutableArray $ newListArr ls
 
 thawPull :: (Type a, Shapely sh) => (Data [Length], Data [a]) -> DPull sh a
 thawPull (l,arr) = toPull (toShape 0 l) arr
