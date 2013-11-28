@@ -338,7 +338,7 @@ transpose2D = transposeL
 
 -- | Matrix multiplication
 mmMult :: (Syntax e, Num e, Pully vec1, Pully vec2) =>
-          vec2 DIM2 e -> vec2 DIM2 e -> Pull DIM2 e
+          vec1 DIM2 e -> vec2 DIM2 e -> Pull DIM2 e
 mmMult vA vB
   = sum (zipWith (*) vaRepl vbRepl)
   where
