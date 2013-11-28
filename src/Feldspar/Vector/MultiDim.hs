@@ -20,6 +20,8 @@ import Data.Tuple.Select
 import Data.Tuple.Curry
 import Control.Monad (zipWithM_)
 
+import GHC.Exts (Constraint)
+
 -- | * Slices
 
 data All    = All
@@ -793,7 +795,7 @@ instance Shaped Manifest where
 -- | * Overloaded operations
 
 class ShapeMap vec where
-  type Vec vec
+  type Vec vec :: (* -> * -> *) -> Constraint
   permute :: Vec vec input =>
              (Shape sh -> Shape sh -> Shape sh) -> input sh a -> vec sh a
   transpose :: Vec vec input =>
