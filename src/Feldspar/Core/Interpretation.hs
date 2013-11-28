@@ -118,22 +118,34 @@ class Sharable dom
     sharable :: dom a -> Bool
     sharable _ = True
 
+    hoistOver :: dom a -> Bool
+    hoistOver _ = True
+
 instance (Sharable sub1, Sharable sub2) => Sharable (sub1 :+: sub2)
   where
     sharable (InjL a) = sharable a
     sharable (InjR a) = sharable a
 
+    hoistOver (InjL a) = hoistOver a
+    hoistOver (InjR a) = hoistOver a
+
 instance Sharable sym => Sharable (sym :|| pred)
   where
     sharable (C' s) = sharable s
+
+    hoistOver (C' s) = hoistOver s
 
 instance Sharable sym => Sharable (SubConstr2 c sym p1 p2)
   where
     sharable (SubConstr2 s) = sharable s
 
+    hoistOver (SubConstr2 s) = hoistOver s
+
 instance Sharable dom => Sharable (Decor Info dom)
   where
     sharable = sharable . decorExpr
+
+    hoistOver = hoistOver . decorExpr
 
 instance Sharable Empty
 

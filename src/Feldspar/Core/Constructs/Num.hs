@@ -49,6 +49,7 @@ import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Literal
+import Feldspar.Core.Constructs.Integral
 import Feldspar.Core.Constructs.Complex
 
 
@@ -90,6 +91,7 @@ instance SizeProp (NUM :|| Type)
 
 instance ( (NUM     :|| Type) :<: dom
          , (Literal :|| Type) :<: dom
+         , (INTEGRAL :|| Type) :<: dom
          , (COMPLEX :|| Type) :<: dom
          , OptimizeSuper dom
          )
@@ -154,6 +156,18 @@ instance ( (NUM     :|| Type) :<: dom
         , alphaEq a c
         , alphaEq b d
         = constructFeat opts (c' Add) (a :* c :* Nil)
+
+    -- x `mod` y + y * (x `div` y) ==> x
+    -- Partial index calculations materialized from contractT . expandT 2
+    -- in MultiDim.hs, which is a no-op.
+    constructFeatOpt opts (C' Add) ((rem :$ a :$ b) :* (mul :$ c :$ (quot :$ d :$ e)) :* Nil)
+        | Just (C' Rem)  <- prjF rem
+        , Just (C' Mul)  <- prjF mul
+        , Just (C' Quot) <- prjF quot
+        , alphaEq a d
+        , alphaEq c e
+        , alphaEq b e
+        = return a
 
     -- literal a - (b + literal c) ==> literal (a-c) - b
     -- constructFeatOpt opts s@(C' Sub) (a :* (op :$ b :$ c) :* Nil)
