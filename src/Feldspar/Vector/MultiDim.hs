@@ -564,6 +564,10 @@ instance Functor (Push sh) where
   fmap f (Push k l) = Push k' l
     where k' func   = k (\sh a -> func sh (f a))
 
+-- | The empty one dimensional push vector.
+empty :: Push DIM1 a
+empty = Push (const (return ())) (Z :. 0)
+
 -- | Concatenation along the the last dimension
 (++) :: Push (sh :. Data Length) a
      -> Push (sh :. Data Length) a
