@@ -347,20 +347,23 @@ mmMult vA vB
 
 -- KFFs combinators
 
-expandL :: Data Length -> Pull (sh :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
-expandL n (Pull ixf ext) = Pull ixf' (insLeft n $ insLeft p $ ext')
-  where (m, ext') = peelLeft ext
+expandL :: Pully vec => Data Length -> vec (sh :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
+expandL n v = Pull ixf' (insLeft n $ insLeft p $ ext')
+  where (Pull ixf ext) = toPull v
+        (m, ext') = peelLeft ext
         p = m `div` n
         ixf' ix = let (i,ix') = peelLeft ix; (j,ix'') = peelLeft ix' in ixf $ insLeft (i*p + j) ix''
 
-contractL :: Pull (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length) a
-contractL (Pull ixf ext) = Pull ixf' (insLeft (m*n) ext')
-  where (m, n, ext') = peelLeft2 ext
+contractL :: Pully vec => vec (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length) a
+contractL v = Pull ixf' (insLeft (m*n) ext')
+  where (Pull ixf ext) = toPull v
+        (m, n, ext') = peelLeft2 ext
         ixf' ix = let (i,ix') = peelLeft ix in ixf $ insLeft (i `div` n) $ insLeft (i `mod` n) $ ix'
 
-transL :: Pull (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
-transL (Pull ixf ext) = Pull ixf' (insLeft n $ insLeft m $ ext')
-  where (m, n, ext') = peelLeft2 ext
+transL :: Pully vec => vec (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
+transL v = Pull ixf' (insLeft n $ insLeft m $ ext')
+  where (Pull ixf ext) = toPull v
+        (m, n, ext') = peelLeft2 ext
         ixf' ix = let (i, j, ix') = peelLeft2 ix in ixf $ insLeft j $ insLeft i $ ix'
 
 
@@ -386,10 +389,10 @@ dzipWithL f a1 a2 = uncurryL (min m n) $ \ i -> f (g i) (h i)
 
 -- Convenience functions that maybe should not be in the lib
 
-expandLT :: Data Length -> Pull (sh :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
+expandLT :: Pully vec => Data Length -> vec (sh :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
 expandLT n a = transL $ expandL n $ a
 
-contractLT :: Pull (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length) a
+contractLT :: Pully vec => vec (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length) a
 contractLT a = contractL $ transL $ a
 
 
@@ -561,6 +564,10 @@ instance Functor (Push sh) where
   fmap f (Push k l) = Push k' l
     where k' func   = k (\sh a -> func sh (f a))
 
+-- | The empty one dimensional push vector.
+empty :: Push DIM1 a
+empty = Push (const (return ())) (Z :. 0)
+
 -- | Concatenation along the the last dimension
 (++) :: Push (sh :. Data Length) a
      -> Push (sh :. Data Length) a
@@ -712,20 +719,23 @@ flattenList (Pull ixf sh) = Push f sz
 
 -- KFFs extensions
 
-expandS :: Data Length -> Push (sh :. Data Length) a -> Push (sh :. Data Length :. Data Length) a
-expandS n (Push k ext) = Push k' $ insLeft n $ insLeft p $ ext'
-  where (m, ext') = peelLeft ext
+expandS :: Pushy vec => Data Length -> vec (sh :. Data Length) a -> Push (sh :. Data Length :. Data Length) a
+expandS n v = Push k' $ insLeft n $ insLeft p $ ext'
+  where (Push k ext) = toPush v
+        (m, ext') = peelLeft ext
         p = m `div` n
         k' wtf = k $ \ ix v -> let (i,ix') = peelLeft ix in wtf (insLeft (i `div` p) $ insLeft (i `Feldspar.mod` p) $ ix') v
 
-contractS :: Push (sh :. Data Length :. Data Length) a -> Push (sh :. Data Length) a
-contractS (Push k ext) = Push k' $ insLeft (m*n) $ ext'
-  where (m, n, ext') = peelLeft2 ext
+contractS :: Pushy vec => vec (sh :. Data Length :. Data Length) a -> Push (sh :. Data Length) a
+contractS v = Push k' $ insLeft (m*n) $ ext'
+  where (Push k ext) = toPush v
+        (m, n, ext') = peelLeft2 ext
         k' wtf = k $ \ ix v -> let (i, j, ix') = peelLeft2 ix in wtf (insLeft (i*n + j) ix') v
 
-transS :: Push (sh :. Data Length :. Data Length) a -> Push (sh :. Data Length :. Data Length) a
-transS (Push k ext) = Push k' $ insLeft n $ insLeft m $ ext'
-  where (m, n, ext') = peelLeft2 ext
+transS :: Pushy vec => vec (sh :. Data Length :. Data Length) a -> Push (sh :. Data Length :. Data Length) a
+transS v = Push k' $ insLeft n $ insLeft m $ ext'
+  where (Push k ext) = toPush v
+        (m, n, ext') = peelLeft2 ext
         k' wtf = k $ \ ix v -> let (i, j, ix') = peelLeft2 ix in wtf (insLeft j $ insLeft i $ ix') v
 
 uncurryS :: Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
@@ -733,10 +743,10 @@ uncurryS m f = Push k' (insLeft m ext)
   where Push _ ext = f (undefined :: Data Length)
         k' wtf = forM m $ \ i -> let Push k _ = f i in k (\ ix v -> wtf (insLeft i ix) v)
 
-expandST :: Data Length -> Push (sh :. Data Length) a -> Push (sh :. Data Length :. Data Length) a
+expandST :: Pushy vec => Data Length -> vec (sh :. Data Length) a -> Push (sh :. Data Length :. Data Length) a
 expandST n a = transS $ expandS n $ a
 
-contractST :: Push (sh :. Data Length :. Data Length) a -> Push (sh :. Data Length) a
+contractST :: Pushy vec => vec (sh :. Data Length :. Data Length) a -> Push (sh :. Data Length) a
 contractST a = contractS $ transS $ a
 
 -- | * Manifest arrays
