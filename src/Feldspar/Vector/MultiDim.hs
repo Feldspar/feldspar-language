@@ -752,6 +752,9 @@ instance Storable Manifest where
 instance Storable Pull where
   store vec@(Pull ixf sh) = Manifest (fromPull (fmap F.desugar vec)) sh
 
+instance Storable Push where
+  store vec@(Push f sh) = Manifest (fromPush (fmap F.desugar vec)) sh
+
 instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where 
   type Domain   (Manifest sh a) = FeldDomain
   type Internal (Manifest sh a) = ([Length],[Internal a])
