@@ -91,10 +91,10 @@ fromList ls = loop 1 (parallel (value len) (const (P.head ls)))
             | i P.< len = loop (i+1) (setIx arr (value i) (ls P.!! (P.fromIntegral i)))
             | otherwise = arr
         len  = P.fromIntegral $ P.length ls
-{-
+
 thawPull :: (Type a, Shapely sh) => (Data [Length], Data [a]) -> DPull sh a
-thawPull (l,arr) = toPull (toShape 0 l) arr
--}
+thawPull (l,arr) = arrToPull (toShape 0 l) arr
+
 {-
 -- | Store a vector in memory. Use this function instead of 'force' if
 --   possible as it is both much more safe and faster.
