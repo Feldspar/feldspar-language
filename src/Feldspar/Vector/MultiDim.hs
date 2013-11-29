@@ -347,20 +347,23 @@ mmMult vA vB
 
 -- KFFs combinators
 
-expandL :: Data Length -> Pull (sh :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
-expandL n (Pull ixf ext) = Pull ixf' (insLeft n $ insLeft p $ ext')
-  where (m, ext') = peelLeft ext
+expandL :: Pully vec => Data Length -> vec (sh :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
+expandL n v = Pull ixf' (insLeft n $ insLeft p $ ext')
+  where (Pull ixf ext) = toPull v
+        (m, ext') = peelLeft ext
         p = m `div` n
         ixf' ix = let (i,ix') = peelLeft ix; (j,ix'') = peelLeft ix' in ixf $ insLeft (i*p + j) ix''
 
-contractL :: Pull (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length) a
-contractL (Pull ixf ext) = Pull ixf' (insLeft (m*n) ext')
-  where (m, n, ext') = peelLeft2 ext
+contractL :: Pully vec => vec (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length) a
+contractL v = Pull ixf' (insLeft (m*n) ext')
+  where (Pull ixf ext) = toPull v
+        (m, n, ext') = peelLeft2 ext
         ixf' ix = let (i,ix') = peelLeft ix in ixf $ insLeft (i `div` n) $ insLeft (i `mod` n) $ ix'
 
-transL :: Pull (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
-transL (Pull ixf ext) = Pull ixf' (insLeft n $ insLeft m $ ext')
-  where (m, n, ext') = peelLeft2 ext
+transL :: Pully vec => vec (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
+transL v = Pull ixf' (insLeft n $ insLeft m $ ext')
+  where (Pull ixf ext) = toPull v
+        (m, n, ext') = peelLeft2 ext
         ixf' ix = let (i, j, ix') = peelLeft2 ix in ixf $ insLeft j $ insLeft i $ ix'
 
 
@@ -386,10 +389,10 @@ dzipWithL f a1 a2 = uncurryL (min m n) $ \ i -> f (g i) (h i)
 
 -- Convenience functions that maybe should not be in the lib
 
-expandLT :: Data Length -> Pull (sh :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
+expandLT :: Pully vec => Data Length -> vec (sh :. Data Length) a -> Pull (sh :. Data Length :. Data Length) a
 expandLT n a = transL $ expandL n $ a
 
-contractLT :: Pull (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length) a
+contractLT :: Pully vec => vec (sh :. Data Length :. Data Length) a -> Pull (sh :. Data Length) a
 contractLT a = contractL $ transL $ a
 
 
