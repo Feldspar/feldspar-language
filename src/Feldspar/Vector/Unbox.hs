@@ -1,19 +1,23 @@
-{-# LANGUAGE TypeFamilies  #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE GADTs         #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 module Feldspar.Vector.Unbox where
 
 import qualified Prelude as P
 
-import Feldspar hiding ((!),M,P)
+import Feldspar hiding ((!),P)
 import qualified Feldspar.Vector.PullPush as Pl
 import qualified Feldspar.Vector.MultiDim as M
 import Feldspar.Vector.MultiDim (Slice(..),Any,All)
 import Feldspar.Vector.Shape
 
 import Language.Syntactic hiding (fold,desugar,sugar,P)
+
+import Data.Proxy
 
 -- | Non-nested vector
 type Vector1 a = Vector (Data a)
@@ -62,12 +66,12 @@ instance (Type (Repr a), Elm a) => Elm (Vector a) where
   freezeVector (Nest vec) = Pl.freezePull (fmap freezeVector vec)
 
 instance (Syntax a, Shapely sh) => Elm (M.Pull sh a) where
-  data Vector (M.Pull sh a) = M (M.Pull (sh :. Data Length) a)
+  data Vector (M.Pull sh a) = MP (M.Pull (sh :. Data Length) a)
   type Repr (M.Pull sh a) = [Internal a]
-  (M vec) ! i = M.slice vec (SAny ::. i)
-  indexed ixf l = M $ M.flatten $ M.indexed (\(Z :. ix) -> ixf ix) (Z :. l)
-  length (M (M.Pull _ (_ :. l))) = l
-  freezeVector (M vec) = snd (M.freezePull (fmap desugar vec))
+  (MP vec) ! i = M.slice vec (SAny ::. i)
+  indexed ixf l = MP $ M.flatten $ M.indexed (\(Z :. ix) -> ixf ix) (Z :. l)
+  length (MP (M.Pull _ (_ :. l))) = l
+  freezeVector (MP vec) = snd (M.freezePull (fmap desugar vec))
 
 instance Syntax a => Elm (Pl.Pull a) where
   data Vector (Pl.Pull a) = P (M.Pull DIM2 a)
@@ -162,8 +166,6 @@ last vec = vec ! (length vec - 1)
 tail :: Elm a => Vector a -> Vector a
 tail = drop 1
 
-(++) = P.error "++ not implemented"
-
 scan :: (Elm a, Elm b) => (a -> b -> a) -> a -> Vector b -> Vector a
 scan f init bs = P.error "scan not implemented"
 -- scan f init bs = sugar $ sequential (length bs) (desugar init) $ \i s ->
@@ -176,3 +178,62 @@ min4 a b c d = min (min a b) (min c d)
 fst3 (a,_,_) = a
 snd3 (_,b,_) = b
 trd3 (_,_,c) = c
+
+-- Push vectors
+
+class ElmP a where
+  type RepP a
+  type Arr  a
+  allocArray  :: Proxy a -> Data Length -> M (Arr a)
+  writeArray  :: Arr a -> ((Data Index -> a -> M ()) -> M ()) -> M ()
+  freezePush  :: Proxy a -> Arr a -> M (RepP a)
+
+data PushP a = ElmP a => PushP ((Data Index -> a -> M ()) -> M ()) (Data Length)
+
+store :: forall a. ElmP a =>
+         ((Data Index -> a -> M ()) -> M ()) ->
+         Data Length ->
+         M (RepP a)
+store f l = do arr <- allocArray (Proxy :: Proxy a) l
+               writeArray arr f
+               freezePush (Proxy :: Proxy a) arr
+
+storePush :: PushP a -> M (RepP a)
+storePush (PushP f l) = store f l
+
+instance Type a => ElmP (Data a) where
+  type RepP (Data a) = Data [a]
+  type Arr  (Data a) = Data (MArr a)
+  allocArray _ = newArr_
+  writeArray marr f = f (\i a -> setArr marr i a)
+  freezePush _ arr = freezeArray arr
+
+instance (ElmP a, ElmP b) => ElmP (a,b) where
+  type RepP (a,b) = (RepP a, RepP b)
+  type Arr  (a,b) = (Arr  a, Arr  b)
+  allocArray (p :: Proxy (a,b)) l = do
+    a1 <- allocArray (Proxy :: Proxy a) l
+    a2 <- allocArray (Proxy :: Proxy b) l
+    return (a1,a2)
+  writeArray (arr1,arr2) f =
+    f (\i (a,b) -> writeArray arr1 (\k -> k i a) >>
+                   writeArray arr2 (\k -> k i b)
+      )
+  freezePush (p :: Proxy (a,b)) (arr1,arr2) = do
+    a1 <- freezePush (Proxy :: Proxy a) arr1
+    a2 <- freezePush (Proxy :: Proxy b) arr2
+    return (a1,a2)
+
+mapP :: ElmP b => (a -> b) -> PushP a -> PushP b
+mapP f (PushP g l) = PushP (\k -> g (\i a -> k i (f a))) l
+
+(++) :: PushP a -> PushP a -> PushP a
+PushP f l ++ PushP g m = PushP (\k -> f k >> g k) (l + m)
+
+data Push a = Push ((Data Index -> a -> M ()) -> M ()) (Data Length)
+
+storeFlat :: forall a . (ElmP a, Syntax (RepP a)) => Push a -> RepP a
+storeFlat (Push f l) = runMutable $ do
+  arr <- allocArray (Proxy :: Proxy a) l
+  writeArray arr f
+  freezePush (Proxy :: Proxy a) arr
