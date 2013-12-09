@@ -235,7 +235,6 @@ unzip5 :: Functor vec => vec (a,b,c,d,e) -> (vec a, vec b, vec c, vec d, vec e)
 unzip5 v = (fmap sel1 v, fmap sel2 v, fmap sel3 v, fmap sel4 v, fmap sel5 v)
 
 -- | Reduce a vector along its last dimension
-
 fold :: (Syntax a, Pully vec (sh :. Data Length), Shapely sh) =>
         (a -> a -> a)
      -> a
@@ -783,7 +782,9 @@ contractST a = contractS $ transS $ a
 
 data Manifest sh a = Syntax a => Manifest (Data [Internal a]) (Data [Length])
 
+-- | A class for memory allocation. All vectors are instances of this class.
 class Shaped vec => Storable vec where
+  -- | Allocates a vector to memory.
   store :: (Syntax a, Shapely sh) => vec sh a -> Manifest sh a
 
 instance Storable Manifest where
@@ -807,6 +808,8 @@ manifestToArr (Manifest arr sh) = (sh,arr)
 arrToManifest :: Syntax a => (Data [Length], Data [Internal a]) -> Manifest sh a
 arrToManifest (ls,arr) = Manifest arr ls
 
+-- | This class captures all vector which can be turned into a pull vector
+--   without allocating memory. Pull and Manifest are instances.
 class (Shaped vec) => Pully vec sh where
   toPull :: vec sh a -> Pull sh a
 
@@ -820,6 +823,7 @@ instance Pully Pull sh where
 instance Shapely sh => Pushy Manifest sh where
   toPush m = toPush (toPull m)
 
+-- | A single method class for getting the shape of a vector
 class Shaped vec where
   extent :: Shapely sh => vec sh a -> Shape sh
 
@@ -834,6 +838,7 @@ instance Shaped Manifest where
 
 -- | * Overloaded operations
 
+-- | A class with various functions for manipulating the shape of a vector
 class ShapeMap vec where
   type Vec vec :: (* -> * -> *) -> * -> Constraint
   permute :: Vec vec input sh =>
