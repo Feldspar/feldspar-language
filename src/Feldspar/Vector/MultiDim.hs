@@ -7,7 +7,41 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE ConstraintKinds       #-}
-module Feldspar.Vector.MultiDim where
+module Feldspar.Vector.MultiDim (
+  -- * Pull Vectors
+  Pull(..), -- TODO: don't export the data constructor
+  DPull,Pully(..),
+  freezePull, -- I'd like to get rid of these
+  newExtent,indexed,traverse,reshape,unit,fromZero,
+  replicate,slice,(!:),diagonal,backpermute,
+  zip,zipWith,zip3,zip4,zip5,
+  unzip,unzip3,unzip4,unzip5,
+  fold,fold',sum,
+  halve,
+  expandL,contractL,transL,curryL,uncurryL,dmapL,dzipWithL,expandLT,contractLT,
+  dmapS,dzipWithS,
+  -- * Shape concatenation
+  ShapeConc(..),
+  flatten,
+  -- * Slices of Pull vectors
+  All(..),Any(..),Slice(..),FullShape,SliceShape,sliceOfFull,fullOfSlice,
+  -- * Functions on one-dimensional Pull vectors
+  indexed1,length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
+  rotateVecL,rotateVecR,replicate1,enumFromTo,(...),fold1,
+  maximum,minimum,or,and,any,all,eqVector,scalarProd,
+  OneDim(..),ixmap,
+  -- * Push vectors
+  Push,
+  DPush,Pushy(..),
+  empty,(++),(+=+),unpair,riffle,interleave,flattenList,
+  expandS,contractS,transS,uncurryS,expandST,contractST,
+  -- * Manifest vectors
+  Manifest,
+  Storable(..),
+  -- * Overloaded functions
+  Shaped(..),ShapeMap(..),
+  reverse
+  ) where
 
 import qualified Prelude as P
 
@@ -22,7 +56,7 @@ import Control.Monad (zipWithM_)
 
 import GHC.Exts (Constraint)
 
--- | * Slices
+-- Slices
 
 data All    = All
 data Any sh = Any
@@ -58,7 +92,7 @@ fullOfSlice SAny sh = sh
 fullOfSlice (fsl ::. n) ssl = fullOfSlice fsl ssl :. n
 fullOfSlice (fsl ::: All) (ssl :. s) = fullOfSlice fsl ssl :. s
 
--- | * Pull Vectors
+-- Pull Vectors
 
 data Pull sh a = Pull (Shape sh -> a) (Shape sh)
 
@@ -69,7 +103,7 @@ instance Functor (Pull sh)
     fmap f (Pull ixf sh) = Pull (f . ixf) sh
 
 
--- | * Functions
+-- Functions
 
 -- | Store a vector in an array.
 fromPull :: (Type a, Shapely sh) => DPull sh a -> Data [a]
@@ -154,6 +188,12 @@ reshape sh' vec
 -- | A scalar (zero dimensional) vector
 unit :: a -> Pull Z a
 unit a = Pull (const a) Z
+
+-- | Get the one element from a zero-dimensional vector
+fromZero :: Pully vec Z => vec Z a -> a
+fromZero vec = ixf Z
+  where Pull ixf Z = toPull vec
+-- TODO: A better name.
 
 -- | Index into a vector
 (!:) :: Pully vec sh => vec sh a -> Shape sh -> a
@@ -285,9 +325,9 @@ instance ShapeConc sh1 sh2 => ShapeConc (sh1 :. Data Length) sh2 where
 
 -- | Flatten nested vectors.
 flatten :: forall a sh1 sh2.
-           Shapely (ShapeConcT sh1 sh2) =>
-          ShapeConc sh1 sh2 => Pull sh1 (Pull sh2 a)
-       -> Pull (ShapeConcT sh1 sh2) a
+           (Shapely (ShapeConcT sh1 sh2), ShapeConc sh1 sh2) =>
+           Pull sh1 (Pull sh2 a) ->
+           Pull (ShapeConcT sh1 sh2) a
 flatten (Pull ixf1 sh1) = Pull ixf sh
   where ixf i = let (i1,i2) = splitIndex i sh1
   	       	    (Pull ixf2 _) = ixf1 i1
@@ -391,8 +431,9 @@ dmapL :: (Pull sh1 a1 -> Pull sh2 a2) -> Pull (sh1 :. Data Length) a1 -> Pull (s
 dmapL f a = uncurryL n $ f . g
   where (n,g) = curryL a
 
-dzipWithL :: (Pull sh1 a1 -> Pull sh2 a2 -> Pull sh3 a3) -> Pull (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2
-          -> Pull (sh3 :. Data Length) a3
+dzipWithL :: (Pull sh1 a1 -> Pull sh2 a2 -> Pull sh3 a3) ->
+             Pull (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2 ->
+             Pull (sh3 :. Data Length) a3
 dzipWithL f a1 a2 = uncurryL (min m n) $ \ i -> f (g i) (h i)
   where (m,g) = curryL a1
         (n,h) = curryL a2
@@ -410,14 +451,6 @@ contractLT :: Pully vec (sh :. Data Length :. Data Length) =>
 contractLT a = contractL $ transL $ a
 
 
-
-{-
-
-Here is some functions that use both pull and push vectors (pull in, push out). Hence they do not build in the current module structure,
-so I include them in the form of comments. Should be uncommentable in a joint module, modulo renaming ;-)
-
-Only difference to the pure pull variants is the use of uncurryS instead of uncurryL.
--}
 dmapS :: (Pull sh1 a1 -> Push sh2 a2) -> Pull (sh1 :. Data Length) a1 -> Push (sh2 :. Data Length) a2
 dmapS f a = uncurryS n $ f . g
   where (n,g) = curryL a
@@ -429,7 +462,7 @@ dzipWithS f a1 a2 = uncurryS (min m n) $ \ i -> f (g i) (h i)
         (n,h) = curryL a2
 
 
--- | * Functions on one dimensional Pull vectors
+-- Functions on one dimensional Pull vectors
 
 indexed1 :: Data Length -> (Data Index -> a) -> Pull DIM1 a
 indexed1 l ixf = Pull (\(Z :. i) -> ixf i) (Z :. l)
@@ -508,19 +541,17 @@ enumFromTo m n = indexed1 (i2n l) ((+m) . i2n)
   where
     l = (n<m) ? 0 $ (n-m+1)
 
+-- | An infix version of 'enumFromTo'.
 (...) :: forall a. (Type a, Integral a)
       => Data a -> Data a -> Pull DIM1 (Data a)
 
 (...) = enumFromTo
 
+-- | Folding a one-dimensional vector
 fold1 :: (Syntax a, Pully vec DIM1) => (a -> a -> a) -> vec DIM1 a -> a
 fold1 f a = fromZero $ fold f (head a) (tail a)
 
-fromZero :: Pully vec Z => vec Z a -> a
-fromZero vec = ixf Z
-  where Pull ixf Z = toPull vec
-
--- Generalize to arbitrary dimensions
+-- TODO: Generalize to arbitrary dimensions
 maximum, minimum :: (Ord a, Pully vec DIM1) => vec DIM1 (Data a) -> (Data a)
 maximum = fold1 max
 
@@ -572,8 +603,10 @@ ixmap :: OneDim vec =>
          (Data Index -> Data Index) -> vec a -> vec a
 ixmap perm  = permute1 (const perm)
 
--- | * Multidimensional push vectors
+-- Multidimensional push vectors
 data Push sh a = Push ((Shape sh -> a -> M ()) -> M ()) (Shape sh)
+
+type DPush sh a = Push sh (Data a)
 
 instance Functor (Push sh) where
   fmap f (Push k l) = Push k' l
@@ -778,7 +811,7 @@ contractST :: Pushy vec (sh :. Data Length :. Data Length) =>
               Push (sh :. Data Length) a
 contractST a = contractS $ transS $ a
 
--- | * Manifest arrays
+-- Manifest arrays
 
 data Manifest sh a = Syntax a => Manifest (Data [Internal a]) (Data [Length])
 
@@ -836,7 +869,7 @@ instance Shaped Push where
 instance Shaped Manifest where
   extent (Manifest _ sh) = toShape 0 sh
 
--- | * Overloaded operations
+-- Overloaded operations
 
 -- | A class with various functions for manipulating the shape of a vector
 class ShapeMap vec where
