@@ -54,14 +54,14 @@ instance Semantic Error
 
 instance Render Error
   where
-    render Undefined    = "undefined"
-    render (Assert msg) = "assert " ++ show msg
+    renderSym Undefined    = "undefined"
+    renderSym (Assert msg) = "assert " ++ show msg
 
-instance Equality Error where equal = equalDefault; exprHash = exprHashDefault
-instance ToTree   Error
-instance Eval     Error where evaluate = evaluateDefault
-instance EvalBind Error where evalBindSym = evalBindSymDefault
-instance Sharable Error
+instance Equality   Error where equal = equalDefault; exprHash = exprHashDefault
+instance StringTree Error
+instance Eval       Error where evaluate = evaluateDefault
+instance EvalBind   Error where evalBindSym = evalBindSymDefault
+instance Sharable   Error
 
 instance SizeProp (Error :|| Type)
   where

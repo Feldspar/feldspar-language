@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -69,16 +70,15 @@ instance Semantic NUM
     semantics Sub  = Sem "(-)" (-)
     semantics Mul  = Sem "(*)" (*)
 
-instance Equality NUM where equal = equalDefault; exprHash = exprHashDefault
-instance Render   NUM where renderArgs = renderArgsDefault
-instance ToTree   NUM
-instance Eval     NUM where evaluate = evaluateDefault
+semanticInstances ''NUM
+
 instance EvalBind NUM where evalBindSym = evalBindSymDefault
-instance Sharable NUM
 
 instance AlphaEq dom dom dom env => AlphaEq NUM NUM dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable NUM
 
 instance SizeProp (NUM :|| Type)
   where

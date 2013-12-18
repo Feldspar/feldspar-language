@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -63,16 +64,15 @@ instance Semantic Logic
     semantics Or  = Sem "(||)" (||)
     semantics Not = Sem "not"  not
 
-instance Equality Logic where equal = equalDefault; exprHash = exprHashDefault
-instance Render   Logic where renderArgs = renderArgsDefault
-instance ToTree   Logic
-instance Eval     Logic where evaluate = evaluateDefault
+semanticInstances ''Logic
+
 instance EvalBind Logic where evalBindSym = evalBindSymDefault
-instance Sharable Logic
 
 instance AlphaEq dom dom dom env => AlphaEq Logic Logic dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable Logic
 
 instance SizeProp (Logic :|| Type)
   where

@@ -200,15 +200,15 @@ showExpr = render . reifyFeld defaultFeldOpts N32
 
 -- | Print an optimized expression
 printExpr :: SyntacticFeld a => a -> IO ()
-printExpr = Syntactic.printExpr . reifyFeld defaultFeldOpts N32
+printExpr = print . reifyFeld defaultFeldOpts N32
 
 -- | Print an optimized expression with options
 printExprWith :: SyntacticFeld a => FeldOpts -> a -> IO ()
-printExprWith opts = Syntactic.printExpr . reifyFeld opts N32
+printExprWith opts = print . reifyFeld opts N32
 
 -- | Print an unoptimized expression
 printExprUnOpt :: SyntacticFeld a => a -> IO ()
-printExprUnOpt = Syntactic.printExpr . reifyFeldUnOpt defaultFeldOpts N32
+printExprUnOpt = print . reifyFeldUnOpt defaultFeldOpts N32
 
 showAST :: SyntacticFeld a => a -> String
 showAST = Syntactic.showAST . reifyFeld defaultFeldOpts N32
@@ -218,11 +218,11 @@ drawAST = Syntactic.drawAST . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
 showDecor :: SyntacticFeld a => a -> String
-showDecor = Syntactic.showDecor . reifyFeld defaultFeldOpts N32
+showDecor = Syntactic.showDecorWith show . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
 drawDecor :: SyntacticFeld a => a -> IO ()
-drawDecor = Syntactic.drawDecor . reifyFeld defaultFeldOpts N32
+drawDecor = Syntactic.drawDecorWith show . reifyFeld defaultFeldOpts N32
 
 eval :: SyntacticFeld a => a -> Internal a
 eval = evalBind . reifyFeld defaultFeldOpts N32

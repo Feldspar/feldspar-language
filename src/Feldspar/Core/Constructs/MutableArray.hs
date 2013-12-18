@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -65,16 +66,15 @@ instance Semantic MutableArray
     semantics SetArr    = Sem "setMArr"   writeArray
     semantics ArrLength = Sem "arrLength" (getBounds >=> \(l,u) -> return (u-l+1))
 
-instance Equality MutableArray where equal = equalDefault; exprHash = exprHashDefault
-instance Render   MutableArray where renderArgs = renderArgsDefault
-instance ToTree   MutableArray
-instance Eval     MutableArray where evaluate = evaluateDefault
+semanticInstances ''MutableArray
+
 instance EvalBind MutableArray where evalBindSym = evalBindSymDefault
-instance Sharable MutableArray
 
 instance AlphaEq dom dom dom env => AlphaEq MutableArray MutableArray dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable MutableArray
 
 instance SizeProp MutableArray
   where

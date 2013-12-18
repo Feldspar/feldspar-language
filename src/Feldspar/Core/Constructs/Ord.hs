@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -69,16 +70,15 @@ instance Semantic ORD
     semantics Min = Sem "min"  min
     semantics Max = Sem "max"  max
 
-instance Equality ORD where equal = equalDefault; exprHash = exprHashDefault
-instance Render   ORD where renderArgs = renderArgsDefault
-instance ToTree   ORD
-instance Eval     ORD where evaluate = evaluateDefault
+semanticInstances ''ORD
+
 instance EvalBind ORD where evalBindSym = evalBindSymDefault
-instance Sharable ORD
 
 instance AlphaEq dom dom dom env => AlphaEq ORD ORD dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable ORD
 
 instance SizeProp (ORD :|| Type)
   where

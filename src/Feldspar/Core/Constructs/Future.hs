@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -51,19 +52,18 @@ instance Semantic FUTURE
     semantics MkFuture = Sem "future" FVal
     semantics Await    = Sem "await"  unFVal
 
-instance Equality FUTURE where equal = equalDefault; exprHash = exprHashDefault
-instance Render   FUTURE where renderArgs = renderArgsDefault
-instance ToTree   FUTURE
-instance Eval     FUTURE where evaluate = evaluateDefault
+semanticInstances ''FUTURE
+
 instance EvalBind FUTURE where evalBindSym = evalBindSymDefault
-instance Sharable FUTURE
-  where
-    hoistOver MkFuture = False
-    hoistOver _        = True
 
 instance AlphaEq dom dom dom env => AlphaEq FUTURE FUTURE dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable FUTURE
+  where
+    hoistOver MkFuture = False
+    hoistOver _        = True
 
 instance SizeProp (FUTURE :|| Type)
   where

@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -56,16 +57,15 @@ instance Semantic EQ
     semantics Equal    = Sem "(==)" (==)
     semantics NotEqual = Sem "(/=)" (/=)
 
-instance Equality EQ where equal = equalDefault; exprHash = exprHashDefault
-instance Render   EQ where renderArgs = renderArgsDefault
-instance ToTree   EQ
-instance Eval     EQ where evaluate = evaluateDefault
+semanticInstances ''EQ
+
 instance EvalBind EQ where evalBindSym = evalBindSymDefault
-instance Sharable EQ
 
 instance AlphaEq dom dom dom env => AlphaEq EQ EQ dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable EQ
 
 instance SizeProp (EQ :|| Type)
   where sizeProp a@(C' _) = sizePropDefault a

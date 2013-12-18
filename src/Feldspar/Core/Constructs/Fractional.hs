@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -52,16 +53,15 @@ instance Semantic FRACTIONAL
   where
     semantics DivFrac = Sem "(/)" (/)
 
-instance Equality FRACTIONAL where equal = equalDefault; exprHash = exprHashDefault
-instance Render   FRACTIONAL where renderArgs = renderArgsDefault
-instance ToTree   FRACTIONAL
-instance Eval     FRACTIONAL where evaluate = evaluateDefault
+semanticInstances ''FRACTIONAL
+
 instance EvalBind FRACTIONAL where evalBindSym = evalBindSymDefault
-instance Sharable FRACTIONAL
 
 instance SizeProp (FRACTIONAL :|| Type)
   where
     sizeProp (C' s) = sizePropDefault s
+
+instance Sharable FRACTIONAL
 
 instance AlphaEq dom dom dom env => AlphaEq FRACTIONAL FRACTIONAL dom env
   where

@@ -195,9 +195,9 @@ data Info a
          }
       -> Info a
 
-instance Render Info
+instance Show (Info a)
   where
-    render i@(Info {}) = show (infoType i) ++ szStr ++ srcStr
+    show i@(Info {}) = show (infoType i) ++ szStr ++ srcStr
       where
         szStr = case show (infoSize i) of
           "AnySize" -> ""

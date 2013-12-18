@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -69,16 +70,15 @@ instance Semantic ParFeature
     semantics ParFork   = Sem "fork" CMP.fork
     semantics ParYield  = Sem "yield" yield
 
-instance Equality ParFeature where equal = equalDefault; exprHash = exprHashDefault
-instance Render   ParFeature where renderArgs = renderArgsDefault
-instance ToTree   ParFeature
-instance Eval     ParFeature where evaluate = evaluateDefault
+semanticInstances ''ParFeature
+
 instance EvalBind ParFeature where evalBindSym = evalBindSymDefault
-instance Sharable ParFeature
 
 instance AlphaEq dom dom dom env => AlphaEq ParFeature ParFeature dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable ParFeature
 
 instance Sharable (MONAD Par)
 

@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -95,10 +96,8 @@ instance Semantic Array
           where
             len = genericLength as
 
-instance Equality Array where equal = equalDefault; exprHash = exprHashDefault
-instance Render   Array where renderArgs = renderArgsDefault
-instance ToTree   Array
-instance Eval     Array where evaluate = evaluateDefault
+semanticInstances ''Array
+
 instance EvalBind Array where evalBindSym = evalBindSymDefault
 
 instance AlphaEq dom dom dom env => AlphaEq Array Array dom env

@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -64,17 +65,16 @@ instance Semantic MutableReference
     semantics SetRef = Sem "setRef" writeIORef
     semantics ModRef = Sem "modRef" (\r f -> readIORef r >>= writeIORef r . f)
 
-instance Equality MutableReference where equal = equalDefault; exprHash = exprHashDefault
-instance Render   MutableReference where renderArgs = renderArgsDefault
-instance ToTree   MutableReference
-instance Eval     MutableReference where evaluate = evaluateDefault
+semanticInstances ''MutableReference
+
 instance EvalBind MutableReference where evalBindSym = evalBindSymDefault
-instance Sharable MutableReference
 
 instance AlphaEq dom dom dom env =>
     AlphaEq MutableReference MutableReference dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable MutableReference
 
 instance SizeProp MutableReference
   where

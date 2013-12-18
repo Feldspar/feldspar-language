@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -51,16 +52,15 @@ instance Semantic FFI
   where
     semantics (ForeignImport name f) = Sem name f
 
-instance Equality FFI where equal = equalDefault; exprHash = exprHashDefault
-instance Render   FFI where renderArgs = renderArgsDefault
-instance ToTree   FFI
-instance Eval     FFI where evaluate = evaluateDefault
+semanticInstances ''FFI
+
 instance EvalBind FFI where evalBindSym = evalBindSymDefault
-instance Sharable FFI
 
 instance AlphaEq dom dom dom env => AlphaEq FFI FFI dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable FFI
 
 instance SizeProp (FFI :|| Type)
   where
