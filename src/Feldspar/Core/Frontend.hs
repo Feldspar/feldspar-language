@@ -91,7 +91,7 @@ import Test.QuickCheck
 import Data.Patch
 
 import Language.Syntactic hiding
-    (desugar, sugar, resugar, printExpr, showAST, drawAST)
+    (desugar, sugar, resugar, showAST, drawAST)
 import qualified Language.Syntactic as Syntactic
 import qualified Language.Syntactic.Constructs.Decoration as Syntactic
 import Language.Syntactic.Constructs.Binding
