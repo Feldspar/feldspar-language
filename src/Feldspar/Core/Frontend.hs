@@ -100,7 +100,7 @@ import Language.Syntactic.Sharing.SimpleCodeMotion
 
 import Feldspar.Range
 import Feldspar.Core.Types
-import Feldspar.Core.Interpretation hiding (showDecor, drawDecor)
+import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Binding (cLambda)
 import Feldspar.Core.Frontend.Array            as Frontend
