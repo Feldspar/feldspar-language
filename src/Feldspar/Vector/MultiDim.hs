@@ -837,32 +837,32 @@ flattenList (Pull ixf sh) = Push f sz
 expandS :: Pushy vec (sh :. Data Length) =>
            Data Length -> vec (sh :. Data Length) a ->
            Push (sh :. Data Length :. Data Length) a
-expandS n v = Push k' $ insLeft n $ insLeft p $ ext'
-  where (Push k ext) = toPush v
+expandS n v = Push g $ insLeft n $ insLeft p $ ext'
+  where (Push f ext) = toPush v
         (m, ext') = peelLeft ext
         p = m `div` n
-        k' wtf = k $ \ ix v -> let (i,ix') = peelLeft ix in wtf (insLeft (i `div` p) $ insLeft (i `Feldspar.mod` p) $ ix') v
+        g k = f $ \ ix v -> let (i,ix') = peelLeft ix in k (insLeft (i `div` p) $ insLeft (i `Feldspar.mod` p) $ ix') v
 
 contractS :: Pushy vec (sh :. Data Length :. Data Length) =>
              vec (sh :. Data Length :. Data Length) a ->
              Push (sh :. Data Length) a
-contractS v = Push k' $ insLeft (m*n) $ ext'
-  where (Push k ext) = toPush v
+contractS v = Push g $ insLeft (m*n) $ ext'
+  where (Push f ext) = toPush v
         (m, n, ext') = peelLeft2 ext
-        k' wtf = k $ \ ix v -> let (i, j, ix') = peelLeft2 ix in wtf (insLeft (i*n + j) ix') v
+        g k = f $ \ ix v -> let (i, j, ix') = peelLeft2 ix in k (insLeft (i*n + j) ix') v
 
 transS :: Pushy vec (sh :. Data Length :. Data Length) =>
           vec (sh :. Data Length :. Data Length) a ->
           Push (sh :. Data Length :. Data Length) a
-transS v = Push k' $ insLeft n $ insLeft m $ ext'
-  where (Push k ext) = toPush v
+transS v = Push g $ insLeft n $ insLeft m $ ext'
+  where (Push f ext) = toPush v
         (m, n, ext') = peelLeft2 ext
-        k' wtf = k $ \ ix v -> let (i, j, ix') = peelLeft2 ix in wtf (insLeft j $ insLeft i $ ix') v
+        g k = f $ \ ix v -> let (i, j, ix') = peelLeft2 ix in k (insLeft j $ insLeft i $ ix') v
 
 uncurryS :: Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
-uncurryS m f = Push k' (insLeft m ext)
+uncurryS m f = Push g (insLeft m ext)
   where Push _ ext = f (undefined :: Data Length)
-        k' wtf = forM m $ \ i -> let Push k _ = f i in k (\ ix v -> wtf (insLeft i ix) v)
+        g k = forM m $ \ i -> let Push h _ = f i in h (\ ix v -> k (insLeft i ix) v)
 
 expandST :: Pushy vec (sh :. Data Length) =>
             Data Length -> vec (sh :. Data Length) a ->
