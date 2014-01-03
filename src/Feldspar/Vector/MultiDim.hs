@@ -60,8 +60,6 @@ import Data.Tuple.Curry
 import Control.Monad (zipWithM_)
 import Data.Proxy
 
-import GHC.Exts (Constraint)
-
 -- $intro
 -- The Feldspar Vector library.
 --
@@ -707,8 +705,8 @@ unpair v = Push f' (sh :. (l * 2))
                                     >> k (sh :. (2 * i + 1)) b)
 
 -- | Reverse a vector along its last dimension
-reverse :: (ShapeMap vec, Vec vec input (sh :. Data Length)) =>
-           input (sh :. Data Length) a -> vec (sh :. Data Length) a
+reverse :: (ShapeMap vec) =>
+           vec (sh :. Data Length) a -> vec (sh :. Data Length) a
 reverse = permute (\(sh :. l) (shi :. i) -> shi :. (l - i - 1))
 
 -- Some helper functions in Repa to help us define riffle
@@ -1003,22 +1001,21 @@ instance Shaped Manifest where
 
 -- | A class with various functions for manipulating the shape of a vector
 class ShapeMap vec where
-  type Vec vec :: (* -> * -> *) -> * -> Constraint
-  permute :: Vec vec input sh =>
-             (Shape sh -> Shape sh -> Shape sh) -> input sh a -> vec sh a
-  transpose :: Vec vec input (sh :. Data Length :. Data Length) =>
-               input (sh :. Data Length :. Data Length) a
+  -- | Permute the elements of a vector
+  permute :: (Shape sh -> Shape sh -> Shape sh) -> vec sh a -> vec sh a
+  -- | Transpose a vector
+  transpose :: vec (sh :. Data Length :. Data Length) a
             -> vec (sh :. Data Length :. Data Length) a
-  expand :: Vec vec input (sh :. Data Length) =>
-            Data Length
-         -> input (sh :. Data Length) a
+  -- | Add an extra dimension to a vector by splitting the innermost
+  --   dimension in two, using the first argument.
+  expand :: Data Length
+         -> vec (sh :. Data Length) a
          -> vec (sh :. Data Length :. Data Length) a
-  contract :: Vec vec input (sh :. Data Length :. Data Length) =>
-              input (sh :. Data Length :. Data Length) a
+  -- | Merge the two innermost dimensions
+  contract :: vec (sh :. Data Length :. Data Length) a
            -> vec (sh :. Data Length) a
 
 instance ShapeMap Pull where
-  type Vec Pull = Pully
   permute perm vec = Pull (\i -> ixf (perm sh i)) sh
     where Pull ixf sh = toPull vec
   transpose vec = transL (toPull vec)
@@ -1026,7 +1023,6 @@ instance ShapeMap Pull where
   contract  vec = contractL (toPull vec)
 
 instance ShapeMap Push where
-  type Vec Push = Pushy
   permute perm vec = Push (\k -> f (\i a -> k (perm sh i) a)) sh
     where (Push f sh) = toPush vec
   transpose vec = transS (toPush vec)
