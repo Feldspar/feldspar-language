@@ -699,7 +699,7 @@ unpair :: Pushy arr (sh :. Data Length)
        -> Push (sh :. Data Length) a
 unpair v = Push f' (sh :. (l * 2))
   where (Push f ex) = toPush v
-        (sh,l) = case ex of sh :. l -> (sh,l)
+        (sh,l) = uncons ex
         f' k = f (\ (sh :. i) (a,b) -> k (sh :. (2 * i)) a
                                     >> k (sh :. (2 * i + 1)) b)
 
