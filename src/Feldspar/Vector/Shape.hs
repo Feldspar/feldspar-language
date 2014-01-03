@@ -63,6 +63,10 @@ toList (sh :. i) = i : toList sh
 uncons :: Shape (sh :. Data Length) -> (Shape sh, Data Length)
 uncons (sh :. i) = (sh,i)
 
+shapeEq :: Shape sh -> Shape sh -> Data Bool
+shapeEq Z Z = true
+shapeEq (sh1 :. i) (sh2 :. j) = i == j && shapeEq sh1 sh2
+
 class Shapely sh where
   zeroDim   :: Shape sh
   unitDim   :: Shape sh
