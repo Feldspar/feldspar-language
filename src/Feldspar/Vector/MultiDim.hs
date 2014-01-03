@@ -414,9 +414,9 @@ mmMult :: (Syntax e, Num e, Pully vec1 DIM2, Pully vec2 DIM2) =>
 mmMult vA vB
   = sum (zipWith (*) vaRepl vbRepl)
   where
-    tmp = transpose2D vB
+    tmp = transpose (toPull vB)
     vaRepl = replicate (SZ ::: All   ::. colsB ::: All) vA
-    vbRepl = replicate (SZ ::. rowsA ::: All   ::: All)  vB
+    vbRepl = replicate (SZ ::. rowsA ::: All   ::: All) tmp
     [rowsA, colsA] = toList (extent vA) -- brain explosion hack
     [rowsB, colsB] = toList (extent vB)
 
