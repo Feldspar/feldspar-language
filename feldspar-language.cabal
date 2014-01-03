@@ -120,7 +120,6 @@ library
     Feldspar.Vector.MultiDim
     Feldspar.Vector.Sequential
     Feldspar.Vector.Shape
-    Feldspar.Vector.Unbox
     Feldspar.Par
     Feldspar.Algorithm.CRC
     Feldspar.Algorithm.FFT
