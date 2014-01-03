@@ -40,6 +40,9 @@ module Feldspar.Vector.MultiDim (
   -- * Manifest vectors
   Manifest,
   Storable(..),
+  -- * Flattening vectors
+  Flat,
+  storeFlat,
   -- * Overloaded functions
   Shaped(..),ShapeMap(..),
   reverse
@@ -902,6 +905,71 @@ manifestToArr (Manifest arr sh) = (sh,arr)
 
 arrToManifest :: Syntax a => (Data [Length], Data [Internal a]) -> Manifest sh a
 arrToManifest (ls,arr) = Manifest arr ls
+
+-- | A typeclass for types of array elements which can be flattened. An example
+--   is an array of pairs, which can be flattened into a pair of arrays.
+class Flat sh a where
+  type RepP sh a
+  type Arr     a
+  allocArray  :: Proxy a -> Proxy sh -> Data Length -> M (Arr a)
+  writeArray  :: Proxy sh -> Arr a -> ((Data Index -> a -> M ()) -> M ()) -> M ()
+  freezeArr   :: Proxy a -> Shape sh -> Arr a -> M (RepP sh a)
+
+instance Type a => Flat sh (Data a) where
+  type RepP sh (Data a) = Manifest sh (Data a)
+  type Arr  (Data a) = Data (MArr a)
+  allocArray _ _ = newArr_
+  writeArray _ marr f = f (\i a -> setArr marr i a)
+  freezeArr _ sh arr = fmap (\a -> Manifest a (fromList (toList sh))) $
+                       freezeArray arr
+
+instance (Flat sh a, Flat sh b) => Flat sh (a,b) where
+  type RepP sh (a,b) = (RepP sh a, RepP sh b)
+  type Arr     (a,b) = (Arr     a, Arr     b)
+  allocArray (_ :: Proxy (a,b)) (_ :: Proxy sh) l = do
+    a1 <- allocArray (Proxy :: Proxy a) (Proxy :: Proxy sh) l
+    a2 <- allocArray (Proxy :: Proxy b) (Proxy :: Proxy sh) l
+    return (a1,a2)
+  writeArray (_ :: Proxy sh) (arr1,arr2) f =
+    f (\i (a,b) -> writeArray (Proxy :: Proxy sh) arr1 (\k -> k i a) >>
+                   writeArray (Proxy :: Proxy sh) arr2 (\k -> k i b)
+      )
+  freezeArr (_ :: Proxy (a,b)) sh (arr1,arr2) = do
+    a1 <- freezeArr (Proxy :: Proxy a) sh arr1
+    a2 <- freezeArr (Proxy :: Proxy b) sh arr2
+    return (a1,a2)
+
+instance (Flat sh a, Flat sh b, Flat sh c) => Flat sh (a,b,c) where
+  type RepP sh (a,b,c) = (RepP sh a, RepP sh b,RepP sh c)
+  type Arr     (a,b,c) = (Arr     a, Arr     b, Arr    c)
+  allocArray (p :: Proxy (a,b,c)) (_ :: Proxy sh) l = do
+    a1 <- allocArray (Proxy :: Proxy a) (Proxy :: Proxy sh) l
+    a2 <- allocArray (Proxy :: Proxy b) (Proxy :: Proxy sh) l
+    a3 <- allocArray (Proxy :: Proxy c) (Proxy :: Proxy sh) l
+    return (a1,a2,a3)
+  writeArray (_ :: Proxy sh) (arr1,arr2,arr3) f =
+    f (\i (a,b,c) ->
+        writeArray (Proxy :: Proxy sh) arr1 (\k -> k i a) >>
+        writeArray (Proxy :: Proxy sh) arr2 (\k -> k i b) >>
+        writeArray (Proxy :: Proxy sh) arr3 (\k -> k i c)
+      )
+  freezeArr (p :: Proxy (a,b,c)) sh (arr1,arr2,arr3) = do
+    a1 <- freezeArr (Proxy :: Proxy a) sh arr1
+    a2 <- freezeArr (Proxy :: Proxy b) sh arr2
+    a3 <- freezeArr (Proxy :: Proxy c) sh arr3
+    return (a1,a2,a3)
+
+-- | Stores a vector into one or several flattened manifest vectors. The
+--   elements of the vector have to be instances of the 'Flat' type class.
+--   For example, a vector of type @Pull sh (Data Int,Data Float)@ will be
+--   stored as @(Manifest sh (Data Int), Manifest sh (Data Float))@.
+storeFlat :: forall a vec sh. (Flat sh a, Pushy vec sh, Syntax (RepP sh a)) =>
+             vec sh a -> RepP sh a
+storeFlat vec = runMutable $ do
+                  arr <- allocArray (Proxy :: Proxy a) (Proxy :: Proxy sh) (size l)
+                  writeArray (Proxy :: Proxy sh) arr (\k -> f (\sh a -> k (toIndex l sh) a))
+                  freezeArr (Proxy :: Proxy a) l arr
+  where (Push f l) = toPush vec
 
 -- | This class captures all vectors which can be turned into a 'Pull' vector
 --   without allocating memory.
