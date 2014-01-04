@@ -708,7 +708,7 @@ unpair v = Push f' (sh :. (l * 2))
 --   in the result vector.
 --
 -- @
---   unpair = unpairWith (\(sh :. i) -> (sh :. 2*i)) (\(sh :. I) -> (sh :. 2*i+1))
+--   unpair = unpairWith (\(sh :. i) -> (sh :. 2*i)) (\(sh :. i) -> (sh :. 2*i+1))
 -- @
 unpairWith :: Pushy arr (sh :. Data Length)
            => (Shape (sh :. Data Length) -> Shape (sh :. Data Length))
