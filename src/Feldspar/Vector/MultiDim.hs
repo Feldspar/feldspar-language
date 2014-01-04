@@ -35,7 +35,7 @@ module Feldspar.Vector.MultiDim (
   -- * Push vectors
   Push(..),
   DPush,Pushy(..),
-  empty,(++),(+=+),unpair,riffle,interleave,flattenList,
+  empty,(++),(+=+),unpair,unpairWith,riffle,interleave,flattenList,
   expandS,contractS,transS,uncurryS,expandST,contractST,
   -- * Manifest vectors
   Manifest,
@@ -703,6 +703,22 @@ unpair v = Push f' (sh :. (l * 2))
         (sh,l) = uncons ex
         f' k = f (\ (sh :. i) (a,b) -> k (sh :. (2 * i)) a
                                     >> k (sh :. (2 * i + 1)) b)
+
+-- | Similar to 'unpair' but allows control over where the elements end up
+--   in the result vector.
+--
+-- @
+--   unpair = unpairWith (\(sh :. i) -> (sh :. 2*i)) (\(sh :. I) -> (sh :. 2*i+1))
+-- @
+unpairWith :: Pushy arr (sh :. Data Length)
+           => (Shape (sh :. Data Length) -> Shape (sh :. Data Length))
+           -> (Shape (sh :. Data Length) -> Shape (sh :. Data Length))
+           -> arr (sh :. Data Length) (a,a)
+           -> Push (sh :. Data Length) a
+unpairWith ix1 ix2 vec = Push f' (sh :. (l*2))
+  where (Push f ex) = toPush vec
+        (sh,l) = uncons ex
+        f' k = f (\ix (a,b) -> k (ix1 ix) a >> k (ix2 ix) b)
 
 -- | Reverse a vector along its last dimension
 reverse :: (ShapeMap vec) =>
