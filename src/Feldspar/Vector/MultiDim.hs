@@ -41,7 +41,7 @@ module Feldspar.Vector.MultiDim (
   Manifest,
   Storable(..),
   -- * Flattening vectors
-  Flat,
+  Flat,FlatManifest,
   storeFlat,
   -- * Overloaded functions
   Shaped(..),ShapeMap(..),
@@ -907,23 +907,23 @@ arrToManifest (ls,arr) = Manifest arr ls
 -- | A typeclass for types of array elements which can be flattened. An example
 --   is an array of pairs, which can be flattened into a pair of arrays.
 class Flat sh a where
-  type RepP sh a
-  type Arr     a
+  type FlatManifest sh a
+  type Arr a
   allocArray  :: Proxy a -> Proxy sh -> Data Length -> M (Arr a)
   writeArray  :: Proxy sh -> Arr a -> ((Data Index -> a -> M ()) -> M ()) -> M ()
-  freezeArr   :: Proxy a -> Shape sh -> Arr a -> M (RepP sh a)
+  freezeArr   :: Proxy a -> Shape sh -> Arr a -> M (FlatManifest sh a)
 
 instance Type a => Flat sh (Data a) where
-  type RepP sh (Data a) = Manifest sh (Data a)
-  type Arr  (Data a) = Data (MArr a)
+  type FlatManifest sh (Data a) = Manifest sh (Data a)
+  type Arr (Data a) = Data (MArr a)
   allocArray _ _ = newArr_
   writeArray _ marr f = f (\i a -> setArr marr i a)
   freezeArr _ sh arr = fmap (\a -> Manifest a (fromList (toList sh))) $
                        freezeArray arr
 
 instance (Flat sh a, Flat sh b) => Flat sh (a,b) where
-  type RepP sh (a,b) = (RepP sh a, RepP sh b)
-  type Arr     (a,b) = (Arr     a, Arr     b)
+  type FlatManifest sh (a,b) = (FlatManifest sh a, FlatManifest sh b)
+  type Arr (a,b) = (Arr a, Arr b)
   allocArray (_ :: Proxy (a,b)) (_ :: Proxy sh) l = do
     a1 <- allocArray (Proxy :: Proxy a) (Proxy :: Proxy sh) l
     a2 <- allocArray (Proxy :: Proxy b) (Proxy :: Proxy sh) l
@@ -938,8 +938,8 @@ instance (Flat sh a, Flat sh b) => Flat sh (a,b) where
     return (a1,a2)
 
 instance (Flat sh a, Flat sh b, Flat sh c) => Flat sh (a,b,c) where
-  type RepP sh (a,b,c) = (RepP sh a, RepP sh b,RepP sh c)
-  type Arr     (a,b,c) = (Arr     a, Arr     b, Arr    c)
+  type FlatManifest sh (a,b,c) = (FlatManifest sh a, FlatManifest sh b,FlatManifest sh c)
+  type Arr (a,b,c) = (Arr a, Arr b, Arr c)
   allocArray (p :: Proxy (a,b,c)) (_ :: Proxy sh) l = do
     a1 <- allocArray (Proxy :: Proxy a) (Proxy :: Proxy sh) l
     a2 <- allocArray (Proxy :: Proxy b) (Proxy :: Proxy sh) l
@@ -961,8 +961,8 @@ instance (Flat sh a, Flat sh b, Flat sh c) => Flat sh (a,b,c) where
 --   elements of the vector have to be instances of the 'Flat' type class.
 --   For example, a vector of type @Pull sh (Data Int,Data Float)@ will be
 --   stored as @(Manifest sh (Data Int), Manifest sh (Data Float))@.
-storeFlat :: forall a vec sh. (Flat sh a, Pushy vec sh, Syntax (RepP sh a)) =>
-             vec sh a -> RepP sh a
+storeFlat :: forall a vec sh. (Flat sh a, Pushy vec sh, Syntax (FlatManifest sh a)) =>
+             vec sh a -> FlatManifest sh a
 storeFlat vec = runMutable $ do
                   arr <- allocArray (Proxy :: Proxy a) (Proxy :: Proxy sh) (size l)
                   writeArray (Proxy :: Proxy sh) arr (\k -> f (\sh a -> k (toIndex l sh) a))
