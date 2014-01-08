@@ -31,14 +31,14 @@ module Feldspar.Vector.MultiDim (
   -- * Functions on one-dimensional vectors
   indexed1,length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
   rotateVecL,rotateVecR,replicate1,enumFromTo,enumFrom,(...),fold1,
-  maximum,minimum,or,and,any,all,eqVector,scalarProd,
+  maximum,minimum,or,and,any,all,eqVector,scalarProd,chunk,
   OneDim(..),ixmap,
   -- * Functions on two-dimensional vectors
   mmMult,
   -- * Push vectors
   Push,
   DPush,Pushy(..),
-  empty,(++),(+=+),unpair,unpairWith,riffle,interleave,flattenList,
+  empty,(++),(+=+),unpair,unpairWith,zipUnpair,riffle,interleave,flattenList,
   uncurryS,
   -- * Manifest vectors
   Manifest,
@@ -662,6 +662,25 @@ scalarProd :: (Syntax a, Num a, Pully vec1 DIM1, Pully vec2 DIM1) =>
               vec1 DIM1 a -> vec2 DIM1 a -> a
 scalarProd a b = fromZero $ sum (zipWith (*) a b)
 
+-- | This function can distribute vector computations on chunks of a large
+--   pull vector. A call @chunk l f g v@ will split the vector 'v' into chunks
+--   of size 'l' and apply 'f' to these chunks. In case the length of 'v' is
+--   not a multiple of 'l' then the rest of 'v' will be processed by 'g'.
+chunk :: (Pully vec DIM1, Pushy vec1 DIM1, Pushy vec2 DIM1, Syntax b)
+      => Data Length            -- ^ Size of the chunks
+      -> (Pull DIM1 a -> vec1 DIM1 b) -- ^ Applied to every chunk
+      -> (Pull DIM1 a -> vec2 DIM1 b) -- ^ Applied to the rest of the vector
+      -> vec DIM1 a
+      -> Push DIM1 b
+chunk c f g vec = Push loop (Z :. (noc * c))
+             ++ toPush (g (drop (noc * c) v))
+  where l = length v
+        noc = l `div` c
+        loop func = forM noc $ \i ->
+                      do let (Push k _) = toPush $ f (take c (drop (c*i) v))
+                         k (\(Z :. j) a -> func (Z :. (c*i + j)) a)
+        v = toPull vec
+
 
 -- | An overloaded function for reordering elements of a one-dimensional vector.
 class OneDim vec where
@@ -734,15 +753,23 @@ unpair v = Push f' (sh :. (l * 2))
 -- @
 --   unpair = unpairWith (\(sh :. i) -> (sh :. 2*i)) (\(sh :. i) -> (sh :. 2*i+1))
 -- @
-unpairWith :: Pushy arr (sh :. Data Length)
+unpairWith :: Pushy vec (sh :. Data Length)
            => (Shape (sh :. Data Length) -> Shape (sh :. Data Length))
            -> (Shape (sh :. Data Length) -> Shape (sh :. Data Length))
-           -> arr (sh :. Data Length) (a,a)
+           -> vec (sh :. Data Length) (a,a)
            -> Push (sh :. Data Length) a
 unpairWith ix1 ix2 vec = Push f' (sh :. (l*2))
   where (Push f ex) = toPush vec
         (sh,l) = uncons ex
         f' k = f (\ix (a,b) -> k (ix1 ix) a >> k (ix2 ix) b)
+
+-- | Interleaves the elements of two vectors.
+zipUnpair :: (Pully vec1 (sh :. Data Length),
+              Pully vec2 (sh :. Data Length),
+              Shapely sh) =>
+             vec1 (sh :. Data Length) a -> vec2 (sh :. Data Length) a ->
+             Push (sh :. Data Length) a
+zipUnpair vec1 vec2 = unpair (zip vec1 vec2)
 
 -- | Reverse a vector along its outermost dimension
 reverse :: (ShapeMap vec) =>
