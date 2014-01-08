@@ -16,6 +16,7 @@ module Feldspar.Vector.MultiDim (
   DPull,Pully(..),
   newExtent,indexed,traverse,reshape,unit,fromZero,
   replicate,slice,(!:),diagonal,backpermute,
+  map,
   zip,zipWith,zip3,zip4,zip5,
   unzip,unzip3,unzip4,unzip5,
   fold,fold',sum,
@@ -29,7 +30,7 @@ module Feldspar.Vector.MultiDim (
   All(..),Any(..),Slice(..),FullShape,SliceShape,sliceOfFull,fullOfSlice,
   -- * Functions on one-dimensional vectors
   indexed1,length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
-  rotateVecL,rotateVecR,replicate1,enumFromTo,(...),fold1,
+  rotateVecL,rotateVecR,replicate1,enumFromTo,enumFrom,(...),fold1,
   maximum,minimum,or,and,any,all,eqVector,scalarProd,
   OneDim(..),ixmap,
   -- * Functions on two-dimensional vectors
@@ -83,7 +84,7 @@ import Data.Proxy
 -- As an example of the syntax, the shape of a two dimensional vector look like
 -- this @Z :. Data Length :. Data Length@. Shapes don't have to be fully
 -- determined. A shape with at least two dimensions is written 
--- @a :. Data Length :. Data Length@ where @a@ is a type variable.
+-- @sh :. Data Length :. Data Length@ where @sh@ is a type variable.
 
 -- Slices
 
@@ -586,6 +587,9 @@ replicate1 n a = Pull (const a) (Z :. n)
 -- | A vector which enumerates numbers consecutively
 enumFromTo :: forall a. (Type a, Integral a)
            => Data a -> Data a -> Pull DIM1 (Data a)
+enumFromTo 0 n
+    | IntType U _ <- typeRep :: TypeRep a
+    = indexed1 (i2n n - 1) i2n
 enumFromTo 1 n
     | IntType U _ <- typeRep :: TypeRep a
     = indexed1 (i2n n) ((+1) . i2n)
@@ -593,11 +597,17 @@ enumFromTo m n = indexed1 (i2n l) ((+m) . i2n)
   where
     l = (n<m) ? 0 $ (n-m+1)
 
+-- | @enumFrom m@: Enumerate the indexes from @m@ to 'maxBound'
+enumFrom m = enumFromTo m (value maxBound)
+
 -- | An infix version of 'enumFromTo'.
 (...) :: forall a. (Type a, Integral a)
       => Data a -> Data a -> Pull DIM1 (Data a)
-
 (...) = enumFromTo
+
+-- | Transform all the elements of a vector
+map :: Functor vec => (a -> b) -> vec a -> vec b
+map = fmap 
 
 -- | Folding a one-dimensional vector
 fold1 :: (Syntax a, Pully vec DIM1) => (a -> a -> a) -> vec DIM1 a -> a
