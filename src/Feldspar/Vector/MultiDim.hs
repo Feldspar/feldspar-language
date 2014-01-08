@@ -10,33 +10,35 @@
 module Feldspar.Vector.MultiDim (
   -- $intro
   
+  module Feldspar.Vector.Shape,
   -- * Pull Vectors
-  Pull(..), -- TODO: don't export the data constructor
+  Pull,
   DPull,Pully(..),
-  freezePull, -- I'd like to get rid of these
   newExtent,indexed,traverse,reshape,unit,fromZero,
   replicate,slice,(!:),diagonal,backpermute,
   zip,zipWith,zip3,zip4,zip5,
   unzip,unzip3,unzip4,unzip5,
   fold,fold',sum,
   halve,
-  expandL,contractL,transL,curryL,uncurryL,dmapL,dzipWithL,expandLT,contractLT,
+  curryL,uncurryL,dmapL,dzipWithL,
   dmapS,dzipWithS,
   -- * Shape concatenation
   ShapeConc(..),
   flatten,
   -- * Slices of Pull vectors
   All(..),Any(..),Slice(..),FullShape,SliceShape,sliceOfFull,fullOfSlice,
-  -- * Functions on one-dimensional Pull vectors
+  -- * Functions on one-dimensional vectors
   indexed1,length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
   rotateVecL,rotateVecR,replicate1,enumFromTo,(...),fold1,
   maximum,minimum,or,and,any,all,eqVector,scalarProd,
   OneDim(..),ixmap,
+  -- * Functions on two-dimensional vectors
+  mmMult,
   -- * Push vectors
-  Push(..),
+  Push,
   DPush,Pushy(..),
   empty,(++),(+=+),unpair,unpairWith,riffle,interleave,flattenList,
-  expandS,contractS,transS,uncurryS,expandST,contractST,
+  uncurryS,
   -- * Manifest vectors
   Manifest,
   Storable(..),
@@ -132,35 +134,37 @@ instance Functor (Pull sh)
   where
     fmap f (Pull ixf sh) = Pull (f . ixf) sh
 
+instance (Syntax a, Shapely sh) => Syntactic (Pull sh a)
+  where
+    type Domain (Pull sh a) = FeldDomain
+    type Internal (Pull sh a) = ([Length],[Internal a])
+    desugar = desugar . freezePull . fmap resugar
+    sugar   = fmap resugar . thawPull . sugar
 
 -- Functions
 
--- | Store a vector in an array.
+-- | Store a vector to memory.
 fromPull :: (Type a, Shapely sh) => DPull sh a -> Data [a]
 fromPull vec = parallel (size ext) (\ix -> vec !: fromIndex ext ix)
   where ext = extent vec
 
-
--- | Restore a vector from an array
+-- | Restore a vector from memory
 arrToPull :: (Type a) => Shape sh -> Data [a] -> DPull sh a
 arrToPull sh arr = Pull (\ix -> arr ! toIndex sh ix) sh
 
+-- | Store a vector and its shape to memory
 freezePull :: (Type a, Shapely sh) => DPull sh a -> (Data [Length], Data [a])
 freezePull v   = (shapeArr, fromPull v) -- TODO should be fromPull' to remove div and mod
   where shapeArr = fromList (toList $ extent v)
 
+-- | Create an array from a Haskell list.
 fromList :: Type a => [Data a] -> Data [a]
 fromList ls = runMutableArray $ newListArr ls
 
+-- | Restore a vector and its shape from memory
 thawPull :: (Type a, Shapely sh) => (Data [Length], Data [a]) -> DPull sh a
 thawPull (l,arr) = arrToPull (toShape 0 l) arr
 
-{-
--- | Store a vector in memory. Use this function instead of 'force' if
---   possible as it is both much more safe and faster.
-memorize :: (Type a) => DPull sh a -> DPull sh a
-memorize vec = toPull (extent vec) (fromPull vec)
--}
 -- | A shape-aware version of parallel (though this implementation is
 --   sequental).
 parShape :: (Type a) => Shape sh -> (Shape sh -> Data a) -> Data [a]
@@ -180,6 +184,7 @@ fromVector' (Pull ixf sh) = parShape sh ixf
 newExtent :: Shape sh -> Pull sh a -> Pull sh a
 newExtent sh (Pull ixf _) = Pull ixf sh
 
+-- | Construct a pull vector from an index function and a shape.
 indexed :: (Shape sh -> a) -> Shape sh -> Pull sh a
 indexed ixf l = Pull ixf l
 
@@ -306,7 +311,7 @@ unzip4 v = (fmap sel1 v, fmap sel2 v, fmap sel3 v, fmap sel4 v)
 unzip5 :: Functor vec => vec (a,b,c,d,e) -> (vec a, vec b, vec c, vec d, vec e)
 unzip5 v = (fmap sel1 v, fmap sel2 v, fmap sel3 v, fmap sel4 v, fmap sel5 v)
 
--- | Reduce a vector along its last dimension
+-- | Reduce a vector along its outermost dimension
 fold :: (Syntax a, Pully vec (sh :. Data Length), Shapely sh) =>
         (a -> a -> a)
      -> a
@@ -330,7 +335,7 @@ fold' f x vec = Pull ixf sh
     where (sh, n) = uncons (extent vec) -- brain explosion hack
           ixf i = forLoop n (x!:i) (\ix s -> f s (vec !: (i :. ix)))
 
--- | Summing a vector along its last dimension
+-- | Summing a vector along its outermost dimension
 sum :: (Syntax a, Num a, Pully vec (sh :. Data Length), Shapely sh) =>
        vec (sh :. Data Length) a -> Pull sh a
 sum = fold (+) 0
@@ -423,6 +428,7 @@ mmMult vA vB
 
 -- KFFs combinators
 
+-- | Split the innermost dimension of a pull vector in two
 expandL :: Pully vec (sh :. Data Length) =>
            Data Length -> vec (sh :. Data Length) a ->
            Pull (sh :. Data Length :. Data Length) a
@@ -432,6 +438,7 @@ expandL n v = Pull ixf' (insLeft n $ insLeft p $ ext')
         p = m `div` n
         ixf' ix = let (i,ix') = peelLeft ix; (j,ix'') = peelLeft ix' in ixf $ insLeft (i*p + j) ix''
 
+-- | Flatten the two innermost dimensions into a single dimension
 contractL :: Pully vec (sh :. Data Length :. Data Length) =>
              vec (sh :. Data Length :. Data Length) a ->
              Pull (sh :. Data Length) a
@@ -440,6 +447,7 @@ contractL v = Pull ixf' (insLeft (m*n) ext')
         (m, n, ext') = peelLeft2 ext
         ixf' ix = let (i,ix') = peelLeft ix in ixf $ insLeft (i `div` n) $ insLeft (i `mod` n) $ ix'
 
+-- | Swap the two innermmost dimensions
 transL :: Pully vec (sh :. Data Length :. Data Length) =>
           vec (sh :. Data Length :. Data Length) a ->
           Pull (sh :. Data Length :. Data Length) a
@@ -448,21 +456,24 @@ transL v = Pull ixf' (insLeft n $ insLeft m $ ext')
         (m, n, ext') = peelLeft2 ext
         ixf' ix = let (i, j, ix') = peelLeft2 ix in ixf $ insLeft j $ insLeft i $ ix'
 
-
--- Note: curry is unsafe in that it produces an index function that does not check that its leftmost argument is in range
+-- | Abstract over the innermost dimension in a vector
 curryL :: Pull (sh :. Data Length) a -> (Data Length, Data Length -> Pull sh a)
 curryL (Pull ixf sh) = (n, \ i -> Pull (\ ix -> ixf $ insLeft i ix) sh')
   where (n, sh') = peelLeft sh
+-- Note: curry is unsafe in that it produces an index function that does not check that its leftmost argument is in range
 
+-- | Instantiate the innermost dimension from an abstracted vector
 uncurryL :: Data Length -> (Data Length -> Pull sh a) -> Pull (sh :. Data Length) a
 uncurryL m f = Pull ixf (insLeft m ext)
   where Pull _ ext = f (undefined :: Data Length)
         ixf ix = let (i, ix') = peelLeft ix; Pull ixf' _ = f i in ixf' ix'
 
+-- | Transform a pull vector, except for the innermost dimension
 dmapL :: (Pull sh1 a1 -> Pull sh2 a2) -> Pull (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2
 dmapL f a = uncurryL n $ f . g
   where (n,g) = curryL a
 
+-- | Zip together two pull vectors, but preserve the innermost dimension
 dzipWithL :: (Pull sh1 a1 -> Pull sh2 a2 -> Pull sh3 a3) ->
              Pull (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2 ->
              Pull (sh3 :. Data Length) a3
@@ -482,11 +493,14 @@ contractLT :: Pully vec (sh :. Data Length :. Data Length) =>
               Pull (sh :. Data Length) a
 contractLT a = contractL $ transL $ a
 
-
+-- | Transform a pull vector to a push vector, but preserve the innermost 
+--   dimension
 dmapS :: (Pull sh1 a1 -> Push sh2 a2) -> Pull (sh1 :. Data Length) a1 -> Push (sh2 :. Data Length) a2
 dmapS f a = uncurryS n $ f . g
   where (n,g) = curryL a
 
+-- | Zip together two pull vectors into a push vector, but preserve the
+--   innermost dimension
 dzipWithS :: (Pull sh1 a1 -> Pull sh2 a2 -> Push sh3 a3) -> Pull (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2
           -> Push (sh3 :. Data Length) a3
 dzipWithS f a1 a2 = uncurryS (min m n) $ \ i -> f (g i) (h i)
@@ -672,7 +686,7 @@ instance Functor (Push sh) where
 empty :: Push DIM1 a
 empty = Push (const (return ())) (Z :. 0)
 
--- | Concatenation along the the last dimension
+-- | Concatenation along the the outmost dimension
 (++) :: Push (sh :. Data Length) a
      -> Push (sh :. Data Length) a
      -> Push (sh :. Data Length) a
@@ -682,8 +696,8 @@ empty = Push (const (return ())) (Z :. 0)
 		 k2 (\ (sh :. i) a -> func (sh :. (i + l1)) a)
 -- Assumption sh1 == sh2
 
--- | Concatenation along the last dimension where the two vectors have the same
---   length. There is no check that the lengths are equal.
+-- | Concatenation along the outermost dimension where the two vectors have
+--   the same length. There is no check that the lengths are equal.
 (+=+) :: Pull (sh :. Data Length) a
       -> Pull (sh :. Data Length) a
       -> Push (sh :. Data Length) a
@@ -720,14 +734,14 @@ unpairWith ix1 ix2 vec = Push f' (sh :. (l*2))
         (sh,l) = uncons ex
         f' k = f (\ix (a,b) -> k (ix1 ix) a >> k (ix2 ix) b)
 
--- | Reverse a vector along its last dimension
+-- | Reverse a vector along its outermost dimension
 reverse :: (ShapeMap vec) =>
            vec (sh :. Data Length) a -> vec (sh :. Data Length) a
 reverse = permute (\(sh :. l) (shi :. i) -> shi :. (l - i - 1))
 
 -- Some helper functions in Repa to help us define riffle
 
--- | Split a vector in half along the last dimension. If there is an odd
+-- | Split a vector in half along the outermost dimension. If there is an odd
 --   number of elements in that dimension, the second vector of the two result
 --   vectors will be one longer than the first.
 halve :: Pully vec (sh :. Data Length) => vec (sh :. Data Length) a
@@ -738,6 +752,12 @@ halve vec = (Pull ixf  (sh :. (l `div` 2))
         Pull ixf ext = toPull vec
         (sh,l) = uncons ext
 
+-- | Permute the elemements of a vector such that the first half is interleaved
+--   with the second half. Useful for constructing butterfly networks.
+--
+-- @
+-- riffle (enumFromTo 1 10) == [1,6,2,7,3,8,4,9,5,10]
+-- @
 riffle :: (Pully vec (sh :. Data Length), Shapely sh) =>
           vec (sh :. Data Length) a -> Push (sh :. Data Length) a
 riffle =  unpair . uncurry zip . halve
@@ -848,6 +868,7 @@ flattenList (Pull ixf sh) = Push f sz
 
 -- KFFs extensions
 
+-- | Split the innermost dimension of a push vector in two
 expandS :: Pushy vec (sh :. Data Length) =>
            Data Length -> vec (sh :. Data Length) a ->
            Push (sh :. Data Length :. Data Length) a
@@ -873,6 +894,7 @@ transS v = Push g $ insLeft n $ insLeft m $ ext'
         (m, n, ext') = peelLeft2 ext
         g k = f $ \ ix v -> let (i, j, ix') = peelLeft2 ix in k (insLeft j $ insLeft i $ ix') v
 
+-- | Instantiate the innermost dimension from an abstracted push vector
 uncurryS :: Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
 uncurryS m f = Push g (insLeft m ext)
   where Push _ ext = f (undefined :: Data Length)
