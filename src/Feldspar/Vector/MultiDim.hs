@@ -579,7 +579,7 @@ rotateVecL ix = permute1 (\l i -> (i + ix) `rem` l)
 rotateVecR :: Data Index -> Pull DIM1 a -> Pull DIM1 a
 rotateVecR ix = reverse . rotateVecL ix . reverse
 
--- | @replicate1 n a@ creates a one dimensional pull array 
+-- | @replicate1 n a@ creates a one dimensional pull vector
 --    containing @n@ copies of @a@
 replicate1 :: Data Length -> a -> Pull DIM1 a
 replicate1 n a = Pull (const a) (Z :. n)
@@ -736,10 +736,10 @@ empty = Push (const (return ())) zeroDim
                 do k (shi :. i)      (ixf1 (shi :. i))
                    k (shi :. i + l1) (ixf2 (shi :. i))
 
--- | Flattens an array of pairs such that the elements of a pair end up next
---   to each other in the resulting array.
-unpair :: Pushy arr (sh :. Data Length)
-       => arr (sh :. Data Length) (a,a)
+-- | Flattens a vector of pairs such that the elements of a pair end up next
+--   to each other in the resulting vector.
+unpair :: Pushy vec (sh :. Data Length)
+       => vec (sh :. Data Length) (a,a)
        -> Push (sh :. Data Length) a
 unpair v = Push f' (sh :. (l * 2))
   where (Push f ex) = toPush v
@@ -946,8 +946,6 @@ contractST :: Pushy vec (sh :. Data Length :. Data Length) =>
               vec (sh :. Data Length :. Data Length) a ->
               Push (sh :. Data Length) a
 contractST a = contractS $ transS $ a
-
--- Manifest arrays
 
 -- | Manifest vectors live in memory. Pull- and Push vectors can be allocated
 --   as Manifest using the 'store' function.
