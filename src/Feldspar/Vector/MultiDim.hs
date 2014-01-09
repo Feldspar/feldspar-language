@@ -9,12 +9,12 @@
 {-# LANGUAGE ConstraintKinds       #-}
 module Feldspar.Vector.MultiDim (
   -- $intro
-  
+
   module Feldspar.Vector.Shape,
   -- * Pull Vectors
   Pull,
   DPull,Pully(..),
-  newExtent,indexed,traverse,reshape,unit,fromZero,
+  indexed,newExtent,traverse,reshape,unit,fromZero,
   replicate,slice,(!:),diagonal,backpermute,
   map,
   zip,zipWith,zip3,zip4,zip5,
