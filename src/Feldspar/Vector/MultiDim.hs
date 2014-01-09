@@ -34,7 +34,7 @@ module Feldspar.Vector.MultiDim (
   maximum,minimum,or,and,any,all,eqVector,scalarProd,chunk,
   OneDim(..),ixmap,
   -- * Functions on two-dimensional vectors
-  mmMult,
+  indexed2,mmMult,
   -- * Push vectors
   Push,
   DPush,Pushy(..),
@@ -400,8 +400,13 @@ laplace steps vec = forLoop steps (store vec) (\ix ->
                     )
 
 
+-- | Create a two-dimensional Pull vector
+indexed2 :: Data Length -> Data Length -> (Data Index -> Data Index -> a) -> Pull DIM2 a
+indexed2 l1 l2 ixf = Pull (\(Z :. i1 :. i2) -> ixf i1 i2) (Z :. l1 :. l2)
+
 -- Matrix Multiplication
 
+-- | Transpose the two innermmost dimensions of a vector
 transposeL :: forall sh e vec.
               (Pully vec (sh :. Data Length :. Data Length), Shapely sh) =>
               vec  (sh :. Data Length :. Data Length) e ->
@@ -411,6 +416,7 @@ transposeL vec
   where swap ((tail :: Shape sh) :. i :. j) = tail :. j :. i
         new_extent         = swap (extent vec)
 
+-- | Transpose a two-dimensional vector
 transpose2D :: Pully vec DIM2 => vec DIM2 e -> Pull DIM2 e
 transpose2D = transposeL
 
