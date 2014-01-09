@@ -9,12 +9,12 @@
 {-# LANGUAGE ConstraintKinds       #-}
 module Feldspar.Vector.MultiDim (
   -- $intro
-  
+
   module Feldspar.Vector.Shape,
   -- * Pull Vectors
   Pull,
   DPull,Pully(..),
-  newExtent,indexed,traverse,reshape,unit,fromZero,
+  indexed,newExtent,traverse,reshape,unit,fromZero,
   replicate,slice,(!:),diagonal,backpermute,
   map,
   zip,zipWith,zip3,zip4,zip5,
@@ -34,7 +34,7 @@ module Feldspar.Vector.MultiDim (
   maximum,minimum,or,and,any,all,eqVector,scalarProd,chunk,
   OneDim(..),ixmap,
   -- * Functions on two-dimensional vectors
-  mmMult,
+  indexed2,mmMult,
   -- * Push vectors
   Push,
   DPush,Pushy(..),
@@ -83,7 +83,7 @@ import Data.Proxy
 -- Vectors are multidimensional. They are parameterized on their shape.
 -- As an example of the syntax, the shape of a two dimensional vector look like
 -- this @Z :. Data Length :. Data Length@. Shapes don't have to be fully
--- determined. A shape with at least two dimensions is written 
+-- determined. A shape with at least two dimensions is written
 -- @sh :. Data Length :. Data Length@ where @sh@ is a type variable.
 
 -- Slices
@@ -171,7 +171,7 @@ thawPull (l,arr) = arrToPull (toShape 0 l) arr
 parShape :: (Type a) => Shape sh -> (Shape sh -> Data a) -> Data [a]
 parShape sh ixf = runMutableArray $ do
                    arr <- newArr_ (size sh)
-                   forShape sh $ \i -> do
+                   forShape sh $ \i ->
                      setArr arr (toIndex sh i) (ixf i)
                    return arr
 
@@ -371,8 +371,8 @@ flatten (Pull ixf1 sh1) = Pull ixf sh
   	       	    (Pull ixf2 _) = ixf1 i1
   	       	in ixf2 i2
         sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh1
-	         (Pull _ sh2) = ixf1 i1
-	     in shapeConc sh1 sh2
+                 (Pull _ sh2) = ixf1 i1
+             in shapeConc sh1 sh2
 
 -- Laplace
 
@@ -400,8 +400,13 @@ laplace steps vec = forLoop steps (store vec) (\ix ->
                     )
 
 
+-- | Create a two-dimensional Pull vector
+indexed2 :: Data Length -> Data Length -> (Data Index -> Data Index -> a) -> Pull DIM2 a
+indexed2 l1 l2 ixf = Pull (\(Z :. i1 :. i2) -> ixf i1 i2) (Z :. l1 :. l2)
+
 -- Matrix Multiplication
 
+-- | Transpose the two innermmost dimensions of a vector
 transposeL :: forall sh e vec.
               (Pully vec (sh :. Data Length :. Data Length), Shapely sh) =>
               vec  (sh :. Data Length :. Data Length) e ->
@@ -411,6 +416,7 @@ transposeL vec
   where swap ((tail :: Shape sh) :. i :. j) = tail :. j :. i
         new_extent         = swap (extent vec)
 
+-- | Transpose a two-dimensional vector
 transpose2D :: Pully vec DIM2 => vec DIM2 e -> Pull DIM2 e
 transpose2D = transposeL
 
@@ -494,7 +500,7 @@ contractLT :: Pully vec (sh :. Data Length :. Data Length) =>
               Pull (sh :. Data Length) a
 contractLT a = contractL $ transL $ a
 
--- | Transform a pull vector to a push vector, but preserve the innermost 
+-- | Transform a pull vector to a push vector, but preserve the innermost
 --   dimension
 dmapS :: (Pull sh1 a1 -> Push sh2 a2) -> Pull (sh1 :. Data Length) a1 -> Push (sh2 :. Data Length) a2
 dmapS f a = uncurryS n $ f . g
@@ -569,13 +575,13 @@ inits vec = indexed1 (length vec + 1) (`take` vec)
 inits1 :: Pully vec DIM1 => vec DIM1 a -> Pull DIM1 (Pull DIM1 a)
 inits1 = tail . inits
 
--- | The call @roteateVecL n vec@ rotates the elements of @vec@ @n@ steps 
---   to the left 
+-- | The call @roteateVecL n vec@ rotates the elements of @vec@ @n@ steps
+--   to the left
 rotateVecL :: Data Index -> Pull DIM1 a -> Pull DIM1 a
 rotateVecL ix = permute1 (\l i -> (i + ix) `rem` l)
 
 -- | The call @roteateVecR n vec@ rotates the elements of @vec@ @n@ steps
---   to the right 
+--   to the right
 rotateVecR :: Data Index -> Pull DIM1 a -> Pull DIM1 a
 rotateVecR ix = reverse . rotateVecL ix . reverse
 
@@ -607,7 +613,7 @@ enumFrom m = enumFromTo m (value maxBound)
 
 -- | Transform all the elements of a vector
 map :: Functor vec => (a -> b) -> vec a -> vec b
-map = fmap 
+map = fmap
 
 -- | Folding a one-dimensional vector
 fold1 :: (Syntax a, Pully vec DIM1) => (a -> a -> a) -> vec DIM1 a -> a
@@ -721,8 +727,8 @@ empty = Push (const (return ())) zeroDim
      -> Push (sh :. Data Length) a
 (Push k1 (sh1 :. l1)) ++ (Push k2 (sh2 :. l2)) = Push k (sh1 :. (l1 + l2))
   where k func = k1 func
-  	       	 >>
-		 k2 (\ (sh :. i) a -> func (sh :. (i + l1)) a)
+                 >>
+                 k2 (\ (sh :. i) a -> func (sh :. (i + l1)) a)
 -- Assumption sh1 == sh2
 
 -- | Concatenation along the outermost dimension where the two vectors have
@@ -731,7 +737,7 @@ empty = Push (const (return ())) zeroDim
       -> Pull (sh :. Data Length) a
       -> Push (sh :. Data Length) a
 (Pull ixf1 (sh1 :. l1)) +=+ (Pull ixf2 (sh2 :. l2))
-	  = Push f (sh1 :. (l1 + l2))
+          = Push f (sh1 :. (l1 + l2))
   where f k = forShape (sh1 :. l1) $ \ (shi :. i) ->
                 do k (shi :. i)      (ixf1 (shi :. i))
                    k (shi :. i + l1) (ixf2 (shi :. i))
@@ -840,8 +846,8 @@ conc :: Selector sel sh =>
 conc s (Push k1 sh1) (Push k2 sh2)
      = Push k (adjustDimension s (+ selectDimension s sh2) sh1)
   where k func = k1 func
-  	       	 >>
-		 k2 (\ sh a -> func (adjustDimension s (+ selectDimension s sh1) sh) a)
+                 >>
+                 k2 (\ sh a -> func (adjustDimension s (+ selectDimension s sh1) sh) a)
 -- Assumption sh1 == sh2
 
 -- | Reverse a vector along a particular dimension.
@@ -860,17 +866,16 @@ instance Pushy Push sh where
 
 instance Pushy Pull sh where
   toPush (Pull ixf l) = Push f l
-    where f k = forShape l (\i ->
+    where f k = forShape l $ \i ->
     	    	  k i (ixf i)
-	        )
 
 -- | Store a vector in memory as a flat array
-fromPush :: Type a =>
-	      Push sh (Data a) -> Data [a]
+fromPush :: Type a
+         => Push sh (Data a) -> Data [a]
 fromPush (Push ixf l) = runMutableArray $
-	   	   	  do marr <- newArr_ (size l)
-			     ixf (\ix a -> setArr marr (toIndex l ix) a)
-			     return marr
+                          do marr <- newArr_ (size l)
+                             ixf (\ix a -> setArr marr (toIndex l ix) a)
+                             return marr
 
 freezePush :: (Type a, Shapely sh) =>
               Push sh (Data a) -> (Data [Length], Data [a])
@@ -896,11 +901,11 @@ flattenList :: Shapely sh => Pull sh [a] -> Push (sh :. Data Length) a
 flattenList (Pull ixf sh) = Push f sz
   where f k = forShape sh $ \i ->
   	      	do let indices = fmap (\j -> i :. j) $
-				 fmap value [0..l-1]
+                                 fmap value [0..l-1]
     	           zipWithM_ k indices (ixf i)
         sz  = sh :. value l
         l   = P.fromIntegral $
-	      P.length (ixf fakeShape)
+              P.length (ixf fakeShape)
 
 
 -- KFFs extensions
@@ -965,7 +970,7 @@ instance Storable Pull where
 instance Storable Push where
   store vec@(Push f sh) = Manifest (fromPush (fmap F.desugar vec)) (fromList (toList sh))
 
-instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where 
+instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where
   type Domain   (Manifest sh a) = FeldDomain
   type Internal (Manifest sh a) = ([Length],[Internal a])
   desugar = desugar . manifestToArr

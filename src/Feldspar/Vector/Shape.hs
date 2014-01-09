@@ -20,10 +20,12 @@ data Shape sh where
   Z :: Shape Z
   (:.) :: Shape tail -> Data Length -> Shape (tail :. Data Length)
 
+-- | The dimensionality of @sh@
 dim :: Shape sh -> Int
 dim Z = 0
 dim (sh :. _) = 1 + dim sh
 
+-- | The total number of elements in @sh@
 size :: Shape sh -> Data Length
 size Z = 1
 size (sh :. i) = size sh * i
@@ -45,21 +47,24 @@ fromIndexOne (ds@(_ :. _) :. d) ix
 intersectDim :: Shape sh -> Shape sh -> Shape sh
 intersectDim Z Z = Z
 intersectDim (sh1 :. n1) (sh2 :. n2)
-  = (intersectDim sh1 sh2 :. (min n1 n2))
+  = intersectDim sh1 sh2 :. min n1 n2
 
 inRange :: Shape sh -> Shape sh -> Shape sh -> Data Bool
 inRange Z Z Z    = true
 inRange (shL :. l) (shU :. u) (sh :. i)
   = l <= i && i < u && inRange shL shU sh
 
+-- | Walk the shape, performing @k@ at each index
 forShape :: Shape sh -> (Shape sh -> M ()) -> M ()
 forShape Z k = k Z
 forShape (sh :. l) k = forM l (\i -> forShape sh (\sh -> k (sh :. i)))
 
-toList :: Shape sh -> [Data Index]
+-- | Unpack the shape to a list with the innermost dimension first
+toList :: Shape sh -> [Data Length]
 toList Z         = []
 toList (sh :. i) = i : toList sh
 
+-- | Deconstruct the shape
 uncons :: Shape (sh :. Data Length) -> (Shape sh, Data Length)
 uncons (sh :. i) = (sh,i)
 
