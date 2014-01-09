@@ -1104,13 +1104,13 @@ class ShapeMap vec where
            -> vec (sh :. Data Length) a
 
 instance ShapeMap Pull where
-  reverse   vec = reversePull (toPull vec)
-  transpose vec = transL (toPull vec)
-  expand  l vec = expandL l (toPull vec)
-  contract  vec = contractL (toPull vec)
+  reverse   vec = reversePull vec
+  transpose vec = transL vec
+  expand  l vec = expandL l vec
+  contract  vec = contractL vec
 
 instance ShapeMap Push where
-  reverse   vec = reversePush (toPush vec)
-  transpose vec = transS (toPush vec)
-  expand  l vec = expandS l (toPush vec)
-  contract  vec = contractS (toPush vec)
+  reverse   vec = reversePush vec
+  transpose vec = transS vec
+  expand  l vec = expandS l vec
+  contract  vec = contractS vec
