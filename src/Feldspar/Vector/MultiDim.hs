@@ -39,6 +39,7 @@ module Feldspar.Vector.MultiDim (
   Push,
   DPush,Pushy(..),
   empty,(++),(+=+),unpair,unpairWith,zipUnpair,riffle,interleave,flattenList,
+  forwardPermute,
   uncurryS,
   -- * Manifest vectors
   Manifest,
@@ -48,7 +49,6 @@ module Feldspar.Vector.MultiDim (
   storeFlat,
   -- * Overloaded functions
   Shaped(..),ShapeMap(..),
-  reverse
   ) where
 
 import qualified Prelude as P
@@ -246,6 +246,10 @@ backpermute :: Pully vec sh =>
   Shape sh' -> (Shape sh' -> Shape sh) ->
   vec sh a -> Pull sh' a
 backpermute sh perm vec = traverse (toPull vec) (const sh) (. perm)
+
+reversePull :: Pull (sh :. Data Length) a -> Pull (sh :. Data Length) a
+reversePull (Pull ixf (sh :. l)) =
+  Pull (\(sh' :. ix) -> ixf (sh' :. (l - ix - 1))) (sh :. l)
 
 -- | Combines the elements of two vectors. The size of the resulting vector
 --   will be the intersection of the two argument vectors.
@@ -777,11 +781,6 @@ zipUnpair :: (Pully vec1 (sh :. Data Length),
              Push (sh :. Data Length) a
 zipUnpair vec1 vec2 = unpair (zip vec1 vec2)
 
--- | Reverse a vector along its outermost dimension
-reverse :: (ShapeMap vec) =>
-           vec (sh :. Data Length) a -> vec (sh :. Data Length) a
-reverse = permute (\(sh :. l) (shi :. i) -> shi :. (l - i - 1))
-
 -- Some helper functions in Repa to help us define riffle
 
 -- | Split a vector in half along the outermost dimension. If there is an odd
@@ -813,6 +812,17 @@ interleave :: (Pully vec1 (sh :. Data Length)
               Push (sh :. Data Length) a
 interleave v1 v2 = unpair (zip v1 v2)
 
+-- | Forward permute a push vector.
+forwardPermute :: Pushy vec1 sh =>
+                  (Shape sh -> Shape sh -> Shape sh) ->
+                  vec1 sh a ->  Push sh a
+forwardPermute p vec = Push g sh
+  where Push f sh = toPush vec
+        g k = f (\ix a -> k (p sh ix) a)
+
+reversePush :: Push (sh :. Data Length) a -> Push (sh :. Data Length) a
+reversePush (Push f (sh :. l)) =
+  Push (\k -> f (\(sh' :. ix) a -> k (sh' :. (l - ix - 1)) a)) (sh :. l)
 
 -- Pinpointing one particular dimension
 
@@ -1079,8 +1089,8 @@ instance Shaped Manifest where
 
 -- | A class with various functions for manipulating the shape of a vector
 class ShapeMap vec where
-  -- | Permute the elements of a vector
-  permute :: (Shape sh -> Shape sh -> Shape sh) -> vec sh a -> vec sh a
+  -- | Reverse a vector along its outermost dimension
+  reverse :: vec (sh :. Data Length) a -> vec (sh :. Data Length) a
   -- | Transpose a vector
   transpose :: vec (sh :. Data Length :. Data Length) a
             -> vec (sh :. Data Length :. Data Length) a
@@ -1094,15 +1104,13 @@ class ShapeMap vec where
            -> vec (sh :. Data Length) a
 
 instance ShapeMap Pull where
-  permute perm vec = Pull (\i -> ixf (perm sh i)) sh
-    where Pull ixf sh = toPull vec
+  reverse   vec = reversePull (toPull vec)
   transpose vec = transL (toPull vec)
   expand  l vec = expandL l (toPull vec)
   contract  vec = contractL (toPull vec)
 
 instance ShapeMap Push where
-  permute perm vec = Push (\k -> f (\i a -> k (perm sh i) a)) sh
-    where (Push f sh) = toPush vec
+  reverse   vec = reversePush (toPush vec)
   transpose vec = transS (toPush vec)
   expand  l vec = expandS l (toPush vec)
   contract  vec = contractS (toPush vec)
