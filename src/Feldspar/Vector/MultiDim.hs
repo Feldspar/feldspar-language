@@ -579,12 +579,12 @@ inits vec = indexed1 (length vec + 1) (`take` vec)
 inits1 :: Pully vec DIM1 => vec DIM1 a -> Pull DIM1 (Pull DIM1 a)
 inits1 = tail . inits
 
--- | The call @roteateVecL n vec@ rotates the elements of @vec@ @n@ steps
+-- | The call @rotateVecL n vec@ rotates the elements of @vec@ @n@ steps
 --   to the left
 rotateVecL :: Data Index -> Pull DIM1 a -> Pull DIM1 a
 rotateVecL ix = permute (\l i -> (i + ix) `rem` l)
 
--- | The call @roteateVecR n vec@ rotates the elements of @vec@ @n@ steps
+-- | The call @rotateVecR n vec@ rotates the elements of @vec@ @n@ steps
 --   to the right
 rotateVecR :: Data Index -> Pull DIM1 a -> Pull DIM1 a
 rotateVecR ix = reverse . rotateVecL ix . reverse
