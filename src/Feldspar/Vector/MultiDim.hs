@@ -24,7 +24,7 @@ module Feldspar.Vector.MultiDim (
   dmapS,dzipWithS,
   -- * Shape concatenation
   ShapeConc(..),
-  flatten,
+  flatten,flattenPush,
   -- * Slices of Pull vectors
   All(..),Any(..),Slice(..),FullShape,SliceShape,sliceOfFull,fullOfSlice,
   -- * Functions on one-dimensional vectors
@@ -364,7 +364,7 @@ instance ShapeConc sh1 sh2 => ShapeConc (sh1 :. Data Length) sh2 where
   splitIndex (sh :. i) (sh1 :. _) = (i1 :. i,i2)
     where (i1,i2) = splitIndex sh sh1
 
--- | Flatten nested vectors.
+-- | Flatten nested pull vectors.
 flatten :: forall a sh1 sh2.
            (Shapely (ShapeConcT sh1 sh2), ShapeConc sh1 sh2) =>
            Pull sh1 (Pull sh2 a) ->
@@ -375,6 +375,19 @@ flatten (Pull ixf1 sh1) = Pull ixf sh
   	       	in ixf2 i2
         sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh1
                  (Pull _ sh2) = ixf1 i1
+             in shapeConc sh1 sh2
+
+-- | Flatten a pull vector of push vectors.
+flattenPush :: forall a sh1 sh2.
+               (Shapely (ShapeConcT sh1 sh2), ShapeConc sh1 sh2) =>
+               Pull sh1 (Push sh2 a) ->
+               Push (ShapeConcT sh1 sh2) a
+flattenPush (Pull ixf sh1) = Push f sh
+  where f k = forShape sh1 $ \i ->
+                let Push g sh' = ixf i
+                in  g (\j a -> k (shapeConc i j) a)
+        sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh1
+                 (Push _ sh2) = ixf i1
              in shapeConc sh1 sh2
 
 -- Laplace
