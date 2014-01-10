@@ -6,7 +6,6 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE ConstraintKinds       #-}
 module Feldspar.Vector.MultiDim (
   -- $intro
 
