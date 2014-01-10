@@ -32,7 +32,7 @@ module Feldspar.Vector.MultiDim (
   indexed1,length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
   rotateVecL,rotateVecR,replicate1,enumFromTo,enumFrom,(...),fold1,
   maximum,minimum,or,and,any,all,eqVector,scalarProd,chunk,
-  OneDim(..),ixmap,
+  permute,ixmap,
   -- * Functions on two-dimensional vectors
   indexed2,mmMult,
   -- * Push vectors
@@ -582,7 +582,7 @@ inits1 = tail . inits
 -- | The call @roteateVecL n vec@ rotates the elements of @vec@ @n@ steps
 --   to the left
 rotateVecL :: Data Index -> Pull DIM1 a -> Pull DIM1 a
-rotateVecL ix = permute1 (\l i -> (i + ix) `rem` l)
+rotateVecL ix = permute (\l i -> (i + ix) `rem` l)
 
 -- | The call @roteateVecR n vec@ rotates the elements of @vec@ @n@ steps
 --   to the right
@@ -691,26 +691,17 @@ chunk c f g vec = Push loop (Z :. (noc * c))
                          k (\(Z :. j) a -> func (Z :. (c*i + j)) a)
         v = toPull vec
 
-
--- | An overloaded function for reordering elements of a one-dimensional vector.
-class OneDim vec where
-  -- | Permutes the elements of a one-dimensional vector according to the
-  --   supplied function. It is important that the first argument is bijection
-  --   otherwise the result is undefined.
-  permute1 :: (Data Length -> Data Index -> Data Index) -> vec a -> vec a
-
-instance OneDim (Pull DIM1) where
-  permute1 perm (Pull ixf sh@(Z :. l))
-    = Pull (\(Z :. i) -> ixf (Z :. perm l i)) sh
-
-instance OneDim (Push DIM1) where
-  permute1 perm (Push f sh@(Z :. l)) =
-    Push (\k -> f (\(Z :. i) a -> k (Z :. (perm l i)) a)) sh
+-- | Permutes the elements of a one-dimensional vector according to the
+--   supplied function. It is important that the first argument is bijection
+--   otherwise the result is undefined.
+permute :: (Data Length -> Data Index -> Data Index) ->
+           Pull DIM1 a -> Pull DIM1 a
+permute perm (Pull ixf sh@(Z :. l))
+  = Pull (\(Z :. i) -> ixf (Z :. perm l i)) sh
 
 -- | Like 'permute' but without the length-parameter to the permutation function
-ixmap :: OneDim vec =>
-         (Data Index -> Data Index) -> vec a -> vec a
-ixmap perm  = permute1 (const perm)
+ixmap :: (Data Index -> Data Index) -> Pull DIM1 a -> Pull DIM1 a
+ixmap perm  = permute (const perm)
 
 -- Multidimensional push vectors
 data Push sh a = Push ((Shape sh -> a -> M ()) -> M ()) (Shape sh)
