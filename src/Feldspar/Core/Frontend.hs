@@ -132,6 +132,7 @@ import Feldspar.Core.Frontend.Save             as Frontend
 import Feldspar.Core.Frontend.SizeProp         as Frontend
 import Feldspar.Core.Frontend.SourceInfo       as Frontend
 import Feldspar.Core.Frontend.Switch           as Frontend
+import Feldspar.Core.Frontend.RealFloat        as Frontend
 import Feldspar.Core.Frontend.Trace            as Frontend
 import Feldspar.Core.Frontend.Tuple            as Frontend
 

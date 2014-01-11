@@ -51,7 +51,6 @@ import Prelude
   , Monad (..)
   , Num (..)
   , Read (..)
-  , RealFloat (..)
   , Show (..)
 
   , (.)

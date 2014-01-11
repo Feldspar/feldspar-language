@@ -73,5 +73,5 @@ instance (Eq a, Eq b, Eq c, Eq d, Eq e)             => Eq (a,b,c,d,e)
 instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f)       => Eq (a,b,c,d,e,f)
 instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g) => Eq (a,b,c,d,e,f,g)
 
-instance (Eq a, RealFloat a) => Eq (Complex a)
+instance (Eq a, P.RealFloat a) => Eq (Complex a)
 

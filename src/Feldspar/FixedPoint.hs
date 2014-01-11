@@ -191,7 +191,7 @@ instance (Bits a) => Fixable (Fix a) where
 
 instance Fixable (Data Float) where
     fix = const id
-    getExp = const $ fromInteger $ toInteger $ Feldspar.exponent (0.0 :: Float)
+    getExp = const $ fromInteger $ toInteger $ Prelude.exponent (0.0 :: Float)
 
 data T a = T
 
