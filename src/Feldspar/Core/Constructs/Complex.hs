@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -66,20 +67,19 @@ instance Semantic COMPLEX
     semantics Phase     = Sem "phase"     phase
     semantics Cis       = Sem "cis"       cis
 
-instance Equality COMPLEX where equal = equalDefault; exprHash = exprHashDefault
-instance Render   COMPLEX where renderArgs = renderArgsDefault
-instance ToTree   COMPLEX
-instance Eval     COMPLEX where evaluate = evaluateDefault
+semanticInstances ''COMPLEX
+
 instance EvalBind COMPLEX where evalBindSym = evalBindSymDefault
+
+instance AlphaEq dom dom dom env => AlphaEq COMPLEX COMPLEX dom env
+  where
+    alphaEqSym = alphaEqSymDefault
+
 instance Sharable COMPLEX
 
 instance SizeProp (COMPLEX :|| Type)
   where
     sizeProp (C' s) = sizePropDefault s
-
-instance AlphaEq dom dom dom env => AlphaEq COMPLEX COMPLEX dom env
-  where
-    alphaEqSym = alphaEqSymDefault
 
 instance ( (COMPLEX :|| Type) :<: dom
          , OptimizeSuper dom)

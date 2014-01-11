@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -70,16 +71,15 @@ instance Semantic INTEGRAL
     semantics Mod  = Sem "mod"  mod
     semantics Exp  = Sem "(^)"  (^)
 
-instance Equality INTEGRAL where equal = equalDefault; exprHash = exprHashDefault
-instance Render   INTEGRAL where renderArgs = renderArgsDefault
-instance ToTree   INTEGRAL
-instance Eval     INTEGRAL where evaluate = evaluateDefault
+semanticInstances ''INTEGRAL
+
 instance EvalBind INTEGRAL where evalBindSym = evalBindSymDefault
-instance Sharable INTEGRAL
 
 instance AlphaEq dom dom dom env => AlphaEq INTEGRAL INTEGRAL dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable INTEGRAL
 
 instance SizeProp (INTEGRAL :|| Type)
   where

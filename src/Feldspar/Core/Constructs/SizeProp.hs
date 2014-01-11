@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -52,17 +53,16 @@ instance Semantic PropSize
   where
     semantics (PropSize _) = Sem "propSize" (const id)
 
-instance Equality PropSize where equal = equalDefault; exprHash = exprHashDefault
-instance Render   PropSize where renderArgs = renderArgsDefault
-instance ToTree   PropSize
-instance Eval     PropSize where evaluate = evaluateDefault
+semanticInstances ''PropSize
+
 instance EvalBind PropSize where evalBindSym = evalBindSymDefault
-instance Sharable PropSize
 
 instance SizeProp (PropSize :|| Type)
   where
     sizeProp (C' (PropSize prop)) (WrapFull a :* WrapFull b :* Nil) =
         prop (infoSize a) /\ infoSize b
+
+instance Sharable PropSize
 
 instance AlphaEq dom dom dom env => AlphaEq PropSize PropSize dom env
   where

@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -85,20 +86,19 @@ instance Semantic FLOATING
     semantics Atanh   = Sem "atanh"   Prelude.atanh
     semantics Acosh   = Sem "acosh"   Prelude.acosh
 
-instance Equality FLOATING where equal = equalDefault; exprHash = exprHashDefault
-instance Render   FLOATING where renderArgs = renderArgsDefault
-instance ToTree   FLOATING
-instance Eval     FLOATING where evaluate = evaluateDefault
+semanticInstances ''FLOATING
+
 instance EvalBind FLOATING where evalBindSym = evalBindSymDefault
+
+instance AlphaEq dom dom dom env => AlphaEq FLOATING FLOATING dom env
+  where
+    alphaEqSym = alphaEqSymDefault
+
 instance Sharable FLOATING
 
 instance SizeProp (FLOATING :|| Type)
   where
     sizeProp (C' s) = sizePropDefault s
-
-instance AlphaEq dom dom dom env => AlphaEq FLOATING FLOATING dom env
-  where
-    alphaEqSym = alphaEqSymDefault
 
 instance ( (FLOATING :|| Type) :<: dom
          , OptimizeSuper dom)

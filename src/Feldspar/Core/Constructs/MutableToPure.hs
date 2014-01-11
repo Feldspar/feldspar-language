@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -73,22 +74,20 @@ withArrayEval ma f
     = do a <- f (elems (unsafePerformIO $ freeze ma :: Array WordN a))
          C.evaluate a
 
-instance Equality MutableToPure where equal = equalDefault; exprHash = exprHashDefault
-instance Render   MutableToPure where renderArgs = renderArgsDefault
-instance ToTree   MutableToPure
-instance Eval     MutableToPure where evaluate = evaluateDefault
-instance EvalBind MutableToPure where evalBindSym = evalBindSymDefault
-instance Sharable MutableToPure
-
 instance Typed MutableToPure
   where
     typeDictSym RunMutableArray = Just Dict
     typeDictSym _ = Nothing
 
+semanticInstances ''MutableToPure
+
+instance EvalBind MutableToPure where evalBindSym = evalBindSymDefault
 
 instance AlphaEq dom dom dom env => AlphaEq MutableToPure MutableToPure dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable MutableToPure
 
 instance SizeProp MutableToPure
   where

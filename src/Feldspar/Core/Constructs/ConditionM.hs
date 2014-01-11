@@ -55,12 +55,13 @@ instance Semantic (ConditionM m)
       where
         ifM cond e t = if cond then e else t
 
-instance Equality (ConditionM m) where equal = equalDefault; exprHash = exprHashDefault
-instance Render   (ConditionM m) where renderArgs = renderArgsDefault
-instance ToTree   (ConditionM m)
-instance Eval     (ConditionM m) where evaluate = evaluateDefault
-instance EvalBind (ConditionM m) where evalBindSym = evalBindSymDefault
-instance Sharable (ConditionM m)
+instance Equality   (ConditionM m) where equal = equalDefault; exprHash = exprHashDefault
+instance Render     (ConditionM m) where renderSym  = renderSymDefault
+                                         renderArgs = renderArgsDefault
+instance StringTree (ConditionM m)
+instance Eval       (ConditionM m) where evaluate = evaluateDefault
+instance EvalBind   (ConditionM m) where evalBindSym = evalBindSymDefault
+instance Sharable   (ConditionM m)
 
 instance AlphaEq dom dom dom env =>
     AlphaEq (ConditionM m) (ConditionM m) dom env

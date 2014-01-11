@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -139,16 +140,15 @@ evalBitCount b = loop b (bitSize b - 1) 0
                | testBit x i   = loop x (i-1) (n+1)
                | otherwise     = loop x (i-1) n
 
-instance Equality BITS where equal = equalDefault; exprHash = exprHashDefault
-instance Render   BITS where renderArgs = renderArgsDefault
-instance ToTree   BITS
-instance Eval     BITS where evaluate = evaluateDefault
+semanticInstances ''BITS
+
 instance EvalBind BITS where evalBindSym = evalBindSymDefault
-instance Sharable BITS
 
 instance AlphaEq dom dom dom env => AlphaEq BITS BITS dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable BITS
 
 instance SizeProp (BITS :|| Type)
   where

@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -62,16 +63,13 @@ instance Semantic Mutable
   where
     semantics Run = Sem "runMutable" unsafePerformIO
 
-instance Equality Mutable where equal = equalDefault; exprHash = exprHashDefault
-instance Render   Mutable where renderArgs = renderArgsDefault
-instance ToTree   Mutable
-instance Eval     Mutable where evaluate = evaluateDefault
-instance EvalBind Mutable where evalBindSym = evalBindSymDefault
-instance Sharable Mutable
-
 instance Typed Mutable
   where
     typeDictSym Run = Just Dict
+
+semanticInstances ''Mutable
+
+instance EvalBind Mutable where evalBindSym = evalBindSymDefault
 
 instance AlphaEq dom dom dom env => AlphaEq Mutable Mutable dom env
   where
@@ -85,6 +83,8 @@ instance SizeProp (MONAD Mut)
     sizeProp Bind   (_ :* WrapFull f :* Nil) = snd $ infoSize f
     sizeProp Then   (_ :* WrapFull b :* Nil) = infoSize b
     sizeProp When   _                        = AnySize
+
+instance Sharable Mutable
 
 instance SizeProp Mutable
   where

@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -85,16 +86,15 @@ instance Semantic Conversion
     semantics Ceiling = Sem "ceiling" ceiling
     semantics Floor   = Sem "floor"   floor
 
-instance Equality Conversion where equal = equalDefault; exprHash = exprHashDefault
-instance Render   Conversion where renderArgs = renderArgsDefault
-instance Eval     Conversion where evaluate = evaluateDefault
-instance ToTree   Conversion
+semanticInstances ''Conversion
+
 instance EvalBind Conversion where evalBindSym = evalBindSymDefault
-instance Sharable Conversion
 
 instance AlphaEq dom dom dom env => AlphaEq Conversion Conversion dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable Conversion
 
 instance SizeProp (Conversion :|| Type)
   where

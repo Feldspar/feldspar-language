@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -50,16 +51,15 @@ instance Semantic Save
   where
     semantics Save = Sem "save" id
 
-instance Equality Save where equal = equalDefault; exprHash = exprHashDefault
-instance Render   Save where renderArgs = renderArgsDefault
-instance ToTree   Save
-instance Eval     Save where evaluate = evaluateDefault
+semanticInstances ''Save
+
 instance EvalBind Save where evalBindSym = evalBindSymDefault
-instance Sharable Save
 
 instance AlphaEq dom dom dom env => AlphaEq Save Save dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable Save
 
 instance SizeProp (Save :|| Type)
   where

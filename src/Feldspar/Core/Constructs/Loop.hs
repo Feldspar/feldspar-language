@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -89,19 +90,17 @@ instance Semantic Loop
             go st | cond st   = go $ body st
                   | otherwise = st
 
-instance Monad m => Equality (LoopM m) where equal = equalDefault; exprHash = exprHashDefault
-instance Monad m => Render   (LoopM m) where renderArgs = renderArgsDefault
-instance Monad m => ToTree   (LoopM m)
-instance Monad m => Eval     (LoopM m) where evaluate = evaluateDefault
-instance Monad m => EvalBind (LoopM m) where evalBindSym = evalBindSymDefault
-instance Sharable (LoopM m)
+instance Monad m => Equality   (LoopM m) where equal = equalDefault; exprHash = exprHashDefault
+instance Monad m => Render     (LoopM m) where renderSym  = renderSymDefault
+                                               renderArgs = renderArgsDefault
+instance Monad m => StringTree (LoopM m)
+instance Monad m => Eval       (LoopM m) where evaluate = evaluateDefault
+instance Monad m => EvalBind   (LoopM m) where evalBindSym = evalBindSymDefault
+instance            Sharable   (LoopM m)
 
-instance Equality Loop where equal = equalDefault; exprHash = exprHashDefault
-instance Render   Loop where renderArgs = renderArgsDefault
-instance ToTree   Loop
-instance Eval     Loop where evaluate = evaluateDefault
+semanticInstances ''Loop
+
 instance EvalBind Loop where evalBindSym = evalBindSymDefault
-instance Sharable Loop
 
 instance (AlphaEq dom dom dom env, Monad m) =>
     AlphaEq (LoopM m) (LoopM m) dom env
@@ -111,6 +110,8 @@ instance (AlphaEq dom dom dom env, Monad m) =>
 instance AlphaEq dom dom dom env => AlphaEq Loop Loop dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable Loop
 
 instance SizeProp (LoopM m)
   where

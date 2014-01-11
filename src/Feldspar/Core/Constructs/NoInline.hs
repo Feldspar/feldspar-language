@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -49,20 +50,19 @@ instance Semantic NoInline
   where
     semantics NoInline  = Sem "NoInline" id
 
-instance Equality NoInline where equal = equalDefault; exprHash = exprHashDefault
-instance Render   NoInline where renderArgs = renderArgsDefault
-instance ToTree   NoInline
-instance Eval     NoInline where evaluate = evaluateDefault
+semanticInstances ''NoInline
+
 instance EvalBind NoInline where evalBindSym = evalBindSymDefault
+
+instance AlphaEq dom dom dom env => AlphaEq NoInline NoInline dom env
+  where
+    alphaEqSym = alphaEqSymDefault
+
 instance Sharable NoInline
 
 instance SizeProp (NoInline :|| Type)
   where
     sizeProp (C' s) = sizePropDefault s
-
-instance AlphaEq dom dom dom env => AlphaEq NoInline NoInline dom env
-  where
-    alphaEqSym = alphaEqSymDefault
 
 instance ( (NoInline :|| Type) :<: dom
          , OptimizeSuper dom)

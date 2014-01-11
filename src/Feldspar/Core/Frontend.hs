@@ -91,7 +91,7 @@ import Test.QuickCheck
 import Data.Patch
 
 import Language.Syntactic hiding
-    (desugar, sugar, resugar, printExpr, showAST, drawAST)
+    (desugar, sugar, resugar, showAST, drawAST)
 import qualified Language.Syntactic as Syntactic
 import qualified Language.Syntactic.Constructs.Decoration as Syntactic
 import Language.Syntactic.Constructs.Binding
@@ -100,7 +100,7 @@ import Language.Syntactic.Sharing.SimpleCodeMotion
 
 import Feldspar.Range
 import Feldspar.Core.Types
-import Feldspar.Core.Interpretation hiding (showDecor, drawDecor)
+import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Binding (cLambda)
 import Feldspar.Core.Frontend.Array            as Frontend
@@ -132,6 +132,7 @@ import Feldspar.Core.Frontend.Save             as Frontend
 import Feldspar.Core.Frontend.SizeProp         as Frontend
 import Feldspar.Core.Frontend.SourceInfo       as Frontend
 import Feldspar.Core.Frontend.Switch           as Frontend
+import Feldspar.Core.Frontend.RealFloat        as Frontend
 import Feldspar.Core.Frontend.Trace            as Frontend
 import Feldspar.Core.Frontend.Tuple            as Frontend
 
@@ -200,15 +201,15 @@ showExpr = render . reifyFeld defaultFeldOpts N32
 
 -- | Print an optimized expression
 printExpr :: SyntacticFeld a => a -> IO ()
-printExpr = Syntactic.printExpr . reifyFeld defaultFeldOpts N32
+printExpr = print . reifyFeld defaultFeldOpts N32
 
 -- | Print an optimized expression with options
 printExprWith :: SyntacticFeld a => FeldOpts -> a -> IO ()
-printExprWith opts = Syntactic.printExpr . reifyFeld opts N32
+printExprWith opts = print . reifyFeld opts N32
 
 -- | Print an unoptimized expression
 printExprUnOpt :: SyntacticFeld a => a -> IO ()
-printExprUnOpt = Syntactic.printExpr . reifyFeldUnOpt defaultFeldOpts N32
+printExprUnOpt = print . reifyFeldUnOpt defaultFeldOpts N32
 
 showAST :: SyntacticFeld a => a -> String
 showAST = Syntactic.showAST . reifyFeld defaultFeldOpts N32
@@ -218,11 +219,11 @@ drawAST = Syntactic.drawAST . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
 showDecor :: SyntacticFeld a => a -> String
-showDecor = Syntactic.showDecor . reifyFeld defaultFeldOpts N32
+showDecor = Syntactic.showDecorWith show . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
 drawDecor :: SyntacticFeld a => a -> IO ()
-drawDecor = Syntactic.drawDecor . reifyFeld defaultFeldOpts N32
+drawDecor = Syntactic.drawDecorWith show . reifyFeld defaultFeldOpts N32
 
 eval :: SyntacticFeld a => a -> Internal a
 eval = evalBind . reifyFeld defaultFeldOpts N32

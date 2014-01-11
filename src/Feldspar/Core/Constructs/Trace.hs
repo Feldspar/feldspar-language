@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -63,16 +64,15 @@ instance Constrained Trace
       type Sat Trace = Type
       exprDict Trace = Dict
 
-instance Equality Trace where equal = equalDefault; exprHash = exprHashDefault
-instance Render   Trace where renderArgs = renderArgsDefault
-instance ToTree   Trace
-instance Eval     Trace where evaluate = evaluateDefault
+semanticInstances ''Trace
+
 instance EvalBind Trace where evalBindSym = evalBindSymDefault
-instance Sharable Trace
 
 instance AlphaEq dom dom dom env => AlphaEq Trace Trace dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable Trace
 
 instance SizeProp (Trace :|| Type)
   where

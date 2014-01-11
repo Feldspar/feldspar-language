@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -21,16 +22,15 @@ instance Semantic Switch
   where
     semantics Switch = Sem "switch" id
 
-instance Equality Switch where equal = equalDefault; exprHash = exprHashDefault
-instance Render   Switch where renderArgs = renderArgsDefault
-instance ToTree   Switch
-instance Eval     Switch where evaluate = evaluateDefault
+semanticInstances ''Switch
+
 instance EvalBind Switch where evalBindSym = evalBindSymDefault
-instance Sharable Switch
 
 instance AlphaEq dom dom dom env => AlphaEq Switch Switch dom env
   where
     alphaEqSym = alphaEqSymDefault
+
+instance Sharable Switch
 
 instance SizeProp (Switch :|| Type)
   where

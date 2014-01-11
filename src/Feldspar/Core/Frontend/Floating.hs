@@ -83,3 +83,5 @@ instance Floating Double
 
 instance (Fraction a, Prelude.RealFloat a) => Floating (Complex a)
 
+π :: Floating a => Data a
+π = pi
