@@ -96,12 +96,12 @@ instance Semantic BITS
     semantics ComplementBit = Sem "complementBit" (liftIntWord complementBit)
     semantics TestBit       = Sem "testBit"       (liftIntWord testBit)
 
-    semantics ShiftLU       = Sem "shiftL"      (liftIntWord shiftL)
-    semantics ShiftRU       = Sem "shiftR"      (liftIntWord shiftR)
+    semantics ShiftLU       = Sem "shiftLU"     (liftIntWord shiftL)
+    semantics ShiftRU       = Sem "shiftRU"     (liftIntWord shiftR)
     semantics ShiftL        = Sem "shiftL"      (liftInt shiftL)
     semantics ShiftR        = Sem "shiftR"      (liftInt shiftR)
-    semantics RotateLU      = Sem "rotateL"     (liftIntWord rotateL)
-    semantics RotateRU      = Sem "rotateR"     (liftIntWord rotateR)
+    semantics RotateLU      = Sem "rotateLU"    (liftIntWord rotateL)
+    semantics RotateRU      = Sem "rotateRU"    (liftIntWord rotateR)
     semantics RotateL       = Sem "rotateL"     (liftInt rotateL)
     semantics RotateR       = Sem "rotateR"     (liftInt rotateR)
     semantics ReverseBits   = Sem "reverseBits" evalReverseBits
