@@ -208,6 +208,13 @@ instance ( (BITS  :|| Type) :<: dom
         = do tb <- constructFeat opts (c' TestBit) (v1 :* v3 :* Nil)
              constructFeat opts (c' Not) (tb :* Nil)
 
+    -- shiftRU (shiftRU b i) j ==> shiftRU b (shiftRU i j)
+    constructFeatOpt opts x@(C' ShiftRU) ((op :$ a :$ b) :* c :* Nil)
+        | Just (C' ShiftRU) <- prjF op
+        , Just i <- viewLiteral a
+        , Just j <- viewLiteral c
+        = constructFeat opts x (literalDecor (i `shiftR` fromIntegral j) :* b :* Nil)
+
     constructFeatOpt opts x@(C' ShiftLU)  args = optZero opts x args
     constructFeatOpt opts x@(C' ShiftRU)  args = optZero opts x args
     constructFeatOpt opts x@(C' ShiftL)   args = optZero opts x args
