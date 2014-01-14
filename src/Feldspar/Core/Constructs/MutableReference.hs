@@ -76,6 +76,8 @@ instance AlphaEq dom dom dom env =>
 
 instance Sharable MutableReference
 
+instance Monotonic MutableReference
+
 instance SizeProp MutableReference
   where
     sizeProp NewRef _ = universal

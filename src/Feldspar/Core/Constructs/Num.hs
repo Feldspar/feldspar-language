@@ -80,6 +80,8 @@ instance AlphaEq dom dom dom env => AlphaEq NUM NUM dom env
 
 instance Sharable NUM
 
+instance Monotonic NUM
+
 instance SizeProp (NUM :|| Type)
   where
     sizeProp (C' Abs)  (WrapFull a :* Nil)               = abs (infoSize a)

@@ -62,6 +62,7 @@ instance StringTree (ConditionM m)
 instance Eval       (ConditionM m) where evaluate = evaluateDefault
 instance EvalBind   (ConditionM m) where evalBindSym = evalBindSymDefault
 instance Sharable   (ConditionM m)
+instance Monotonic  (ConditionM m)
 
 instance AlphaEq dom dom dom env =>
     AlphaEq (ConditionM m) (ConditionM m) dom env

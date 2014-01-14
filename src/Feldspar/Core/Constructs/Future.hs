@@ -65,6 +65,8 @@ instance Sharable FUTURE
     hoistOver MkFuture = False
     hoistOver _        = True
 
+instance Monotonic FUTURE
+
 instance SizeProp (FUTURE :|| Type)
   where
     sizeProp (C' MkFuture) (WrapFull a :* Nil) = infoSize a

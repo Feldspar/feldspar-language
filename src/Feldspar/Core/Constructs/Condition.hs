@@ -49,6 +49,8 @@ import Feldspar.Core.Constructs.Logic
 
 instance Sharable Condition
 
+instance Monotonic Condition
+
 instance SizeProp (Condition :|| Type)
   where
     sizeProp (C' Condition) (_ :* WrapFull t :* WrapFull f :* Nil)

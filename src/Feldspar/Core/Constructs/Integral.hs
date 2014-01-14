@@ -81,6 +81,8 @@ instance AlphaEq dom dom dom env => AlphaEq INTEGRAL INTEGRAL dom env
 
 instance Sharable INTEGRAL
 
+instance Monotonic INTEGRAL
+
 instance SizeProp (INTEGRAL :|| Type)
   where
     sizeProp (C' Quot) (WrapFull a :* WrapFull b :* Nil) = rangeQuot (infoSize a) (infoSize b)

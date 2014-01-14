@@ -80,6 +80,8 @@ instance AlphaEq dom dom dom env => AlphaEq ORD ORD dom env
 
 instance Sharable ORD
 
+instance Monotonic ORD
+
 instance SizeProp (ORD :|| Type)
   where
     sizeProp (C' Min) (WrapFull a :* WrapFull b :* Nil) = min (infoSize a) (infoSize b)

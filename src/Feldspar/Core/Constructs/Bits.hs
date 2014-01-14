@@ -150,6 +150,8 @@ instance AlphaEq dom dom dom env => AlphaEq BITS BITS dom env
 
 instance Sharable BITS
 
+instance Monotonic BITS
+
 instance SizeProp (BITS :|| Type)
   where
     sizeProp (C' BAnd) (WrapFull a :* WrapFull b :* Nil) = rangeAnd (infoSize a) (infoSize b)

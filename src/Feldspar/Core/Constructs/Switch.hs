@@ -32,6 +32,8 @@ instance AlphaEq dom dom dom env => AlphaEq Switch Switch dom env
 
 instance Sharable Switch
 
+instance Monotonic Switch
+
 instance SizeProp (Switch :|| Type)
   where
     sizeProp (C' Switch) (WrapFull sz :* Nil) = infoSize sz

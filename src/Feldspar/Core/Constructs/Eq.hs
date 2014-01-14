@@ -67,6 +67,8 @@ instance AlphaEq dom dom dom env => AlphaEq EQ EQ dom env
 
 instance Sharable EQ
 
+instance Monotonic EQ
+
 instance SizeProp (EQ :|| Type)
   where sizeProp a@(C' _) = sizePropDefault a
 
