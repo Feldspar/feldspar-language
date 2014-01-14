@@ -150,7 +150,14 @@ instance AlphaEq dom dom dom env => AlphaEq BITS BITS dom env
 
 instance Sharable BITS
 
-instance Monotonic BITS
+instance Monotonic BITS where
+    monotonicInc _ _ = []
+
+    monotonicDec ShiftRU (a :* b :* Nil)
+        | RangeSet r <- infoRange $ getInfo b
+        , isNatural r
+        = [a]
+    monotonicDec _ _ = []
 
 instance SizeProp (BITS :|| Type)
   where
