@@ -170,6 +170,7 @@ instance ( (BITS  :|| Type) :<: dom
          , (Logic :|| Type) :<: dom
          , (EQ    :|| Type) :<: dom
          , (ORD   :|| Type) :<: dom
+         , Monotonic dom
          , OptimizeSuper dom
          )
       => Optimize (BITS :|| Type) dom

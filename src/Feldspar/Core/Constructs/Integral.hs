@@ -99,6 +99,7 @@ instance
     , (COMPLEX :|| Type) :<: dom
     , (Condition :||Type) :<: dom
     , (Logic     :||Type) :<: dom
+    , Monotonic dom
     , OptimizeSuper dom
     , Optimize (Condition :|| Type) dom
     ) =>

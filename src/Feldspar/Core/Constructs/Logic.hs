@@ -83,6 +83,7 @@ instance SizeProp (Logic :|| Type)
 instance ( (Logic :|| Type) :<: dom
          , (EQ    :|| Type) :<: dom
          , (ORD   :|| Type) :<: dom
+         , Monotonic dom
          , OptimizeSuper dom
          )
       => Optimize (Logic :|| Type) dom
