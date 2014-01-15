@@ -729,23 +729,32 @@ empty :: Shapely sh => Push sh a
 empty = Push (const (return ())) zeroDim
 
 -- | Concatenation along the the outmost dimension
-(++) :: Push (sh :. Data Length) a
+(++) :: (Pushy vec1 (sh :. Data Length), Pushy vec2 (sh :. Data Length)) =>
+        vec1 (sh :. Data Length) a
+     -> vec2 (sh :. Data Length) a
      -> Push (sh :. Data Length) a
-     -> Push (sh :. Data Length) a
-(Push k1 (sh1 :. l1)) ++ (Push k2 (sh2 :. l2)) = Push k (sh1 :. (l1 + l2))
-  where k func = k1 func
+vec1 ++ vec2 = Push k (sh1 :. (l1 + l2))
+  where Push k1 ext1 = toPush vec1
+        Push k2 ext2 = toPush vec2
+        (sh1,l1) = uncons ext1
+        (sh2,l2) = uncons ext2
+        k func = k1 func
                  >>
                  k2 (\ (sh :. i) a -> func (sh :. (i + l1)) a)
 -- Assumption sh1 == sh2
 
 -- | Concatenation along the outermost dimension where the two vectors have
 --   the same length. There is no check that the lengths are equal.
-(+=+) :: Pull (sh :. Data Length) a
-      -> Pull (sh :. Data Length) a
+(+=+) :: (Pully vec1 (sh :. Data Length), Pully vec2 (sh :. Data Length)) =>
+         vec1 (sh :. Data Length) a
+      -> vec2 (sh :. Data Length) a
       -> Push (sh :. Data Length) a
-(Pull ixf1 (sh1 :. l1)) +=+ (Pull ixf2 (sh2 :. l2))
-          = Push f (sh1 :. (l1 + l2))
-  where f k = forShape (sh1 :. l1) $ \ (shi :. i) ->
+vec1 +=+ vec2 = Push f (sh1 :. (l1 + l2))
+  where Pull ixf1 ext1 = toPull vec1
+        Pull ixf2 ext2 = toPull vec2
+        (sh1,l1) = uncons ext1
+        (sh2,l2) = uncons ext2
+        f k = forShape (sh1 :. l1) $ \ (shi :. i) ->
                 do k (shi :. i)      (ixf1 (shi :. i))
                    k (shi :. i + l1) (ixf2 (shi :. i))
 
