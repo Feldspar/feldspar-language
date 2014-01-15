@@ -1,67 +1,34 @@
 <<WordN -> WordN -> WordN | (Range {lowerBound = 0, upperBound = 4294967295},(Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 1, upperBound = 6}))>>
-|
-`- Lambda 0
-   |
-   `- <<WordN -> WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 1, upperBound = 6})>>
-      |
-      `- Lambda 1
-         |
-         `- <<WordN | Range {lowerBound = 1, upperBound = 6}>>
-            |
-            `- Let
-               |
-               +- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-               |  |
-               |  `- (+)
-               |     |
-               |     +- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-               |     |  |
-               |     |  `- var:0
-               |     |
-               |     `- <<WordN | Range {lowerBound = 5, upperBound = 5}>>
-               |        |
-               |        `- 5
-               |
-               `- <<WordN -> WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 1, upperBound = 6})>>
-                  |
-                  `- Lambda 2
-                     |
-                     `- <<WordN | Range {lowerBound = 1, upperBound = 6}>>
-                        |
-                        `- condition
-                           |
-                           +- <<Bool>>
-                           |  |
-                           |  `- (<)
-                           |     |
-                           |     +- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                           |     |  |
-                           |     |  `- var:1
-                           |     |
-                           |     `- <<WordN | Range {lowerBound = 5, upperBound = 5}>>
-                           |        |
-                           |        `- 5
-                           |
-                           +- <<WordN | Range {lowerBound = 2, upperBound = 6}>>
-                           |  |
-                           |  `- (!)
-                           |     |
-                           |     +- <<[WordN] | Range {lowerBound = 5, upperBound = 5} :> Range {lowerBound = 2, upperBound = 6}>>
-                           |     |  |
-                           |     |  `- [2,3,4,5,6]
-                           |     |
-                           |     `- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                           |        |
-                           |        `- var:2
-                           |
-                           `- <<WordN | Range {lowerBound = 1, upperBound = 5}>>
-                              |
-                              `- (!)
-                                 |
-                                 +- <<[WordN] | Range {lowerBound = 5, upperBound = 5} :> Range {lowerBound = 1, upperBound = 5}>>
-                                 |  |
-                                 |  `- [1,2,3,4,5]
-                                 |
-                                 `- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                    |
-                                    `- var:2
+ └╴Lambda 0
+    └╴<<WordN -> WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 1, upperBound = 6})>>
+       └╴Lambda 1
+          └╴<<WordN | Range {lowerBound = 1, upperBound = 6}>>
+             └╴Let
+                ├╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                │  └╴(+)
+                │     ├╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                │     │  └╴var:0
+                │     └╴<<WordN | Range {lowerBound = 5, upperBound = 5}>>
+                │        └╴5
+                └╴<<WordN -> WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 1, upperBound = 6})>>
+                   └╴Lambda 2
+                      └╴<<WordN | Range {lowerBound = 1, upperBound = 6}>>
+                         └╴condition
+                            ├╴<<Bool>>
+                            │  └╴(<)
+                            │     ├╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                            │     │  └╴var:1
+                            │     └╴<<WordN | Range {lowerBound = 5, upperBound = 5}>>
+                            │        └╴5
+                            ├╴<<WordN | Range {lowerBound = 2, upperBound = 6}>>
+                            │  └╴(!)
+                            │     ├╴<<[WordN] | Range {lowerBound = 5, upperBound = 5} :> Range {lowerBound = 2, upperBound = 6}>>
+                            │     │  └╴[2,3,4,5,6]
+                            │     └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                            │        └╴var:2
+                            └╴<<WordN | Range {lowerBound = 1, upperBound = 5}>>
+                               └╴(!)
+                                  ├╴<<[WordN] | Range {lowerBound = 5, upperBound = 5} :> Range {lowerBound = 1, upperBound = 5}>>
+                                  │  └╴[1,2,3,4,5]
+                                  └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                     └╴var:2
