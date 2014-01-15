@@ -28,7 +28,8 @@ module Feldspar.Vector.MultiDim (
   -- * Slices of Pull vectors
   All(..),Any(..),Slice(..),FullShape,SliceShape,sliceOfFull,fullOfSlice,
   -- * Functions on one-dimensional vectors
-  indexed1,length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
+  value1,indexed1,
+  length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
   rotateVecL,rotateVecR,replicate1,enumFromTo,enumFrom,(...),fold1,
   maximum,minimum,or,and,any,all,eqVector,scalarProd,chunk,
   permute,ixmap,
@@ -532,6 +533,9 @@ dzipWithS f a1 a2 = uncurryS (min m n) $ \ i -> f (g i) (h i)
 
 
 -- Functions on one dimensional Pull vectors
+
+value1 :: Syntax a => [Internal a] -> Manifest DIM1 a
+value1 ls = value ([P.fromIntegral (P.length ls)],ls)
 
 -- | Create a one-dimensional Pull vector
 indexed1 :: Data Length -> (Data Index -> a) -> Pull DIM1 a
