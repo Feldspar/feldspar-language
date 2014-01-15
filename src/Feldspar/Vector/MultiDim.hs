@@ -20,7 +20,7 @@ module Feldspar.Vector.MultiDim (
   unzip,unzip3,unzip4,unzip5,
   fold,fold',sum,
   halve,
-  curryL,uncurryL,dmapL,dzipWithL,
+  expandL,contractL,curryL,uncurryL,dmapL,dzipWithL,
   dmapS,dzipWithS,
   -- * Shape concatenation
   ShapeConc(..),
@@ -39,7 +39,7 @@ module Feldspar.Vector.MultiDim (
   DPush,Pushy(..),
   empty,(++),(+=+),unpair,unpairWith,zipUnpair,riffle,interleave,flattenList,
   forwardPermute,
-  uncurryS,
+  expandS,contractS,uncurryS,
   -- * Manifest vectors
   Manifest,
   Storable(..),
