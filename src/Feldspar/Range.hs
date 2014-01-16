@@ -53,7 +53,14 @@ data Range a = Range
   { lowerBound :: a
   , upperBound :: a
   }
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance (Show a, Bounded a, Eq a) => Show (Range a)
+  where
+    show (Range l u) = "[" ++ sl ++ "," ++ su ++ "]"
+      where
+        sl = if l == minBound then "*" else show l
+        su = if u == maxBound then "*" else show u
 
 -- | Convenience alias for bounded integers
 type BoundedInt a = (BoundedSuper a, BoundedSuper (UnsignedRep a))

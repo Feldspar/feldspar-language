@@ -205,7 +205,7 @@ instance Show (Info a)
       where
         szStr = case show (infoSize i) of
           "AnySize" -> ""
-          str  -> " | " ++ str
+          str       -> " | " ++ str
 
         srcStr = case infoSource i of
           ""  -> ""
