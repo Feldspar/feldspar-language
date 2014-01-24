@@ -44,7 +44,7 @@ where
 
 import qualified Prelude
 import Feldspar hiding (sugar,desugar)
-import Feldspar.Vector
+import Feldspar.Vector hiding (store)
 
 import Language.Syntactic hiding (fold)
 
@@ -221,8 +221,8 @@ instance (Bits a) => Splittable (Fix a) where
     common f g = max (Feldspar.FixedPoint.exponent f) (Feldspar.FixedPoint.exponent g)
 
 -- | A version of vector fold for fixed point algorithms
-fixFold :: forall a b . (Splittable a) => (a -> b -> a) -> a -> Vector b -> a
-fixFold fun ini vec = retrieve (static, fold fun' ini' vec)
+fixFold :: forall a b . (Splittable a) => (a -> b -> a) -> a -> Pull DIM1 b -> a
+fixFold fun ini vec = retrieve (static, fromZero $ fold fun' ini' vec)
   where
     static = fst $ store ini
     ini' = snd $ store ini

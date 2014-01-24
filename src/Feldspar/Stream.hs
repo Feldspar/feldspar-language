@@ -62,10 +62,11 @@ import qualified Prelude as P
 import Control.Applicative
 
 import Feldspar
-import Feldspar.Vector.PullPush
-         (Pull, Pull1
-         ,freezePull,indexed
-         ,sum,length,replicate,scalarProd)
+-- import Feldspar.Vector
+--          (Pull, Pull1, DIM1
+--          ,freezePull1,indexed, Z(..), (:.)(..)
+--          ,sum,length,replicate,scalarProd)
+import Feldspar.Vector hiding (drop,take,zipWith,map,interleave)
 
 -- | Infinite streams.
 data Stream a where
@@ -326,21 +327,21 @@ splitAt :: (Syntax a) =>
 splitAt n stream = (take n stream,drop n stream)
 
 -- | Loops through a vector indefinitely to produce a stream.
-cycle :: Syntax a => Pull a -> Stream a
+cycle :: Syntax a => Pull DIM1 a -> Stream a
 cycle vec = Stream next init
   where
     init = newRef (0 :: Data Index)
     next r = do i <- getRef r
                 setRef r ((i + 1) `rem` length vec)
-                return (vec ! i)
+                return (vec ! (Z :. i))
 
-unsafeVectorToStream :: Syntax a => Pull a -> Stream a
+unsafeVectorToStream :: Syntax a => Pull DIM1 a -> Stream a
 unsafeVectorToStream vec = Stream next init
   where
     init = newRef (0 :: Data Index)
     next r = do i <- getRef r
                 setRef r (i + 1)
-                return (vec ! i)
+                return (vec ! (Z :. i))
 
 -- | A convenience function for translating an algorithm on streams to an algorithm on vectors.
 --   The result vector will have the same length as the input vector.
@@ -350,14 +351,14 @@ unsafeVectorToStream vec = Stream next init
 --   This function allocates memory for the output vector.
 streamAsVector :: (Syntax a, Syntax b) =>
                   (Stream a -> Stream b)
-               -> (Pull a -> Pull b)
+               -> (Pull DIM1 a -> Pull DIM1 b)
 streamAsVector f v = sugar $ take (length v) $ f $ unsafeVectorToStream v
 
 -- | Similar to 'streamAsVector' except the size of the output array is computed by the second argument
 --   which is given the size of the input vector as a result.
 streamAsVectorSize :: (Syntax a, Syntax b) =>
                       (Stream a -> Stream b) -> (Data Length -> Data Length)
-                   -> (Pull a -> Pull b)
+                   -> (Pull DIM1 a -> Pull DIM1 b)
 streamAsVectorSize f s v = sugar $ take (s $ length v) $ f $ cycle v
 
 -- | A combinator for descibing recurrence equations, or feedback loops.
@@ -379,7 +380,7 @@ recurrenceO initV mkExpr = Stream next init
   where
     len  = length initV
     init = do
-      buf <- thawArray (freezePull initV)
+      buf <- thawArray (freezePull1 initV)
       r   <- newRef (0 :: Data Index)
       return (buf,r)
 
@@ -426,8 +427,8 @@ recurrenceIO ii (Stream nxt int) io mkExpr
     lenI = length ii
     lenO = length io
     init = do
-      ibuf <- thawArray (freezePull ii)
-      obuf <- thawArray (freezePull io)
+      ibuf <- thawArray (freezePull1 ii)
+      obuf <- thawArray (freezePull1 io)
       st   <- int
       r    <- newRef (0 :: Data Index)
       return (ibuf,obuf,st,r)
@@ -461,11 +462,11 @@ recurrenceIIO i1 (Stream next1 init1) i2 (Stream next2 init2) io mkExpr
     len2 = length i2
     lenO = length io
     init = do
-      ibuf1 <- thawArray (freezePull i1)
+      ibuf1 <- thawArray (freezePull1 i1)
       st1   <- init1
-      ibuf2 <- thawArray (freezePull i2)
+      ibuf2 <- thawArray (freezePull1 i2)
       st2   <- init2
-      obuf  <- thawArray (freezePull io)
+      obuf  <- thawArray (freezePull1 io)
       c     <- newRef (0 :: Data Index)
       return (ibuf1,st1,ibuf2,st2,obuf,c)
     next (ibuf1,st1,ibuf2,st2,obuf,c) = do

@@ -35,7 +35,7 @@ withFuture :: (Syntax a, Syntax b)
            => a -> (Future a -> b) -> b
 withFuture = share . future
 
-withFutures :: (Syntax a, Syntax b)
-            => Vector a -> (Vector (Future a) -> b) -> b
-withFutures coll = share $ indexed (V.length coll) $ \i -> future $ coll!i
+withFutures :: (Syntax a, Syntax b, Shapely sh)
+            => Pull sh a -> (Manifest sh (Future a) -> b) -> b
+withFutures coll = share $ store $ V.map future coll
 

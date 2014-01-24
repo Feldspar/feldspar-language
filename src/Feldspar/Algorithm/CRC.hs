@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
@@ -36,8 +38,8 @@ import Feldspar.Vector
 tstBit :: Bits a => Data a -> Data Index -> Data Bool
 tstBit w b = w .&. (1 .<<. b) /= 0
 
-makeCrcTable :: (Bits a) => Data a -> Vector1 a
-makeCrcTable polynomial = indexed 256 $ \i -> forLoop 8 (i2n i .<<. (sz - 8)) step
+makeCrcTable :: (Bits a) => Data a -> Pull1 a
+makeCrcTable polynomial = indexed1 256 $ \i -> forLoop 8 (i2n i .<<. (sz - 8)) step
   where
     sz       = bitSize polynomial
     step _ r = let r' = r .<<. 1
@@ -45,22 +47,22 @@ makeCrcTable polynomial = indexed 256 $ \i -> forLoop 8 (i2n i .<<. (sz - 8)) st
 
 -- | Calculate the normal form CRC using a table
 crcNormal :: (Bits a)
-          => Vector1 a -> Data a -> Vector1 Word8 -> Data a
-crcNormal table initial xs = fold step initial xs
+          => Pull1 a -> Data a -> Pull1 Word8 -> Data a
+crcNormal table initial xs = fromZero $ fold step initial xs
   where
     sz         = bitSize initial
-    step crc a = (table ! i2n ((i2n (crc .>>. (sz - 8)) .&. 0xFF) `xor` a)) `xor` (crc .<<. 8)
+    step crc a = (table ! (Z :. i2n ((i2n (crc .>>. (sz - 8)) .&. 0xFF) `xor` a))) `xor` (crc .<<. 8)
 
 -- | Calculate the reflected form CRC using a table
 -- needs reflected tables
 crcReflected :: (Bits a)
-             => Vector1 a -> Data a -> Vector1 Word8 -> Data a
-crcReflected table = fold step
+             => Pull1 a -> Data a -> Pull1 Word8 -> Data a
+crcReflected table initial xs = fromZero $ fold step initial xs
   where
-    step crc a = (table ! i2n ((crc `xor` i2n a) .&. 0xFF)) `xor` (crc .>>. 8)
+    step crc a = (table ! (Z :. i2n ((crc `xor` i2n a) .&. 0xFF))) `xor` (crc .>>. 8)
 
 -- | Calculate normal form CRC from a polynominal
-crcNaive :: (Bits a) => Data a -> Data a -> Vector1 Word8 -> Data a
+crcNaive :: (Bits a) => Data a -> Data a -> Pull1 Word8 -> Data a
 crcNaive = crcNormal . makeCrcTable
 
 -- Future work
