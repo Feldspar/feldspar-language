@@ -96,12 +96,12 @@ instance Semantic BITS
     semantics ComplementBit = Sem "complementBit" (liftIntWord complementBit)
     semantics TestBit       = Sem "testBit"       (liftIntWord testBit)
 
-    semantics ShiftLU       = Sem "shiftL"      (liftIntWord shiftL)
-    semantics ShiftRU       = Sem "shiftR"      (liftIntWord shiftR)
+    semantics ShiftLU       = Sem "shiftLU"     (liftIntWord shiftL)
+    semantics ShiftRU       = Sem "shiftRU"     (liftIntWord shiftR)
     semantics ShiftL        = Sem "shiftL"      (liftInt shiftL)
     semantics ShiftR        = Sem "shiftR"      (liftInt shiftR)
-    semantics RotateLU      = Sem "rotateL"     (liftIntWord rotateL)
-    semantics RotateRU      = Sem "rotateR"     (liftIntWord rotateR)
+    semantics RotateLU      = Sem "rotateLU"    (liftIntWord rotateL)
+    semantics RotateRU      = Sem "rotateRU"    (liftIntWord rotateR)
     semantics RotateL       = Sem "rotateL"     (liftInt rotateL)
     semantics RotateR       = Sem "rotateR"     (liftInt rotateR)
     semantics ReverseBits   = Sem "reverseBits" evalReverseBits
@@ -207,6 +207,13 @@ instance ( (BITS  :|| Type) :<: dom
         , a == 2 ^ b
         = do tb <- constructFeat opts (c' TestBit) (v1 :* v3 :* Nil)
              constructFeat opts (c' Not) (tb :* Nil)
+
+    -- shiftRU (shiftRU b i) j ==> shiftRU b (shiftRU i j)
+    constructFeatOpt opts x@(C' ShiftRU) ((op :$ a :$ b) :* c :* Nil)
+        | Just (C' ShiftRU) <- prjF op
+        , Just i <- viewLiteral a
+        , Just j <- viewLiteral c
+        = constructFeat opts x (literalDecor (i `shiftR` fromIntegral j) :* b :* Nil)
 
     constructFeatOpt opts x@(C' ShiftLU)  args = optZero opts x args
     constructFeatOpt opts x@(C' ShiftRU)  args = optZero opts x args
