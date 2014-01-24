@@ -452,7 +452,10 @@ mmMult vA vB
 
 -- KFFs combinators
 
--- | Split the innermost dimension of a pull vector in two
+-- | Split the innermost dimension of a pull vector in two. If the innermost
+-- dimension of 'vec' has length 'i' then the innermost dimension of
+-- @expandL n vec@ has length 'n' and the second innermost dimension will have
+-- length @i / p@.
 expandL :: Pully vec (sh :. Data Length) =>
            Data Length -> vec (sh :. Data Length) a ->
            Pull (sh :. Data Length :. Data Length) a
