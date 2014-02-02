@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -51,7 +52,11 @@ import Data.Complex
 import Data.Int
 import Data.IORef
 import Data.List
-import Data.Typeable (Typeable, Typeable1)
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+import Data.Typeable (Typeable)
+#else
+import Data.Typeable (Typeable,Typeable1)
+#endif
 import Data.Word
 import Test.QuickCheck
 import qualified Control.Monad.Par as MonadPar
@@ -61,7 +66,6 @@ import Data.Proxy
 
 import Feldspar.Lattice
 import Feldspar.Range
-
 
 
 --------------------------------------------------------------------------------
@@ -91,7 +95,11 @@ instance (Lattice a, Lattice b) => Lattice (a :> b)
 newtype WordN = WordN Word32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
-    , Arbitrary )
+    , Arbitrary
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+    , FiniteBits
+#endif
+    )
 
 type instance UnsignedRep WordN = Word32
 
@@ -99,7 +107,11 @@ type instance UnsignedRep WordN = Word32
 newtype IntN = IntN Int32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
-    , Arbitrary )
+    , Arbitrary
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+    , FiniteBits
+#endif
+    )
 
 type instance UnsignedRep IntN = Word32
 
@@ -279,20 +291,23 @@ instance MonadType Mut
 -- | Monad for parallel constructs
 type Par = MonadPar.Par
 
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+deriving instance Typeable Par
+#else
 deriving instance Typeable1 Par
+#endif
 
 -- | Immutable references
 type IV = MonadPar.IVar
 
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+#else
 deriving instance Typeable1 IV
+#endif
 
 instance Show (IV a)
   where
     show _ = "IVar"
-
-instance Eq (IV a)
-  where
-    _ == _ = False
 
 instance MonadType Par
   where
@@ -304,7 +319,12 @@ instance MonadType Par
 
 newtype FVal a = FVal {unFVal :: a}
 
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+deriving instance Typeable IV
+deriving instance Typeable FVal
+#else
 deriving instance Typeable1 FVal
+#endif
 
 instance Show (FVal a)
   where
