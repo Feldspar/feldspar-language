@@ -36,6 +36,7 @@
 --
 
 module Feldspar.Core.Constructs.MutableArray
+  (MutableArray(..))
 where
 
 import Control.Monad
@@ -59,12 +60,18 @@ data MutableArray a
 
 instance Semantic MutableArray
   where
-    semantics NewArr    = Sem "newMArr"   (\l -> newArray  (0,l-1))
-    semantics NewArr_   = Sem "newMArr_"  (\l -> newListArray (0,l-1)
-        [error $ "Undefined element at index " ++ show i | i <- [0..l-1]])
+    semantics NewArr    = Sem "newMArr"  $ \l -> newArray (mkBounds l)
+    semantics NewArr_   = Sem "newMArr_" $ \l -> newListArray (mkBounds l)
+        [error $ "Undefined element at index " ++ show i | i <- [0..]]
     semantics GetArr    = Sem "getMArr"   readArray
     semantics SetArr    = Sem "setMArr"   writeArray
     semantics ArrLength = Sem "arrLength" (getBounds >=> \(l,u) -> return (u-l+1))
+
+-- | Calculate array bounds. If the length is zero, flip the arguments to
+-- make an empty range
+mkBounds :: Length -> (Length,Length)
+mkBounds 0 = (pred 0, 0)
+mkBounds l = (0, pred l)
 
 semanticInstances ''MutableArray
 
