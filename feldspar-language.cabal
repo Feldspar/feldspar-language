@@ -178,8 +178,8 @@ test-suite range
     base,
     random           >= 1   && < 2,
     QuickCheck       >= 2.4 && < 3,
-    tasty            >= 0.3 && < 0.8,
-    tasty-quickcheck >= 0.2 && < 0.5
+    tasty            >= 0.3,
+    tasty-quickcheck >= 0.2
 
 test-suite semantics
   type: exitcode-stdio-1.0
@@ -198,9 +198,9 @@ test-suite semantics
     feldspar-language,
     base,
     QuickCheck       >= 2.4 && < 3,
-    tasty            >= 0.3 && < 0.8,
-    tasty-th         >= 0.1 && < 0.2,
-    tasty-quickcheck >= 0.2 && < 0.5
+    tasty            >= 0.3,
+    tasty-th         >= 0.1,
+    tasty-quickcheck >= 0.2
 
 test-suite decoration
   type: exitcode-stdio-1.0
@@ -215,8 +215,8 @@ test-suite decoration
     feldspar-language,
     base,
     bytestring            >= 0.9 && < 0.11,
-    tasty                 >= 0.3 && < 0.8,
-    tasty-golden          >= 2.0 && < 3,
+    tasty                 >= 0.3,
+    tasty-golden          >= 2.0,
     utf8-string           >= 0.3.7
 
 test-suite tutorial
