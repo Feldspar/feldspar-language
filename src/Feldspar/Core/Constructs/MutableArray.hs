@@ -62,7 +62,7 @@ instance Semantic MutableArray
   where
     semantics NewArr    = Sem "newMArr"  $ \l -> newArray (mkBounds l)
     semantics NewArr_   = Sem "newMArr_" $ \l -> newListArray (mkBounds l)
-        [error $ "Undefined element at index " ++ show i | i <- [0..]]
+        [error $ "Undefined element at index " ++ show (i::Index) | i <- [0..]]
     semantics GetArr    = Sem "getMArr"   readArray
     semantics SetArr    = Sem "setMArr"   writeArray
     semantics ArrLength = Sem "arrLength" (getBounds >=> \(l,u) -> return (u-l+1))
