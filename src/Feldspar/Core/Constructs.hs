@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -176,7 +177,11 @@ instance IsHODomain FeldDomain Typeable Type
 
 newtype Data a = Data { unData :: ASTF FeldDomain a }
 
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+deriving instance Typeable Data
+#else
 deriving instance Typeable1 Data
+#endif
 
 instance Type a => Syntactic (Data a)
   where

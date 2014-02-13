@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -54,7 +55,12 @@ import Feldspar.Core.Constructs.Logic
 import Feldspar.Core.Constructs.Eq
 import Feldspar.Core.Constructs.Ord
 
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
 import Data.Bits
+#else
+import Data.Bits
+type FiniteBits b = Bits b
+#endif
 
 -- | Bits constructs
 data BITS a
@@ -115,26 +121,26 @@ liftIntWord f x = f x . fromIntegral
 liftInt :: (a -> Int -> b) -> (a -> IntN -> b)
 liftInt f x = f x . fromIntegral
 
-evalReverseBits :: (Num b, Bits b) => b -> b
+evalReverseBits :: (Num b, FiniteBits b) => b -> b
 evalReverseBits b = revLoop b 0 (0 `asTypeOf` b)
   where
-    bSz = bitSize b
+    bSz = finiteBitSize b
     revLoop x i n | i >= bSz    = n
                   | testBit x i = revLoop x (i+1) (setBit n (bSz - i - 1))
                   | otherwise   = revLoop x (i+1) n
 
-evalBitScan :: Bits b => b -> WordN
+evalBitScan :: (FiniteBits b) => b -> WordN
 evalBitScan b =
    if isSigned b
-   then scanLoop b (testBit b (bitSize b - 1)) (bitSize b - 2) 0
-   else scanLoop b False (bitSize b - 1) 0
+   then scanLoop b (testBit b (finiteBitSize b - 1)) (finiteBitSize b - 2) 0
+   else scanLoop b False (finiteBitSize b - 1) 0
   where
     scanLoop x t i n | i Prelude.< 0            = n
                      | testBit x i Prelude./= t = n
                      | otherwise                = scanLoop x t (i-1) (n+1)
 
-evalBitCount :: Bits b => b -> WordN
-evalBitCount b = loop b (bitSize b - 1) 0
+evalBitCount :: (FiniteBits b) => b -> WordN
+evalBitCount b = loop b (finiteBitSize b - 1) 0
   where
     loop x i n | i Prelude.< 0 = n
                | testBit x i   = loop x (i-1) (n+1)

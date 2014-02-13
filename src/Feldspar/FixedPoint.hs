@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -43,10 +44,12 @@ module Feldspar.FixedPoint
 where
 
 import qualified Prelude
+
 import Feldspar hiding (sugar,desugar)
 import Feldspar.Vector
 
 import Language.Syntactic hiding (fold)
+
 
 -- | Abstract real number type with exponent and mantissa
 data Fix a =
@@ -59,49 +62,48 @@ data Fix a =
 instance
     ( Integral a
     , Bits a
-    , Prelude.Real a
     ) => Num (Fix a)
   where
     fromInteger n = Fix 0 (Prelude.fromInteger n)
-    (+) = fixAddition
-    (*) = fixMultiplication
-    negate = fixNegate
-    abs = fixAbsolute
-    signum = fixSignum
+    (+)           = fixAddition
+    (*)           = fixMultiplication
+    negate        = fixNegate
+    abs           = fixAbsolute
+    signum        = fixSignum
 
 instance
     ( Integral a
     , Bits a
-    , Prelude.Real a
+    , Prelude.Floating a
     ) => Fractional (Fix a)
   where
     (/) = fixDiv'
     recip = fixRecip'
     fromRational = fixfromRational
 
-fixAddition :: (Integral a, Bits a, Prelude.Real a) => Fix a -> Fix a -> Fix a
+fixAddition :: (Integral a, Bits a) => Fix a -> Fix a -> Fix a
 fixAddition f1@(Fix e1 _) f2@(Fix e2 _) = Fix e m
    where
      e = max e1 e2
      m = mantissa (fix e f1) + mantissa (fix e f2)
 
-fixMultiplication :: (Integral a, Bits a, Prelude.Real a) => Fix a -> Fix a -> Fix a
+fixMultiplication :: (Integral a) => Fix a -> Fix a -> Fix a
 fixMultiplication (Fix e1 m1) (Fix e2 m2) = Fix e m
    where
      e =  e1 + e2
      m =  m1 * m2
 
-fixNegate :: (Integral a, Bits a, Prelude.Real a) => Fix a -> Fix a
+fixNegate :: (Integral a) => Fix a -> Fix a
 fixNegate (Fix e1 m1)  = Fix e1 m
    where
      m = negate m1
 
-fixAbsolute :: (Integral a, Bits a, Prelude.Real a) => Fix a -> Fix a
+fixAbsolute :: (Integral a) => Fix a -> Fix a
 fixAbsolute (Fix e1 m1)  = Fix e1 m
    where
      m = abs m1
 
-fixSignum :: (Integral a, Bits a, Prelude.Real a) => Fix a -> Fix a
+fixSignum :: (Integral a) => Fix a -> Fix a
 fixSignum (Fix _ m1)  = Fix 0 m
    where
      m = signum m1
@@ -113,21 +115,21 @@ fixDiv' (Fix e1 m1) (Fix e2 m2) = Fix e m
      e = e1 - e2
      m = div m1 m2
 
-fixRecip' :: forall a . (Integral a, Bits a, Prelude.Real a)
+fixRecip' :: forall a . (Integral a, Bits a, Prelude.Floating a)
              => Fix a -> Fix a
 fixRecip' (Fix e m) = Fix (e + value (wordLength (T :: T a) - 1)) (div sh m)
    where
      sh  :: Data a
      sh  = (1::Data a) .<<. value (fromInteger $ toInteger $ wordLength (T :: T a) - 1)
 
-fixfromRational :: forall a . (Integral a) =>
+fixfromRational :: forall a . (Integral a, Bits a, Prelude.Floating a) =>
                    Prelude.Rational -> Fix a
 fixfromRational inp = Fix e m
    where
       inpAsFloat :: Float
       inpAsFloat = fromRational inp
       intPart :: Float
-      intPart = fromRational $ toRational $ Prelude.floor inpAsFloat
+      intPart = Prelude.fromIntegral (Prelude.floor inpAsFloat :: Integer)
       intPartWidth :: IntN
       intPartWidth =  Prelude.ceiling $ Prelude.logBase 2 intPart
       fracPartWith :: IntN
@@ -177,8 +179,8 @@ setSignificantBits sb x = resizeData r x
     r :: Range a
     r =  Range 0 sb
 -}
-wordLength :: forall a . (Integral a, Prelude.Real a) => T a -> IntN
-wordLength _ = Prelude.ceiling ( Prelude.logBase 2 $ fromRational $ toRational (maxBound :: a)) + 1
+wordLength :: forall a. (Bits a) => T a -> IntN
+wordLength _ = Prelude.fromIntegral $ finiteBitSize (undefined :: a)
 
 -- | Operations to get and set exponent
 class (Splittable t) => Fixable t where

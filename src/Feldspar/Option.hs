@@ -37,6 +37,7 @@ module Feldspar.Option where
 
 
 import qualified Prelude
+import Control.Applicative (Applicative(..))
 import Control.Monad
 
 import Language.Syntactic
@@ -57,6 +58,11 @@ instance Syntax a => Syntactic (Option a)
 instance Functor Option
   where
     fmap f opt = opt {fromSome = f (fromSome opt)}
+
+instance Applicative Option
+  where
+    pure  = return
+    (<*>) = ap
 
 instance Monad Option
   where

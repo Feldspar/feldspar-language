@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -41,7 +42,7 @@ import Prelude hiding (Integral(..))
 import Data.Int
 import Data.Word
 
-import Feldspar.Range
+import Feldspar.Range (Range(..))
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Bits
@@ -106,12 +107,20 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     bitSize       :: Data a -> Data Index
     bitSize       = value . bitSize'
     bitSize'      :: Data a -> Index
-    bitSize'      = const $ fromIntegral $ B.bitSize (undefined :: a)
+    bitSize'      = const $ fromIntegral $ finiteBitSize (undefined :: a)
 
     isSigned      :: Data a -> Data Bool
     isSigned      = value . isSigned'
     isSigned'     :: Data a -> Bool
     isSigned'     = const $ B.isSigned (undefined :: a)
+
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+finiteBitSize :: (B.FiniteBits b) => b -> Int
+finiteBitSize = B.finiteBitSize
+#else
+finiteBitSize :: (B.Bits b) => b -> Int
+finiteBitSize = B.bitSize
+#endif
 
 instance Bits Word8
 instance Bits Word16
