@@ -82,6 +82,10 @@ instance Sharable ParFeature
 
 instance Sharable (MONAD Par)
 
+instance Monotonic ParFeature
+
+instance Monotonic (MONAD Par)
+
 instance SizeProp ParFeature
   where
     sizeProp ParRun   (WrapFull a :* Nil) = infoSize a

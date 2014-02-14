@@ -151,6 +151,10 @@ singletonRange a = Range a a
 naturalRange :: BoundedInt a => Range a
 naturalRange = Range 0 maxBound
 
+-- | The range from @1@ to the maximum element
+positiveRange :: BoundedInt a => Range a
+positiveRange = Range 1 maxBound
+
 -- | The range from the smallest negative element to @-1@.
 --   Undefined for unsigned types
 negativeRange :: forall a . BoundedInt a => Range a
@@ -187,6 +191,10 @@ isSubRangeOf r1@(Range l1 u1) r2@(Range l2 u2)
 -- | Checks whether a range is a sub-range of the natural numbers.
 isNatural :: BoundedInt a => Range a -> Bool
 isNatural = (`isSubRangeOf` naturalRange)
+
+-- | Checks whether a range is a sub-range of the positive numbers.
+isPositive :: BoundedInt a => Range a -> Bool
+isPositive = (`isSubRangeOf` positiveRange)
 
 -- | Checks whether a range is a sub-range of the negative numbers.
 isNegative :: BoundedInt a => Range a -> Bool

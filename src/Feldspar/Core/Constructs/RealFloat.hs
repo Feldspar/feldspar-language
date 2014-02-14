@@ -33,6 +33,8 @@ instance AlphaEq dom dom dom env => AlphaEq REALFLOAT REALFLOAT dom env
 
 instance Sharable REALFLOAT
 
+instance Monotonic REALFLOAT
+
 instance SizeProp (REALFLOAT :|| Type)
   where
     sizeProp (C' s) = sizePropDefault s

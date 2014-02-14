@@ -83,6 +83,8 @@ instance AlphaEq dom dom dom env => AlphaEq MutableArray MutableArray dom env
 
 instance Sharable MutableArray
 
+instance Monotonic MutableArray
+
 instance SizeProp MutableArray
   where
     sizeProp NewArr  (WrapFull len :* _ :* Nil) = infoSize len :> universal
