@@ -60,6 +60,8 @@ instance AlphaEq dom dom dom env => AlphaEq NoInline NoInline dom env
 
 instance Sharable NoInline
 
+instance Monotonic NoInline
+
 instance SizeProp (NoInline :|| Type)
   where
     sizeProp (C' s) = sizePropDefault s

@@ -60,6 +60,7 @@ module Feldspar.Core.Frontend
     , printExprUnOpt
     , showAST
     , drawAST
+    , writeHtmlAST
     , showDecor
     , drawDecor
     , eval
@@ -91,7 +92,7 @@ import Test.QuickCheck
 import Data.Patch
 
 import Language.Syntactic hiding
-    (desugar, sugar, resugar, showAST, drawAST)
+    (desugar, sugar, resugar, showAST, drawAST, writeHtmlAST)
 import qualified Language.Syntactic as Syntactic
 import qualified Language.Syntactic.Constructs.Decoration as Syntactic
 import Language.Syntactic.Constructs.Binding
@@ -211,11 +212,17 @@ printExprWith opts = print . reifyFeld opts N32
 printExprUnOpt :: SyntacticFeld a => a -> IO ()
 printExprUnOpt = print . reifyFeldUnOpt defaultFeldOpts N32
 
+-- | Show the syntax tree using Unicode art
 showAST :: SyntacticFeld a => a -> String
 showAST = Syntactic.showAST . reifyFeld defaultFeldOpts N32
 
+-- | Draw the syntax tree on the terminal using Unicode art
 drawAST :: SyntacticFeld a => a -> IO ()
 drawAST = Syntactic.drawAST . reifyFeld defaultFeldOpts N32
+
+-- | Convert the syntax tree to an HTML file with foldable nodes
+writeHtmlAST :: SyntacticFeld a => FilePath -> a -> IO ()
+writeHtmlAST file = Syntactic.writeHtmlAST file . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
 showDecor :: SyntacticFeld a => a -> String

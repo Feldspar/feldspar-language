@@ -132,7 +132,7 @@ maps fs (Stream next initial) = Stream newNext newInit
       return $
         (P.foldr (\ (k,f) x ->
                             i==(P.fromIntegral k) ? f a $ x))
-         a (P.zip [1..] fs)
+         a (P.zip [(1::Index)..] fs)
 
 -- | 'intersperse a str' inserts an 'a' between each element of the stream
 --    'str'.

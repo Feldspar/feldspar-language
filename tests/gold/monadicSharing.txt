@@ -1,107 +1,54 @@
 <<WordN -> WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
-|
-`- Lambda 0
-   |
-   `- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-      |
-      `- runMutable
-         |
-         `- <<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-            |
-            `- bind
-               |
-               +- <<Mut Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-               |  |
-               |  `- newRef
-               |     |
-               |     `- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-               |        |
-               |        `- var:0
-               |
-               `- <<Ref WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
-                  |
-                  `- Lambda 1
-                     |
-                     `- <<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                        |
-                        `- bind
-                           |
-                           +- <<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                           |  |
-                           |  `- getRef
-                           |     |
-                           |     `- <<Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                           |        |
-                           |        `- var:1
-                           |
-                           `- <<WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
-                              |
-                              `- Lambda 2
-                                 |
-                                 `- <<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                    |
-                                    `- Let
-                                       |
-                                       +- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                       |  |
-                                       |  `- (+)
-                                       |     |
-                                       |     +- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                       |     |  |
-                                       |     |  `- var:2
-                                       |     |
-                                       |     `- <<WordN | Range {lowerBound = 3, upperBound = 3}>>
-                                       |        |
-                                       |        `- 3
-                                       |
-                                       `- <<WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
-                                          |
-                                          `- Lambda 5
-                                             |
-                                             `- <<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                                |
-                                                `- bind
-                                                   |
-                                                   +- <<Mut Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                                   |  |
-                                                   |  `- newRef
-                                                   |     |
-                                                   |     `- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                                   |        |
-                                                   |        `- var:5
-                                                   |
-                                                   `- <<Ref WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
-                                                      |
-                                                      `- Lambda 3
-                                                         |
-                                                         `- <<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                                            |
-                                                            `- bind
-                                                               |
-                                                               +- <<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                                               |  |
-                                                               |  `- getRef
-                                                               |     |
-                                                               |     `- <<Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                                               |        |
-                                                               |        `- var:3
-                                                               |
-                                                               `- <<WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
-                                                                  |
-                                                                  `- Lambda 4
-                                                                     |
-                                                                     `- <<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                                                        |
-                                                                        `- return
-                                                                           |
-                                                                           `- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                                                              |
-                                                                              `- (+)
-                                                                                 |
-                                                                                 +- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                                                                 |  |
-                                                                                 |  `- var:4
-                                                                                 |
-                                                                                 `- <<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
-                                                                                    |
-                                                                                    `- var:5
+ └╴Lambda 0
+    └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+       └╴runMutable
+          └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+             └╴bind
+                ├╴<<Mut Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                │  └╴newRef
+                │     └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                │        └╴var:0
+                └╴<<Ref WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+                   └╴Lambda 1
+                      └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                         └╴bind
+                            ├╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                            │  └╴getRef
+                            │     └╴<<Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                            │        └╴var:1
+                            └╴<<WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+                               └╴Lambda 2
+                                  └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                     └╴Let
+                                        ├╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                        │  └╴(+)
+                                        │     ├╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                        │     │  └╴var:2
+                                        │     └╴<<WordN | Range {lowerBound = 3, upperBound = 3}>>
+                                        │        └╴3
+                                        └╴<<WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+                                           └╴Lambda 5
+                                              └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                 └╴bind
+                                                    ├╴<<Mut Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                    │  └╴newRef
+                                                    │     └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                    │        └╴var:5
+                                                    └╴<<Ref WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+                                                       └╴Lambda 3
+                                                          └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                             └╴bind
+                                                                ├╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                │  └╴getRef
+                                                                │     └╴<<Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                │        └╴var:3
+                                                                └╴<<WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+                                                                   └╴Lambda 4
+                                                                      └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                         └╴return
+                                                                            └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                               └╴(+)
+                                                                                  ├╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                                  │  └╴var:4
+                                                                                  └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                                     └╴var:5

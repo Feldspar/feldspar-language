@@ -96,6 +96,8 @@ instance AlphaEq dom dom dom env => AlphaEq Conversion Conversion dom env
 
 instance Sharable Conversion
 
+instance Monotonic Conversion
+
 instance SizeProp (Conversion :|| Type)
   where
     sizeProp (C' F2I)     _ = universal

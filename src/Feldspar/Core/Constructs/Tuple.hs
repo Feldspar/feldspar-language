@@ -51,6 +51,8 @@ import Feldspar.Core.Constructs.Binding
 
 instance Sharable Tuple
 
+instance Monotonic Tuple
+
 instance SizeProp (Tuple :|| Type)
   where
     sizeProp (C' Tup2) (a :* b :* Nil)
@@ -121,6 +123,8 @@ instance SizeProp (Tuple :|| Type)
 instance Sharable Select
   where
     sharable _ = False
+
+instance Monotonic Select
 
 sel1Size :: (Sel1' a ~ b) => TypeRep a -> Size a -> Size b
 sel1Size Tup2Type{} = sel1

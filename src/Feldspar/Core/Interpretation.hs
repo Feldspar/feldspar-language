@@ -78,6 +78,9 @@ module Feldspar.Core.Interpretation
     , optimizeFeatDefault
     , prjF
     , c'
+    , Monotonic (..)
+    , viewMonotonicInc
+    , viewMonotonicDec
     ) where
 
 
@@ -502,3 +505,57 @@ optimizeFeatDefault
 optimizeFeatDefault opts feat args
     = constructFeat opts feat =<< mapArgsM (optimizeM opts) args
 
+
+-- | The 'Monotonic' class represents (weak) monotonicity
+class Monotonic feature where
+    -- | Return the arguments for which the symbol is monotonic increasing
+    --
+    -- prop> forAll a. [a] = monotonicInc (f a) ==> f a >= a
+    --
+    monotonicInc :: feature a
+                 -> Args (AST (Decor Info (dom :|| Typeable))) a
+                 -> [ASTF (Decor Info (dom :|| Typeable)) (DenResult a)]
+    monotonicInc _ _ = []
+
+    -- | Return the arguments for which the symbol is monotonic decreasing
+    --
+    -- prop> forAll a. [a] = monotonicDec (f a) ==> f a <= a
+    --
+    monotonicDec :: feature a
+                 -> Args (AST (Decor Info (dom :|| Typeable))) a
+                 -> [ASTF (Decor Info (dom :|| Typeable)) (DenResult a)]
+    monotonicDec _ _ = []
+
+instance (Monotonic sub1, Monotonic sub2) => Monotonic (sub1 :+: sub2) where
+    monotonicInc (InjL a) = monotonicInc a
+    monotonicInc (InjR a) = monotonicInc a
+    monotonicDec (InjL a) = monotonicDec a
+    monotonicDec (InjR a) = monotonicDec a
+
+instance (Monotonic sym) => Monotonic (sym :|| pred) where
+    monotonicInc (C' s) = monotonicInc s
+    monotonicDec (C' s) = monotonicDec s
+
+instance (Monotonic sym) => Monotonic (SubConstr2 c sym p1 p2) where
+    monotonicInc (SubConstr2 s) = monotonicInc s
+    monotonicDec (SubConstr2 s) = monotonicDec s
+
+instance (Monotonic dom) => Monotonic (Decor Info dom) where
+    monotonicInc = monotonicInc . decorExpr
+    monotonicDec = monotonicDec . decorExpr
+
+instance Monotonic Empty
+
+-- | Extract sub-expressions for which the expression is (weak) monotonic
+-- increasing
+viewMonotonicInc :: (Monotonic dom)
+                 => ASTF (Decor Info (dom :|| Typeable)) a
+                 -> [ASTF (Decor Info (dom :|| Typeable)) a]
+viewMonotonicInc = simpleMatch monotonicInc
+
+-- | Extract sub-expressions for which the expression is (weak) monotonic
+-- decreasing
+viewMonotonicDec :: (Monotonic dom)
+                 => ASTF (Decor Info (dom :|| Typeable)) a
+                 -> [ASTF (Decor Info (dom :|| Typeable)) a]
+viewMonotonicDec = simpleMatch monotonicDec

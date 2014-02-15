@@ -1,63 +1,32 @@
 <<Int32 -> Int32 | (Range {lowerBound = -2147483648, upperBound = 2147483647},Range {lowerBound = -2147483648, upperBound = 2147483647})>>
-|
-`- Lambda 0
-   |
-   `- <<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
-      |
-      `- Let
-         |
-         +- <<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
-         |  |
-         |  `- (+)
-         |     |
-         |     +- <<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
-         |     |  |
-         |     |  `- var:0
-         |     |
-         |     `- <<Int32 | Range {lowerBound = 20, upperBound = 20}>>
-         |        |
-         |        `- 20
-         |
-         `- <<Int32 -> Int32 | (Range {lowerBound = -2147483648, upperBound = 2147483647},Range {lowerBound = -2147483648, upperBound = 2147483647})>>
-            |
-            `- Lambda 1
-               |
-               `- <<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
-                  |
-                  `- condition
-                     |
-                     +- <<Bool>>
-                     |  |
-                     |  `- (<)
-                     |     |
-                     |     +- <<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
-                     |     |  |
-                     |     |  `- var:0
-                     |     |
-                     |     `- <<Int32 | Range {lowerBound = 5, upperBound = 5}>>
-                     |        |
-                     |        `- 5
-                     |
-                     +- <<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
-                     |  |
-                     |  `- (*)
-                     |     |
-                     |     +- <<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
-                     |     |  |
-                     |     |  `- var:1
-                     |     |
-                     |     `- <<Int32 | Range {lowerBound = 3, upperBound = 3}>>
-                     |        |
-                     |        `- 3
-                     |
-                     `- <<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
-                        |
-                        `- (*)
-                           |
-                           +- <<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
-                           |  |
-                           |  `- var:1
-                           |
-                           `- <<Int32 | Range {lowerBound = 30, upperBound = 30}>>
-                              |
-                              `- 30
+ └╴Lambda 0
+    └╴<<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+       └╴Let
+          ├╴<<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+          │  └╴(+)
+          │     ├╴<<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+          │     │  └╴var:0
+          │     └╴<<Int32 | Range {lowerBound = 20, upperBound = 20}>>
+          │        └╴20
+          └╴<<Int32 -> Int32 | (Range {lowerBound = -2147483648, upperBound = 2147483647},Range {lowerBound = -2147483648, upperBound = 2147483647})>>
+             └╴Lambda 1
+                └╴<<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+                   └╴condition
+                      ├╴<<Bool>>
+                      │  └╴(<)
+                      │     ├╴<<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+                      │     │  └╴var:0
+                      │     └╴<<Int32 | Range {lowerBound = 5, upperBound = 5}>>
+                      │        └╴5
+                      ├╴<<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+                      │  └╴(*)
+                      │     ├╴<<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+                      │     │  └╴var:1
+                      │     └╴<<Int32 | Range {lowerBound = 3, upperBound = 3}>>
+                      │        └╴3
+                      └╴<<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+                         └╴(*)
+                            ├╴<<Int32 | Range {lowerBound = -2147483648, upperBound = 2147483647}>>
+                            │  └╴var:1
+                            └╴<<Int32 | Range {lowerBound = 30, upperBound = 30}>>
+                               └╴30

@@ -51,6 +51,8 @@ instance Sharable Literal
   where
     sharable (Literal a) = typeRepTyCon (typeOf a) == typeRepTyCon (typeOf [()])
 
+instance Monotonic Literal
+
 instance SizeProp (Literal :|| Type)
   where
     sizeProp (C' (Literal a)) Nil = sizeOf a

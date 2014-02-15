@@ -81,6 +81,8 @@ instance AlphaEq dom dom dom env => AlphaEq INTEGRAL INTEGRAL dom env
 
 instance Sharable INTEGRAL
 
+instance Monotonic INTEGRAL
+
 instance SizeProp (INTEGRAL :|| Type)
   where
     sizeProp (C' Quot) (WrapFull a :* WrapFull b :* Nil) = rangeQuot (infoSize a) (infoSize b)
@@ -97,6 +99,7 @@ instance
     , (COMPLEX :|| Type) :<: dom
     , (Condition :||Type) :<: dom
     , (Logic     :||Type) :<: dom
+    , Monotonic dom
     , OptimizeSuper dom
     , Optimize (Condition :|| Type) dom
     ) =>
@@ -139,10 +142,11 @@ instance
         | Just 1 <- viewLiteral b = return a
 
     constructFeatOpt opts (C' Div) (a :* b :* Nil)
-        | Just b' <- viewLiteral b
+        | IntType U _ <- infoType $ getInfo a
+        , Just b' <- viewLiteral b
         , b' > 0
         , isPowerOfTwo b'
-        = constructFeat opts (c' ShiftR) (a :* literalDecor (log2 b') :* Nil)
+        = constructFeat opts (c' ShiftRU) (a :* literalDecor (log2 b') :* Nil)
 
     constructFeatOpt opts (C' Div) (a :* b :* Nil)
         | sameSign (infoSize (getInfo a)) (infoSize (getInfo b))

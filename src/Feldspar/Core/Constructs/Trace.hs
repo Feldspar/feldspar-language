@@ -73,6 +73,7 @@ instance AlphaEq dom dom dom env => AlphaEq Trace Trace dom env
     alphaEqSym = alphaEqSymDefault
 
 instance Sharable Trace
+instance Monotonic Trace
 
 instance SizeProp (Trace :|| Type)
   where

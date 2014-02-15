@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -58,8 +59,16 @@ data Range a = Range
 type BoundedInt a = (BoundedSuper a, BoundedSuper (UnsignedRep a))
 
 -- | Super class to 'BoundedInt'
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+class    (Ord a, Num a, Bounded a, Integral a, FiniteBits a) => BoundedSuper a
+instance (Ord a, Num a, Bounded a, Integral a, FiniteBits a) => BoundedSuper a
+#else
 class    (Ord a, Num a, Bounded a, Integral a, Bits a) => BoundedSuper a
 instance (Ord a, Num a, Bounded a, Integral a, Bits a) => BoundedSuper a
+
+finiteBitSize :: (Bits b) => b -> Int
+finiteBitSize = bitSize
+#endif
 
 -- | Type famliy to determine the bit representation of a type
 type family UnsignedRep a
@@ -142,6 +151,10 @@ singletonRange a = Range a a
 naturalRange :: BoundedInt a => Range a
 naturalRange = Range 0 maxBound
 
+-- | The range from @1@ to the maximum element
+positiveRange :: BoundedInt a => Range a
+positiveRange = Range 1 maxBound
+
 -- | The range from the smallest negative element to @-1@.
 --   Undefined for unsigned types
 negativeRange :: forall a . BoundedInt a => Range a
@@ -178,6 +191,10 @@ isSubRangeOf r1@(Range l1 u1) r2@(Range l2 u2)
 -- | Checks whether a range is a sub-range of the natural numbers.
 isNatural :: BoundedInt a => Range a -> Bool
 isNatural = (`isSubRangeOf` naturalRange)
+
+-- | Checks whether a range is a sub-range of the positive numbers.
+isPositive :: BoundedInt a => Range a -> Bool
+isPositive = (`isSubRangeOf` positiveRange)
 
 -- | Checks whether a range is a sub-range of the negative numbers.
 isNegative :: BoundedInt a => Range a -> Bool
@@ -405,7 +422,7 @@ rangeMulSigned r1 r2
     -- work for 'minBound' on signed numbers.
     | lowerBound r1 == minBound || lowerBound r2 == minBound
         = range minBound maxBound
-    | bits (maxAbs r1) + bits (maxAbs r2) <= bitSize (undefined :: a) - 1
+    | bits (maxAbs r1) + bits (maxAbs r2) <= finiteBitSize (undefined :: a) - 1
         = range (minimum [b1,b2,b3,b4]) (maximum [b1,b2,b3,b4])
     | otherwise = range minBound maxBound
   where maxAbs (Range l u) = max (abs l) (abs u)
@@ -418,7 +435,7 @@ rangeMulSigned r1 r2
 rangeMulUnsigned :: forall a . BoundedInt a => Range a -> Range a -> Range a
 rangeMulUnsigned r1 r2
     | bits (upperBound r1) + bits (upperBound r2)
-      <= bitSize (undefined :: a)
+      <= finiteBitSize (undefined :: a)
         = mapMonotonic2 (*) r1 r2
     | otherwise = universal
 
@@ -437,7 +454,7 @@ rangeExp = handleSign rangeExpUnsigned rangeExpSigned
 -- | Unsigned case for 'rangeExp'.
 rangeExpUnsigned :: BoundedInt a => Range a -> Range a -> Range a
 rangeExpUnsigned m@(Range l1 u1) e@(Range l2 u2)
-    | toInteger (bits u1) * toInteger u2 > toInteger (bitSize l1) + 1 = universal
+    | toInteger (bits u1) * toInteger u2 > toInteger (finiteBitSize l1) + 1 = universal
     | toInteger u1 ^ toInteger u2 > toInteger (maxBound `asTypeOf` l1) = universal
     | 0 `inRange` m && 0 `inRange` e = range 0 (max b1 b2)
     | otherwise = range b1 b2
@@ -462,7 +479,7 @@ minOrUnsigned a b c d =
     fromIntegral $ minOr (unsigned a) (unsigned b) (unsigned c) (unsigned d)
 
 minOr :: BoundedSuper a => a -> a -> a -> a -> a
-minOr a b c d = loop (bit (bitSize a - 1))
+minOr a b c d = loop (bit (finiteBitSize a - 1))
   where loop 0 = a .|. c
         loop m
             | complement a .&. c .&. m > 0 =
@@ -484,7 +501,7 @@ maxOrUnsigned a b c d =
     fromIntegral $ maxOr (unsigned a) (unsigned b) (unsigned c) (unsigned d)
 
 maxOr :: BoundedSuper a => a -> a -> a -> a -> a
-maxOr a b c d = loop (bit (bitSize a - 1))
+maxOr a b c d = loop (bit (finiteBitSize a - 1))
   where loop 0 = b .|. d
         loop m
              | b .&. d .&. m > 0 =
@@ -606,7 +623,7 @@ rangeShiftLU = handleSign rangeShiftLUUnsigned (\_ _ -> universal)
 rangeShiftLUUnsigned :: (BoundedInt a, Integral b)
                      => Range a -> Range b -> Range a
 rangeShiftLUUnsigned (Range _ u1) (Range _ u2)
-    | toInteger (bits u1) + fromIntegral u2 > toInteger (bitSize u1) = universal
+    | toInteger (bits u1) + fromIntegral u2 > toInteger (finiteBitSize u1) = universal
 rangeShiftLUUnsigned (Range l1 u1) (Range l2 u2)
     = range (shiftL l1 (fromIntegral l2)) (shiftL u1 (fromIntegral u2))
 
