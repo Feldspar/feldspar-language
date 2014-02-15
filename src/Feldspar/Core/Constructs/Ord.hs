@@ -80,6 +80,8 @@ instance AlphaEq dom dom dom env => AlphaEq ORD ORD dom env
 
 instance Sharable ORD
 
+instance Monotonic ORD
+
 instance SizeProp (ORD :|| Type)
   where
     sizeProp (C' Min) (WrapFull a :* WrapFull b :* Nil) = min (infoSize a) (infoSize b)
@@ -88,6 +90,7 @@ instance SizeProp (ORD :|| Type)
 
 
 instance ( (ORD :|| Type) :<: dom
+         , Monotonic dom
          , OptimizeSuper dom
          )
       => Optimize (ORD :|| Type) dom
@@ -163,6 +166,14 @@ instance ( (ORD :|| Type) :<: dom
     constructFeatOpt _ (C' Min) (a :* b :* Nil)
         | alphaEq a b
         = return a
+
+    constructFeatOpt _ (C' Min) (a :* b :* Nil)
+        | as <- viewMonotonicDec a
+        , any (alphaEq b) as = return a
+
+        | bs <- viewMonotonicDec b
+        , any (alphaEq a) bs = return b
+
 
     constructFeatOpt opts s@(C' Min) (a :* (op :$ b :$ c) :* Nil)
         | Just (C' Min) <- prjF op

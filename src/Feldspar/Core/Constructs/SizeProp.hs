@@ -64,6 +64,8 @@ instance SizeProp (PropSize :|| Type)
 
 instance Sharable PropSize
 
+instance Monotonic PropSize
+
 instance AlphaEq dom dom dom env => AlphaEq PropSize PropSize dom env
   where
     alphaEqSym = alphaEqSymDefault

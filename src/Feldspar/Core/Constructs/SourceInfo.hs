@@ -53,6 +53,10 @@ instance Sharable (Decor SourceInfo1 Identity)
   where
     sharable _ = True
 
+instance Monotonic (Decor SourceInfo1 Identity)
+
+instance Monotonic Identity
+
 instance SizeProp Identity
   where
     sizeProp Id (WrapFull a :* Nil) = infoSize a

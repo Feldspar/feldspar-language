@@ -63,6 +63,8 @@ instance SizeProp (FRACTIONAL :|| Type)
 
 instance Sharable FRACTIONAL
 
+instance Monotonic FRACTIONAL
+
 instance AlphaEq dom dom dom env => AlphaEq FRACTIONAL FRACTIONAL dom env
   where
     alphaEqSym = alphaEqSymDefault

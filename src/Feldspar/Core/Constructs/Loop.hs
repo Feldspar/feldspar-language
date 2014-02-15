@@ -97,6 +97,7 @@ instance Monad m => StringTree (LoopM m)
 instance Monad m => Eval       (LoopM m) where evaluate = evaluateDefault
 instance Monad m => EvalBind   (LoopM m) where evalBindSym = evalBindSymDefault
 instance            Sharable   (LoopM m)
+instance            Monotonic  (LoopM m)
 
 semanticInstances ''Loop
 
@@ -112,6 +113,8 @@ instance AlphaEq dom dom dom env => AlphaEq Loop Loop dom env
     alphaEqSym = alphaEqSymDefault
 
 instance Sharable Loop
+
+instance Monotonic Loop
 
 instance SizeProp (LoopM m)
   where

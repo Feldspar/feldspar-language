@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -54,7 +55,12 @@ import Feldspar.Core.Constructs.Logic
 import Feldspar.Core.Constructs.Eq
 import Feldspar.Core.Constructs.Ord
 
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
 import Data.Bits
+#else
+import Data.Bits
+type FiniteBits b = Bits b
+#endif
 
 -- | Bits constructs
 data BITS a
@@ -96,12 +102,12 @@ instance Semantic BITS
     semantics ComplementBit = Sem "complementBit" (liftIntWord complementBit)
     semantics TestBit       = Sem "testBit"       (liftIntWord testBit)
 
-    semantics ShiftLU       = Sem "shiftL"      (liftIntWord shiftL)
-    semantics ShiftRU       = Sem "shiftR"      (liftIntWord shiftR)
+    semantics ShiftLU       = Sem "shiftLU"     (liftIntWord shiftL)
+    semantics ShiftRU       = Sem "shiftRU"     (liftIntWord shiftR)
     semantics ShiftL        = Sem "shiftL"      (liftInt shiftL)
     semantics ShiftR        = Sem "shiftR"      (liftInt shiftR)
-    semantics RotateLU      = Sem "rotateL"     (liftIntWord rotateL)
-    semantics RotateRU      = Sem "rotateR"     (liftIntWord rotateR)
+    semantics RotateLU      = Sem "rotateLU"    (liftIntWord rotateL)
+    semantics RotateRU      = Sem "rotateRU"    (liftIntWord rotateR)
     semantics RotateL       = Sem "rotateL"     (liftInt rotateL)
     semantics RotateR       = Sem "rotateR"     (liftInt rotateR)
     semantics ReverseBits   = Sem "reverseBits" evalReverseBits
@@ -115,26 +121,26 @@ liftIntWord f x = f x . fromIntegral
 liftInt :: (a -> Int -> b) -> (a -> IntN -> b)
 liftInt f x = f x . fromIntegral
 
-evalReverseBits :: (Num b, Bits b) => b -> b
+evalReverseBits :: (Num b, FiniteBits b) => b -> b
 evalReverseBits b = revLoop b 0 (0 `asTypeOf` b)
   where
-    bSz = bitSize b
+    bSz = finiteBitSize b
     revLoop x i n | i >= bSz    = n
                   | testBit x i = revLoop x (i+1) (setBit n (bSz - i - 1))
                   | otherwise   = revLoop x (i+1) n
 
-evalBitScan :: Bits b => b -> WordN
+evalBitScan :: (FiniteBits b) => b -> WordN
 evalBitScan b =
    if isSigned b
-   then scanLoop b (testBit b (bitSize b - 1)) (bitSize b - 2) 0
-   else scanLoop b False (bitSize b - 1) 0
+   then scanLoop b (testBit b (finiteBitSize b - 1)) (finiteBitSize b - 2) 0
+   else scanLoop b False (finiteBitSize b - 1) 0
   where
     scanLoop x t i n | i Prelude.< 0            = n
                      | testBit x i Prelude./= t = n
                      | otherwise                = scanLoop x t (i-1) (n+1)
 
-evalBitCount :: Bits b => b -> WordN
-evalBitCount b = loop b (bitSize b - 1) 0
+evalBitCount :: (FiniteBits b) => b -> WordN
+evalBitCount b = loop b (finiteBitSize b - 1) 0
   where
     loop x i n | i Prelude.< 0 = n
                | testBit x i   = loop x (i-1) (n+1)
@@ -149,6 +155,15 @@ instance AlphaEq dom dom dom env => AlphaEq BITS BITS dom env
     alphaEqSym = alphaEqSymDefault
 
 instance Sharable BITS
+
+instance Monotonic BITS where
+    monotonicInc _ _ = []
+
+    monotonicDec ShiftRU (a :* b :* Nil)
+        | RangeSet r <- infoRange $ getInfo b
+        , isNatural r
+        = [a]
+    monotonicDec _ _ = []
 
 instance SizeProp (BITS :|| Type)
   where
@@ -168,6 +183,7 @@ instance ( (BITS  :|| Type) :<: dom
          , (Logic :|| Type) :<: dom
          , (EQ    :|| Type) :<: dom
          , (ORD   :|| Type) :<: dom
+         , Monotonic dom
          , OptimizeSuper dom
          )
       => Optimize (BITS :|| Type) dom
@@ -207,6 +223,13 @@ instance ( (BITS  :|| Type) :<: dom
         , a == 2 ^ b
         = do tb <- constructFeat opts (c' TestBit) (v1 :* v3 :* Nil)
              constructFeat opts (c' Not) (tb :* Nil)
+
+    -- shiftRU (shiftRU b i) j ==> shiftRU b (shiftRU i j)
+    constructFeatOpt opts x@(C' ShiftRU) ((op :$ a :$ b) :* c :* Nil)
+        | Just (C' ShiftRU) <- prjF op
+        , Just i <- viewLiteral a
+        , Just j <- viewLiteral c
+        = constructFeat opts x (literalDecor (i `shiftR` fromIntegral j) :* b :* Nil)
 
     constructFeatOpt opts x@(C' ShiftLU)  args = optZero opts x args
     constructFeatOpt opts x@(C' ShiftRU)  args = optZero opts x args

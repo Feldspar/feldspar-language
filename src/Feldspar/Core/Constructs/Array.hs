@@ -106,6 +106,8 @@ instance AlphaEq dom dom dom env => AlphaEq Array Array dom env
 
 instance Sharable Array
 
+instance Monotonic Array
+
 instance SizeProp (Array :|| Type)
   where
     sizeProp (C' Parallel) (WrapFull len :* WrapFull ixf :* Nil) =

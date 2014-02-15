@@ -131,18 +131,18 @@ library
   default-language: Haskell2010
 
   build-depends:
-    array                       >= 0.4    && < 0.5,
-    base                        >= 4      && < 4.7,
+    array,
+    base                        >= 4      && < 4.8,
     containers                  >= 0.4    && < 0.6,
     data-hash                   >= 0.1    && < 0.3,
     data-lens                   >= 2.10   && < 2.11,
     mtl                         >= 2.0    && < 2.2,
     QuickCheck                  >= 2.5    && < 3,
     patch-combinators           >= 0.2    && < 0.3,
-    syntactic                   >= 1.9    && < 1.10,
+    syntactic                   >= 1.10   && < 2.0,
     tagged                      >= 0.4    && < 0.8,
     tuple                       >= 0.2    && < 0.3,
-    monad-par                   >= 0.3    && < 0.3.4
+    monad-par                   >= 0.3.4.5
 
   other-extensions:
     DeriveDataTypeable
@@ -180,11 +180,11 @@ test-suite range
 
   build-depends:
     feldspar-language,
-    base             >= 4   && < 4.7,
+    base,
     random           >= 1   && < 2,
     QuickCheck       >= 2.4 && < 3,
-    tasty            >= 0.3 && < 0.6,
-    tasty-quickcheck >= 0.2 && < 0.5
+    tasty            >= 0.3,
+    tasty-quickcheck >= 0.2
 
 test-suite semantics
   type: exitcode-stdio-1.0
@@ -201,11 +201,11 @@ test-suite semantics
 
   build-depends:
     feldspar-language,
-    base             >= 4   && < 4.7,
+    base,
     QuickCheck       >= 2.4 && < 3,
-    tasty            >= 0.3 && < 0.6,
-    tasty-th         >= 0.1 && < 0.2,
-    tasty-quickcheck >= 0.2 && < 0.5
+    tasty            >= 0.3,
+    tasty-th         >= 0.1,
+    tasty-quickcheck >= 0.2
 
 test-suite decoration
   type: exitcode-stdio-1.0
@@ -218,10 +218,11 @@ test-suite decoration
 
   build-depends:
     feldspar-language,
-    base                  >= 4   && < 4.7,
+    base,
     bytestring            >= 0.9 && < 0.11,
-    tasty                 >= 0.3 && < 0.6,
-    tasty-golden          >= 2.0 && < 3
+    tasty                 >= 0.3,
+    tasty-golden          >= 2.0,
+    utf8-string           >= 0.3.7
 
 test-suite tutorial
   type: exitcode-stdio-1.0
@@ -234,6 +235,6 @@ test-suite tutorial
 
   build-depends:
     feldspar-language,
-    base               >= 4   && < 4.7,
+    base,
     bytestring         >= 0.9 && < 0.11
 

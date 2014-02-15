@@ -61,6 +61,8 @@ instance AlphaEq dom dom dom env => AlphaEq Save Save dom env
 
 instance Sharable Save
 
+instance Monotonic Save
+
 instance SizeProp (Save :|| Type)
   where
     sizeProp (C' Save) (WrapFull a :* Nil) = infoSize a

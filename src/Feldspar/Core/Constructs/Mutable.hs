@@ -77,6 +77,8 @@ instance AlphaEq dom dom dom env => AlphaEq Mutable Mutable dom env
 
 instance Sharable (MONAD Mut)
 
+instance Monotonic (MONAD Mut)
+
 instance SizeProp (MONAD Mut)
   where
     sizeProp Return (WrapFull a :* Nil)      = infoSize a
@@ -85,6 +87,8 @@ instance SizeProp (MONAD Mut)
     sizeProp When   _                        = AnySize
 
 instance Sharable Mutable
+
+instance Monotonic Mutable
 
 instance SizeProp Mutable
   where

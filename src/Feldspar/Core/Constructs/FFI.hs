@@ -62,6 +62,8 @@ instance AlphaEq dom dom dom env => AlphaEq FFI FFI dom env
 
 instance Sharable FFI
 
+instance Monotonic FFI
+
 instance SizeProp (FFI :|| Type)
   where
     sizeProp (C' s) = sizePropDefault s

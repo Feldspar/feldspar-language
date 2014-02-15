@@ -8,7 +8,7 @@ import qualified Prelude
 import Test.Tasty
 import Test.Tasty.Golden
 
-import qualified Data.ByteString.Lazy.Char8 as B
+import Data.ByteString.Lazy.UTF8 (fromString)
 
 import Feldspar
 import Examples.Simple.Basics
@@ -30,9 +30,9 @@ monadicSharing a = runMutable $ do
     return (c'+(b'+3))
 
 tests = testGroup "DecorationTests"
-    [ goldenVsFile "example9" "tests/gold/example9.txt" "tests/example9.txt" $ B.writeFile "tests/example9.txt" $ B.pack $ showDecor example9
-    , goldenVsFile "topLevelConsts" "tests/gold/topLevelConsts.txt" "tests/topLevelConsts.txt" $ B.writeFile "tests/topLevelConsts.txt" $ B.pack $ showDecor topLevelConsts
-    , goldenVsFile "monadicSharing" "tests/gold/monadicSharing.txt" "tests/monadicSharing.txt" $ B.writeFile "tests/monadicSharing.txt" $ B.pack $ showDecor monadicSharing
+    [ goldenVsFile "example9" "tests/gold/example9.txt" "tests/example9.txt" $ writeFile "tests/example9.txt" $ showDecor example9
+    , goldenVsFile "topLevelConsts" "tests/gold/topLevelConsts.txt" "tests/topLevelConsts.txt" $ writeFile "tests/topLevelConsts.txt" $ showDecor topLevelConsts
+    , goldenVsFile "monadicSharing" "tests/gold/monadicSharing.txt" "tests/monadicSharing.txt" $ writeFile "tests/monadicSharing.txt" $ showDecor monadicSharing
     ]
 
 main = defaultMain $ testGroup "Tests" [tests]
