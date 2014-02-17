@@ -48,6 +48,7 @@ library
     Feldspar.Core.Constructs.Conversion
     Feldspar.Core.Constructs.Eq
     Feldspar.Core.Constructs.Error
+    Feldspar.Core.Constructs.Elements
     Feldspar.Core.Constructs.Floating
     Feldspar.Core.Constructs.Fractional
     Feldspar.Core.Constructs.Future
@@ -79,6 +80,7 @@ library
     Feldspar.Core.Frontend.Condition
     Feldspar.Core.Frontend.ConditionM
     Feldspar.Core.Frontend.Conversion
+    Feldspar.Core.Frontend.Elements
     Feldspar.Core.Frontend.Eq
     Feldspar.Core.Frontend.Error
     Feldspar.Core.Frontend.Floating
