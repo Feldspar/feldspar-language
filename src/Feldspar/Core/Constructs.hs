@@ -55,6 +55,7 @@ import Feldspar.Core.Constructs.Complex
 import Feldspar.Core.Constructs.Condition
 import Feldspar.Core.Constructs.ConditionM
 import Feldspar.Core.Constructs.Conversion
+import Feldspar.Core.Constructs.Elements
 import Feldspar.Core.Constructs.Eq
 import Feldspar.Core.Constructs.Error
 import Feldspar.Core.Constructs.FFI
@@ -122,6 +123,7 @@ type FeldSymbols
     :+: MutableToPure
     :+: MONAD Par
     :+: ParFeature
+    :+: (ElementsFeat :|| Type)
     :+: Empty
 
 -- TODO We are currently a bit inconsistent in that `Type` constraints are sometimes attached
