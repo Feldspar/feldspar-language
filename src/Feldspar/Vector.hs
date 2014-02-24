@@ -609,7 +609,7 @@ enumFromTo :: forall a. (Type a, Integral a)
            => Data a -> Data a -> Pull DIM1 (Data a)
 enumFromTo 0 n
     | IntType U _ <- typeRep :: TypeRep a
-    = indexed1 (i2n n - 1) i2n
+    = indexed1 (i2n n + 1) i2n
 enumFromTo 1 n
     | IntType U _ <- typeRep :: TypeRep a
     = indexed1 (i2n n) ((+1) . i2n)
