@@ -406,32 +406,6 @@ flattenPush (Pull ixf sh1) = Push f sh
                  (Push _ sh2) = ixf i1
              in shapeConc sh1 sh2
 
--- Laplace
-
-stencil :: Pully vec DIM2 => vec DIM2 (Data Float) -> DPull DIM2 Float
-stencil vec
-  = traverse vec id update
-  where
-    (width : height : _) = toList (extent vec) -- brain explosion hack
-
-    update get d@(sh :. i :. j)
-      = isBoundary i j ?
-        get d
-        $ (get (sh :. (i-1) :. j)
-         + get (sh :. i     :. (j-1))
-         + get (sh :. (i+1) :. j)
-         + get (sh :. i     :. (j+1))) / 4
-
-    isBoundary i j
-      =  (i == 0) || (i >= width  - 1)
-      || (j == 0) || (j >= height - 1)
-
-laplace :: Storable vec => Data Length -> vec DIM2 (Data Float) -> Manifest DIM2 (Data Float)
-laplace steps vec = forLoop steps (store vec) (\ix ->
-                       store . stencil
-                    )
-
-
 -- | Create a two-dimensional Pull vector
 indexed2 :: Data Length -> Data Length -> (Data Index -> Data Index -> a) -> Pull DIM2 a
 indexed2 l1 l2 ixf = Pull (\(Z :. i1 :. i2) -> ixf i1 i2) (Z :. l1 :. l2)
