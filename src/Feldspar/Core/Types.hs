@@ -320,6 +320,7 @@ instance MonadType Par
 newtype Elements a = Elements { unE :: [(Index, a)] }
 
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+deriving instance Typeable Elements
 #else
 deriving instance Typeable1 Elements
 #endif
