@@ -51,7 +51,7 @@ module Feldspar.Vector (
   -- * Overloaded functions
   Shaped(..),ShapeMap(..),
   -- * Ugly hacks
-  freezePull1
+  freezePull1,arrToManifest,fromList
   ) where
 
 import qualified Prelude as P
