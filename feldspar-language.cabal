@@ -110,13 +110,13 @@ library
     Feldspar.Core.Collection
     Feldspar.Core
     Feldspar
-    -- Feldspar.BitVector
+    Feldspar.BitVector
     Feldspar.FixedPoint
     Feldspar.Future
     Feldspar.Memoize
     Feldspar.Option
     Feldspar.Repa
-    -- Feldspar.Stream
+    Feldspar.Stream
     Feldspar.Vector
     Feldspar.Vector.Shape
     Feldspar.Par

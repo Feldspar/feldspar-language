@@ -20,7 +20,7 @@ module Feldspar.Vector (
   unzip,unzip3,unzip4,unzip5,
   fold,fold',sum,
   halve,
-  expandL,contractL,curryL,uncurryL,dmapL,dzipWithL,
+  expandL,expandLT,contractL,contractLT,curryL,uncurryL,dmapL,dzipWithL,
   dmapS,dzipWithS,
   -- * Shape concatenation
   ShapeConc(..),
@@ -33,15 +33,15 @@ module Feldspar.Vector (
   length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
   rotateVecL,rotateVecR,replicate1,enumFromTo,enumFrom,(...),fold1,
   maximum,minimum,or,and,any,all,eqVector,scalarProd,chunk,
-  permute,ixmap,
+  permute,ixmap,newLen1,
   -- * Functions on two-dimensional vectors
   indexed2,mmMult,
   -- * Push vectors
-  Push,
+  Push(..),
   DPush,Pushy(..),
   empty,(++),(+=+),unpair,unpairWith,zipUnpair,riffle,interleave,flattenList,
   forwardPermute,
-  expandS,contractS,uncurryS,
+  expandS,expandST,contractS,contractST,uncurryS,
   -- * Manifest vectors
   Manifest,
   Storable(..),
@@ -50,8 +50,11 @@ module Feldspar.Vector (
   storeFlat,
   -- * Overloaded functions
   Shaped(..),ShapeMap(..),
+  -- * Patches
+  tVec1,
   -- * Ugly hacks
-  freezePull1,arrToManifest,fromList
+  freezePull1,arrToManifest,arrToPull,thawPull,thawPush,
+  fromList,fromPush,fromPull,freezePull,freezePush
   ) where
 
 import qualified Prelude as P
@@ -227,6 +230,12 @@ slice :: (Pully vec (FullShape ss), Shapely (FullShape ss)) =>
 slice vec sl
  = backpermute (sliceOfFull sl (extent vec))
                (fullOfSlice sl) vec
+
+--- | Change the length of the vector to the supplied value. If the supplied
+--- length is greater than the old length, the new elements will have undefined
+--- value. Useful function for patches.
+newLen1 :: Syntax a => Data Length -> Pull1 a -> Pull1 a
+newLen1 l vec = reshape (Z :. l) vec
 
 -- | Change the shape of a vector. This function is potentially unsafe, the
 --   new shape need to have fewer or equal number of elements compared to
@@ -1132,3 +1141,16 @@ instance ShapeMap Push where
   transpose vec = transS vec
   expand  l vec = expandS l vec
   contract  vec = contractS vec
+
+-------------------------------------------------------------------------------
+ --- Misc.
+-------------------------------------------------------------------------------
+
+tVec :: Patch a a -> Patch (Pull sh a) (Pull sh a)
+tVec _ = id
+
+tVec1 :: Patch a a -> Patch (Pull1 a) (Pull1 a)
+tVec1 _ = id
+
+-- tVec2 :: Patch a a -> Patch (Pull (Vector (Data a))) (Vector (Vector (Data a)))
+-- tVec2 _ = id

@@ -72,7 +72,7 @@ drop2 :: Data Index -> Vector (Data Word8) -> Vector (Data Word8)
 drop2 n v = drop n' v'
   where
     n' = max 100 n
-    v' = newLen (min 200 (length v)) v
+    v' = newLen1 (min 200 (length v)) v
 \end{code}
 
 This lets the analysis infer the range [0,100] for the length of the result, which means that it is safe for the back end to allocate a 100-element array.
@@ -95,7 +95,7 @@ drop3 :: Data Index -> Vector (Data Word8) -> Vector (Data Word8)
 drop3 n v = drop n' v'
   where
     n' = notBelow 100 n
-    v' = newLen (notAbove 200 (length v)) v
+    v' = newLen1 (notAbove 200 (length v)) v
 \end{code}
 
 Functions `notBelow` and `notAbove` should be used with care as they are only well-defined as long as the guarantee is fulfilled. These, and some other functions for guiding the size analysis are found in the module [`Feldspar.Core.Frontend.SizeProp`](http://hackage.haskell.org/package/feldspar-language).
@@ -119,7 +119,7 @@ drop4 :: Data Index -> Vector (Data Word8) -> Vector (Data Word8)
 drop4 n v = drop n' v'
   where
     n' = between 100 120 n
-    v' = newLen (between 150 200 (length v)) v
+    v' = newLen1 (between 150 200 (length v)) v
 \end{code}
 
 This gives us a core expression without any run-time checks:

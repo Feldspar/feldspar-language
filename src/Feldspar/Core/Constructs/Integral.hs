@@ -164,7 +164,7 @@ instance
         | sameSign (infoSize (getInfo a)) (infoSize (getInfo b))
         = constructFeat opts (c' Rem) (a :* b :* Nil)
 
-    constructFeatOpt opts (C' Exp) (a :* b :* Nil)
+    constructFeatOpt _ (C' Exp) (a :* b :* Nil)
         | Just 1 <- viewLiteral a = return $ literalDecor 1
         | Just 0 <- viewLiteral a = return $ literalDecor 0
         | Just 1 <- viewLiteral b = return a
