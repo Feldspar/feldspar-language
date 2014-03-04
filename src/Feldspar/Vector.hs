@@ -29,7 +29,7 @@ module Feldspar.Vector (
   All(..),Any(..),Slice(..),FullShape,SliceShape,sliceOfFull,fullOfSlice,
   -- * Functions on one-dimensional vectors
   Pull1,
-  value1,indexed1,
+  value1,indexed1,(!!),
   length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
   rotateVecL,rotateVecR,replicate1,enumFromTo,enumFrom,(...),fold1,
   maximum,minimum,or,and,any,all,eqVector,scalarProd,chunk,
@@ -534,6 +534,9 @@ value1 ls = value ([P.fromIntegral (P.length ls)],ls)
 -- | Create a one-dimensional Pull vector
 indexed1 :: Data Length -> (Data Index -> a) -> Pull DIM1 a
 indexed1 l ixf = Pull (\(Z :. i) -> ixf i) (Z :. l)
+
+(!!) :: Pully vec DIM1 => vec DIM1 a -> Data Index -> a
+vec !! i = vec !: (Z :. i)
 
 -- | Take the length of a one-dimensional vector
 length :: Shaped vec => vec DIM1 a -> Data Length
