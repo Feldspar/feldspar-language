@@ -332,11 +332,11 @@ unzip5 :: Functor vec => vec (a,b,c,d,e) -> (vec a, vec b, vec c, vec d, vec e)
 unzip5 v = (fmap sel1 v, fmap sel2 v, fmap sel3 v, fmap sel4 v, fmap sel5 v)
 
 -- | Reduce a vector along its outermost dimension
-fold :: (Syntax a, Pully vec (sh :. Data Length), Shapely sh) =>
-        (a -> a -> a)
-     -> a
+fold :: (Syntax b, Pully vec (sh :. Data Length), Shapely sh) =>
+        (b -> a -> b)
+     -> b
      -> vec (sh :. Data Length) a
-     -> Pull sh a
+     -> Pull sh b
 fold f x vec = Pull ixf sh
     where (sh, n) = uncons (extent vec) -- brain explosion hack
           ixf i = forLoop n x (\ix s -> f s (vec !: (i :. ix)))
