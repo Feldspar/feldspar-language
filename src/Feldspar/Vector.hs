@@ -201,8 +201,8 @@ newExtent :: Shape sh -> Pull sh a -> Pull sh a
 newExtent sh (Pull ixf _) = Pull ixf sh
 
 -- | Construct a pull vector from an index function and a shape.
-indexed :: (Shape sh -> a) -> Shape sh -> Pull sh a
-indexed ixf l = Pull ixf l
+indexed :: Shape sh -> (Shape sh -> a) -> Pull sh a
+indexed l ixf = Pull ixf l
 
 -- | Change shape and transform elements of a vector. This function is the
 --   most general way of manipulating a vector.
