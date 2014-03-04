@@ -35,53 +35,53 @@ module Feldspar.Algorithm.FFT
 import qualified Prelude as P
 
 import Feldspar
-import Feldspar.Vector
+import Feldspar.Vector hiding (riffle)
 
 -- | Radix-2 Decimation-In-Frequeny Fast Fourier Transformation of the given complex vector
 --   The given vector must be power-of-two sized, (for example 2, 4, 8, 16, 32, etc.)
-fft :: Vector1 (Complex Float) -> Vector1 (Complex Float)
-fft v = newLen (length v) $ bitRev steps $ fftCore steps v
+fft :: Pull1 (Complex Float) -> Pull1 (Complex Float)
+fft v = bitRev steps $ fftCore steps v
     where steps = ilog2 (length v) - 1
 
 -- | Radix-2 Decimation-In-Frequeny Inverse Fast Fourier Transformation of the given complex vector
 --   The given vector must be power-of-two sized, (for example 2, 4, 8, 16, 32, etc.)
-ifft :: Vector1 (Complex Float) -> Vector1 (Complex Float)
-ifft v = newLen (length v) $ bitRev steps $ ifftCore steps v
+ifft :: Pull1 (Complex Float) -> Pull1 (Complex Float)
+ifft v = bitRev steps $ ifftCore steps v
     where steps = ilog2 (length v) - 1
 
-fftCore :: Data Index -> Vector1 (Complex Float) -> Vector1 (Complex Float)
+fftCore :: Data Index -> Pull1 (Complex Float) -> Pull1 (Complex Float)
 fftCore n = composeOn stage (reverse (0...n))
   where
-    stage k (Indexed l ixf Empty) = indexed l ixf'
+    stage k vec = indexed1 (length vec) ixf
       where
-        ixf' i = condition (testBit i k) (twid * (b - a)) (a+b)
+        ixf i = condition (testBit i k) (twid * (b - a)) (a+b)
           where
-            a    = ixf i
-            b    = ixf (i `xor` k2)
+            a    = vec ! (Z :. i)
+            b    = vec ! (Z :. (i `xor` k2))
             twid = cis (-pi * i2f (lsbs k i) / i2f k2)
             k2   = 1 .<<. k
 
-ifftCore :: Data Index -> Vector1 (Complex Float) -> Vector1 (Complex Float)
+ifftCore :: Data Index -> Pull1 (Complex Float) -> Pull1 (Complex Float)
 ifftCore n = map (/ complex (i2f (2^(n+1))) 0) . composeOn stage (reverse (0...n))
   where
-    stage k (Indexed l ixf Empty) = indexed l ixf'
+    stage k vec = indexed1 (length vec) ixf
       where
-        ixf' i = condition (testBit i k) (twid * (b - a)) (a+b)
+        ixf i = condition (testBit i k) (twid * (b - a)) (a+b)
           where
-            a    = ixf i
-            b    = ixf (i `xor` k2)
+            a    = vec ! (Z :. i)
+            b    = vec ! (Z :. (i `xor` k2))
             twid = cis (pi * i2f (lsbs k i) / i2f k2)
             k2   = 1 .<<. k
 
-bitRev :: Type a => Data Index -> Vector1 a -> Vector1 a
+bitRev :: Type a => Data Index -> Pull1 a -> Pull1 a
 bitRev n = composeOn riffle (1...n)
 
-riffle :: Syntax a => Data Index -> Vector a -> Vector a
+riffle :: Syntax a => Data Index -> Pull DIM1 a -> Pull DIM1 a
 riffle k = permute (const $ rotBit k)
 
 -- Helper functions
-composeOn :: (Syntax a) => (b -> a -> a) -> Vector b -> a -> a
-composeOn = flip . fold . flip
+composeOn :: (Syntax a) => (b -> a -> a) -> Pull DIM1 b -> a -> a
+composeOn f v i = fromZero $ fold (flip f) i v
 
 rotBit :: Data Index -> Data Index -> Data Index
 rotBit 0 _ = P.error "rotBit: k should be at least 1"
