@@ -19,14 +19,14 @@ import Feldspar.Vector
 Scalar product:
 
 \begin{code}
-scProd :: (Syntax a, Num a) => Vector a -> Vector a -> a
+scProd :: (Syntax a, Num a) => Pull1 a -> Pull1 a -> a
 scProd a b = sum (zipWith (*) a b)
 \end{code}
 
 Specialize the type:
 
 \begin{code}
-scProdF = scProd :: Vector (Data Float) -> Vector (Data Float) -> Data Float
+scProdF = scProd :: Pull1 Float -> Pull1 Float -> Data Float
 \end{code}
 
 Testing:
