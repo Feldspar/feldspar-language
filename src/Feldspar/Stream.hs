@@ -62,11 +62,11 @@ import qualified Prelude as P
 import Control.Applicative
 
 import Feldspar
--- import Feldspar.Vector
---          (Pull, Pull1, DIM1
---          ,freezePull1,indexed, Z(..), (:.)(..)
---          ,sum,length,replicate,scalarProd)
-import Feldspar.Vector hiding (drop,take,zipWith,map,interleave)
+import Feldspar.Vector
+          (Pull, Pull1, fromZero, toPull, arrToManifest
+          ,freezePull1, indexed1, value1, fromList
+          ,sum,length,replicate1,scalarProd)
+import Feldspar.Vector.Shape (Shape(..),DIM1,Shapely(..))
 
 -- | Infinite streams.
 data Stream a where
@@ -352,14 +352,16 @@ unsafeVectorToStream vec = Stream next init
 streamAsVector :: (Syntax a, Syntax b) =>
                   (Stream a -> Stream b)
                -> (Pull DIM1 a -> Pull DIM1 b)
-streamAsVector f v = sugar $ take (length v) $ f $ unsafeVectorToStream v
+streamAsVector f v = toPull $ arrToManifest (fromList [lv], take lv $ f $ unsafeVectorToStream v)
+  where lv = length v
 
 -- | Similar to 'streamAsVector' except the size of the output array is computed by the second argument
 --   which is given the size of the input vector as a result.
 streamAsVectorSize :: (Syntax a, Syntax b) =>
                       (Stream a -> Stream b) -> (Data Length -> Data Length)
                    -> (Pull DIM1 a -> Pull DIM1 b)
-streamAsVectorSize f s v = sugar $ take (s $ length v) $ f $ cycle v
+streamAsVectorSize f s v = toPull $ arrToManifest (fromList [lv], take lv $ f $ cycle v)
+  where lv = s $ length v
 
 -- | A combinator for descibing recurrence equations, or feedback loops.
 --   The recurrence equation may refer to previous outputs of the stream,
@@ -389,7 +391,7 @@ recurrenceO initV mkExpr = Stream next init
       setRef r (ix + 1)
       a <- withArray buf
            (\ibuf -> return $ mkExpr
-                     (indexed len (\i -> getIx ibuf ((i + ix) `rem` len))))
+                     (indexed1 len (\i -> getIx ibuf ((i + ix) `rem` len))))
       result <- getArr buf (ix `rem` len)
       setArr buf (ix `rem` len) a
       return result
@@ -410,7 +412,7 @@ recurrenceI :: (Type a, Type b) =>
                (Pull1 a -> Data b) ->
                Stream (Data b)
 recurrenceI ii stream mkExpr
-    = recurrenceIO ii stream (value []) (\i _ -> mkExpr i)
+    = recurrenceIO ii stream (toPull $ value1 []) (\i _ -> mkExpr i)
 
 -- | 'recurrenceIO' is a combination of 'recurrenceO' and 'recurrenceI'. It
 --   has an input stream and the recurrence equation may refer both to
@@ -440,8 +442,8 @@ recurrenceIO ii (Stream nxt int) io mkExpr
       b <- withArray ibuf (\ib ->
              withArray obuf (\ob ->
                return $ mkExpr
-                          (indexed lenI (\i -> getIx ib ((i + ix) `rem` lenI)))
-                          (indexed lenO (\i -> getIx ob ((i + ix - 1) `rem` lenO)))
+                          (indexed1 lenI (\i -> getIx ib ((i + ix) `rem` lenI)))
+                          (indexed1 lenO (\i -> getIx ob ((i + ix - 1) `rem` lenO)))
                             ))
       ifM (lenO /= 0)
         (do o <- getArr obuf (ix `rem` lenO)
@@ -479,9 +481,9 @@ recurrenceIIO i1 (Stream next1 init1) i2 (Stream next2 init2) io mkExpr
       out <- withArray ibuf1 (\ib1 ->
                withArray ibuf2 (\ib2 ->
                  withArray obuf (\ob ->
-                   return $ mkExpr (indexed len1 (\i -> getIx ib1 ((i + ix) `rem` len1)))
-                                   (indexed len2 (\i -> getIx ib2 ((i + ix) `rem` len2)))
-                                   (indexed lenO (\i -> getIx ob  ((i + ix) `rem` lenO)))
+                   return $ mkExpr (indexed1 len1 (\i -> getIx ib1 ((i + ix) `rem` len1)))
+                                   (indexed1 len2 (\i -> getIx ib2 ((i + ix) `rem` len2)))
+                                   (indexed1 lenO (\i -> getIx ob  ((i + ix) `rem` lenO)))
                                 )))
       ifM (lenO /= 0)
           (do o <- getArr obuf (ix `rem` lenO)
@@ -490,22 +492,22 @@ recurrenceIIO i1 (Stream next1 init1) i2 (Stream next2 init2) io mkExpr
           (return out)
 
 slidingAvg :: Data WordN -> Stream (Data WordN) -> Stream (Data WordN)
-slidingAvg n str = recurrenceI (replicate n 0) str
-                   (\input -> sum input `quot` n)
+slidingAvg n str = recurrenceI (replicate1 n 0) str
+                   (\input -> (fromZero $ sum input) `quot` n)
 
 -- | A fir filter on streams
 fir :: Pull1 Float ->
        Stream (Data Float) -> Stream (Data Float)
 fir b inp =
-    recurrenceI (replicate (length b) 0) inp
+    recurrenceI (replicate1 (length b) 0) inp
                 (scalarProd b)
 
 -- | An iir filter on streams
 iir :: Data Float -> Pull1 Float -> Pull1 Float ->
        Stream (Data Float) -> Stream (Data Float)
 iir a0 a b inp =
-    recurrenceIO (replicate (length b) 0) inp
-                 (replicate (length a) 0)
+    recurrenceIO (replicate1 (length b) 0) inp
+                 (replicate1 (length a) 0)
       (\i o -> 1 / a0 * ( scalarProd b i
                         - scalarProd a o)
       )
