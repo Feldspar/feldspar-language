@@ -28,7 +28,7 @@ module Feldspar.Vector (
   -- * Slices of Pull vectors
   All(..),Any(..),Slice(..),FullShape,SliceShape,sliceOfFull,fullOfSlice,
   -- * Functions on one-dimensional vectors
-  Pull1,
+  Pull1,Vector,Vector1,
   value1,indexed1,(!!),
   length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
   rotateVecL,rotateVecR,replicate1,enumFromTo,enumFrom,(...),fold1,
@@ -527,6 +527,11 @@ dzipWithS f a1 a2 = uncurryS (min m n) $ \ i -> f (g i) (h i)
 -- Functions on one dimensional Pull vectors
 
 type Pull1 a = Pull DIM1 (Data a)
+
+type Vector a = Pull DIM1 a
+{-# DEPRECATED Vector "Use Pull instead" #-}
+type Vector1 a = Pull1 a
+{-# DEPRECATED Vector1 "Use Pull1 instead" #-}
 
 value1 :: Syntax a => [Internal a] -> Manifest DIM1 a
 value1 ls = value ([P.fromIntegral (P.length ls)],ls)
