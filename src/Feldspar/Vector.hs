@@ -37,7 +37,7 @@ module Feldspar.Vector (
   -- * Functions on two-dimensional vectors
   indexed2,mmMult,
   -- * Push vectors
-  Push,
+  Push(..),
   DPush,Pushy(..),
   empty,(++),(+=+),unpair,unpairWith,zipUnpair,riffle,interleave,flattenList,
   forwardPermute,
@@ -51,7 +51,8 @@ module Feldspar.Vector (
   -- * Overloaded functions
   Shaped(..),ShapeMap(..),
   -- * Ugly hacks
-  freezePull1,arrToManifest,fromList
+  freezePull1,arrToManifest,arrToPull,thawPull,thawPush,
+  fromList,fromPush,fromPull,freezePull,freezePush
   ) where
 
 import qualified Prelude as P
