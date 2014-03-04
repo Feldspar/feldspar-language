@@ -20,7 +20,7 @@ module Feldspar.Vector (
   unzip,unzip3,unzip4,unzip5,
   fold,fold',sum,
   halve,
-  expandL,contractL,curryL,uncurryL,dmapL,dzipWithL,
+  expandL,expandLT,contractL,contractLT,curryL,uncurryL,dmapL,dzipWithL,
   dmapS,dzipWithS,
   -- * Shape concatenation
   ShapeConc(..),
@@ -41,7 +41,7 @@ module Feldspar.Vector (
   DPush,Pushy(..),
   empty,(++),(+=+),unpair,unpairWith,zipUnpair,riffle,interleave,flattenList,
   forwardPermute,
-  expandS,contractS,uncurryS,
+  expandS,expandST,contractS,contractST,uncurryS,
   -- * Manifest vectors
   Manifest,
   Storable(..),
