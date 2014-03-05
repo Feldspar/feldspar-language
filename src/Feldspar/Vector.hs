@@ -52,6 +52,8 @@ module Feldspar.Vector (
   Shaped(..),ShapeMap(..),
   -- * Patches
   tVec1,
+  -- * Semiquestionable things
+  scan,
   -- * Ugly hacks
   freezePull1,arrToManifest,arrToPull,thawPull,thawPush,
   fromList,fromPush,fromPull,freezePull,freezePush
@@ -641,6 +643,12 @@ enumFrom m = enumFromTo m (value maxBound)
 (...) :: forall a. (Type a, Integral a)
       => Data a -> Data a -> Pull DIM1 (Data a)
 (...) = enumFromTo
+
+scan :: (Syntax a, Syntax b) => (a -> b -> a) -> a -> Pull DIM1 b -> Pull DIM1 a
+scan f init bs = toPull $ arrToManifest (fromList [length bs],
+  F.sugar $ sequential (length bs) (F.desugar init) $ \i s ->
+    let s' = F.desugar $ f (F.sugar s) (bs!!i)
+    in  (s',s'))
 
 -- | Transform all the elements of a vector
 map :: Functor vec => (a -> b) -> vec a -> vec b
