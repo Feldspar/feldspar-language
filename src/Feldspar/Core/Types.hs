@@ -275,7 +275,7 @@ instance Show (IORef a)
     show _ = "IORef"
 
 -- | Mutable arrays
-type MArr a = IOArray Index a
+type MArr a = IOArray Integer a
 
 instance Show (MArr a)
   where
