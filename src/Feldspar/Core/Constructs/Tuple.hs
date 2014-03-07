@@ -121,8 +121,6 @@ instance SizeProp (Tuple :|| Type)
           )
 
 instance Sharable Select
-  where
-    sharable _ = False
 
 instance Monotonic Select
 
