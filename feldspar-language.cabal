@@ -137,7 +137,8 @@ library
     syntactic                   >= 1.10   && < 2.0,
     tagged                      >= 0.4    && < 0.8,
     tuple                       >= 0.2    && < 0.3,
-    monad-par                   >= 0.3.4.5
+    monad-par                   >= 0.3.4.5,
+    deepseq
 
   other-extensions:
     DeriveDataTypeable

@@ -64,6 +64,7 @@ import qualified Control.Monad.Par as MonadPar
 import Data.Patch
 import Data.Proxy
 
+import Control.DeepSeq (NFData(..))
 import Foreign.Storable (Storable)
 
 import Feldspar.Lattice
@@ -97,7 +98,7 @@ instance (Lattice a, Lattice b) => Lattice (a :> b)
 newtype WordN = WordN Word32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
-    , Arbitrary, Storable
+    , Arbitrary, Storable, NFData
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
     , FiniteBits
 #endif
@@ -109,7 +110,7 @@ type instance UnsignedRep WordN = Word32
 newtype IntN = IntN Int32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
-    , Arbitrary, Storable
+    , Arbitrary, Storable, NFData
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
     , FiniteBits
 #endif
