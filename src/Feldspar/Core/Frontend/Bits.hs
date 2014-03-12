@@ -5,6 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -38,11 +39,12 @@ module Feldspar.Core.Frontend.Bits
 where
 
 import Prelude hiding (Integral(..))
+import qualified Prelude as P
 
 import Data.Int
 import Data.Word
 
-import Feldspar.Range (Range(..))
+import Feldspar.Range (Range(..), UnsignedRep)
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Bits
@@ -54,64 +56,70 @@ import qualified Data.Bits as B
 infixl 5 .<<.,.>>.
 infixl 4 ⊕
 
-class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
+class (Integral a) => Bits a
   where
     -- * Logical operations
-    (.&.)         :: Data a -> Data a -> Data a
-    (.&.)         = sugarSymF BAnd
-    (.|.)         :: Data a -> Data a -> Data a
-    (.|.)         = sugarSymF BOr
-    xor           :: Data a -> Data a -> Data a
-    xor           = sugarSymF BXor
-    complement    :: Data a -> Data a
-    complement    = sugarSymF Complement
+    (.&.)         :: a -> a -> a
+    (.|.)         :: a -> a -> a
+    xor           :: a -> a -> a
+    complement    :: a -> a
 
     -- * Bitwise operations
-    bit           :: Data Index -> Data a
-    bit           = sugarSymF Bit
-    setBit        :: Data a -> Data Index -> Data a
-    setBit        = sugarSymF SetBit
-    clearBit      :: Data a -> Data Index -> Data a
-    clearBit      = sugarSymF ClearBit
-    complementBit :: Data a -> Data Index -> Data a
-    complementBit = sugarSymF ComplementBit
-    testBit       :: Data a -> Data Index -> Data Bool
-    testBit       = sugarSymF TestBit
+    bit           :: Data Index -> a
+    setBit        :: a -> Data Index -> a
+    clearBit      :: a -> Data Index -> a
+    complementBit :: a -> Data Index -> a
+    testBit       :: a -> Data Index -> Data Bool
 
     -- * Movement operations
-    shiftLU       :: Data a -> Data Index -> Data a
-    shiftLU       = sugarSymF ShiftLU
-    shiftRU       :: Data a -> Data Index -> Data a
-    shiftRU       = sugarSymF ShiftRU
-    shiftL        :: Data a -> Data IntN -> Data a
-    shiftL        = sugarSymF ShiftL
-    shiftR        :: Data a -> Data IntN -> Data a
-    shiftR        = sugarSymF ShiftR
-    rotateLU      :: Data a -> Data Index -> Data a
-    rotateLU      = sugarSymF RotateLU
-    rotateRU      :: Data a -> Data Index -> Data a
-    rotateRU      = sugarSymF RotateRU
-    rotateL       :: Data a -> Data IntN -> Data a
-    rotateL       = sugarSymF RotateL
-    rotateR       :: Data a -> Data IntN -> Data a
-    rotateR       = sugarSymF RotateR
-    reverseBits   :: Data a -> Data a
-    reverseBits   = sugarSymF ReverseBits
+    shiftLU       :: a -> Data Index -> a
+    shiftRU       :: a -> Data Index -> a
+    shiftL        :: a -> Data IntN -> a
+    shiftR        :: a -> Data IntN -> a
+    rotateLU      :: a -> Data Index -> a
+    rotateRU      :: a -> Data Index -> a
+    rotateL       :: a -> Data IntN -> a
+    rotateR       :: a -> Data IntN -> a
+    reverseBits   :: a -> a
 
     -- * Query operations
-    bitScan       :: Data a -> Data Index
+    bitScan       :: a -> Data Index
+    bitCount      :: a -> Data Index
+
+    bitSize       :: a -> Data Index
+    bitSize'      :: a -> Index
+
+    isSigned      :: a -> Data Bool
+    isSigned'     :: a -> Bool
+
+instance (Type a, B.Bits a, B.Bits (UnsignedRep a), Size a ~ Range a,
+          Ord a, Ord (UnsignedRep a), Num a, Num (UnsignedRep a),
+          P.Integral a, P.Integral (UnsignedRep a),
+          Bounded a, Bounded (UnsignedRep a)) =>
+         Bits (Data a) where
+    (.&.)         = sugarSymF BAnd
+    (.|.)         = sugarSymF BOr
+    xor           = sugarSymF BXor
+    complement    = sugarSymF Complement
+    bit           = sugarSymF Bit
+    setBit        = sugarSymF SetBit
+    clearBit      = sugarSymF ClearBit
+    complementBit = sugarSymF ComplementBit
+    testBit       = sugarSymF TestBit
+    shiftLU       = sugarSymF ShiftLU
+    shiftRU       = sugarSymF ShiftRU
+    shiftL        = sugarSymF ShiftL
+    shiftR        = sugarSymF ShiftR
+    rotateLU      = sugarSymF RotateLU
+    rotateRU      = sugarSymF RotateRU
+    rotateL       = sugarSymF RotateL
+    rotateR       = sugarSymF RotateR
+    reverseBits   = sugarSymF ReverseBits
     bitScan       = sugarSymF BitScan
-    bitCount      :: Data a -> Data Index
     bitCount      = sugarSymF BitCount
-
-    bitSize       :: Data a -> Data Index
     bitSize       = value . bitSize'
-    bitSize'      :: Data a -> Index
     bitSize'      = const $ fromIntegral $ finiteBitSize (undefined :: a)
-
-    isSigned      :: Data a -> Data Bool
     isSigned      = value . isSigned'
-    isSigned'     :: Data a -> Bool
     isSigned'     = const $ B.isSigned (undefined :: a)
 
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
@@ -122,35 +130,24 @@ finiteBitSize :: (B.Bits b) => b -> Int
 finiteBitSize = B.bitSize
 #endif
 
-instance Bits Word8
-instance Bits Word16
-instance Bits Word32
-instance Bits Word64
-instance Bits WordN
-instance Bits Int8
-instance Bits Int16
-instance Bits Int32
-instance Bits Int64
-instance Bits IntN
-
 -- * Combinators
 
-(⊕)    :: (Bits a) => Data a -> Data a -> Data a
+(⊕)    :: (Bits a) => a -> a -> a
 (⊕)    =  xor
-(.<<.) :: (Bits a) => Data a -> Data Index -> Data a
+(.<<.) :: (Bits a) => a -> Data Index -> a
 (.<<.) =  shiftLU
-(.>>.) :: (Bits a) => Data a -> Data Index -> Data a
+(.>>.) :: (Bits a) => a -> Data Index -> a
 (.>>.) =  shiftRU
 
 -- | Set all bits to one
-allOnes :: Bits a => Data a
+allOnes :: Bits a => a
 allOnes = complement 0
 
 -- | Set the `n` lowest bits to one
-oneBits :: Bits a => Data Index -> Data a
+oneBits :: Bits a => Data Index -> a
 oneBits n = complement (allOnes .<<. n)
 
 -- | Extract the `k` lowest bits
-lsbs :: Bits a => Data Index -> Data a -> Data a
+lsbs :: Bits a => Data Index -> a -> a
 lsbs k i = i .&. oneBits k
 

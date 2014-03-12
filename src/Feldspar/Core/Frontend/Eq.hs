@@ -40,38 +40,27 @@ import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Eq
 
+import Feldspar.Core.Frontend.Logic
+
 infix 4 ==
 infix 4 /=
 
 -- | Redefinition of the standard 'P.Eq' class for Feldspar
-class (Type a) => Eq a
+class Syntax a => Eq a
   where
-    (==) :: Data a -> Data a -> Data Bool
+    (==) :: a -> a -> Data Bool
+    (/=) :: a -> a -> Data Bool
+
+instance (Type a, P.Eq a) => Eq (Data a) where
     (==) = sugarSymF Equal
-    (/=) :: Data a -> Data a -> Data Bool
     (/=) = sugarSymF NotEqual
+{-
+instance (Eq a, Eq b)                               => Eq (a,b)          where
+  (a,b) == (c,d) = a == c && b == d
 
-instance Eq ()
-instance Eq Bool
-instance Eq Float
-instance Eq Double
-instance Eq Word8
-instance Eq Word16
-instance Eq Word32
-instance Eq Word64
-instance Eq WordN
-instance Eq Int8
-instance Eq Int16
-instance Eq Int32
-instance Eq Int64
-instance Eq IntN
-
-instance (Eq a, Eq b)                               => Eq (a,b)
 instance (Eq a, Eq b, Eq c)                         => Eq (a,b,c)
 instance (Eq a, Eq b, Eq c, Eq d)                   => Eq (a,b,c,d)
 instance (Eq a, Eq b, Eq c, Eq d, Eq e)             => Eq (a,b,c,d,e)
 instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f)       => Eq (a,b,c,d,e,f)
 instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g) => Eq (a,b,c,d,e,f,g)
-
-instance (Eq a, P.RealFloat a) => Eq (Complex a)
-
+-}

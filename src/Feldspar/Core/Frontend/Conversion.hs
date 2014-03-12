@@ -36,33 +36,36 @@ module Feldspar.Core.Frontend.Conversion
 where
 
 import Prelude hiding (Integral)
+import qualified Prelude as P
 
+import Feldspar.Range
+import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Conversion
 import Feldspar.Core.Frontend.Integral
 import Feldspar.Core.Frontend.Num
 
-i2f :: (Integral a, Numeric b, RealFloat b) => Data a -> Data b
+i2f :: (P.Integral a, Num b, RealFloat b, Type a, Type b, Range a ~ Size a) => Data a -> Data b
 i2f = i2n
 
-f2i :: (Integral a, Numeric b, RealFloat b) => Data b -> Data a
+f2i :: (P.Integral a, Num b, RealFloat b, Type a, Type b) => Data b -> Data a
 f2i = sugarSymF F2I
 
-i2n :: (Integral a, Numeric b) => Data a -> Data b
+i2n :: (P.Integral a, Num b, Type a, Type b, Range a ~ Size a) => Data a -> Data b
 i2n = sugarSymF I2N
 
-b2i :: Integral a => Data Bool -> Data a
+b2i :: (P.Integral a, Type a, Type b) => Data Bool -> Data a
 b2i = sugarSymF B2I
 
-truncate :: (Integral a, Numeric b, RealFloat b) => Data b -> Data a
+truncate :: (P.Integral a, Num b, RealFloat b, Type a, Type b) => Data b -> Data a
 truncate = f2i
 
-round :: (Integral a, Numeric b, RealFloat b) => Data b -> Data a
+round :: (P.Integral a, Num b, RealFloat b, Type a, Type b) => Data b -> Data a
 round = sugarSymF Round
 
-ceiling :: (Integral a, Numeric b, RealFloat b) => Data b -> Data a
+ceiling :: (P.Integral a, Num b, RealFloat b, Type a, Type b) => Data b -> Data a
 ceiling = sugarSymF Ceiling
 
-floor :: (Integral a, Numeric b, RealFloat b) => Data b -> Data a
+floor :: (P.Integral a, Num b, RealFloat b, Type a, Type b) => Data b -> Data a
 floor = sugarSymF Floor
 

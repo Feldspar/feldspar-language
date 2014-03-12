@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -43,38 +44,24 @@ import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Num
 import Feldspar.Core.Frontend.Literal
 
-class (Type a, Num a, Num (Size a)) => Numeric a
+class (Syntax a, Num a) => Numeric a
   where
-    fromIntegerNum :: Integer -> Data a
-    fromIntegerNum =  value . fromInteger
-    absNum         :: Data a -> Data a
-    absNum         =  sugarSymF Abs
-    signumNum      :: Data a -> Data a
-    signumNum      =  sugarSymF Sign
-    addNum         :: Data a -> Data a -> Data a
-    addNum         =  sugarSymF Add
-    subNum         :: Data a -> Data a -> Data a
-    subNum         =  sugarSymF Sub
-    mulNum         :: Data a -> Data a -> Data a
-    mulNum         =  sugarSymF Mul
+    fromIntegerNum :: Integer -> a
+    absNum         :: a -> a
+    signumNum      :: a -> a
+    addNum         :: a -> a -> a
+    subNum         :: a -> a -> a
+    mulNum         :: a -> a -> a
 
-instance Numeric Word8
-instance Numeric Word16
-instance Numeric Word32
-instance Numeric Word64
-instance Numeric WordN
-instance Numeric Int8
-instance Numeric Int16
-instance Numeric Int32
-instance Numeric Int64
-instance Numeric IntN
+instance (Type a, Num a, Num (Size a)) => Numeric (Data a) where
+  fromIntegerNum =  value . fromInteger
+  absNum         =  sugarSymF Abs
+  signumNum      =  sugarSymF Sign
+  addNum         =  sugarSymF Add
+  subNum         =  sugarSymF Sub
+  mulNum         =  sugarSymF Mul
 
-instance Numeric Float
-instance Numeric Double
-
-instance (Type a, RealFloat a) => Numeric (Complex a)
-
-instance (Numeric a) => Num (Data a)
+instance (Type a, Num a, Num (Size a)) => Num (Data a)
   where
     fromInteger = fromIntegerNum
     abs         = absNum

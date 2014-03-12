@@ -5,7 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-
+{-# LANGUAGE UndecidableInstances #-}
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
@@ -53,32 +53,24 @@ import Feldspar.Core.Frontend.Logic
 import Feldspar.Core.Frontend.Num
 import Feldspar.Core.Frontend.Ord
 
-class (Ord a, Numeric a, BoundedInt a, P.Integral a, Size a ~ Range a) => Integral a
+class (Ord a, Numeric a) => Integral a
   where
-    quot :: Data a -> Data a -> Data a
-    quot = sugarSymF Quot
-    rem  :: Data a -> Data a -> Data a
-    rem  = sugarSymF Rem
-    div  :: Data a -> Data a -> Data a
-    div  = sugarSymF Div
-    mod  :: Data a -> Data a -> Data a
-    mod  = sugarSymF Mod
-    (^)  :: Data a -> Data a -> Data a
-    (^)  = sugarSymF Exp
+    quot :: a -> a -> a
+    rem  :: a -> a -> a
+    div  :: a -> a -> a
+    mod  :: a -> a -> a
+    (^)  :: a -> a -> a
 
-divSem :: (Integral a)
+divSem :: (P.Integral a, P.Ord (Size a), Range a ~ Size a, BoundedInt a, Type a)
        => Data a -> Data a -> Data a
 divSem x y = (x > 0 && y < 0 || x < 0 && y > 0) && rem x y /= 0 ?   quot x y P.- 1
                                                                 P.$ quot x y
 
-instance Integral Word8
-instance Integral Word16
-instance Integral Word32
-instance Integral Word64
-instance Integral WordN
-instance Integral Int8
-instance Integral Int16
-instance Integral Int32
-instance Integral Int64
-instance Integral IntN
+instance (P.Integral a, P.Ord (Size a), Range a ~ Size a, BoundedInt a,Type a) =>
+         Integral (Data a) where
+  quot = sugarSymF Quot
+  rem  = sugarSymF Rem
+  div  = sugarSymF Div
+  mod  = sugarSymF Mod
+  (^)  = sugarSymF Exp
 

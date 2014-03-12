@@ -35,7 +35,7 @@
 
 module Feldspar.Core.Frontend.Ord where
 
-import qualified Prelude
+import qualified Prelude as P
 
 import Data.Int
 import Data.Word
@@ -52,33 +52,20 @@ infix 4 <=
 infix 4 >=
 
 -- | Redefinition of the standard 'Prelude.Ord' class for Feldspar
-class (Eq a, Prelude.Ord a, Prelude.Ord (Size a)) => Ord a where
-  (<)  :: Data a -> Data a -> Data Bool
+class Eq a => Ord a where
+  (<)  :: a -> a -> Data Bool
+  (>)  :: a -> a -> Data Bool
+
+  (<=) :: a -> a -> Data Bool
+  (>=) :: a -> a -> Data Bool
+
+  min :: a -> a -> a
+  max :: a -> a -> a
+
+instance (Type a, P.Ord a, P.Ord (Size a)) => Ord (Data a) where
   (<)  =  sugarSymF LTH
-  (>)  :: Data a -> Data a -> Data Bool
   (>)  =  sugarSymF GTH
-
-  (<=) :: Data a -> Data a -> Data Bool
   (<=) =  sugarSymF LTE
-  (>=) :: Data a -> Data a -> Data Bool
   (>=) =  sugarSymF GTE
-
-  min :: Data a -> Data a -> Data a
   min = sugarSymF Min
-  max :: Data a -> Data a -> Data a
   max = sugarSymF Max
-
-instance Ord ()
-instance Ord Bool
-instance Ord Word8
-instance Ord Int8
-instance Ord Word16
-instance Ord Int16
-instance Ord Word32
-instance Ord Int32
-instance Ord Word64
-instance Ord Int64
-instance Ord WordN
-instance Ord IntN
-instance Ord Float
-instance Ord Double

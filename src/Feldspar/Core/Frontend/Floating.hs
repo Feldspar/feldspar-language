@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
@@ -32,56 +35,52 @@ import qualified Prelude
 import Prelude (Float,Double)
 import Data.Complex
 
+import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Floating
 import Feldspar.Core.Frontend.Fractional
 
--- Make new class, with "Data" in all the types
-
 infixr 8 **
 
-class (Fraction a, Prelude.Floating a) => Floating a where
-  pi        :: Data a
+class (Fraction a) => Floating a where
+  pi        :: a
+  exp       :: a -> a
+  sqrt      :: a -> a
+  log       :: a -> a
+  (**)      :: a -> a -> a
+  logBase   :: a -> a -> a
+  sin       :: a -> a
+  tan       :: a -> a
+  cos       :: a -> a
+  asin      :: a -> a
+  atan      :: a -> a
+  acos      :: a -> a
+  sinh      :: a -> a
+  tanh      :: a -> a
+  cosh      :: a -> a
+  asinh     :: a -> a
+  atanh     :: a -> a
+  acosh     :: a -> a
+
+instance (Prelude.Floating a, Type a, Prelude.Num (Size a)) => Floating (Data a) where
   pi        =  sugarSymF Pi
-  exp       :: Data a -> Data a
   exp       =  sugarSymF Exp
-  sqrt      :: Data a -> Data a
   sqrt      =  sugarSymF Sqrt
-  log       :: Data a -> Data a
   log       =  sugarSymF Log
-  (**)      :: Data a -> Data a -> Data a
   (**)      =  sugarSymF Pow
-  logBase   :: Data a -> Data a -> Data a
   logBase   =  sugarSymF LogBase
-  sin       :: Data a -> Data a
   sin       =  sugarSymF Sin
-  tan       :: Data a -> Data a
   tan       =  sugarSymF Tan
-  cos       :: Data a -> Data a
   cos       =  sugarSymF Cos
-  asin      :: Data a -> Data a
   asin      =  sugarSymF Asin
-  atan      :: Data a -> Data a
   atan      =  sugarSymF Atan
-  acos      :: Data a -> Data a
   acos      =  sugarSymF Acos
-  sinh      :: Data a -> Data a
   sinh      =  sugarSymF Sinh
-  tanh      :: Data a -> Data a
   tanh      =  sugarSymF Tanh
-  cosh      :: Data a -> Data a
   cosh      =  sugarSymF Cosh
-  asinh     :: Data a -> Data a
   asinh     =  sugarSymF Asinh
-  atanh     :: Data a -> Data a
   atanh     =  sugarSymF Atanh
-  acosh     :: Data a -> Data a
   acosh     =  sugarSymF Acosh
 
-instance Floating Float
-instance Floating Double
-
-instance (Fraction a, Prelude.RealFloat a) => Floating (Complex a)
-
-π :: Floating a => Data a
+π :: Floating a => a
 π = pi

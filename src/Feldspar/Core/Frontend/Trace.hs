@@ -38,6 +38,6 @@ import Feldspar.Core.Frontend.Num
 -- | Tracing execution of an expression. Semantically, this is the identity
 -- function, but a back end may treat this function specially, for example write
 -- its arguments to a log.
-trace :: Numeric a => Int -> Data a -> Data a
+trace :: (Numeric a, Type a) => Int -> Data a -> Data a
 trace label = sugarSymF Trace (fromIntegral label :: Data IntN)
 

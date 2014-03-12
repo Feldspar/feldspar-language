@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
@@ -31,42 +33,43 @@ where
 
 import Data.Complex (Complex)
 
+import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Complex
 import Feldspar.Core.Frontend.Num
 
-complex :: (Numeric a, RealFloat a) => Data a -> Data a -> Data (Complex a)
+complex :: (Numeric a, Type a, RealFloat a) => Data a -> Data a -> Data (Complex a)
 complex = sugarSymF MkComplex
 
-realPart :: (Numeric a, RealFloat a) => Data (Complex a) -> Data a
+realPart :: (Numeric a, Type a, RealFloat a) => Data (Complex a) -> Data a
 realPart = sugarSymF RealPart
 
-imagPart :: (Numeric a, RealFloat a) => Data (Complex a) -> Data a
+imagPart :: (Numeric a, Type a, RealFloat a) => Data (Complex a) -> Data a
 imagPart = sugarSymF ImagPart
 
-conjugate :: (Numeric a, RealFloat a) => Data (Complex a) -> Data (Complex a)
+conjugate :: (Numeric a, Type a, RealFloat a) => Data (Complex a) -> Data (Complex a)
 conjugate = sugarSymF Conjugate
 
-mkPolar :: (Numeric a, RealFloat a) => Data a -> Data a -> Data (Complex a)
+mkPolar :: (Numeric a, Type a, RealFloat a) => Data a -> Data a -> Data (Complex a)
 mkPolar = sugarSymF MkPolar
 
-cis :: (Numeric a, RealFloat a) => Data a -> Data (Complex a)
+cis :: (Numeric a, Type a, RealFloat a) => Data a -> Data (Complex a)
 cis = sugarSymF Cis
 
-magnitude :: (Numeric a, RealFloat a) => Data (Complex a) -> Data a
+magnitude :: (Numeric a, Type a, RealFloat a) => Data (Complex a) -> Data a
 magnitude = sugarSymF Magnitude
 
-phase :: (Numeric a, RealFloat a) => Data (Complex a) -> Data a
+phase :: (Numeric a, Type a, RealFloat a) => Data (Complex a) -> Data a
 phase = sugarSymF Phase
 
-polar :: (Numeric a, RealFloat a) => Data (Complex a) -> (Data a, Data a)
+polar :: (Numeric a, Type a, RealFloat a) => Data (Complex a) -> (Data a, Data a)
 polar c = (magnitude c, phase c)
 
 infixl 6 +.
 
-(+.) :: (Numeric a, RealFloat a) => Data a -> Data a -> Data (Complex a)
+(+.) :: (Numeric a, Type a, RealFloat a) => Data a -> Data a -> Data (Complex a)
 (+.) = complex
 
-iunit :: (Numeric a, RealFloat a) => Data (Complex a)
+iunit :: (Numeric a, Type a, RealFloat a, Num (Size a)) => Data (Complex a)
 iunit = 0 +. 1
 

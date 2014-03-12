@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
@@ -31,6 +34,7 @@ where
 
 import Data.Complex
 
+import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Fractional
 
@@ -40,20 +44,17 @@ import Feldspar.Core.Frontend.Num
 -- | Fractional types. The relation to the standard 'Fractional' class is
 --
 -- @instance `Fraction` a => `Fractional` (`Data` a)@
-class (Fractional a, Numeric a) => Fraction a
+class (Numeric a) => Fraction a
   where
-    fromRationalFrac :: Rational -> Data a
-    fromRationalFrac = value . fromRational
+    fromRationalFrac :: Rational -> a
 
-    divFrac :: Data a -> Data a -> Data a
-    divFrac = sugarSymF DivFrac
+    divFrac :: a -> a -> a
 
-instance Fraction Float
-instance Fraction Double
+instance (Fractional a, Type a, Num (Size a)) => Fraction (Data a) where
+  fromRationalFrac = value . fromRational
+  divFrac = sugarSymF DivFrac
 
-instance (Fraction a, RealFloat a) => Fraction (Complex a)
-
-instance (Fraction a) => Fractional (Data a)
+instance (Fraction a, Fractional a, Type a, Num (Size a)) => Fractional (Data a)
   where
     fromRational = fromRationalFrac
     (/)          = divFrac

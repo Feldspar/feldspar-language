@@ -91,6 +91,8 @@ import Test.QuickCheck
 
 import Data.Patch
 
+import qualified Data.Bits as B
+
 import Language.Syntactic hiding
     (desugar, sugar, resugar, showAST, drawAST, writeHtmlAST)
 import qualified Language.Syntactic as Syntactic
@@ -309,12 +311,18 @@ tM _ = id
 
 -- | Integer logarithm in base 2
 --   Based on an algorithm in Hacker's Delight
-ilog2 :: (Bits a) => Data a -> Data Index
+ilog2 :: (Type a, Size a ~ Range a, B.Bits a, B.Bits (UnsignedRep a),
+          Num a, Num (UnsignedRep a), P.Integral a, P.Integral (UnsignedRep a),
+          Bounded a, Bounded (UnsignedRep a),
+          P.Ord a, P.Ord (UnsignedRep a)) => Data a -> Data Index
 ilog2 x = bitSize x - 1 - nlz x
 
 -- | Count leading zeros
 --   Based on an algorithm in Hacker's Delight
-nlz :: (Bits a) => Data a -> Data Index
+nlz :: (Type a, Size a ~ Range a, B.Bits a, B.Bits (UnsignedRep a),
+        Num a, Num (UnsignedRep a), P.Integral a, P.Integral (UnsignedRep a),
+        Bounded a, Bounded (UnsignedRep a),
+        P.Ord a, P.Ord (UnsignedRep a)) => Data a -> Data Index
 nlz x = bitCount $ complement $ foldl go x $ takeWhile (P.< bitSize' x) $ P.map (2 P.^) [(0::Integer)..]
   where
     go b s = share b $ \b' -> b' .|. (b' .>>. value s)
