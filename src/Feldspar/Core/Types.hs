@@ -58,7 +58,9 @@ import Data.Typeable (Typeable)
 import Data.Typeable (Typeable,Typeable1)
 #endif
 import Data.Word
+import Data.Default
 import Test.QuickCheck
+import System.Random (Random(..))
 import qualified Control.Monad.Par as MonadPar
 
 import Data.Patch
@@ -98,7 +100,7 @@ instance (Lattice a, Lattice b) => Lattice (a :> b)
 newtype WordN = WordN Word32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
-    , Arbitrary, Storable, NFData
+    , Arbitrary, Random, Storable, NFData, Default
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
     , FiniteBits
 #endif
@@ -110,7 +112,7 @@ type instance UnsignedRep WordN = Word32
 newtype IntN = IntN Int32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
-    , Arbitrary, Storable, NFData
+    , Arbitrary, Random, Storable, NFData, Default
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
     , FiniteBits
 #endif

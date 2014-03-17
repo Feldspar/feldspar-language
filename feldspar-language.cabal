@@ -138,7 +138,9 @@ library
     tagged                      >= 0.4    && < 0.8,
     tuple                       >= 0.2    && < 0.3,
     monad-par                   >= 0.3.4.5,
-    deepseq
+    deepseq,
+    random                      >= 1.0    && < 1.1,
+    data-default                >= 0.5.3  && < 0.6
 
   other-extensions:
     DeriveDataTypeable
