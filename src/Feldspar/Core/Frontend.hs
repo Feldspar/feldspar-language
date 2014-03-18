@@ -111,6 +111,7 @@ import Feldspar.Core.Frontend.Complex          as Frontend
 import Feldspar.Core.Frontend.Condition        as Frontend
 import Feldspar.Core.Frontend.ConditionM       as Frontend
 import Feldspar.Core.Frontend.Conversion       as Frontend
+import Feldspar.Core.Frontend.Elements         as Frontend
 import Feldspar.Core.Frontend.Eq               as Frontend
 import Feldspar.Core.Frontend.Error            as Frontend
 import Feldspar.Core.Frontend.FFI              as Frontend

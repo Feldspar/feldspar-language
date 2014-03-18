@@ -60,17 +60,16 @@ data MutableArray a
 
 instance Semantic MutableArray
   where
-    semantics NewArr    = Sem "newMArr"  $ \l -> newArray (mkBounds l)
-    semantics NewArr_   = Sem "newMArr_" $ \l -> newListArray (mkBounds l)
-        [error $ "Undefined element at index " ++ show (i::Index) | i <- [0..]]
-    semantics GetArr    = Sem "getMArr"   readArray
-    semantics SetArr    = Sem "setMArr"   writeArray
-    semantics ArrLength = Sem "arrLength" (getBounds >=> \(l,u) -> return (u-l+1))
+    semantics NewArr    = Sem "newMArr"  $ \l -> newArray (mkBounds $ toInteger l)
+    semantics NewArr_   = Sem "newMArr_" $ \l -> newListArray (mkBounds $ toInteger l)
+        [error $ "Undefined element at index " ++ show (i::Integer) | i <- [0..]]
+    semantics GetArr    = Sem "getMArr"  $ \arr i -> readArray arr (toInteger i)
+    semantics SetArr    = Sem "setMArr"  $ \arr i -> writeArray arr (toInteger i)
+    semantics ArrLength = Sem "arrLength" (getBounds >=> \(l,u) -> return $ fromInteger (u-l+1))
 
 -- | Calculate array bounds. If the length is zero, flip the arguments to
 -- make an empty range
-mkBounds :: Length -> (Length,Length)
-mkBounds 0 = (pred 0, 0)
+mkBounds :: Integer -> (Integer,Integer)
 mkBounds l = (0, pred l)
 
 semanticInstances ''MutableArray

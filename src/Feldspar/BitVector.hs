@@ -128,20 +128,20 @@ unfreezeBitVector' len arr = unfreezeBitVector $ cap (r :> elemSize) arr
 -- | Transforms a bool vector to a bitvector.
 -- Length of the vector has to be divisible by the wordlength,
 -- otherwise booleans at the end will be dropped.
-fromVector :: forall w . (Unit w, Size w ~ Range w) => Vec.Vector (Data Bool) -> BitVector w
+fromVector :: forall w . (Unit w, Size w ~ Range w) => Vec.Pull1 Bool -> BitVector w
 fromVector v = BitVector
-    { segments = [Segment wl (loop w)]
+    { segments = [Segment wl (loop w')]
         -- TODO: Should Vector segments be transformed to BitVector segments
         -- for the sake of efficiency?
     }
   where
-    w = value $ width (Proxy :: Proxy w)
-    wl = Vec.length v `div` w
+    w' = value $ width (Proxy :: Proxy w)
+    wl = Vec.length v `div` w'
     loop n ix = forLoop n 0 $ \i st ->
-        st `shiftLU` 1 .|. (v ! (w * ix + i) ? 1 $ 0)
+        st `shiftLU` 1 .|. (v Vec.!! (w' * ix + i) ? 1 $ 0)
 
-toVector :: forall w . (Unit w, Size w ~ Range w) => BitVector w -> Vec.Vector (Data Bool)
-toVector bv = Vec.indexed (length bv) (bv!)
+toVector :: forall w . (Unit w, Size w ~ Range w) => BitVector w -> Vec.Pull1 Bool
+toVector bv = Vec.indexed1 (length bv) (bv!)
 
 instance (Unit w, Size w ~ Range w) => Indexed (BitVector w)
   where
@@ -172,7 +172,7 @@ replUnit n u = BitVector [Segment n $ const $ value u]
 
 indexed :: (Unit w, Size w ~ Range w) =>
     Data Length -> (Data Index -> Data Bool) -> BitVector w
-indexed l ixf = fromVector $ Vec.indexed l ixf
+indexed l ixf = fromVector $ Vec.indexed1 l ixf
 
 map :: (Unit w, Size w ~ Range w) =>
     (Data Bool -> Data Bool) -> BitVector w -> BitVector w

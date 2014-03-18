@@ -62,13 +62,13 @@ In the expression printed by `test1`, we see a `min` function computing the numb
 \begin{code}
 test2 = printExpr $ scalarProd
     -:: tVec1 tFloat >-> id
-    -:: name (\a -> id >-> newLen (length a) >-> id)
+    -:: name (\a -> id >-> newLen1 (length a) >-> id)
 \end{code}
 
 The `name` combinator lets us bind the first argument (to the variable `a`) and use it in the patch. The actual patch is then
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.haskell}
-id >-> newLen (length a) >-> id
+id >-> newLen1 (length a) >-> id
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.haskell}
 
 which simply sets the length of the second argument to the length of `a`.
@@ -87,7 +87,7 @@ drop4 :: Data Index -> Vector (Data Word8) -> Vector (Data Word8)
 drop4 n v = drop n' v'
   where
     n' = between 100 120 n
-    v' = newLen (between 150 200 (length v)) v
+    v' = newLen1 (between 150 200 (length v)) v
 \end{code}
 
 Using patch combinators, `drop4` can be written more succinctly as

@@ -67,11 +67,11 @@ runMutableArrayEval :: forall a . Mut (MArr a) -> [a]
 runMutableArrayEval m = unsafePerformIO $
                         do marr <- m
                            iarr <- unsafeFreeze marr
-                           return (elems (iarr :: Array WordN a))
+                           return (elems (iarr :: Array Integer a))
 
 withArrayEval :: forall a b. MArr a -> ([a] -> Mut b) -> Mut b
 withArrayEval ma f
-    = do a <- f (elems (unsafePerformIO $ freeze ma :: Array WordN a))
+    = do a <- f (elems (unsafePerformIO $ freeze ma :: Array Integer a))
          C.evaluate a
 
 instance Typed MutableToPure
