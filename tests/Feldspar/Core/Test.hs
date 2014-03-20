@@ -44,4 +44,4 @@ withInterleaveable prop =
 prop_deinterleave_preseves_elements :: Property
 prop_deinterleave_preseves_elements =
     withInterleaveable $ \xs ->
-      (DL.sort xs :: [WordN]) === DL.sort (eval deinterleave xs)
+      (DL.sort xs :: [WordN]) ==== DL.sort (eval deinterleave xs)

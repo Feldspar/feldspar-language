@@ -71,7 +71,7 @@ module Feldspar.Core.Frontend
 
     -- * QuickCheck
     , (===>)
-    , (===)
+    , (====)
 
     -- * Type constraints
     , tData
@@ -271,18 +271,19 @@ instance Testable (Data Bool)
 a ===> b = eval a ==> b
 
 
+-- | Test that two function of the same arity have the same semantics
 class Equal a
   where
-    (===) :: a -> a -> Property
+    (====) :: a -> a -> Property
 
 instance (P.Eq a, Show a) => Equal a
   where
-    x === y = printTestCase ("Evaluated property: " ++ show x ++ " === " ++ show y)
-            $ property (x P.== y)
+    x ==== y = printTestCase ("Evaluated property: " ++ show x ++ " ==== " ++ show y)
+             $ property (x P.== y)
 
 instance (Show a, Arbitrary a, Equal b) => Equal (a -> b)
   where
-    f === g = property (\x -> f x === g x)
+    f ==== g = property (\x -> f x ==== g x)
 
 
 --------------------------------------------------------------------------------
