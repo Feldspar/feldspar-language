@@ -132,7 +132,7 @@ library
     data-hash                   >= 0.1    && < 0.3,
     data-lens                   >= 2.10   && < 2.11,
     mtl                         >= 2.0    && < 2.2,
-    QuickCheck                  >= 2.5    && < 3,
+    QuickCheck                  >= 2.7    && < 3,
     patch-combinators           >= 0.2    && < 0.3,
     syntactic                   >= 1.10   && < 2.0,
     tagged                      >= 0.4    && < 0.8,
@@ -180,7 +180,7 @@ test-suite range
     feldspar-language,
     base,
     random           >= 1   && < 2,
-    QuickCheck       >= 2.4 && < 3,
+    QuickCheck       >= 2.7 && < 3,
     tasty            >= 0.3,
     tasty-quickcheck >= 0.2
 
@@ -200,7 +200,7 @@ test-suite semantics
   build-depends:
     feldspar-language,
     base,
-    QuickCheck       >= 2.4 && < 3,
+    QuickCheck       >= 2.7 && < 3,
     tasty            >= 0.3,
     tasty-th         >= 0.1,
     tasty-quickcheck >= 0.2

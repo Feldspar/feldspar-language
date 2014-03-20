@@ -279,8 +279,7 @@ class Equal a
 
 instance (P.Eq a, Show a) => Equal a
   where
-    x ==== y = printTestCase ("Evaluated property: " ++ show x ++ " ==== " ++ show y)
-             $ property (x P.== y)
+    x ==== y = x === y
 
 instance (Show a, Arbitrary a, Equal b) => Equal (a -> b)
   where
