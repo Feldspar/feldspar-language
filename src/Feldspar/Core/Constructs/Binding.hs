@@ -45,6 +45,7 @@ module Feldspar.Core.Constructs.Binding
     , optimizeLambda
     , optimizeFunction
 --    , optimizeFunctionFix
+    , subst
     , betaReduce
     , prjLambda
     , cLambda
