@@ -39,13 +39,20 @@ module Feldspar.Core.Constructs.Condition
     ) where
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding hiding (subst)
+import Language.Syntactic.Constructs.Binding.HigherOrder (CLambda(..))
+import Language.Syntactic.Constructs.Literal
 import Language.Syntactic.Constructs.Condition
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
+import Feldspar.Core.Constructs.Eq
+import Feldspar.Core.Constructs.Ord
 import Feldspar.Core.Constructs.Logic
+import Feldspar.Core.Constructs.Binding (subst)
+
+import Data.Typeable (Typeable)
 
 instance Sharable Condition
 
@@ -58,16 +65,65 @@ instance SizeProp (Condition :|| Type)
 
 instance ( (Condition :|| Type) :<: dom
          , (Logic     :|| Type) :<: dom
+         , (EQ        :|| Type) :<: dom
+         , (ORD       :|| Type) :<: dom
+         , (Variable  :|| Type) :<: dom
+         , CLambda Type :<: dom
+         , Monotonic dom
          , OptimizeSuper dom
          )
       => Optimize (Condition :|| Type) dom
   where
-    constructFeatOpt _ (C' Condition) (c :* t :* f :* Nil)
+    -- If the condition is a variable, substitute for True/False in each
+    -- branch
+    optimizeFeat opts s@(C' Condition) (c :* t :* f :* Nil)
+        | Just (C' (Variable v)) <- prjF c
+        = optimizeFeatDefault opts s $ c :* subst v (literal True) t
+                                         :* subst v (literal False) f
+                                         :* Nil
+
+    -- If condition is (a == b) and either a or b is a variable,
+    -- substitute for the other in the True branch
+    optimizeFeat opts s@(C' Condition) (c@(op :$ a :$ b) :* t :* f :* Nil)
+        | Just (C' Equal) <- prjF op
+        , Just (C' (Variable v)) <- prjF b
+        = optimizeFeatDefault opts s $ c :* subst v a t :* f :* Nil
+
+        | Just (C' Equal) <- prjF op
+        , Just (C' (Variable v)) <- prjF a
+        = optimizeFeatDefault opts s $ c :* subst v b t :* f :* Nil
+
+    -- If condition is (a /= b) and either a or b is a variable,
+    -- substitute for the other in the False branch
+    optimizeFeat opts s@(C' Condition) (c@(op :$ a :$ b) :* t :* f :* Nil)
+        | Just (C' NotEqual) <- prjF op
+        , Just (C' (Variable v)) <- prjF b
+        = optimizeFeatDefault opts s $ c :* t :* subst v a f :* Nil
+
+        | Just (C' NotEqual) <- prjF op
+        , Just (C' (Variable v)) <- prjF a
+        = optimizeFeatDefault opts s $ c :* t :* subst v b f :* Nil
+
+    optimizeFeat opts sym args = optimizeFeatDefault opts sym args
+
+    -- If the condition is a literal, shortcut the condition
+    constructFeatOpt opts (C' Condition) (c :* t :* f :* Nil)
         | Just cl <- viewLiteral c = return $ if cl then t else f
 
+    -- If the branches a Boolean literals, shortcut as a truth table
+    constructFeatOpt opts (C' Condition) (c :* t :* f :* Nil)
+        | BoolType <- infoType (getInfo t)
+        , Just tl <- viewLiteral t
+        , Just fl <- viewLiteral f
+        = case (tl,fl) of
+            (True,False) -> return c
+            (False,True) -> constructFeat opts (c' Not) (c :* Nil)
+
+    -- It the branches are equal, the choice doesn't matter
     constructFeatOpt _ (C' Condition) (_ :* t :* f :* Nil)
         | alphaEq t f = return t
 
+    -- Invert a negated condition
     constructFeatOpt opts cond@(C' Condition) ((op :$ c) :* t :* f :* Nil)
         | Just (C' Not) <- prjF op
         = constructFeat opts cond (c :* f :* t :* Nil)
