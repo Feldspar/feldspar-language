@@ -56,6 +56,7 @@ module Feldspar.Core.Interpretation
     , infoRange
     , LatticeSize1 (..)
     , viewLiteral
+    , literal
     , literalDecor
     , constFold
     , SomeInfo (..)
@@ -278,6 +279,11 @@ viewLiteral _ = Nothing
 
 prjF :: Project (sub :|| Type) sup => sup sig -> Maybe ((sub :|| Type) sig)
 prjF = prj
+
+-- | Construct a 'Literal'
+literal :: (Type a, (Literal :|| Type) :<: dom) =>
+    a -> ASTF (dom :|| Typeable) a
+literal a = Sym $ C' $ inj $ c' $ Literal a
 
 -- | Construct a 'Literal' decorated with 'Info'
 literalDecorSrc :: (Type a, (Literal :|| Type) :<: dom) =>
