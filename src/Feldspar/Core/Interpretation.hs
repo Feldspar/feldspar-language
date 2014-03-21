@@ -217,8 +217,10 @@ mkInfo sz = Info typeRep sz Map.empty ""
 mkInfoTy :: (Show (Size a), Lattice (Size a)) => TypeRep a -> Info a
 mkInfoTy t = Info t universal Map.empty ""
 
-infoRange :: Type a => Info a -> RangeSet a
-infoRange = sizeToRange . infoSize
+infoRange :: Info a -> RangeSet a
+infoRange info = case infoType info of
+                   IntType _ _ -> RangeSet $ infoSize info
+                   _           -> Universal
 
 -- | This class is used to allow constructs to be abstract in the monad. Its
 -- purpose is similar to that of 'MonadType'.
