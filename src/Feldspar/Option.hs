@@ -92,6 +92,11 @@ option noneCase someCase opt = isSome opt
     ? someCase (fromSome opt)
     $ noneCase
 
+optionM :: Syntax b => M b -> (a -> M b) -> Option a -> M b
+optionM noneCase someCase opt = ifM (isSome opt)
+    (someCase (fromSome opt))
+    noneCase
+
 oplus :: Syntax a => Option a -> Option a -> Option a
 oplus a b = isSome a ? a $ b
 
