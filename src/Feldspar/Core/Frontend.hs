@@ -221,7 +221,7 @@ showAST = Syntactic.showAST . reifyFeld defaultFeldOpts N32
 drawAST :: SyntacticFeld a => a -> IO ()
 drawAST = Syntactic.drawAST . reifyFeld defaultFeldOpts N32
 
--- | Convert the syntax tree to an HTML file with foldable nodes
+-- | Write the syntax tree to an HTML file with foldable nodes
 writeHtmlAST :: SyntacticFeld a => FilePath -> a -> IO ()
 writeHtmlAST file = Syntactic.writeHtmlAST file . reifyFeld defaultFeldOpts N32
 
