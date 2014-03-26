@@ -67,7 +67,6 @@ import qualified Feldspar as F
 import Feldspar.Vector.Shape
 
 import Data.Tuple.Select
-import Data.Tuple.Curry
 import Control.Monad (zipWithM_)
 import Data.Proxy
 

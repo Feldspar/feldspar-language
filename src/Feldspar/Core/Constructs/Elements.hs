@@ -10,16 +10,12 @@
 module Feldspar.Core.Constructs.Elements where
 
 import Language.Syntactic
-import Language.Syntactic.Constructs.Monad
-import Language.Syntactic.Constructs.Binding.HigherOrder
 
-import Feldspar.Lattice
+import Feldspar.Lattice (universal)
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Constructs.Binding
-import Feldspar.Core.Constructs.Literal
-
-import Data.List
+import Data.List (genericTake, sortBy)
 import Data.Function (on)
 
 data ElementsFeat a
