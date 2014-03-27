@@ -1,54 +1,54 @@
-<<WordN -> WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+<<WordN -> WordN | ([*,*],[*,*])>>
  └╴Lambda 0
-    └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+    └╴<<WordN | [*,*]>>
        └╴runMutable
-          └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+          └╴<<Mut WordN | [*,*]>>
              └╴bind
-                ├╴<<Mut Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                ├╴<<Mut Ref WordN | [*,*]>>
                 │  └╴newRef
-                │     └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                │     └╴<<WordN | [*,*]>>
                 │        └╴var:0
-                └╴<<Ref WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+                └╴<<Ref WordN -> Mut WordN | ([*,*],[*,*])>>
                    └╴Lambda 1
-                      └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                      └╴<<Mut WordN | [*,*]>>
                          └╴bind
-                            ├╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                            ├╴<<Mut WordN | [*,*]>>
                             │  └╴getRef
-                            │     └╴<<Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                            │     └╴<<Ref WordN | [*,*]>>
                             │        └╴var:1
-                            └╴<<WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+                            └╴<<WordN -> Mut WordN | ([*,*],[*,*])>>
                                └╴Lambda 2
-                                  └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                  └╴<<Mut WordN | [*,*]>>
                                      └╴Let
-                                        ├╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                        ├╴<<WordN | [*,*]>>
                                         │  └╴(+)
-                                        │     ├╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                        │     ├╴<<WordN | [*,*]>>
                                         │     │  └╴var:2
-                                        │     └╴<<WordN | Range {lowerBound = 3, upperBound = 3}>>
+                                        │     └╴<<WordN | [3,3]>>
                                         │        └╴3
-                                        └╴<<WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+                                        └╴<<WordN -> Mut WordN | ([*,*],[*,*])>>
                                            └╴Lambda 5
-                                              └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                              └╴<<Mut WordN | [*,*]>>
                                                  └╴bind
-                                                    ├╴<<Mut Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                    ├╴<<Mut Ref WordN | [*,*]>>
                                                     │  └╴newRef
-                                                    │     └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                    │     └╴<<WordN | [*,*]>>
                                                     │        └╴var:5
-                                                    └╴<<Ref WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+                                                    └╴<<Ref WordN -> Mut WordN | ([*,*],[*,*])>>
                                                        └╴Lambda 3
-                                                          └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                          └╴<<Mut WordN | [*,*]>>
                                                              └╴bind
-                                                                ├╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                ├╴<<Mut WordN | [*,*]>>
                                                                 │  └╴getRef
-                                                                │     └╴<<Ref WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                │     └╴<<Ref WordN | [*,*]>>
                                                                 │        └╴var:3
-                                                                └╴<<WordN -> Mut WordN | (Range {lowerBound = 0, upperBound = 4294967295},Range {lowerBound = 0, upperBound = 4294967295})>>
+                                                                └╴<<WordN -> Mut WordN | ([*,*],[*,*])>>
                                                                    └╴Lambda 4
-                                                                      └╴<<Mut WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                      └╴<<Mut WordN | [*,*]>>
                                                                          └╴return
-                                                                            └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                            └╴<<WordN | [*,*]>>
                                                                                └╴(+)
-                                                                                  ├╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                                  ├╴<<WordN | [*,*]>>
                                                                                   │  └╴var:4
-                                                                                  └╴<<WordN | Range {lowerBound = 0, upperBound = 4294967295}>>
+                                                                                  └╴<<WordN | [*,*]>>
                                                                                      └╴var:5
