@@ -66,7 +66,7 @@ import Feldspar.Vector
           (Pull, Pull1, fromZero, toPull, arrToManifest
           ,freezePull1, indexed1, value1, fromList
           ,sum,length,replicate1,scalarProd)
-import Feldspar.Vector.Shape (Shape(..),DIM1,Shapely(..))
+import Feldspar.Vector.Shape (Shape(..),DIM1)
 
 -- | Infinite streams.
 data Stream a where

@@ -25,5 +25,5 @@ tests = $(testGroupGenerator)
 -- prop_append = eval ((++) -:: tVec1 tIndex >-> id >-> id) === (P.++)
 -- prop_take   = eval (take -:: tData tLength >-> tVec1 tIndex >-> id) === P.genericTake
 -- prop_drop   = eval (drop -:: tData tLength >-> tVec1 tIndex >-> id) === P.genericDrop
--- prop_revrev = eval ((reverse . reverse) -:: tVec1 tIndex >-> id) === id
+-- prop_revrev = eval ((reverse . reverse) -:: tVec1 tIndex >-> id) ==== id
 

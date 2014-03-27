@@ -36,7 +36,7 @@ Say we want to print the core expression resulting from the `scalarProd` functio
 The solution is to provide a type signature for `scalarProd`:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*Tutorial.Patch> printExpr (scalarProd :: Vector1 Float -> Vector1 Float -> Data Float)
+*Tutorial.Patch> printExpr (scalarProd :: Pull1 Float -> Pull1 Float -> Data Float)
 ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -49,7 +49,7 @@ test1 = printExpr $ scalarProd -:: tVec1 tFloat >-> id
 The part to the right of `-::` is the "patch", which is applied as a wrapper around `scalarProd`. In general, patches can change the behavior of the wrapped function, but type patches, such as the one above, only have the effect of constraining the function's type. The patch `tVec1 tFloat >-> id` is composed of two smaller patches: `tVec1 tFloat` and `id` (the identity function). The first of these is applied to the first argument and constrains its type to `Vector1 Float`. The `id` patch simply leaves the result (that is, the partially applied `scalarProd`) untouched. Thus, the whole patch can be thought of as the following *partial type signature* for `scalarProd`:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.haskell}
-scalarProd :: Vector1 Float -> _  -- Not legal Haskell
+scalarProd :: Pull1 Float -> _  -- Not legal Haskell
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.haskell}
 
 
@@ -83,7 +83,7 @@ Size patches
 The following example was used to demonstrate how the programmer can guide the analysis by providing guarantees about the ranges of values in the program:
 
 \begin{code}
-drop4 :: Data Index -> Vector (Data Word8) -> Vector (Data Word8)
+drop4 :: Data Index -> Pull1 (Data Word8) -> Pull1 (Data Word8)
 drop4 n v = drop n' v'
   where
     n' = between 100 120 n
@@ -93,7 +93,7 @@ drop4 n v = drop n' v'
 Using patch combinators, `drop4` can be written more succinctly as
 
 \begin{code}
-drop4' :: Data Index -> Vector (Data Word8) -> Vector (Data Word8)
+drop4' :: Data Index -> Pull1 (Data Word8) -> Pull1 (Data Word8)
 drop4' = drop -:: between 100 120 >-> (between 150 200 |> id) >-> id
 \end{code}
 
