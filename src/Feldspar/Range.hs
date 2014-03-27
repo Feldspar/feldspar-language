@@ -701,7 +701,7 @@ rangeRem d r
     | isSigned (lowerBound d) &&
       minBound `inRange` d && (-1) `inRange` r = fullRange
     | d `rangeLessAbs` r && isNatural d = d
-    | isNatural d = range 0 (pred (upperBound (abs r)))
+    | isNatural d = range 0 (upperBound (abs r))
     | d `absRangeLessAbs` r && isNeg d = d
     | isNeg d = range (negate (upperBound (abs r))) 0
     where
