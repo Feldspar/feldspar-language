@@ -200,7 +200,10 @@ prop_disjointGen t = forAll disjointRanges $ \(r1,r2) -> disjoint r1 (r2 `rangeT
 fromRange :: (BoundedInt a, Random a) => Range a -> Gen a
 fromRange r
     | isEmpty r = error "fromRange: empty range"
-    | otherwise = choose (lowerBound r, upperBound r)
+    | otherwise = frequency [(1,return (lowerBound r))
+                            ,(1,return (upperBound r))
+                            ,(1,choose (lowerBound r, upperBound r))
+                            ]
 
 rangeTy :: Range t -> t -> Range t
 rangeTy r _ = r
