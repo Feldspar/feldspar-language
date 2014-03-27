@@ -51,7 +51,7 @@ module Feldspar.Vector (
   -- * Overloaded functions
   Shaped(..),ShapeMap(..),
   -- * Patches
-  tVec1,
+  tVec,tVec1,
   -- * Semiquestionable things
   scan,
   -- * Ugly hacks
@@ -151,9 +151,15 @@ instance (Syntax a, Shapely sh) => Syntactic (Pull sh a)
 
 type instance Elem (Pull sh a) = a
 type instance CollIndex (Pull sh a) = Shape sh
+type instance CollSize  (Pull1 a) = Data Length
 
 instance Indexed (Pull sh a) where
     Pull ixf _ ! i = ixf i
+
+instance Syntax a => Sized (Pull1 a)
+  where
+    collSize    = length
+    setCollSize = newLen1
 
 instance CollMap (Pull sh a) (Pull sh b) where
     collMap = map
