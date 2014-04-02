@@ -57,7 +57,7 @@ import Feldspar.Core.Constructs.Trace
 import Feldspar.Core.Constructs.Tuple
 import qualified Feldspar.Core.Constructs.Binding as Core
 import Feldspar.Core.UntypedRepresentation hiding ( Lambda, UntypedFeldF(..)
-                                                  , Size, Type(..)
+                                                  , Size, Type(..), Signedness
                                                   )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
 
@@ -93,12 +93,7 @@ untypeProgDecor :: Untype dom dom
     => Decor Info dom a
     -> Args (AST (Decor Info dom)) a
     -> UntypedFeld
-untypeProgDecor (Decor info a) args =
-    untypeDecor info $ untypeProgSym a info args
-
-untypeDecor :: Info a -> UntypedFeld -> UntypedFeld
-untypeDecor info e = e --FIXME: Fishy error
---    let src = infoSource info
+untypeProgDecor (Decor info a) args = untypeProgSym a info args
 
 untypeProg :: Untype dom dom =>
     ASTF (Decor Info dom) a -> UntypedFeld
@@ -114,7 +109,6 @@ untypeProgFresh :: Untype sub dom
 untypeProgFresh = untypeProgSym
 
 -- Array
-
 instance ( Untype dom dom
          , Project (CLambda Type) dom
          , Project (Literal  :|| Type) dom
@@ -706,9 +700,11 @@ untypeType (FunType a b) (sa, sz)   = Ut.FunType (untypeType a sa) (untypeType b
 untypeType (FValType a) sz          = Ut.FValType (untypeType a sz)
 untypeType typ _                    = error $ "untypeType: missing "
 
+convSign :: Signedness a -> Ut.Signedness
 convSign U       = Unsigned
 convSign S       = Signed
 
+convSize :: BitWidth a -> Ut.Size
 convSize N8      = S8
 convSize N16     = S16
 convSize N32     = S32
