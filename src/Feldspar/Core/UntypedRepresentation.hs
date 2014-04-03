@@ -141,6 +141,9 @@ data PrimOp1 =
    -- Mutable
    | Run
    | Return
+   -- MutableReference
+   | NewRef
+   | GetRef
    -- Num
    | Abs
    | Sign
@@ -211,6 +214,9 @@ data PrimOp2 =
    | Bind
    | Then
    | When
+   -- MutableReference
+   | SetRef
+   | ModRef
    -- Num
    | Add
    | Sub
@@ -256,11 +262,6 @@ data UntypedFeldF e =
    -- Loop
    | ForLoop e e e
    | WhileLoop e e e
-   -- MutableReference
-   | NewRef e
-   | GetRef e
-   | SetRef e e
-   | ModRef e e
    -- MutableArray
    | NewArr e e
    | NewArr_ e
@@ -353,12 +354,6 @@ instance HasType UntypedFeld where
    -- Loop
     typeof (In (ForLoop _ e _))           = typeof e
     typeof (In (WhileLoop e _ _))         = typeof e
-   -- MutableReference
-    typeof (In (NewRef e))                = MutType (RefType (typeof e))
-    typeof (In (GetRef e))                = t
-     where (RefType t) = typeof e
-    typeof (In SetRef{})                  = MutType UnitType
-    typeof (In ModRef{})                  = MutType UnitType
    -- MutableArray
     typeof (In (NewArr _ e))              = MutType (MArrType fullRange (typeof e))
     typeof (In (NewArr_ e))               = error "typeof: newArr_"
@@ -438,11 +433,6 @@ fvU' vs (In (Literal l)) = []
    -- Loop
 fvU' vs (In (ForLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
 fvU' vs (In (WhileLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-   -- MutableReference
-fvU' vs (In (NewRef e)) = fvU' vs e
-fvU' vs (In (GetRef e)) = fvU' vs e
-fvU' vs (In (SetRef e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (ModRef e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- MutableArray
 fvU' vs (In (NewArr e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (NewArr_ e)) = fvU' vs e

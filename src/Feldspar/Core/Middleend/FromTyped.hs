@@ -367,7 +367,6 @@ instance ( Untype dom dom
     untypeProgSym ArrLength info (arr :* Nil)
       = In (Ut.ArrLength (untypeProg arr))
 
--- MutableRef
 instance (Untype dom dom, Project (CLambda Type) dom) => Untype Mutable dom
   where
     untypeProgSym Run info (ma :* Nil)
@@ -378,14 +377,19 @@ instance ( Untype dom dom
          , Project (CLambda Type) dom
          ) => Untype MutableReference dom
   where
-    untypeProgSym NewRef info (a :* Nil) = In (Ut.NewRef (untypeProg a))
-    untypeProgSym GetRef info (r :* Nil) = In (Ut.GetRef (untypeProg r))
+    untypeProgSym NewRef info (a :* Nil)
+      = In (Ut.PrimApp1 Ut.NewRef t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym GetRef info (r :* Nil)
+      = In (Ut.PrimApp1 Ut.GetRef t' (untypeProg r))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym SetRef info (r :* a :* Nil)
-       = In (Ut.SetRef (untypeProg r) (untypeProg a))
+      = In (Ut.PrimApp2 Ut.SetRef t' (untypeProg r) (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym ModRef info (r :* a :* Nil)
-       = In (Ut.ModRef (untypeProg r) (untypeProg a))
+      = In (Ut.PrimApp2 Ut.ModRef t' (untypeProg r) (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
 
--- Noinline
 instance Untype dom dom => Untype (NoInline :|| Type) dom
   where
     untypeProgSym (C' NoInline) info (p :* Nil)
