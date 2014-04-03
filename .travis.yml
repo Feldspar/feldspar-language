@@ -6,5 +6,4 @@ ghc:
 
 before_install:
   - cabal sandbox init
-  # TODO newer distributive does not build on GHC 7.4.2
-  - cabal install --only-dep --enable-tests --constraint="distributive<0.4.2"
+  - cabal install --only-dep --enable-tests
