@@ -63,8 +63,11 @@ import Feldspar.Core.UntypedRepresentation hiding ( Lambda, UntypedFeldF(..)
                                                   )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
 
--- Translate from the typed AST to a nearly identical format that is not
--- typed in the host language.
+-- A self contained translation from the Syntactic format into UntypedFeld.
+--
+-- The file begins with the necessary Untype-functions and
+-- Untype-instances and tucks in some local helper functions at the
+-- end. "untypeProg" is the only exported function.
 
 -- | A minimal complete instance has to define either 'untypeProgSym' or
 -- 'untypeExprSym'.
@@ -229,50 +232,6 @@ instance Untype (Literal :|| Type) dom
   where
     untypeProgSym t@(C' (Literal a)) info Nil
       = In (Ut.Literal (literal (infoType info) (infoSize info) a))
-
-literal :: TypeRep a -> Size a -> a -> Lit
-literal t@UnitType        sz a = literalConst t sz a
-literal t@BoolType        sz a = literalConst t sz a
-literal t@IntType{}       sz a = literalConst t sz a
-literal t@FloatType       sz a = literalConst t sz a
-literal t@DoubleType      sz a = literalConst t sz a
-literal t@ComplexType{}   sz a = literalConst t sz a
-literal t@ArrayType{}     sz a = literalConst t sz a
-literal (Tup2Type ta tb) (sa,sb) (a,b)
-    = LTup2 (literal ta sa a) (literal tb sb b)
-
-literal (Tup3Type ta tb tc) (sa,sb,sc) (a,b,c)
-    = LTup3 (literal ta sa a) (literal tb sb b) (literal tc sc c)
-
-literal (Tup4Type ta tb tc td) (sa,sb,sc,sd) (a,b,c,d)
-    = LTup4 (literal ta sa a) (literal tb sb b) (literal tc sc c)
-            (literal td sd d)
-
-literal (Tup5Type ta tb tc td te) (sa,sb,sc,sd,se) (a,b,c,d,e)
-    = LTup5 (literal ta sa a) (literal tb sb b) (literal tc sc c)
-            (literal td sd d) (literal te se e)
-
-literal (Tup6Type ta tb tc td te tf) (sa,sb,sc,sd,se,sf) (a,b,c,d,e,f)
-    = LTup6 (literal ta sa a) (literal tb sb b) (literal tc sc c)
-            (literal td sd d) (literal te se e) (literal tf sf f)
-
-literal (Tup7Type ta tb tc td te tf tg) (sa,sb,sc,sd,se,sf,sg) (a,b,c,d,e,f,g)
-    = LTup7 (literal ta sa a) (literal tb sb b) (literal tc sc c)
-            (literal td sd d) (literal te se e) (literal tf sf f)
-            (literal tg sg g)
-literal t s a = error "Missing pattern: FromTyped.hs: literal"
-
-literalConst :: TypeRep a -> Size a -> a -> Lit
-literalConst UnitType        _  ()     = LUnit
-literalConst BoolType        _  a      = LBool a
-literalConst (IntType s n)   sz a      = LInt (convSign s) (convSize n) (toInteger a)
-literalConst FloatType       _  a      = LFloat a
-literalConst DoubleType      _  a      = LDouble a
-literalConst (ArrayType t)   _  a      = LArray t' $ map (literalConst t (defaultSize t)) a
-  where t' = untypeType t (defaultSize t)
-literalConst (ComplexType t) _  (r:+i) = LComplex re ie
-  where re = literalConst t (defaultSize t) r
-        ie = literalConst t (defaultSize t) i
 
 instance ( Untype dom dom
          , Project (CLambda Type) dom
@@ -807,6 +766,53 @@ untypeType (IVarType a) sz          = Ut.IVarType $ untypeType a sz
 untypeType (FunType a b) (sa, sz)   = Ut.FunType (untypeType a sa) (untypeType b sz)
 untypeType (FValType a) sz          = Ut.FValType (untypeType a sz)
 untypeType typ _                    = error $ "untypeType: missing "
+
+
+-- Helper functions.
+
+literal :: TypeRep a -> Size a -> a -> Lit
+literal t@UnitType        sz a = literalConst t sz a
+literal t@BoolType        sz a = literalConst t sz a
+literal t@IntType{}       sz a = literalConst t sz a
+literal t@FloatType       sz a = literalConst t sz a
+literal t@DoubleType      sz a = literalConst t sz a
+literal t@ComplexType{}   sz a = literalConst t sz a
+literal t@ArrayType{}     sz a = literalConst t sz a
+literal (Tup2Type ta tb) (sa,sb) (a,b)
+    = LTup2 (literal ta sa a) (literal tb sb b)
+
+literal (Tup3Type ta tb tc) (sa,sb,sc) (a,b,c)
+    = LTup3 (literal ta sa a) (literal tb sb b) (literal tc sc c)
+
+literal (Tup4Type ta tb tc td) (sa,sb,sc,sd) (a,b,c,d)
+    = LTup4 (literal ta sa a) (literal tb sb b) (literal tc sc c)
+            (literal td sd d)
+
+literal (Tup5Type ta tb tc td te) (sa,sb,sc,sd,se) (a,b,c,d,e)
+    = LTup5 (literal ta sa a) (literal tb sb b) (literal tc sc c)
+            (literal td sd d) (literal te se e)
+
+literal (Tup6Type ta tb tc td te tf) (sa,sb,sc,sd,se,sf) (a,b,c,d,e,f)
+    = LTup6 (literal ta sa a) (literal tb sb b) (literal tc sc c)
+            (literal td sd d) (literal te se e) (literal tf sf f)
+
+literal (Tup7Type ta tb tc td te tf tg) (sa,sb,sc,sd,se,sf,sg) (a,b,c,d,e,f,g)
+    = LTup7 (literal ta sa a) (literal tb sb b) (literal tc sc c)
+            (literal td sd d) (literal te se e) (literal tf sf f)
+            (literal tg sg g)
+literal t s a = error "Missing pattern: FromTyped.hs: literal"
+
+literalConst :: TypeRep a -> Size a -> a -> Lit
+literalConst UnitType        _  ()     = LUnit
+literalConst BoolType        _  a      = LBool a
+literalConst (IntType s n)   sz a      = LInt (convSign s) (convSize n) (toInteger a)
+literalConst FloatType       _  a      = LFloat a
+literalConst DoubleType      _  a      = LDouble a
+literalConst (ArrayType t)   _  a      = LArray t' $ map (literalConst t (defaultSize t)) a
+  where t' = untypeType t (defaultSize t)
+literalConst (ComplexType t) _  (r:+i) = LComplex re ie
+  where re = literalConst t (defaultSize t) r
+        ie = literalConst t (defaultSize t) i
 
 convSign :: Signedness a -> Ut.Signedness
 convSign U       = Unsigned

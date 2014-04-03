@@ -28,6 +28,13 @@ import Data.List (nub)
 import Feldspar.Range (Range(..), singletonRange, fullRange)
 import Feldspar.Core.Types (Length)
 
+-- This file contains the UntypedFeld format and associated
+-- helper-formats and -functions that work on those formats, for
+-- example fv and typeof.
+--
+-- THe format resembles the structure of the typed Syntactic format,
+-- but it does not reflect into the host language type system.
+
 type UntypedFeld = Term UntypedFeldF
 
 data Term f = In (f (Term f))
@@ -71,6 +78,7 @@ data Var = Var { varNum :: Integer
                }
    deriving (Show)
 
+-- Variables are equal if they have the same varNum.
 instance Eq Var where
   v1 == v2 = varNum v1 == varNum v2
 
@@ -81,7 +89,7 @@ data Lit =
    | LFloat Float
    | LDouble Double
    | LComplex Lit Lit
-   | LArray Type [Lit]
+   | LArray Type [Lit] -- Type necessary for empty array literals.
    | LTup2 Lit Lit
    | LTup3 Lit Lit Lit
    | LTup4 Lit Lit Lit Lit
@@ -90,6 +98,7 @@ data Lit =
    | LTup7 Lit Lit Lit Lit Lit Lit Lit
    deriving (Eq,Show)
 
+-- 0-ary application heads.
 data PrimOp0 =
    -- Elements
      ESkip
@@ -102,6 +111,7 @@ data PrimOp0 =
    | ParYield
    deriving (Eq,Show)
 
+-- 1-ary application heads.
 data PrimOp1 =
    -- Array
      GetLength
@@ -184,6 +194,7 @@ data PrimOp1 =
    | Sel7
    deriving (Eq, Show)
 
+-- 2-ary application heads.
 data PrimOp2 =
    -- Array
      Parallel
@@ -267,6 +278,7 @@ data PrimOp2 =
    | Trace
    deriving (Eq, Show)
 
+-- 3-ary application heads.
 data PrimOp3 =
    -- Array
      Sequential
@@ -281,16 +293,18 @@ data PrimOp3 =
    | SetArr
    deriving (Eq, Show)
 
+-- The main type: Applications, Bindings and other leftovers that are not 0-3-ary.
 data UntypedFeldF e =
    -- Binding
      Variable Var
    | Lambda Var e
    | Let e e
    -- FFI
-   | ForeignImport String Type [e]
+   | ForeignImport String Type [e] -- The type is the return type of the function.
    -- Literal
    | Literal Lit
    -- Tuple
+   -- Keep all tuples in the same place, although Tup2/Tup3 could live in PrimOp2/3.
    | Tup2 e e
    | Tup3 e e e
    | Tup4 e e e e
