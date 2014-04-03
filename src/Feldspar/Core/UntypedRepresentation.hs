@@ -101,6 +101,13 @@ data PrimOp1 =
    | ReverseBits
    | BitScan
    | BitCount
+   -- Complex
+   | RealPart
+   | ImagPart
+   | Conjugate
+   | Magnitude
+   | Phase
+   | Cis
    -- Conversion
    | F2I
    | I2N
@@ -156,6 +163,9 @@ data PrimOp2 =
    | RotateRU
    | RotateL
    | RotateR
+   -- Complex
+   | MkComplex
+   | MkPolar
    -- Floating
    | Pow
    | LogBase
@@ -188,15 +198,6 @@ data UntypedFeldF e =
    | Variable Var
    | Lambda Var e
    | Let e e
-   -- Complex
-   | MkComplex e e
-   | RealPart e
-   | ImagPart e
-   | Conjugate e
-   | MkPolar e e
-   | Magnitude e
-   | Phase e
-   | Cis e
    -- Condition
    | Condition e e e
    | ConditionM e e e
@@ -330,19 +331,6 @@ instance HasType UntypedFeld where
     typeof (In (Variable v))              = typeof v
     typeof (In (Lambda v e))              = FunType (typeof v) (typeof e)
     typeof (In (Let _ (In (Lambda _ e)))) = typeof e
-   -- Complex
-    typeof (In (MkComplex e _))           = ComplexType (typeof e)
-    typeof (In (RealPart e))              = t
-      where (ComplexType t) = typeof e
-    typeof (In (ImagPart e))              = t
-      where (ComplexType t) = typeof e
-    typeof (In (Conjugate e))             = typeof e
-    typeof (In (MkPolar e _))             = ComplexType (typeof e)
-    typeof (In (Magnitude e))             = t
-      where (ComplexType t) = typeof e
-    typeof (In (Phase e))                 = t
-      where (ComplexType t) = typeof e
-    typeof (In (Cis e))                   = ComplexType (typeof e)
    -- Condition
     typeof (In (Condition _ e _))         = typeof e
     typeof (In (ConditionM _ e _))        = typeof e
@@ -470,15 +458,6 @@ fvU' vs (In (Variable v)) | v `elem` vs = []
                           | otherwise = [v]
 fvU' vs (In (Lambda v e))  = fvU' (v:vs) e
 fvU' vs (In (Let e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Complex
-fvU' vs (In (MkComplex e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (RealPart e)) = fvU' vs e
-fvU' vs (In (ImagPart e)) = fvU' vs e
-fvU' vs (In (Conjugate e)) = fvU' vs e
-fvU' vs (In (MkPolar e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Magnitude e)) = fvU' vs e
-fvU' vs (In (Phase e)) = fvU' vs e
-fvU' vs (In (Cis e)) = fvU' vs e
    -- Condition
 fvU' vs (In (Condition c t f)) = fvU' vs c ++ fvU' vs t ++ fvU' vs f
 fvU' vs (In (ConditionM c t f)) = fvU' vs c ++ fvU' vs t ++ fvU' vs f

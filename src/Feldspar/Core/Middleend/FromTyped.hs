@@ -110,7 +110,6 @@ untypeProgFresh :: Untype sub dom
     -> UntypedFeld
 untypeProgFresh = untypeProgSym
 
--- Array
 instance ( Untype dom dom
          , Project (CLambda Type) dom
          , Project (Literal  :|| Type) dom
@@ -144,7 +143,6 @@ instance ( Untype dom dom
     untypeProgSym (C' GetLength) info (a :* Nil)
         = In (Ut.GetLength (untypeProg a))
 
--- Binding
 instance Untype (Core.Variable :|| Type) dom
   where
     untypeProgSym (C' (Core.Variable v)) info Nil
@@ -164,7 +162,6 @@ instance ( Untype dom dom
     untypeProgSym Core.Let info (a :* b :* Nil)
         = In (Ut.Let (untypeProg a) (untypeProg b))
 
--- Condition
 instance Untype dom dom => Untype (Condition :|| Type) dom
   where
     untypeProgSym (C' Condition) info (cond :* tHEN :* eLSE :* Nil)
@@ -175,7 +172,6 @@ instance Untype dom dom => Untype (ConditionM m) dom
     untypeProgSym ConditionM info (cond :* tHEN :* eLSE :* Nil)
       = In (Ut.ConditionM (untypeProg cond) (untypeProg tHEN) (untypeProg eLSE))
 
--- Error
 instance (Untype dom dom) => Untype (Error :|| Type) dom
   where
     untypeProgSym (C' Undefined)    info Nil = In (Ut.Undefined)
@@ -206,13 +202,11 @@ instance ( Untype dom dom
 
     untypeProgSym (C' ESkip) info Nil = In (Ut.ESkip)
 
--- FFI
 instance (Untype dom dom) => Untype (FFI :|| Type) dom
   where -- No use for second argument at this stage.
     untypeProgSym (C' (ForeignImport name _)) info args
       = In (Ut.ForeignImport name (listArgs untypeProg args))
 
--- Future
 instance Untype dom dom => Untype (FUTURE :|| Type) dom
   where
     untypeProgSym (C' MkFuture) info (p :* Nil)
@@ -221,7 +215,6 @@ instance Untype dom dom => Untype (FUTURE :|| Type) dom
     untypeProgSym (C' Await) info (a :* Nil)
       = In (Ut.Await (untypeProg a))
 
--- Literal
 instance Untype (Literal :|| Type) dom
   where
     untypeProgSym t@(C' (Literal a)) info Nil
@@ -271,8 +264,6 @@ literalConst (ComplexType t) _  (r:+i) = LComplex re ie
   where re = literalConst t (defaultSize t) r
         ie = literalConst t (defaultSize t) i
 
-
--- Loop
 instance ( Untype dom dom
          , Project (CLambda Type) dom
          , Project (Literal  :|| Type) dom
@@ -301,7 +292,6 @@ instance ( Untype dom dom
     untypeProgSym While info (cond :* step :* Nil)
         = In (Ut.While (untypeProg cond) (untypeProg step))
 
--- MutableToPure
 instance ( Untype dom dom
          , Project (CLambda Type) dom
          , Project (Core.Variable :|| Type) dom
@@ -492,21 +482,29 @@ instance Untype dom dom => Untype (BITS       :|| Type) dom
 instance Untype dom dom => Untype (COMPLEX    :|| Type) dom
    where
       untypeProgSym (C' MkComplex) info (a :* b :* Nil)
-        = In (Ut.MkComplex (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.MkComplex t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' RealPart) info (a :* Nil)
-        = In (Ut.RealPart (untypeProg a))
+        = In (Ut.PrimApp1 Ut.RealPart t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' ImagPart) info (a :* Nil)
-        = In (Ut.ImagPart (untypeProg a))
+        = In (Ut.PrimApp1 Ut.ImagPart t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' MkPolar) info (a :* b :* Nil)
-        = In (Ut.MkPolar (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.MkPolar t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Conjugate) info (a :* Nil)
-        = In (Ut.Conjugate (untypeProg a))
+        = In (Ut.PrimApp1 Ut.Conjugate t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Magnitude) info (a :* Nil)
-        = In (Ut.Magnitude (untypeProg a))
+        = In (Ut.PrimApp1 Ut.Magnitude t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Phase) info (a :* Nil)
-        = In (Ut.Phase (untypeProg a))
+        = In (Ut.PrimApp1 Ut.Phase t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Cis) info (a :* Nil)
-        = In (Ut.Cis (untypeProg a))
+        = In (Ut.PrimApp1 Ut.Cis t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Conversion :|| Type) dom
   where
@@ -672,24 +670,20 @@ instance Untype dom dom => Untype (Trace      :|| Type) dom
       untypeProgSym (C' Trace) info (a :* b :* Nil)
         = In (Ut.Trace (untypeProg a) (untypeProg b))
 
--- Save
 instance Untype dom dom => Untype (Save :|| Type) dom
   where
     untypeProgSym (C' Save) info (a :* Nil) = In (Ut.Save (untypeProg a))
 
--- Sizeprop
 instance Untype dom dom => Untype (PropSize :|| Type) dom
   where
     untypeProgSym (C' (PropSize _)) info (_ :* b :* Nil)
       = In (Ut.PropSize (untypeProg b))
 
--- SourceInfo
 instance Untype dom dom => Untype (Decor SourceInfo1 Identity :|| Type) dom
   where
     untypeProgSym (C' (Decor (SourceInfo1 comment) Id)) info (a :* Nil)
       = In (Ut.SourceInfo comment (untypeProg a))
 
--- Switch
 instance ( Untype dom dom
          , Project (EQ :|| Type) dom
          , Project (Condition :|| Type) dom
@@ -699,7 +693,6 @@ instance ( Untype dom dom
     untypeProgSym (C' Switch) info (tree :* Nil)
         = In (Ut.Switch (untypeProg tree))
 
--- Tuple
 instance Untype dom dom => Untype (Tuple :|| Type) dom
   where
     untypeProgSym (C' Tup2) info (m1 :* m2 :* Nil)
