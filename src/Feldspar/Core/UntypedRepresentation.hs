@@ -24,14 +24,8 @@ module Feldspar.Core.UntypedRepresentation (
 
 import Data.List (nub)
 
-import Language.Syntactic.Constructs.Decoration
-import Language.Syntactic.Constructs.Identity
-
 import Feldspar.Range (Range(..), singletonRange, fullRange)
-
-import Feldspar.Core.Constructs
 import Feldspar.Core.Types (Length)
-import Feldspar.Core.Constructs.SourceInfo
 
 type UntypedFeld = Term UntypedFeldF
 
