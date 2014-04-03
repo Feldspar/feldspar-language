@@ -407,18 +407,24 @@ instance ( Untype dom dom
          )
       => Untype ParFeature dom
   where
-    untypeProgSym ParRun info (p :* Nil) = In (Ut.ParRun (untypeProg p))
-
-    untypeProgSym ParNew info Nil = In Ut.ParNew
-
-    untypeProgSym ParGet info (r :* Nil) = In (Ut.ParGet (untypeProg r))
-
+    untypeProgSym ParRun info (p :* Nil)
+      = In (Ut.PrimApp1 Ut.ParRun t' (untypeProg p))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym ParNew info Nil
+        = In (Ut.PrimApp0 Ut.ParNew t')
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym ParGet info (r :* Nil)
+      = In (Ut.PrimApp1 Ut.ParGet t' (untypeProg r))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym ParPut info (r :* a :* Nil)
-      = In (Ut.ParPut (untypeProg r) (untypeProg a))
-
-    untypeProgSym ParFork info (p :* Nil) = In (Ut.ParFork (untypeProg p))
-
-    untypeProgSym ParYield info Nil = In Ut.ParYield
+      = In (Ut.PrimApp2 Ut.ParPut t' (untypeProg r) (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym ParFork info (p :* Nil)
+      = In (Ut.PrimApp1 Ut.ParFork t' (untypeProg p))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym ParYield info Nil
+        = In (Ut.PrimApp0 Ut.ParYield t')
+          where t' = untypeType (infoType info) (infoSize info)
 
 -- | Converts symbols to primitive function calls
 instance Untype dom dom => Untype Semantics dom
@@ -613,7 +619,8 @@ instance Untype dom dom => Untype (FLOATING   :|| Type) dom
 instance Untype dom dom => Untype (FRACTIONAL :|| Type) dom
   where
       untypeProgSym (C' DivFrac) info (a :* b :* Nil)
-        = In (Ut.DivFrac (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.DivFrac t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (INTEGRAL   :|| Type) dom
   where

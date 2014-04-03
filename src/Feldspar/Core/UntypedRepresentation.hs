@@ -95,6 +95,9 @@ data PrimOp0 =
      Undefined
    -- Floating
    | Pi
+   -- Par
+   | ParNew
+   | ParYield
    deriving (Eq,Show)
 
 data PrimOp1 =
@@ -157,6 +160,10 @@ data PrimOp1 =
    -- Num
    | Abs
    | Sign
+   -- Par
+   | ParRun
+   | ParGet
+   | ParFork
    -- Save
    | Save
    -- SizeProp
@@ -208,6 +215,8 @@ data PrimOp2 =
    -- Floating
    | Pow
    | LogBase
+   -- Fractional
+   | DivFrac
    -- Integral
    | Quot
    | Rem
@@ -236,6 +245,8 @@ data PrimOp2 =
    | Add
    | Sub
    | Mul
+   -- Par
+   | ParPut
    -- Ord
    | LTH
    | GTH
@@ -276,17 +287,8 @@ data UntypedFeldF e =
    | EparFor e e
    -- FFI
    | ForeignImport String [e]
-   -- Fractional
-   | DivFrac e e
    -- Literal
    | Literal Lit
-   -- Par
-   | ParRun e
-   | ParNew
-   | ParGet e
-   | ParPut e e
-   | ParFork e
-   | ParYield
    -- Tuple
    | Tup2 e e
    | Tup3 e e e
@@ -343,19 +345,8 @@ instance HasType UntypedFeld where
     typeof (In (EparFor _ (In (Lambda _ e)))) = typeof e
    -- FFI
     typeof (In (ForeignImport _ e))       = error "typeof FFI"
-   -- Fractional
-    typeof (In (DivFrac e _))             = typeof e
    -- Literal
     typeof (In (Literal l))               = typeof l
-   -- Par
-    typeof (In (ParRun e))                = t
-      where (ParType t) = typeof e
-    typeof (In ParNew)                    = ParType (IVarType UnitType) -- XXX
-    typeof (In (ParGet e))                = ParType t
-      where (IVarType t) = typeof e
-    typeof (In ParPut{})                  = ParType UnitType
-    typeof (In ParFork{})                 = ParType UnitType
-    typeof (In ParYield)                  = ParType UnitType
    -- Tuple
     typeof (In (Tup2 e1 e2))              = Tup2Type (typeof e1) (typeof e2)
     typeof (In (Tup3 e1 e2 e3))           = Tup3Type (typeof e1) (typeof e2)
@@ -396,17 +387,8 @@ fvU' vs (In (EPar e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (EparFor e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- FFI
 fvU' vs (In (ForeignImport _ es)) = concatMap (fvU' vs) es
-   -- Fractional
-fvU' vs (In (DivFrac e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Literal
 fvU' vs (In (Literal l)) = []
-   -- Par
-fvU' vs (In (ParRun e)) = fvU' vs e
-fvU' vs (In (ParNew)) = []
-fvU' vs (In (ParGet e)) = fvU' vs e
-fvU' vs (In (ParPut e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (ParFork e)) = fvU' vs e
-fvU' vs (In (ParYield)) = []
    -- Tuple
 fvU' vs (In (Tup2 e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (Tup3 e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
