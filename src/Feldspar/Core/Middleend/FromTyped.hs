@@ -306,11 +306,11 @@ instance ( Untype dom dom
       => Untype MutableToPure dom
   where
     untypeProgSym WithArray info (marr :* b :* Nil)
-        = In (Ut.WithArray (untypeProg marr) (untypeProg b))
-
+        = In (Ut.PrimApp2 Ut.WithArray t' (untypeProg marr) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym RunMutableArray info (marr :* Nil)
-        = In (Ut.RunMutableArray (untypeProg marr))
-
+        = In (Ut.PrimApp1 Ut.RunMutableArray t' (untypeProg marr))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
          , Project (CLambda Type) dom
@@ -353,19 +353,21 @@ instance ( Untype dom dom
          , Project (CLambda Type) dom
          ) => Untype MutableArray dom
   where
-    untypeProgSym NewArr_ info (len :* Nil) = In (Ut.NewArr_ (untypeProg len))
-
+    untypeProgSym NewArr_ info (len :* Nil)
+        = In (Ut.PrimApp1 Ut.NewArr_ t' (untypeProg len))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym NewArr info (len :* a :* Nil)
-      = In (Ut.NewArr (untypeProg len) (untypeProg a))
-
+        = In (Ut.PrimApp2 Ut.NewArr t' (untypeProg len) (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym GetArr info (arr :* i :* Nil)
-      = In (Ut.GetArr (untypeProg arr) (untypeProg i))
-
+        = In (Ut.PrimApp2 Ut.GetArr t' (untypeProg arr) (untypeProg i))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym SetArr info (arr :* i :* a :* Nil)
-      = In (Ut.SetArr (untypeProg arr) (untypeProg i) (untypeProg a))
-
+        = In (Ut.PrimApp3 Ut.SetArr t' (untypeProg arr) (untypeProg i) (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym ArrLength info (arr :* Nil)
-      = In (Ut.ArrLength (untypeProg arr))
+        = In (Ut.PrimApp1 Ut.ArrLength t' (untypeProg arr))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance (Untype dom dom, Project (CLambda Type) dom) => Untype Mutable dom
   where

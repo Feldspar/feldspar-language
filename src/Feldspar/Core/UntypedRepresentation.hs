@@ -141,6 +141,11 @@ data PrimOp1 =
    -- Mutable
    | Run
    | Return
+   -- MutableArray
+   | NewArr_
+   | ArrLength
+   -- MutableToPure
+   | RunMutableArray
    -- MutableReference
    | NewRef
    | GetRef
@@ -214,6 +219,11 @@ data PrimOp2 =
    | Bind
    | Then
    | When
+   -- MutableArray
+   | NewArr
+   | GetArr
+   -- MutableToPure
+   | WithArray
    -- MutableReference
    | SetRef
    | ModRef
@@ -238,6 +248,8 @@ data PrimOp3 =
    -- Array
      Sequential
    | SetIx
+   -- MutableArray
+   | SetArr
    deriving (Eq, Show)
 
 data UntypedFeldF e =
@@ -266,15 +278,6 @@ data UntypedFeldF e =
    -- Loop
    | ForLoop e e e
    | WhileLoop e e e
-   -- MutableArray
-   | NewArr e e
-   | NewArr_ e
-   | GetArr e e
-   | SetArr e e e
-   | ArrLength e
-   -- MutableToPure
-   | RunMutableArray e
-   | WithArray e e
    -- Noinline
    | NoInline e
    -- Par
@@ -354,17 +357,6 @@ instance HasType UntypedFeld where
    -- Loop
     typeof (In (ForLoop _ e _))           = typeof e
     typeof (In (WhileLoop e _ _))         = typeof e
-   -- MutableArray
-    typeof (In (NewArr _ e))              = MutType (MArrType fullRange (typeof e))
-    typeof (In (NewArr_ e))               = error "typeof: newArr_"
-    typeof (In (GetArr e _))              = MutType t
-     where (MArrType _ t) = typeof e
-    typeof (In SetArr{})                  = MutType UnitType
-    typeof (In ArrLength{})               = MutType (IntType Unsigned S32)
-   -- MutableToPure
-    typeof (In (RunMutableArray e))       = ArrayType rs a
-     where (MutType (MArrType rs a)) = typeof e
-    typeof (In (WithArray _ (In (Lambda _ e)))) = typeof e
    -- Noinline
     typeof (In (NoInline e))              = typeof e
    -- Par
@@ -429,15 +421,6 @@ fvU' vs (In (Literal l)) = []
    -- Loop
 fvU' vs (In (ForLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
 fvU' vs (In (WhileLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-   -- MutableArray
-fvU' vs (In (NewArr e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (NewArr_ e)) = fvU' vs e
-fvU' vs (In (GetArr e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (SetArr e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-fvU' vs (In (ArrLength e)) = fvU' vs e
-   -- MutableToPure
-fvU' vs (In (RunMutableArray e)) = fvU' vs e
-fvU' vs (In (WithArray e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Noinline
 fvU' vs (In (NoInline e)) = fvU' vs e
    -- Par
