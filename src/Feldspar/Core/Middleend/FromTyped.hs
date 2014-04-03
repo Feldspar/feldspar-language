@@ -213,7 +213,8 @@ instance ( Untype dom dom
 instance (Untype dom dom) => Untype (FFI :|| Type) dom
   where -- No use for second argument at this stage.
     untypeProgSym (C' (ForeignImport name _)) info args
-      = In (Ut.ForeignImport name (listArgs untypeProg args))
+      = In (Ut.ForeignImport name t' (listArgs untypeProg args))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (FUTURE :|| Type) dom
   where
