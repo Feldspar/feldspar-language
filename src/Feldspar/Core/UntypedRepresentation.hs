@@ -9,6 +9,8 @@ module Feldspar.Core.UntypedRepresentation (
     Term(..)
   , UntypedFeld(..)
   , UntypedFeldF(..)
+  , PrimOp1(..)
+  , PrimOp2(..)
   , Type(..)
   , Lit(..)
   , Var(..)
@@ -92,6 +94,34 @@ data Lit =
    | LTup7 Lit Lit Lit Lit Lit Lit Lit
    deriving (Eq,Show)
 
+data PrimOp1 =
+   -- Bits
+     Bit
+   | Complement
+   | ReverseBits
+   | BitScan
+   | BitCount
+   deriving (Eq, Show)
+
+data PrimOp2 =
+   -- Bits
+     BAnd
+   | BOr
+   | BXor
+   | SetBit
+   | ClearBit
+   | ComplementBit
+   | TestBit
+   | ShiftLU
+   | ShiftRU
+   | ShiftL
+   | ShiftR
+   | RotateLU
+   | RotateRU
+   | RotateL
+   | RotateR
+   deriving (Eq, Show)
+
 data UntypedFeldF e =
    -- Array
      Parallel e e
@@ -105,27 +135,6 @@ data UntypedFeldF e =
    | Variable Var
    | Lambda Var e
    | Let e e
-   -- Bits
-   | BAnd e e
-   | BOr e e
-   | BXor e e
-   | Complement e
-   | Bit e
-   | SetBit e e
-   | ClearBit e e
-   | ComplementBit e e
-   | TestBit e e
-   | ShiftLU e e
-   | ShiftRU e e
-   | ShiftL e e
-   | ShiftR e e
-   | RotateLU e e
-   | RotateRU e e
-   | RotateL e e
-   | RotateR e e
-   | ReverseBits e
-   | BitScan e
-   | BitCount e
    -- Complex
    | MkComplex e e
    | RealPart e
@@ -269,6 +278,9 @@ data UntypedFeldF e =
    | Sel5 e
    | Sel6 e
    | Sel7 e
+   -- Common nodes
+   | PrimApp1 PrimOp1 Type e
+   | PrimApp2 PrimOp2 Type e e
    deriving (Eq, Show)
 
 class HasType a where
@@ -314,27 +326,6 @@ instance HasType UntypedFeld where
     typeof (In (Variable v))              = typeof v
     typeof (In (Lambda v e))              = FunType (typeof v) (typeof e)
     typeof (In (Let _ (In (Lambda _ e)))) = typeof e
-   -- Bits
-    typeof (In (BAnd e _))                = typeof e
-    typeof (In (BOr e _))                 = typeof e
-    typeof (In (BXor e _))                = typeof e
-    typeof (In (Complement e))            = typeof e
-    typeof (In (Bit e))                   = typeof e
-    typeof (In (SetBit _ e))              = typeof e
-    typeof (In (ClearBit _ e))            = typeof e
-    typeof (In (ComplementBit _ e))       = typeof e
-    typeof (In (TestBit _ _))             = BoolType
-    typeof (In (ShiftLU e _))             = typeof e
-    typeof (In (ShiftRU e _))             = typeof e
-    typeof (In (ShiftL e _))              = typeof e
-    typeof (In (ShiftR e _))              = typeof e
-    typeof (In (RotateLU e _))            = typeof e
-    typeof (In (RotateRU e _))            = typeof e
-    typeof (In (RotateL e _))             = typeof e
-    typeof (In (RotateR e _))             = typeof e
-    typeof (In (ReverseBits e))           = typeof e
-    typeof (In (BitScan e))               = IntType Unsigned S32
-    typeof (In (BitCount e))              = IntType Unsigned S32
    -- Complex
     typeof (In (MkComplex e _))           = ComplexType (typeof e)
     typeof (In (RealPart e))              = t
@@ -529,6 +520,8 @@ instance HasType UntypedFeld where
                | (Tup7Type _ _ _ _ _ t _) <- typeof e = t
     typeof (In (Sel7 e))                   = t'
       where t' | (Tup7Type _ _ _ _ _ _ t) <- typeof e = t
+    typeof (In (PrimApp1 _ t _))           = t
+    typeof (In (PrimApp2 _ t _ _))         = t
     typeof e = error ("UntypedRepresentation: Missing match of: " ++ show e)
 
 
@@ -549,27 +542,6 @@ fvU' vs (In (Variable v)) | v `elem` vs = []
                           | otherwise = [v]
 fvU' vs (In (Lambda v e))  = fvU' (v:vs) e
 fvU' vs (In (Let e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Bits
-fvU' vs (In (BAnd e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (BOr e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (BXor e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Complement e)) = fvU' vs e
-fvU' vs (In (Bit e)) = fvU' vs e
-fvU' vs (In (SetBit e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (ClearBit e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (ComplementBit e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (TestBit e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (ShiftLU e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (ShiftRU e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (ShiftL e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (ShiftR e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (RotateLU e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (RotateRU e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (RotateL e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (RotateR e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (ReverseBits e)) = fvU' vs e
-fvU' vs (In (BitScan e)) = fvU' vs e
-fvU' vs (In (BitCount e)) = fvU' vs e
    -- Complex
 fvU' vs (In (MkComplex e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (RealPart e)) = fvU' vs e
@@ -713,3 +685,5 @@ fvU' vs (In (Sel4 e)) = fvU' vs e
 fvU' vs (In (Sel5 e)) = fvU' vs e
 fvU' vs (In (Sel6 e)) = fvU' vs e
 fvU' vs (In (Sel7 e)) = fvU' vs e
+fvU' vs (In (PrimApp1 _ _ e))     = fvU' vs e
+fvU' vs (In (PrimApp2 _ _ e1 e2)) = fvU' vs e1 ++ fvU' vs e2
