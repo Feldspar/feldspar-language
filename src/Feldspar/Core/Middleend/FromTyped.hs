@@ -510,17 +510,23 @@ instance Untype dom dom => Untype (COMPLEX    :|| Type) dom
 instance Untype dom dom => Untype (Conversion :|| Type) dom
   where
       untypeProgSym (C' F2I) info (a :* Nil)
-        = In (Ut.F2I (untypeType (infoType info) (infoSize info)) (untypeProg a))
+        = In (Ut.PrimApp1 Ut.F2I t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' I2N) info (a :* Nil)
-        = In (Ut.I2N (untypeType (infoType info) (infoSize info)) (untypeProg a))
+        = In (Ut.PrimApp1 Ut.I2N t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' B2I) info (a :* Nil)
-        = In (Ut.B2I (untypeType (infoType info) (infoSize info)) (untypeProg a))
+        = In (Ut.PrimApp1 Ut.B2I t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Round) info (a :* Nil)
-        = In (Ut.Round (untypeType (infoType info) (infoSize info)) (untypeProg a))
+        = In (Ut.PrimApp1 Ut.Round t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Ceiling) info (a :* Nil)
-        = In (Ut.Ceiling (untypeType (infoType info) (infoSize info)) (untypeProg a))
+        = In (Ut.PrimApp1 Ut.Ceiling t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Floor) info (a :* Nil)
-        = In (Ut.Floor (untypeType (infoType info) (infoSize info)) (untypeProg a))
+        = In (Ut.PrimApp1 Ut.Floor t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (EQ         :|| Type) dom
   where

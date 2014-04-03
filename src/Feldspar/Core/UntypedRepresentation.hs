@@ -101,6 +101,13 @@ data PrimOp1 =
    | ReverseBits
    | BitScan
    | BitCount
+   -- Conversion
+   | F2I
+   | I2N
+   | B2I
+   | Round
+   | Ceiling
+   | Floor
    -- Tuples
    | Sel1
    | Sel2
@@ -155,13 +162,6 @@ data UntypedFeldF e =
    -- Condition
    | Condition e e e
    | ConditionM e e e
-   -- Conversion
-   | F2I Type e
-   | I2N Type e
-   | B2I Type e
-   | Round Type e
-   | Ceiling Type e
-   | Floor Type e
    -- Elements
    | EMaterialize e e
    | EWrite e e
@@ -343,13 +343,6 @@ instance HasType UntypedFeld where
    -- Condition
     typeof (In (Condition _ e _))         = typeof e
     typeof (In (ConditionM _ e _))        = typeof e
-   -- Conversion
-    typeof (In (F2I t _))                 = t
-    typeof (In (I2N t _))                 = t
-    typeof (In (B2I t _))                 = t
-    typeof (In (Round t _))               = t
-    typeof (In (Ceiling t _))             = t
-    typeof (In (Floor t _))               = t
    -- Elements
     typeof (In (EMaterialize _ e))        = ElementsType (typeof e)
     typeof (In (EWrite _ e))              = ElementsType (typeof e)
@@ -521,13 +514,6 @@ fvU' vs (In (Cis e)) = fvU' vs e
    -- Condition
 fvU' vs (In (Condition c t f)) = fvU' vs c ++ fvU' vs t ++ fvU' vs f
 fvU' vs (In (ConditionM c t f)) = fvU' vs c ++ fvU' vs t ++ fvU' vs f
-   -- Conversion
-fvU' vs (In (F2I _ e)) = fvU' vs e
-fvU' vs (In (I2N _ e)) = fvU' vs e
-fvU' vs (In (B2I _ e)) = fvU' vs e
-fvU' vs (In (Round _ e)) = fvU' vs e
-fvU' vs (In (Ceiling _ e)) = fvU' vs e
-fvU' vs (In (Floor _ e)) = fvU' vs e
    -- Elements
 fvU' vs (In (EMaterialize e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (EWrite e1 e2)) = fvU' vs e1 ++ fvU' vs e2
