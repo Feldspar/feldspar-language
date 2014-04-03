@@ -108,6 +108,9 @@ data PrimOp1 =
    | Round
    | Ceiling
    | Floor
+   -- Num
+   | Abs
+   | Sign
    -- Tuples
    | Sel1
    | Sel2
@@ -135,6 +138,17 @@ data PrimOp2 =
    | RotateRU
    | RotateL
    | RotateR
+   -- Num
+   | Add
+   | Sub
+   | Mul
+   -- Ord
+   | LTH
+   | GTH
+   | LTE
+   | GTE
+   | Min
+   | Max
    deriving (Eq, Show)
 
 data UntypedFeldF e =
@@ -240,19 +254,6 @@ data UntypedFeldF e =
    | WithArray e e
    -- Noinline
    | NoInline e
-   -- Num
-   | Abs e
-   | Sign e
-   | Add e e
-   | Sub e e
-   | Mul e e
-   -- Ord
-   | LTH e e
-   | GTH e e
-   | LTE e e
-   | GTE e e
-   | Min e e
-   | Max e e
    -- Par
    | ParRun e
    | ParNew
@@ -430,19 +431,6 @@ instance HasType UntypedFeld where
     typeof (In (WithArray _ (In (Lambda _ e)))) = typeof e
    -- Noinline
     typeof (In (NoInline e))              = typeof e
-   -- Num
-    typeof (In (Abs e))                   = typeof e
-    typeof (In (Sign e))                  = typeof e
-    typeof (In (Add e _))                 = typeof e
-    typeof (In (Sub e _))                 = typeof e
-    typeof (In (Mul e _))                 = typeof e
-   -- Ord
-    typeof (In LTH{})                     = BoolType
-    typeof (In GTH{})                     = BoolType
-    typeof (In LTE{})                     = BoolType
-    typeof (In GTE{})                     = BoolType
-    typeof (In (Min e _))                 = typeof e
-    typeof (In (Max e _))                 = typeof e
    -- Par
     typeof (In (ParRun e))                = t
       where (ParType t) = typeof e
@@ -592,19 +580,6 @@ fvU' vs (In (RunMutableArray e)) = fvU' vs e
 fvU' vs (In (WithArray e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Noinline
 fvU' vs (In (NoInline e)) = fvU' vs e
-   -- Num
-fvU' vs (In (Abs e)) = fvU' vs e
-fvU' vs (In (Sign e)) = fvU' vs e
-fvU' vs (In (Add e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Sub e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Mul e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Ord
-fvU' vs (In (LTH e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (GTH e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (LTE e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (GTE e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Min e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Max e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Par
 fvU' vs (In (ParRun e)) = fvU' vs e
 fvU' vs (In (ParNew)) = []
