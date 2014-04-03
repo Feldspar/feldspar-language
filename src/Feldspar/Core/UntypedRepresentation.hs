@@ -9,6 +9,7 @@ module Feldspar.Core.UntypedRepresentation (
     Term(..)
   , UntypedFeld(..)
   , UntypedFeldF(..)
+  , PrimOp0(..)
   , PrimOp1(..)
   , PrimOp2(..)
   , Type(..)
@@ -94,6 +95,11 @@ data Lit =
    | LTup7 Lit Lit Lit Lit Lit Lit Lit
    deriving (Eq,Show)
 
+data PrimOp0 =
+   -- Floating
+     Pi
+   deriving (Eq,Show)
+
 data PrimOp1 =
    -- Bits
      Bit
@@ -108,6 +114,22 @@ data PrimOp1 =
    | Round
    | Ceiling
    | Floor
+   -- Floating
+   | Exp
+   | Sqrt
+   | Log
+   | Sin
+   | Tan
+   | Cos
+   | Asin
+   | Atan
+   | Acos
+   | Sinh
+   | Tanh
+   | Cosh
+   | Asinh
+   | Atanh
+   | Acosh
    -- Logic
    | Not
    -- Num
@@ -140,6 +162,9 @@ data PrimOp2 =
    | RotateRU
    | RotateL
    | RotateR
+   -- Floating
+   | Pow
+   | LogBase
    -- Logic
    | And
    | Or
@@ -197,25 +222,6 @@ data UntypedFeldF e =
    | ForeignImport String [e]
    -- Fractional
    | DivFrac e e
-   -- Floating
-   | Pi
-   | Exp e
-   | Sqrt e
-   | Log e
-   | Pow e e
-   | LogBase e e
-   | Sin e
-   | Tan e
-   | Cos e
-   | Asin e
-   | Atan e
-   | Acos e
-   | Sinh e
-   | Tanh e
-   | Cosh e
-   | Asinh e
-   | Atanh e
-   | Acosh e
    -- Future
    | MkFuture e
    | Await e
@@ -282,6 +288,7 @@ data UntypedFeldF e =
    | Tup6 e e e e e e
    | Tup7 e e e e e e e
    -- Common nodes
+   | PrimApp0 PrimOp0 Type
    | PrimApp1 PrimOp1 Type e
    | PrimApp2 PrimOp2 Type e e
    deriving (Eq, Show)
@@ -361,25 +368,6 @@ instance HasType UntypedFeld where
     typeof (In (ForeignImport _ e))       = error "typeof FFI"
    -- Fractional
     typeof (In (DivFrac e _))             = typeof e
-   -- Floating
---    typeof (In Pi)                      =
-    typeof (In (Exp e))                   = typeof e
-    typeof (In (Sqrt e))                  = typeof e
-    typeof (In (Log e))                   = typeof e
-    typeof (In (Pow e _))                 = typeof e
-    typeof (In (LogBase e _))             = typeof e
-    typeof (In (Sin e))                   = typeof e
-    typeof (In (Tan e))                   = typeof e
-    typeof (In (Cos e))                   = typeof e
-    typeof (In (Asin e))                  = typeof e
-    typeof (In (Atan e))                  = typeof e
-    typeof (In (Acos e))                  = typeof e
-    typeof (In (Sinh e))                  = typeof e
-    typeof (In (Tanh e))                  = typeof e
-    typeof (In (Cosh e))                  = typeof e
-    typeof (In (Asinh e))                 = typeof e
-    typeof (In (Atanh e))                 = typeof e
-    typeof (In (Acosh e))                 = typeof e
     -- Future
     typeof (In (MkFuture e))              = FValType (typeof e)
     typeof (In (Await e))                 = t
@@ -465,6 +453,7 @@ instance HasType UntypedFeld where
                                                        (typeof e3) (typeof e4)
                                                        (typeof e5) (typeof e6)
                                                        (typeof e7)
+    typeof (In (PrimApp0 _ t))             = t
     typeof (In (PrimApp1 _ t _))           = t
     typeof (In (PrimApp2 _ t _ _))         = t
     typeof e = error ("UntypedRepresentation: Missing match of: " ++ show e)
@@ -515,25 +504,6 @@ fvU' vs (In (Assert e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (ForeignImport _ es)) = concatMap (fvU' vs) es
    -- Fractional
 fvU' vs (In (DivFrac e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Floating
-fvU' vs (In (Pi)) = []
-fvU' vs (In (Exp e)) = fvU' vs e
-fvU' vs (In (Sqrt e)) = fvU' vs e
-fvU' vs (In (Log e)) = fvU' vs e
-fvU' vs (In (Pow e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (LogBase e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Sin e)) = fvU' vs e
-fvU' vs (In (Tan e)) = fvU' vs e
-fvU' vs (In (Cos e)) = fvU' vs e
-fvU' vs (In (Asin e)) = fvU' vs e
-fvU' vs (In (Atan e)) = fvU' vs e
-fvU' vs (In (Acos e)) = fvU' vs e
-fvU' vs (In (Sinh e)) = fvU' vs e
-fvU' vs (In (Tanh e)) = fvU' vs e
-fvU' vs (In (Cosh e)) = fvU' vs e
-fvU' vs (In (Asinh e)) = fvU' vs e
-fvU' vs (In (Atanh e)) = fvU' vs e
-fvU' vs (In (Acosh e)) = fvU' vs e
    -- Future
 fvU' vs (In (MkFuture e)) = fvU' vs e
 fvU' vs (In (Await e)) = fvU' vs e
@@ -600,5 +570,6 @@ fvU' vs (In (Tup5 e1 e2 e3 e4 e5)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3 ++ f
 fvU' vs (In (Tup6 e1 e2 e3 e4 e5 e6)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3 ++ fvU' vs e4 ++ fvU' vs e5 ++ fvU' vs e6
 fvU' vs (In (Tup7 e1 e2 e3 e4 e5 e6 e7)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3 ++ fvU' vs e4 ++ fvU' vs e5 ++ fvU' vs e6 ++ fvU' vs e7
 -- Common nodes.
+fvU' vs (In PrimApp0{})           = []
 fvU' vs (In (PrimApp1 _ _ e))     = fvU' vs e
 fvU' vs (In (PrimApp2 _ _ e1 e2)) = fvU' vs e1 ++ fvU' vs e2
