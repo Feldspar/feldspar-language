@@ -90,8 +90,10 @@ data Lit =
    deriving (Eq,Show)
 
 data PrimOp0 =
+   -- Error
+     Undefined
    -- Floating
-     Pi
+   | Pi
    deriving (Eq,Show)
 
 data PrimOp1 =
@@ -166,6 +168,11 @@ data PrimOp2 =
    -- Complex
    | MkComplex
    | MkPolar
+   -- Eq
+   | Equal
+   | NotEqual
+   -- Error
+   | Assert String
    -- Floating
    | Pow
    | LogBase
@@ -207,12 +214,6 @@ data UntypedFeldF e =
    | ESkip
    | EPar e e
    | EparFor e e
-   -- Eq
-   | Equal e e
-   | NotEqual e e
-   -- Error
-   | Undefined
-   | Assert e e
    -- FFI
    | ForeignImport String [e]
    -- Fractional
@@ -340,12 +341,6 @@ instance HasType UntypedFeld where
     typeof (In ESkip)                     = ElementsType UnitType
     typeof (In (EPar e _))                = typeof e
     typeof (In (EparFor _ (In (Lambda _ e)))) = typeof e
-   -- Eq
-    typeof (In Equal{})                   = BoolType
-    typeof (In NotEqual{})                = BoolType
-   -- Error
-    typeof (In Undefined)                 = error "Typeof undefined"
-    typeof (In (Assert _ e))              = typeof e
    -- FFI
     typeof (In (ForeignImport _ e))       = error "typeof FFI"
    -- Fractional
@@ -467,12 +462,6 @@ fvU' vs (In (EWrite e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In ESkip) = []
 fvU' vs (In (EPar e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (EparFor e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Eq
-fvU' vs (In (Equal e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (NotEqual e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Error
-fvU' vs (In Undefined) = []
-fvU' vs (In (Assert e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- FFI
 fvU' vs (In (ForeignImport _ es)) = concatMap (fvU' vs) es
    -- Fractional

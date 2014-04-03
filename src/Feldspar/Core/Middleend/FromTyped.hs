@@ -174,9 +174,12 @@ instance Untype dom dom => Untype (ConditionM m) dom
 
 instance (Untype dom dom) => Untype (Error :|| Type) dom
   where
-    untypeProgSym (C' Undefined)    info Nil = In (Ut.Undefined)
+    untypeProgSym (C' Undefined)    info Nil
+        = In (Ut.PrimApp0 Ut.Undefined t')
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' (Assert msg)) info (cond :* a :* Nil)
-     = In (Ut.Assert (untypeProg cond) (untypeProg a))
+        = In (Ut.PrimApp2 (Ut.Assert msg) t' (untypeProg cond) (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
          , Render dom
@@ -530,9 +533,11 @@ instance Untype dom dom => Untype (Conversion :|| Type) dom
 instance Untype dom dom => Untype (EQ         :|| Type) dom
   where
       untypeProgSym (C' Equal) info (a :* b :* Nil)
-        = In (Ut.Equal (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.Equal t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' NotEqual) info (a :* b :* Nil)
-        = In (Ut.NotEqual (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.NotEqual t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (FLOATING   :|| Type) dom
   where
