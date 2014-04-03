@@ -664,8 +664,8 @@ instance Untype dom dom => Untype (PropSize :|| Type) dom
 -- SourceInfo
 instance Untype dom dom => Untype (Decor SourceInfo1 Identity :|| Type) dom
   where
-    untypeProgSym (C' (Decor info Id)) _ (a :* Nil)
-      = In (Ut.SourceInfo (untypeProg a))
+    untypeProgSym (C' (Decor (SourceInfo1 comment) Id)) info (a :* Nil)
+      = In (Ut.SourceInfo comment (untypeProg a))
 
 -- Switch
 instance ( Untype dom dom

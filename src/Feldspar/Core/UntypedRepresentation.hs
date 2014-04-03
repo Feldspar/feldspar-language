@@ -268,7 +268,7 @@ data UntypedFeldF e =
    -- SizeProp
    | PropSize e
    -- SourceInfo
-   | SourceInfo {- FIXME: Missng annotation -} e
+   | SourceInfo String e
    -- Switch
    | Switch e
    -- Trace
@@ -447,7 +447,7 @@ instance HasType UntypedFeld where
    -- SizeProp
     typeof (In (PropSize e))              = typeof e
    -- SourceInfo
-    typeof (In (SourceInfo e))            = typeof e
+    typeof (In (SourceInfo _ e))          = typeof e
    -- Switch
     typeof (In (Switch e))                = typeof e
    -- Trace
@@ -594,7 +594,7 @@ fvU' vs (In (Save e)) = fvU' vs e
    -- SizeProp
 fvU' vs (In (PropSize e)) = fvU' vs e
    -- SourceInfo
-fvU' vs (In (SourceInfo e)) = fvU' vs e
+fvU' vs (In (SourceInfo _ e)) = fvU' vs e
    -- Switch
 fvU' vs (In (Switch e)) = fvU' vs e
    -- Trace
