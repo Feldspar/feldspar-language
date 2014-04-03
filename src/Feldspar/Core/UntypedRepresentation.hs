@@ -101,6 +101,14 @@ data PrimOp1 =
    | ReverseBits
    | BitScan
    | BitCount
+   -- Tuples
+   | Sel1
+   | Sel2
+   | Sel3
+   | Sel4
+   | Sel5
+   | Sel6
+   | Sel7
    deriving (Eq, Show)
 
 data PrimOp2 =
@@ -271,13 +279,6 @@ data UntypedFeldF e =
    | Tup5 e e e e e
    | Tup6 e e e e e e
    | Tup7 e e e e e e e
-   | Sel1 e
-   | Sel2 e
-   | Sel3 e
-   | Sel4 e
-   | Sel5 e
-   | Sel6 e
-   | Sel7 e
    -- Common nodes
    | PrimApp1 PrimOp1 Type e
    | PrimApp2 PrimOp2 Type e e
@@ -486,40 +487,6 @@ instance HasType UntypedFeld where
                                                        (typeof e3) (typeof e4)
                                                        (typeof e5) (typeof e6)
                                                        (typeof e7)
-    typeof (In (Sel1 e))                   = t'
-      where t' | (Tup2Type t _) <- typeof e           = t
-               | (Tup3Type t _ _) <- typeof e         = t
-               | (Tup4Type t _ _ _) <- typeof e       = t
-               | (Tup5Type t _ _ _ _) <- typeof e     = t
-               | (Tup6Type t _ _ _ _ _) <- typeof e   = t
-               | (Tup7Type t _ _ _ _ _ _) <- typeof e = t
-    typeof (In (Sel2 e))                   = t'
-      where t' | (Tup2Type _ t) <- typeof e           = t
-               | (Tup3Type _ t _) <- typeof e         = t
-               | (Tup4Type _ t _ _) <- typeof e       = t
-               | (Tup5Type _ t _ _ _) <- typeof e     = t
-               | (Tup6Type _ t _ _ _ _) <- typeof e   = t
-               | (Tup7Type _ t _ _ _ _ _) <- typeof e = t
-    typeof (In (Sel3 e))                   = t'
-      where t' | (Tup3Type _ _ t) <- typeof e         = t
-               | (Tup4Type _ _ t _) <- typeof e       = t
-               | (Tup5Type _ _ t _ _) <- typeof e     = t
-               | (Tup6Type _ _ t _ _ _) <- typeof e   = t
-               | (Tup7Type _ _ t _ _ _ _) <- typeof e = t
-    typeof (In (Sel4 e))                   = t'
-      where t' | (Tup4Type _ _ _ t) <- typeof e       = t
-               | (Tup5Type _ _ _ t _) <- typeof e     = t
-               | (Tup6Type _ _ _ t _ _) <- typeof e   = t
-               | (Tup7Type _ _ _ t _ _ _) <- typeof e = t
-    typeof (In (Sel5 e))                   = t'
-      where t' | (Tup5Type _ _ _ _ t) <- typeof e     = t
-               | (Tup6Type _ _ _ _ t _) <- typeof e   = t
-               | (Tup7Type _ _ _ _ t _ _) <- typeof e = t
-    typeof (In (Sel6 e))                   = t'
-      where t' | (Tup6Type _ _ _ _ _ t) <- typeof e   = t
-               | (Tup7Type _ _ _ _ _ t _) <- typeof e = t
-    typeof (In (Sel7 e))                   = t'
-      where t' | (Tup7Type _ _ _ _ _ _ t) <- typeof e = t
     typeof (In (PrimApp1 _ t _))           = t
     typeof (In (PrimApp2 _ t _ _))         = t
     typeof e = error ("UntypedRepresentation: Missing match of: " ++ show e)
@@ -678,12 +645,6 @@ fvU' vs (In (Tup4 e1 e2 e3 e4)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3 ++ fvU'
 fvU' vs (In (Tup5 e1 e2 e3 e4 e5)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3 ++ fvU' vs e4 ++ fvU' vs e5
 fvU' vs (In (Tup6 e1 e2 e3 e4 e5 e6)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3 ++ fvU' vs e4 ++ fvU' vs e5 ++ fvU' vs e6
 fvU' vs (In (Tup7 e1 e2 e3 e4 e5 e6 e7)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3 ++ fvU' vs e4 ++ fvU' vs e5 ++ fvU' vs e6 ++ fvU' vs e7
-fvU' vs (In (Sel1 e)) = fvU' vs e
-fvU' vs (In (Sel2 e)) = fvU' vs e
-fvU' vs (In (Sel3 e)) = fvU' vs e
-fvU' vs (In (Sel4 e)) = fvU' vs e
-fvU' vs (In (Sel5 e)) = fvU' vs e
-fvU' vs (In (Sel6 e)) = fvU' vs e
-fvU' vs (In (Sel7 e)) = fvU' vs e
+-- Common nodes.
 fvU' vs (In (PrimApp1 _ _ e))     = fvU' vs e
 fvU' vs (In (PrimApp2 _ _ e1 e2)) = fvU' vs e1 ++ fvU' vs e2

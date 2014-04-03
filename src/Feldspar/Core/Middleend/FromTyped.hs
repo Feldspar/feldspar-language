@@ -678,13 +678,27 @@ instance Untype dom dom => Untype (Tuple :|| Type) dom
 
 instance Untype dom dom => Untype (Select :|| Type) dom
   where
-    untypeProgSym (C' Sel1) info (tup :* Nil) = In (Ut.Sel1 (untypeProg tup))
-    untypeProgSym (C' Sel2) info (tup :* Nil) = In (Ut.Sel2 (untypeProg tup))
-    untypeProgSym (C' Sel3) info (tup :* Nil) = In (Ut.Sel3 (untypeProg tup))
-    untypeProgSym (C' Sel4) info (tup :* Nil) = In (Ut.Sel4 (untypeProg tup))
-    untypeProgSym (C' Sel5) info (tup :* Nil) = In (Ut.Sel5 (untypeProg tup))
-    untypeProgSym (C' Sel6) info (tup :* Nil) = In (Ut.Sel6 (untypeProg tup))
-    untypeProgSym (C' Sel7) info (tup :* Nil) = In (Ut.Sel7 (untypeProg tup))
+    untypeProgSym (C' Sel1) info (tup :* Nil)
+        = In (Ut.PrimApp1 Ut.Sel1 t' (untypeProg tup))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym (C' Sel2) info (tup :* Nil)
+        = In (Ut.PrimApp1 Ut.Sel2 t' (untypeProg tup))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym (C' Sel3) info (tup :* Nil)
+        = In (Ut.PrimApp1 Ut.Sel3 t' (untypeProg tup))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym (C' Sel4) info (tup :* Nil)
+        = In (Ut.PrimApp1 Ut.Sel4 t' (untypeProg tup))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym (C' Sel5) info (tup :* Nil)
+        = In (Ut.PrimApp1 Ut.Sel5 t' (untypeProg tup))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym (C' Sel6) info (tup :* Nil)
+        = In (Ut.PrimApp1 Ut.Sel6 t' (untypeProg tup))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym (C' Sel7) info (tup :* Nil)
+        = In (Ut.PrimApp1 Ut.Sel7 t' (untypeProg tup))
+          where t' = untypeType (infoType info) (infoSize info)
 
 untypeType :: TypeRep a -> Size a -> Ut.Type
 untypeType UnitType _               = Ut.UnitType
