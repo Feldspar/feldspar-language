@@ -204,6 +204,13 @@ data PrimOp2 =
    -- Logic
    | And
    | Or
+   -- LoopM
+   | While
+   | For
+   -- Mutable
+   | Bind
+   | Then
+   | When
    -- Num
    | Add
    | Sub
@@ -249,13 +256,6 @@ data UntypedFeldF e =
    -- Loop
    | ForLoop e e e
    | WhileLoop e e e
-   -- LoopM
-   | While e e
-   | For e e
-   -- Mutable
-   | Bind e e
-   | Then e e
-   | When e e
    -- MutableReference
    | NewRef e
    | GetRef e
@@ -353,17 +353,6 @@ instance HasType UntypedFeld where
    -- Loop
     typeof (In (ForLoop _ e _))           = typeof e
     typeof (In (WhileLoop e _ _))         = typeof e
-   -- LoopM
-    typeof (In (While e _))               = t
-      where t | MutType _ <- typeof e = MutType UnitType
-              | ParType _ <- typeof e = ParType UnitType
-    typeof (In (For _ (In (Lambda _ e)))) = t
-      where t | MutType _ <- typeof e = MutType UnitType
-              | ParType _ <- typeof e = ParType UnitType
-   -- Mutable
-    typeof (In (Bind _ (In (Lambda _ e))))= typeof e
-    typeof (In (Then _ e))                = typeof e
-    typeof (In (When _ e))                = typeof e
    -- MutableReference
     typeof (In (NewRef e))                = MutType (RefType (typeof e))
     typeof (In (GetRef e))                = t
@@ -449,13 +438,6 @@ fvU' vs (In (Literal l)) = []
    -- Loop
 fvU' vs (In (ForLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
 fvU' vs (In (WhileLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-   -- LoopM
-fvU' vs (In (While e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (For e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Mutable
-fvU' vs (In (Bind e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Then e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (When e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- MutableReference
 fvU' vs (In (NewRef e)) = fvU' vs e
 fvU' vs (In (GetRef e)) = fvU' vs e

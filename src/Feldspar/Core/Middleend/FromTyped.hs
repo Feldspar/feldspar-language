@@ -291,10 +291,11 @@ instance ( Untype dom dom
       => Untype (LoopM Mut) dom
   where
     untypeProgSym For info (len :* a :* Nil)
-        = In (Ut.For (untypeProg len) (untypeProg a))
-
+        = In (Ut.PrimApp2 Ut.For t' (untypeProg len) (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym While info (cond :* step :* Nil)
-        = In (Ut.While (untypeProg cond) (untypeProg step))
+        = In (Ut.PrimApp2 Ut.While t' (untypeProg cond) (untypeProg step))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
          , Project (CLambda Type) dom
@@ -318,14 +319,17 @@ instance ( Untype dom dom
       => Untype (MONAD Par) dom
   where
     untypeProgSym Bind info (ma :* mb :* Nil)
-        = In (Ut.Bind (untypeProg ma) (untypeProg mb))
+        = In (Ut.PrimApp2 Ut.Bind t' (untypeProg ma) (untypeProg mb))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym Then info (ma :* mb :* Nil)
-        = In (Ut.Then (untypeProg ma) (untypeProg mb))
+        = In (Ut.PrimApp2 Ut.Then t' (untypeProg ma) (untypeProg mb))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym Return info (a :* Nil)
         = In (Ut.PrimApp1 Ut.Return t' (untypeProg a))
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym When info (c :* action :* Nil)
-        = In (Ut.When (untypeProg c) (untypeProg action))
+        = In (Ut.PrimApp2 Ut.When t' (untypeProg c) (untypeProg action))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
          , Project (CLambda Type) dom
@@ -333,14 +337,17 @@ instance ( Untype dom dom
       => Untype (MONAD Mut) dom
   where
     untypeProgSym Bind info (ma :* mb :* Nil)
-        = In (Ut.Bind (untypeProg ma) (untypeProg mb))
+        = In (Ut.PrimApp2 Ut.Bind t' (untypeProg ma) (untypeProg mb))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym Then info (ma :* mb :* Nil)
-        = In (Ut.Then (untypeProg ma) (untypeProg mb))
+        = In (Ut.PrimApp2 Ut.Then t' (untypeProg ma) (untypeProg mb))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym Return info (a :* Nil)
         = In (Ut.PrimApp1 Ut.Return t' (untypeProg a))
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym When info (c :* action :* Nil)
-        = In (Ut.When (untypeProg c) (untypeProg action))
+        = In (Ut.PrimApp2 Ut.When t' (untypeProg c) (untypeProg action))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
          , Project (CLambda Type) dom
