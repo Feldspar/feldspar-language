@@ -176,6 +176,12 @@ data PrimOp2 =
    -- Floating
    | Pow
    | LogBase
+   -- Integral
+   | Quot
+   | Rem
+   | Div
+   | Mod
+   | IExp
    -- Logic
    | And
    | Or
@@ -221,12 +227,6 @@ data UntypedFeldF e =
    -- Future
    | MkFuture e
    | Await e
-   -- Integral
-   | Quot e e
-   | Rem e e
-   | Div e e
-   | Mod e e
-   | IExp e e
    -- Literal
    | Literal Lit
    -- Loop
@@ -349,12 +349,6 @@ instance HasType UntypedFeld where
     typeof (In (MkFuture e))              = FValType (typeof e)
     typeof (In (Await e))                 = t
       where (FValType t) = typeof e
-   -- Integral
-    typeof (In (Quot e _))                = typeof e
-    typeof (In (Rem e _))                 = typeof e
-    typeof (In (Div e _))                 = typeof e
-    typeof (In (Mod e _))                 = typeof e
-    typeof (In (IExp e _))                = typeof e
    -- Literal
     typeof (In (Literal l))               = typeof l
    -- Loop
@@ -469,12 +463,6 @@ fvU' vs (In (DivFrac e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Future
 fvU' vs (In (MkFuture e)) = fvU' vs e
 fvU' vs (In (Await e)) = fvU' vs e
-   -- Integral
-fvU' vs (In (Quot e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Rem e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Div e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Mod e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (IExp e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Literal
 fvU' vs (In (Literal l)) = []
    -- Loop

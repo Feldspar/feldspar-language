@@ -604,15 +604,20 @@ instance Untype dom dom => Untype (FRACTIONAL :|| Type) dom
 instance Untype dom dom => Untype (INTEGRAL   :|| Type) dom
   where
       untypeProgSym (C' Quot) info (a :* b :* Nil)
-        = In (Ut.Quot (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.Quot t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Rem) info (a :* b :* Nil)
-        = In (Ut.Rem (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.Rem t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Div) info (a :* b :* Nil)
-        = In (Ut.Div (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.Div t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Mod) info (a :* b :* Nil)
-        = In (Ut.Mod (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.Mod t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Feldspar.Core.Constructs.Integral.Exp) info (a :* b :* Nil)
-        = In (Ut.IExp (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.IExp t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Logic      :|| Type) dom
   where
