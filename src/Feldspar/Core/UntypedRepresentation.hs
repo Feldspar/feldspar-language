@@ -141,6 +141,14 @@ data PrimOp1 =
    -- Num
    | Abs
    | Sign
+   -- Save
+   | Save
+   -- SizeProp
+   | PropSize
+   -- SourceInfo
+   | SourceInfo String
+   -- Switch
+   | Switch
    -- Tuples
    | Sel1
    | Sel2
@@ -272,14 +280,6 @@ data UntypedFeldF e =
    | ParYield
    -- RealFloat
    | Atan2 e e
-   -- Save
-   | Save e
-   -- SizeProp
-   | PropSize e
-   -- SourceInfo
-   | SourceInfo String e
-   -- Switch
-   | Switch e
    -- Trace
    | Trace e e
    -- Tuple
@@ -396,14 +396,6 @@ instance HasType UntypedFeld where
     typeof (In ParYield)                  = ParType UnitType
    -- RealFloat
     typeof (In (Atan2 e _))               = typeof e
-   -- Save
-    typeof (In (Save e))                  = typeof e
-   -- SizeProp
-    typeof (In (PropSize e))              = typeof e
-   -- SourceInfo
-    typeof (In (SourceInfo _ e))          = typeof e
-   -- Switch
-    typeof (In (Switch e))                = typeof e
    -- Trace
     typeof (In (Trace _ e))               = typeof e
    -- Tuple
@@ -493,14 +485,6 @@ fvU' vs (In (ParFork e)) = fvU' vs e
 fvU' vs (In (ParYield)) = []
    -- RealFloat
 fvU' vs (In (Atan2 e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Save
-fvU' vs (In (Save e)) = fvU' vs e
-   -- SizeProp
-fvU' vs (In (PropSize e)) = fvU' vs e
-   -- SourceInfo
-fvU' vs (In (SourceInfo _ e)) = fvU' vs e
-   -- Switch
-fvU' vs (In (Switch e)) = fvU' vs e
    -- Trace
 fvU' vs (In (Trace e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Tuple

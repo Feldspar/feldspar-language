@@ -680,17 +680,21 @@ instance Untype dom dom => Untype (Trace      :|| Type) dom
 
 instance Untype dom dom => Untype (Save :|| Type) dom
   where
-    untypeProgSym (C' Save) info (a :* Nil) = In (Ut.Save (untypeProg a))
+    untypeProgSym (C' Save) info (a :* Nil)
+        = In (Ut.PrimApp1 Ut.Save t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (PropSize :|| Type) dom
   where
     untypeProgSym (C' (PropSize _)) info (_ :* b :* Nil)
-      = In (Ut.PropSize (untypeProg b))
+        = In (Ut.PrimApp1 Ut.PropSize t' (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Decor SourceInfo1 Identity :|| Type) dom
   where
     untypeProgSym (C' (Decor (SourceInfo1 comment) Id)) info (a :* Nil)
-      = In (Ut.SourceInfo comment (untypeProg a))
+        = In (Ut.PrimApp1 (Ut.SourceInfo comment) t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
          , Project (EQ :|| Type) dom
@@ -699,7 +703,8 @@ instance ( Untype dom dom
       => Untype (Switch :|| Type) dom
   where
     untypeProgSym (C' Switch) info (tree :* Nil)
-        = In (Ut.Switch (untypeProg tree))
+        = In (Ut.PrimApp1 Ut.Switch t' (untypeProg tree))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Tuple :|| Type) dom
   where
