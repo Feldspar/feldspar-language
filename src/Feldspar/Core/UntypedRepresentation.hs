@@ -108,6 +108,8 @@ data PrimOp1 =
    | Round
    | Ceiling
    | Floor
+   -- Logic
+   | Not
    -- Num
    | Abs
    | Sign
@@ -138,6 +140,9 @@ data PrimOp2 =
    | RotateRU
    | RotateL
    | RotateR
+   -- Logic
+   | And
+   | Or
    -- Num
    | Add
    | Sub
@@ -222,10 +227,6 @@ data UntypedFeldF e =
    | IExp e e
    -- Literal
    | Literal Lit
-   -- Logic
-   | And e e
-   | Or e e
-   | Not e
    -- Loop
    | ForLoop e e e
    | WhileLoop e e e
@@ -391,10 +392,6 @@ instance HasType UntypedFeld where
     typeof (In (IExp e _))                = typeof e
    -- Literal
     typeof (In (Literal l))               = typeof l
-   -- Logic
-    typeof (In And{})                     = BoolType
-    typeof (In Or{})                      = BoolType
-    typeof (In Not{})                     = BoolType
    -- Loop
     typeof (In (ForLoop _ e _))           = typeof e
     typeof (In (WhileLoop e _ _))         = typeof e
@@ -548,10 +545,6 @@ fvU' vs (In (Mod e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (IExp e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Literal
 fvU' vs (In (Literal l)) = []
-   -- Logic
-fvU' vs (In (And e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Or e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Not e)) = fvU' vs e
    -- Loop
 fvU' vs (In (ForLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
 fvU' vs (In (WhileLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3

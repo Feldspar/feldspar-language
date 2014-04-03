@@ -595,11 +595,14 @@ instance Untype dom dom => Untype (INTEGRAL   :|| Type) dom
 instance Untype dom dom => Untype (Logic      :|| Type) dom
   where
       untypeProgSym (C' And) info (a :* b :* Nil)
-        = In (Ut.And (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.And t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Or) info (a :* b :* Nil)
-        = In (Ut.Or (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp2 Ut.Or t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Not) info (a :* Nil)
-        = In (Ut.Not (untypeProg a))
+        = In (Ut.PrimApp1 Ut.Not t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (NUM        :|| Type) dom
   where
