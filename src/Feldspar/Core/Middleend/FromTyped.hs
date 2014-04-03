@@ -216,10 +216,11 @@ instance (Untype dom dom) => Untype (FFI :|| Type) dom
 instance Untype dom dom => Untype (FUTURE :|| Type) dom
   where
     untypeProgSym (C' MkFuture) info (p :* Nil)
-      = In (Ut.MkFuture (untypeProg p))
-
+      = In (Ut.PrimApp1 Ut.MkFuture t' (untypeProg p))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Await) info (a :* Nil)
-      = In (Ut.Await (untypeProg a))
+      = In (Ut.PrimApp1 Ut.Await t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype (Literal :|| Type) dom
   where
@@ -398,7 +399,8 @@ instance ( Untype dom dom
 instance Untype dom dom => Untype (NoInline :|| Type) dom
   where
     untypeProgSym (C' NoInline) info (p :* Nil)
-      = In (Ut.NoInline (untypeProg p))
+      = In (Ut.PrimApp1 Ut.NoInline t' (untypeProg p))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
          , Project (Core.Variable :|| Type) dom

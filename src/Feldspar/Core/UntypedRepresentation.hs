@@ -136,6 +136,9 @@ data PrimOp1 =
    | Asinh
    | Atanh
    | Acosh
+   -- Future
+   | MkFuture
+   | Await
    -- Logic
    | Not
    -- Mutable
@@ -149,6 +152,8 @@ data PrimOp1 =
    -- MutableReference
    | NewRef
    | GetRef
+   -- Noinline
+   | NoInline
    -- Num
    | Abs
    | Sign
@@ -273,13 +278,8 @@ data UntypedFeldF e =
    | ForeignImport String [e]
    -- Fractional
    | DivFrac e e
-   -- Future
-   | MkFuture e
-   | Await e
    -- Literal
    | Literal Lit
-   -- Noinline
-   | NoInline e
    -- Par
    | ParRun e
    | ParNew
@@ -345,14 +345,8 @@ instance HasType UntypedFeld where
     typeof (In (ForeignImport _ e))       = error "typeof FFI"
    -- Fractional
     typeof (In (DivFrac e _))             = typeof e
-    -- Future
-    typeof (In (MkFuture e))              = FValType (typeof e)
-    typeof (In (Await e))                 = t
-      where (FValType t) = typeof e
    -- Literal
     typeof (In (Literal l))               = typeof l
-   -- Noinline
-    typeof (In (NoInline e))              = typeof e
    -- Par
     typeof (In (ParRun e))                = t
       where (ParType t) = typeof e
@@ -404,13 +398,8 @@ fvU' vs (In (EparFor e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (ForeignImport _ es)) = concatMap (fvU' vs) es
    -- Fractional
 fvU' vs (In (DivFrac e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Future
-fvU' vs (In (MkFuture e)) = fvU' vs e
-fvU' vs (In (Await e)) = fvU' vs e
    -- Literal
 fvU' vs (In (Literal l)) = []
-   -- Noinline
-fvU' vs (In (NoInline e)) = fvU' vs e
    -- Par
 fvU' vs (In (ParRun e)) = fvU' vs e
 fvU' vs (In (ParNew)) = []
