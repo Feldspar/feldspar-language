@@ -228,6 +228,10 @@ data PrimOp2 =
    | GTE
    | Min
    | Max
+   -- RealFloat
+   | Atan2
+   -- Trace
+   | Trace
    deriving (Eq, Show)
 
 data PrimOp3 =
@@ -280,10 +284,6 @@ data UntypedFeldF e =
    | ParPut e e
    | ParFork e
    | ParYield
-   -- RealFloat
-   | Atan2 e e
-   -- Trace
-   | Trace e e
    -- Tuple
    | Tup2 e e
    | Tup3 e e e
@@ -376,10 +376,6 @@ instance HasType UntypedFeld where
     typeof (In ParPut{})                  = ParType UnitType
     typeof (In ParFork{})                 = ParType UnitType
     typeof (In ParYield)                  = ParType UnitType
-   -- RealFloat
-    typeof (In (Atan2 e _))               = typeof e
-   -- Trace
-    typeof (In (Trace _ e))               = typeof e
    -- Tuple
     typeof (In (Tup2 e1 e2))              = Tup2Type (typeof e1) (typeof e2)
     typeof (In (Tup3 e1 e2 e3))           = Tup3Type (typeof e1) (typeof e2)
@@ -451,10 +447,6 @@ fvU' vs (In (ParGet e)) = fvU' vs e
 fvU' vs (In (ParPut e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (ParFork e)) = fvU' vs e
 fvU' vs (In (ParYield)) = []
-   -- RealFloat
-fvU' vs (In (Atan2 e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Trace
-fvU' vs (In (Trace e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Tuple
 fvU' vs (In (Tup2 e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (Tup3 e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3

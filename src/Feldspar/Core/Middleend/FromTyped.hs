@@ -679,13 +679,15 @@ instance Untype dom dom => Untype (ORD        :|| Type) dom
 
 instance Untype dom dom => Untype (REALFLOAT  :|| Type) dom
   where
-      untypeProgSym (C' Atan2) info (a :* b :* Nil)
-        = In (Ut.Atan2 (untypeProg a) (untypeProg b))
+   untypeProgSym (C' Atan2) info (a :* b :* Nil)
+      = In (Ut.PrimApp2 Ut.Atan2 t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Trace      :|| Type) dom
   where
-      untypeProgSym (C' Trace) info (a :* b :* Nil)
-        = In (Ut.Trace (untypeProg a) (untypeProg b))
+   untypeProgSym (C' Trace) info (a :* b :* Nil)
+      = In (Ut.PrimApp2 Ut.Trace t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Save :|| Type) dom
   where
