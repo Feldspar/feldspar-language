@@ -375,7 +375,7 @@ fvU' vs (In (Variable v)) | v `elem` vs  = []
 fvU' vs (In (Lambda v e))                = fvU' (v:vs) e
 fvU' vs (In (Let e1 e2))                 = fvU' vs e1 ++ fvU' vs e2
    -- FFI
-fvU' vs (In (ForeignImport _ _ es))        = concatMap (fvU' vs) es
+fvU' vs (In (ForeignImport _ _ es))      = concatMap (fvU' vs) es
    -- Literal
 fvU' vs (In (Literal l))                 = []
    -- Tuple
