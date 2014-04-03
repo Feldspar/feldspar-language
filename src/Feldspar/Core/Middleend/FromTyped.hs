@@ -166,12 +166,14 @@ instance ( Untype dom dom
 instance Untype dom dom => Untype (Condition :|| Type) dom
   where
     untypeProgSym (C' Condition) info (cond :* tHEN :* eLSE :* Nil)
-      = In (Ut.Condition (untypeProg cond) (untypeProg tHEN) (untypeProg eLSE))
+      = In (Ut.PrimApp3 Ut.Condition t' (untypeProg cond) (untypeProg tHEN) (untypeProg eLSE))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (ConditionM m) dom
   where
     untypeProgSym ConditionM info (cond :* tHEN :* eLSE :* Nil)
-      = In (Ut.ConditionM (untypeProg cond) (untypeProg tHEN) (untypeProg eLSE))
+      = In (Ut.PrimApp3 Ut.ConditionM t' (untypeProg cond) (untypeProg tHEN) (untypeProg eLSE))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance (Untype dom dom) => Untype (Error :|| Type) dom
   where
@@ -278,10 +280,11 @@ instance ( Untype dom dom
       => Untype (Loop :|| Type) dom
   where
     untypeProgSym (C' ForLoop) info (len :* init :* b :* Nil)
-         = In (Ut.ForLoop (untypeProg len) (untypeProg init) (untypeProg b))
-
+         = In (Ut.PrimApp3 Ut.ForLoop t' (untypeProg len) (untypeProg init) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' WhileLoop) info (init :* a :* b :* Nil)
-        = In (Ut.WhileLoop (untypeProg init) (untypeProg a) (untypeProg b))
+        = In (Ut.PrimApp3 Ut.WhileLoop t' (untypeProg init) (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
          , Project (CLambda Type) dom

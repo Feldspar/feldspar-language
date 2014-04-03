@@ -248,6 +248,12 @@ data PrimOp3 =
    -- Array
      Sequential
    | SetIx
+   -- Condition
+   | Condition
+   | ConditionM
+   -- Loop
+   | ForLoop
+   | WhileLoop
    -- MutableArray
    | SetArr
    deriving (Eq, Show)
@@ -257,9 +263,6 @@ data UntypedFeldF e =
      Variable Var
    | Lambda Var e
    | Let e e
-   -- Condition
-   | Condition e e e
-   | ConditionM e e e
    -- Elements
    | EMaterialize e e
    | EWrite e e
@@ -275,9 +278,6 @@ data UntypedFeldF e =
    | Await e
    -- Literal
    | Literal Lit
-   -- Loop
-   | ForLoop e e e
-   | WhileLoop e e e
    -- Noinline
    | NoInline e
    -- Par
@@ -335,9 +335,6 @@ instance HasType UntypedFeld where
     typeof (In (Variable v))              = typeof v
     typeof (In (Lambda v e))              = FunType (typeof v) (typeof e)
     typeof (In (Let _ (In (Lambda _ e)))) = typeof e
-   -- Condition
-    typeof (In (Condition _ e _))         = typeof e
-    typeof (In (ConditionM _ e _))        = typeof e
    -- Elements
     typeof (In (EMaterialize _ e))        = ElementsType (typeof e)
     typeof (In (EWrite _ e))              = ElementsType (typeof e)
@@ -354,9 +351,6 @@ instance HasType UntypedFeld where
       where (FValType t) = typeof e
    -- Literal
     typeof (In (Literal l))               = typeof l
-   -- Loop
-    typeof (In (ForLoop _ e _))           = typeof e
-    typeof (In (WhileLoop e _ _))         = typeof e
    -- Noinline
     typeof (In (NoInline e))              = typeof e
    -- Par
@@ -400,9 +394,6 @@ fvU' vs (In (Variable v)) | v `elem` vs = []
                           | otherwise = [v]
 fvU' vs (In (Lambda v e))  = fvU' (v:vs) e
 fvU' vs (In (Let e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Condition
-fvU' vs (In (Condition c t f)) = fvU' vs c ++ fvU' vs t ++ fvU' vs f
-fvU' vs (In (ConditionM c t f)) = fvU' vs c ++ fvU' vs t ++ fvU' vs f
    -- Elements
 fvU' vs (In (EMaterialize e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (EWrite e1 e2)) = fvU' vs e1 ++ fvU' vs e2
@@ -418,9 +409,6 @@ fvU' vs (In (MkFuture e)) = fvU' vs e
 fvU' vs (In (Await e)) = fvU' vs e
    -- Literal
 fvU' vs (In (Literal l)) = []
-   -- Loop
-fvU' vs (In (ForLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-fvU' vs (In (WhileLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
    -- Noinline
 fvU' vs (In (NoInline e)) = fvU' vs e
    -- Par
