@@ -319,13 +319,11 @@ instance ( Untype dom dom
   where
     untypeProgSym Bind info (ma :* mb :* Nil)
         = In (Ut.Bind (untypeProg ma) (untypeProg mb))
-
     untypeProgSym Then info (ma :* mb :* Nil)
         = In (Ut.Then (untypeProg ma) (untypeProg mb))
-
     untypeProgSym Return info (a :* Nil)
-        = In (Ut.Return (untypeProg a))
-
+        = In (Ut.PrimApp1 Ut.Return t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym When info (c :* action :* Nil)
         = In (Ut.When (untypeProg c) (untypeProg action))
 
@@ -336,13 +334,11 @@ instance ( Untype dom dom
   where
     untypeProgSym Bind info (ma :* mb :* Nil)
         = In (Ut.Bind (untypeProg ma) (untypeProg mb))
-
     untypeProgSym Then info (ma :* mb :* Nil)
         = In (Ut.Then (untypeProg ma) (untypeProg mb))
-
     untypeProgSym Return info (a :* Nil)
-        = In (Ut.Return (untypeProg a))
-
+        = In (Ut.PrimApp1 Ut.Return t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym When info (c :* action :* Nil)
         = In (Ut.When (untypeProg c) (untypeProg action))
 
@@ -367,7 +363,9 @@ instance ( Untype dom dom
 -- MutableRef
 instance (Untype dom dom, Project (CLambda Type) dom) => Untype Mutable dom
   where
-    untypeProgSym Run info (ma :* Nil) = In (Ut.Run (untypeProg ma))
+    untypeProgSym Run info (ma :* Nil)
+      = In (Ut.PrimApp1 Ut.Run t' (untypeProg ma))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
          , Project (CLambda Type) dom
@@ -769,8 +767,8 @@ untypeType (Tup7Type a b c d e f g) (sa,sb,sc,sd,se,sf,sg)
   = Ut.Tup7Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
                 (untypeType d sd) (untypeType e se) (untypeType f sf)
                 (untypeType g sg)
-untypeType (MutType a) _            = Ut.MutType (untypeType a (defaultSize a))
-untypeType (RefType a) _            = Ut.RefType (untypeType a (defaultSize a))
+untypeType (MutType a) sz           = Ut.MutType (untypeType a sz)
+untypeType (RefType a) sz           = Ut.RefType (untypeType a sz)
 untypeType (ArrayType a) (rs :> es) = Ut.ArrayType rs (untypeType a es)
 untypeType (MArrType a) (rs :> es)  = Ut.MArrType rs (untypeType a es)
 untypeType (ParType a) _            = Ut.ParType (untypeType a (defaultSize a))

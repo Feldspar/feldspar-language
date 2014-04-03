@@ -138,6 +138,9 @@ data PrimOp1 =
    | Acosh
    -- Logic
    | Not
+   -- Mutable
+   | Run
+   | Return
    -- Num
    | Abs
    | Sign
@@ -250,8 +253,6 @@ data UntypedFeldF e =
    | While e e
    | For e e
    -- Mutable
-   | Run e
-   | Return e
    | Bind e e
    | Then e e
    | When e e
@@ -360,9 +361,6 @@ instance HasType UntypedFeld where
       where t | MutType _ <- typeof e = MutType UnitType
               | ParType _ <- typeof e = ParType UnitType
    -- Mutable
-    typeof (In (Run e))                   = t
-      where t | MutType a <- typeof e = a
-    typeof (In (Return e))                = MutType (typeof e)
     typeof (In (Bind _ (In (Lambda _ e))))= typeof e
     typeof (In (Then _ e))                = typeof e
     typeof (In (When _ e))                = typeof e
@@ -455,8 +453,6 @@ fvU' vs (In (WhileLoop e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
 fvU' vs (In (While e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (For e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Mutable
-fvU' vs (In (Run e)) = fvU' vs e
-fvU' vs (In (Return e)) = fvU' vs e
 fvU' vs (In (Bind e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (Then e1 e2)) = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (When e1 e2)) = fvU' vs e1 ++ fvU' vs e2
