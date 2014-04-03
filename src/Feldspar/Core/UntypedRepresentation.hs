@@ -12,6 +12,7 @@ module Feldspar.Core.UntypedRepresentation (
   , PrimOp0(..)
   , PrimOp1(..)
   , PrimOp2(..)
+  , PrimOp3(..)
   , Type(..)
   , Lit(..)
   , Var(..)
@@ -97,8 +98,10 @@ data PrimOp0 =
    deriving (Eq,Show)
 
 data PrimOp1 =
+   -- Array
+     GetLength
    -- Bits
-     Bit
+   | Bit
    | Complement
    | ReverseBits
    | BitScan
@@ -149,8 +152,13 @@ data PrimOp1 =
    deriving (Eq, Show)
 
 data PrimOp2 =
+   -- Array
+     Parallel
+   | Append
+   | GetIx
+   | SetLength
    -- Bits
-     BAnd
+   | BAnd
    | BOr
    | BXor
    | SetBit
@@ -198,17 +206,15 @@ data PrimOp2 =
    | Max
    deriving (Eq, Show)
 
-data UntypedFeldF e =
+data PrimOp3 =
    -- Array
-     Parallel e e
-   | Sequential e e e
-   | Append e e
-   | GetIx e e
-   | SetIx e e e
-   | GetLength e
-   | SetLength e e
+     Sequential
+   | SetIx
+   deriving (Eq, Show)
+
+data UntypedFeldF e =
    -- Binding
-   | Variable Var
+     Variable Var
    | Lambda Var e
    | Let e e
    -- Condition
@@ -287,6 +293,7 @@ data UntypedFeldF e =
    | PrimApp0 PrimOp0 Type
    | PrimApp1 PrimOp1 Type e
    | PrimApp2 PrimOp2 Type e e
+   | PrimApp3 PrimOp3 Type e e e
    deriving (Eq, Show)
 
 class HasType a where
@@ -319,15 +326,6 @@ instance HasType Lit where
 
 instance HasType UntypedFeld where
     type TypeOf UntypedFeld          = Type
-   -- Array
-    typeof (In (Parallel _ e))            = ArrayType fullRange (typeof e)
-    typeof (In (Sequential _ _ e))        = ArrayType fullRange (typeof e)
-    typeof (In (Append e _))              = typeof e
-    typeof (In (GetIx e _))               = t
-      where (ArrayType _ t) = typeof e
-    typeof (In (SetIx e _ _))             = typeof e
-    typeof (In GetLength{})               = IntType Unsigned S32
-    typeof (In (SetLength _ e))           = typeof e
    -- Binding
     typeof (In (Variable v))              = typeof v
     typeof (In (Lambda v e))              = FunType (typeof v) (typeof e)
@@ -427,6 +425,7 @@ instance HasType UntypedFeld where
     typeof (In (PrimApp0 _ t))             = t
     typeof (In (PrimApp1 _ t _))           = t
     typeof (In (PrimApp2 _ t _ _))         = t
+    typeof (In (PrimApp3 _ t _ _ _))       = t
     typeof e = error ("UntypedRepresentation: Missing match of: " ++ show e)
 
 
@@ -434,14 +433,6 @@ fv :: UntypedFeld -> [Var]
 fv = nub . fvU' []
 
 fvU' :: [Var] -> UntypedFeld -> [Var]
--- Array
-fvU' vs (In (Parallel len ixf)) = fvU' vs len ++ fvU' vs ixf
-fvU' vs (In (Sequential len init e)) = fvU' vs len ++ fvU' vs init ++ fvU' vs e
-fvU' vs (In (Append e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (GetIx e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (SetIx e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-fvU' vs (In (GetLength e)) = fvU' vs e
-fvU' vs (In (SetLength e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- Binding
 fvU' vs (In (Variable v)) | v `elem` vs = []
                           | otherwise = [v]
@@ -520,6 +511,7 @@ fvU' vs (In (Tup5 e1 e2 e3 e4 e5)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3 ++ f
 fvU' vs (In (Tup6 e1 e2 e3 e4 e5 e6)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3 ++ fvU' vs e4 ++ fvU' vs e5 ++ fvU' vs e6
 fvU' vs (In (Tup7 e1 e2 e3 e4 e5 e6 e7)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3 ++ fvU' vs e4 ++ fvU' vs e5 ++ fvU' vs e6 ++ fvU' vs e7
 -- Common nodes.
-fvU' vs (In PrimApp0{})           = []
-fvU' vs (In (PrimApp1 _ _ e))     = fvU' vs e
-fvU' vs (In (PrimApp2 _ _ e1 e2)) = fvU' vs e1 ++ fvU' vs e2
+fvU' vs (In PrimApp0{})              = []
+fvU' vs (In (PrimApp1 _ _ e))        = fvU' vs e
+fvU' vs (In (PrimApp2 _ _ e1 e2))    = fvU' vs e1 ++ fvU' vs e2
+fvU' vs (In (PrimApp3 _ _ e1 e2 e3)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3

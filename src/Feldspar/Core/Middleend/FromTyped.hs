@@ -59,7 +59,7 @@ import qualified Feldspar.Core.Constructs.Binding as Core
 import Feldspar.Core.UntypedRepresentation hiding ( Lambda, UntypedFeldF(..)
                                                   , Size, Type(..), Signedness
                                                   , PrimOp0(..), PrimOp1(..)
-                                                  , PrimOp2(..)
+                                                  , PrimOp2(..), PrimOp3(..)
                                                   )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
 
@@ -123,25 +123,26 @@ instance ( Untype dom dom
       => Untype (Array :|| Type) dom
   where
     untypeProgSym (C' Parallel) info (len :* ixf :* Nil)
-        = In (Ut.Parallel (untypeProg len) (untypeProg ixf))
-
+        = In (Ut.PrimApp2 Ut.Parallel t' (untypeProg len) (untypeProg ixf))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Sequential) info (len :* st :* ixf :* Nil)
-        = In (Ut.Sequential (untypeProg len) (untypeProg st) (untypeProg ixf))
-
+        = In (Ut.PrimApp3 Ut.Sequential t' (untypeProg len) (untypeProg st) (untypeProg ixf))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Append) info (a :* b :* Nil)
-        = In (Ut.Append (untypeProg a) (untypeProg b))
-
+        = In (Ut.PrimApp2 Ut.Append t' (untypeProg a) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' SetIx) info (arr :* i :* a :* Nil)
-        = In (Ut.SetIx (untypeProg arr) (untypeProg i) (untypeProg a))
-
+        = In (Ut.PrimApp3 Ut.SetIx t' (untypeProg arr) (untypeProg i) (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' GetIx) info (arr :* i :* Nil)
-        = In (Ut.GetIx (untypeProg arr) (untypeProg i))
-
+        = In (Ut.PrimApp2 Ut.GetIx t' (untypeProg arr) (untypeProg i))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' SetLength) info (len :* arr :* Nil)
-        = In (Ut.SetLength (untypeProg len) (untypeProg arr))
-
+        = In (Ut.PrimApp2 Ut.SetLength t' (untypeProg len) (untypeProg arr))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' GetLength) info (a :* Nil)
-        = In (Ut.GetLength (untypeProg a))
+        = In (Ut.PrimApp1 Ut.GetLength t' (untypeProg a))
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype (Core.Variable :|| Type) dom
   where
@@ -385,7 +386,6 @@ instance Untype dom dom => Untype (NoInline :|| Type) dom
     untypeProgSym (C' NoInline) info (p :* Nil)
       = In (Ut.NoInline (untypeProg p))
 
--- Par
 instance ( Untype dom dom
          , Project (Core.Variable :|| Type) dom
          )
@@ -403,8 +403,6 @@ instance ( Untype dom dom
     untypeProgSym ParFork info (p :* Nil) = In (Ut.ParFork (untypeProg p))
 
     untypeProgSym ParYield info Nil = In Ut.ParYield
-
--- Primitive
 
 -- | Converts symbols to primitive function calls
 instance Untype dom dom => Untype Semantics dom
