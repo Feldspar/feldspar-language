@@ -195,18 +195,20 @@ instance ( Untype dom dom
       => Untype (ElementsFeat :|| Type) dom
   where
     untypeProgSym (C' EMaterialize) info (len :* arr :* Nil)
-      = In (Ut.EMaterialize (untypeProg len) (untypeProg arr))
-
+      = In (Ut.PrimApp2 Ut.EMaterialize t' (untypeProg len) (untypeProg arr))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' EWrite) info (ix :* e :* Nil)
-      = In (Ut.EWrite (untypeProg ix) (untypeProg e))
-
+      = In (Ut.PrimApp2 Ut.EWrite t' (untypeProg ix) (untypeProg e))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' EPar) info (p1 :* p2 :* Nil)
-      = In (Ut.EPar (untypeProg p1) (untypeProg p2))
-
+      = In (Ut.PrimApp2 Ut.EPar t' (untypeProg p1) (untypeProg p2))
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' EparFor) info (len :* b :* Nil)
-      = In (Ut.EparFor (untypeProg len) (untypeProg b))
-
-    untypeProgSym (C' ESkip) info Nil = In (Ut.ESkip)
+      = In (Ut.PrimApp2 Ut.EparFor t' (untypeProg len) (untypeProg b))
+          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym (C' ESkip) info Nil
+      = In (Ut.PrimApp0 Ut.ESkip t')
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance (Untype dom dom) => Untype (FFI :|| Type) dom
   where -- No use for second argument at this stage.

@@ -91,8 +91,10 @@ data Lit =
    deriving (Eq,Show)
 
 data PrimOp0 =
+   -- Elements
+     ESkip
    -- Error
-     Undefined
+   | Undefined
    -- Floating
    | Pi
    -- Par
@@ -207,6 +209,11 @@ data PrimOp2 =
    -- Complex
    | MkComplex
    | MkPolar
+   -- Elements
+   | EMaterialize
+   | EWrite
+   | EPar
+   | EparFor
    -- Eq
    | Equal
    | NotEqual
@@ -279,12 +286,6 @@ data UntypedFeldF e =
      Variable Var
    | Lambda Var e
    | Let e e
-   -- Elements
-   | EMaterialize e e
-   | EWrite e e
-   | ESkip
-   | EPar e e
-   | EparFor e e
    -- FFI
    | ForeignImport String [e]
    -- Literal
@@ -337,12 +338,6 @@ instance HasType UntypedFeld where
     typeof (In (Variable v))              = typeof v
     typeof (In (Lambda v e))              = FunType (typeof v) (typeof e)
     typeof (In (Let _ (In (Lambda _ e)))) = typeof e
-   -- Elements
-    typeof (In (EMaterialize _ e))        = ElementsType (typeof e)
-    typeof (In (EWrite _ e))              = ElementsType (typeof e)
-    typeof (In ESkip)                     = ElementsType UnitType
-    typeof (In (EPar e _))                = typeof e
-    typeof (In (EparFor _ (In (Lambda _ e)))) = typeof e
    -- FFI
     typeof (In (ForeignImport _ e))       = error "typeof FFI"
    -- Literal
@@ -379,12 +374,6 @@ fvU' vs (In (Variable v)) | v `elem` vs = []
                           | otherwise = [v]
 fvU' vs (In (Lambda v e))  = fvU' (v:vs) e
 fvU' vs (In (Let e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-   -- Elements
-fvU' vs (In (EMaterialize e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (EWrite e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In ESkip) = []
-fvU' vs (In (EPar e1 e2)) = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (EparFor e1 e2)) = fvU' vs e1 ++ fvU' vs e2
    -- FFI
 fvU' vs (In (ForeignImport _ es)) = concatMap (fvU' vs) es
    -- Literal
