@@ -16,7 +16,8 @@ module Feldspar.Vector (
   indexed,newExtent,traverse,reshape,unit,fromZero,
   replicate,slice,(!:),diagonal,backpermute,
   map,
-  zip,zipWith,zip3,zip4,zip5,
+  zipWith,zipWith3,zipWith4,zipWith5,
+  zip,zip3,zip4,zip5,
   unzip,unzip3,unzip4,unzip5,
   fold,fold',sum,
   halve,
@@ -282,12 +283,6 @@ reversePull :: Pull (sh :. Data Length) a -> Pull (sh :. Data Length) a
 reversePull (Pull ixf (sh :. l)) =
   Pull (\(sh' :. ix) -> ixf (sh' :. (l - ix - 1))) (sh :. l)
 
--- | Combines the elements of two vectors. The size of the resulting vector
---   will be the intersection of the two argument vectors.
-zip :: (Pully vec1 sh, Pully vec2 sh, Shapely sh) =>
-       vec1 sh a -> vec2 sh b -> Pull sh (a,b)
-zip = zipWith (\a b -> (a,b))
-
 -- | Combines the elements of two vectors pointwise using a function.
 --   The size of the resulting vector will be the intersection of the
 --   two argument vectors.
@@ -295,6 +290,42 @@ zipWith :: (Pully vec1 sh, Pully vec2 sh, Shapely sh) =>
            (a -> b -> c) -> vec1 sh a -> vec2 sh b -> Pull sh c
 zipWith f arr1 arr2 = Pull (\ix -> f (arr1 !: ix) (arr2 !: ix))
                            (intersectDim (extent arr1) (extent arr2))
+
+-- | Like 'zipWith' but combines the elements of three vectors.
+zipWith3 :: (Pully vec1 sh, Pully vec2 sh, Pully vec3 sh, Shapely sh) =>
+           (a -> b -> c -> d) -> vec1 sh a -> vec2 sh b -> vec3 sh c -> Pull sh d
+zipWith3 f arr1 arr2 arr3 = Pull (\ix -> f (arr1 !: ix) (arr2 !: ix) (arr3 !: ix))
+                           (intersectDim (extent arr1)
+                              (intersectDim (extent arr2) (extent arr3)))
+
+-- | Like 'zipWith' but combines the elements of four vectors.
+zipWith4 :: ( Pully vec1 sh, Pully vec2 sh, Pully vec3 sh, Pully vec4 sh
+            , Shapely sh
+            ) =>
+           (a -> b -> c -> d -> e) -> vec1 sh a -> vec2 sh b ->
+           vec3 sh c -> vec4 sh d -> Pull sh e
+zipWith4 f arr1 arr2 arr3 arr4
+  = Pull (\ix -> f (arr1 !: ix) (arr2 !: ix) (arr3 !: ix) (arr4 !: ix))
+                           (intersectDim (intersectDim (extent arr1) (extent arr2))
+                                         (intersectDim (extent arr3) (extent arr4)))
+
+-- | Like 'zipWith' but combines the elements of five vectors.
+zipWith5 :: ( Pully vec1 sh, Pully vec2 sh, Pully vec3 sh, Pully vec4 sh
+            , Pully vec5 sh, Shapely sh
+            ) =>
+           (a -> b -> c -> d -> e -> f) -> vec1 sh a -> vec2 sh b ->
+           vec3 sh c -> vec4 sh d -> vec5 sh e -> Pull sh f
+zipWith5 f arr1 arr2 arr3 arr4 arr5
+  = Pull (\ix -> f (arr1 !: ix) (arr2 !: ix) (arr3 !: ix) (arr4 !: ix) (arr5 !: ix))
+            (intersectDim (extent arr1)
+                          (intersectDim (intersectDim (extent arr2) (extent arr3))
+                                        (intersectDim (extent arr4) (extent arr5))))
+
+-- | Combines the elements of two vectors. The size of the resulting vector
+--   will be the intersection of the two argument vectors.
+zip :: (Pully vec1 sh, Pully vec2 sh, Shapely sh) =>
+       vec1 sh a -> vec2 sh b -> Pull sh (a,b)
+zip = zipWith (\a b -> (a,b))
 
 -- | Like 'zip' but combining three vectors.
 zip3 :: (Pully vec1 sh, Pully vec2 sh, Pully vec3 sh) =>
