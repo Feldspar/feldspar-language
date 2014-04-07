@@ -37,6 +37,8 @@ library
     Feldspar.Lattice
     Feldspar.Range
     Feldspar.Core.Types
+    Feldspar.Core.UntypedRepresentation
+    Feldspar.Core.Middleend.FromTyped
     Feldspar.Core.Interpretation.Typed
     Feldspar.Core.Interpretation
     Feldspar.Core.Constructs.Array

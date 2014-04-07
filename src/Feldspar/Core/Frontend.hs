@@ -56,6 +56,7 @@ module Feldspar.Core.Frontend
     , reifyFeldUnOpt
     , showExpr
     , printExpr
+    , printExpr2
     , printExprWith
     , printExprUnOpt
     , showAST
@@ -102,6 +103,7 @@ import Language.Syntactic.Sharing.SimpleCodeMotion
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
+import Feldspar.Core.Middleend.FromTyped
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Binding (cLambda)
 import Feldspar.Core.Frontend.Array            as Frontend
@@ -200,6 +202,10 @@ reifyFeldUnOpt _ n = flip evalState 0 .
 
 showExpr :: SyntacticFeld a => a -> String
 showExpr = render . reifyFeld defaultFeldOpts N32
+
+-- | Print an optimized untyped expression
+printExpr2 :: SyntacticFeld a => a -> IO ()
+printExpr2 = print . untypeProg . reifyFeld defaultFeldOpts N32
 
 -- | Print an optimized expression
 printExpr :: SyntacticFeld a => a -> IO ()
