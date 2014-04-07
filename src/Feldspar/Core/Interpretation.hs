@@ -86,6 +86,7 @@ module Feldspar.Core.Interpretation
 
 
 
+import Control.Applicative ((<$>))
 import Control.Monad.Reader
 import Data.Map as Map
 import Data.Typeable (Typeable)
@@ -95,6 +96,7 @@ import Language.Syntactic.Constructs.Decoration
 import Language.Syntactic.Constructs.Literal
 import Language.Syntactic.Constructs.Binding
 
+import Feldspar.Range (isSingleton, lowerBound)
 import Feldspar.Lattice
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation.Typed
@@ -217,8 +219,10 @@ mkInfo sz = Info typeRep sz Map.empty ""
 mkInfoTy :: (Show (Size a), Lattice (Size a)) => TypeRep a -> Info a
 mkInfoTy t = Info t universal Map.empty ""
 
-infoRange :: Type a => Info a -> RangeSet a
-infoRange = sizeToRange . infoSize
+infoRange :: Info a -> RangeSet a
+infoRange info = case infoType info of
+                   IntType _ _ -> RangeSet $ infoSize info
+                   _           -> Universal
 
 -- | This class is used to allow constructs to be abstract in the monad. Its
 -- purpose is similar to that of 'MonadType'.
@@ -305,14 +309,25 @@ literalDecor = literalDecorSrc ""
 
 -- | Replaces an expression with a literal if the type permits, otherwise
 -- returns the expression unchanged.
-constFold :: (Typed dom, (Literal :|| Type) :<: dom)
-    => SourceInfo -> ASTF (Decor Info (dom :|| Typeable)) a
-    -> a
+constFold :: (Typed dom, EvalBind dom, (Literal :|| Type) :<: dom)
+    => ASTF (Decor Info (dom :|| Typeable)) a
     -> ASTF (Decor Info (dom :|| Typeable)) a
-constFold src expr a
+
+-- Replace with a literal if the range on the expression is a singleton
+constFold expr
+    | Just Dict     <- typeDict expr
+    , info          <- getInfo expr
+    , RangeSet size <- infoRange info
+    , isSingleton size
+    = literalDecorSrc (infoSource info) $ lowerBound size
+
+-- Replace with a literal if the expression is closed
+constFold expr
     | Just Dict <- typeDict expr
-    = literalDecorSrc src a
-constFold _ expr _ = expr
+    , info      <- getInfo expr
+    , Map.null $ infoVars info   -- closed expression
+    = literalDecorSrc (infoSource info) $ evalBind expr
+constFold expr = expr
 
 -- | Environment for optimization
 type Opt = Reader Env
@@ -446,14 +461,7 @@ optimizeM :: (OptimizeSuper dom)
           => FeldOpts -> ASTF (dom :|| Typeable) a -> Opt (ASTF (Decor Info (dom :|| Typeable)) a)
 optimizeM opts a
     | Dict <- exprDict a
-    = do
-        aOpt <- matchTrans (\(C' x) -> optimizeFeat opts x) a
-        let vars  = infoVars $ getInfo aOpt
-            value = evalBind aOpt
-            src   = infoSource $ getInfo aOpt
-        if Map.null vars
-           then return $ constFold src aOpt value
-           else return aOpt
+    = constFold <$> matchTrans (\(C' x) -> optimizeFeat opts x) a
 
 -- | Optimization of an expression. This function runs 'optimizeM' and extracts
 -- the result.
