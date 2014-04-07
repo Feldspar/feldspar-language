@@ -234,13 +234,6 @@ instance
         | Just (C' Parallel)  <- prjF op = return a
         | Just (C' SetLength) <- prjF op = return a
 
-    -- TODO remove this optimization when the singletonRange -> literal
-    -- optimization in Feldspar.Core.Interpretation has been implemented (issue #27)
-    constructFeatOpt _ (C' GetLength) (arr :* Nil)
-        | len :> _ <- infoSize $ getInfo arr
-        , isSingleton len
-        = return $ literalDecor $ lowerBound len
-
     constructFeatOpt _ (C' SetLength) (len :* _ :* Nil)
         | Just 0 <- viewLiteral len = return $ literalDecor []
 
