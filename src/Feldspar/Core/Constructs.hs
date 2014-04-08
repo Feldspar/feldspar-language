@@ -79,7 +79,6 @@ import Feldspar.Core.Constructs.Switch
 import Feldspar.Core.Constructs.SizeProp
 import Feldspar.Core.Constructs.SourceInfo
 import Feldspar.Core.Constructs.RealFloat
-import Feldspar.Core.Constructs.Trace
 import Feldspar.Core.Constructs.Tuple
 
 --------------------------------------------------------------------------------
@@ -112,7 +111,6 @@ type FeldSymbols
     :+: (PropSize   :|| Type)
     :+: (Save       :|| Type)
     :+: (Switch     :|| Type)
-    :+: (Trace      :|| Type)
     :+: Let
     :+: ConditionM Mut
     :+: LoopM Mut
