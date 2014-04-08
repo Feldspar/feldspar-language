@@ -20,6 +20,8 @@ module Feldspar.Core.UntypedRepresentation (
   , Signedness(..)
   , HasType(..)
   , fv
+  , collectLetBinders
+  , mkLets
   )
   where
 
@@ -40,7 +42,8 @@ type UntypedFeld = Term UntypedFeldF
 data Term f = In (f (Term f))
 
 deriving instance (Eq (f (Term f))) => Eq (Term f)
-deriving instance (Show (f (Term f))) => Show (Term f)
+instance (Show (f (Term f))) => Show (Term f) where
+  show (In f) = show f
 
 data Size = S8 | S16 | S32 | S40 | S64
     deriving (Eq,Show)
@@ -76,11 +79,13 @@ data Type =
 data Var = Var { varNum :: Integer
                , varType :: Type
                }
-   deriving (Show)
 
 -- Variables are equal if they have the same varNum.
 instance Eq Var where
   v1 == v2 = varNum v1 == varNum v2
+
+instance Show Var where
+  show (Var n _t) = "v" ++ show n
 
 data Lit =
      LUnit
@@ -407,3 +412,14 @@ fvU' vs (In PrimApp0{})                  = []
 fvU' vs (In (PrimApp1 _ _ e))            = fvU' vs e
 fvU' vs (In (PrimApp2 _ _ e1 e2))        = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (PrimApp3 _ _ e1 e2 e3))     = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
+
+-- | Collect nested let binders into the binders and the body.
+collectLetBinders :: UntypedFeld -> ([(Var, UntypedFeld)], UntypedFeld)
+collectLetBinders e = go e []
+  where go (In (Let e (In (Lambda v b)))) acc = go b ((v, e):acc)
+        go e                              acc = (reverse acc, e)
+
+-- | Inverse of collectLetBinders, put the term back together.
+mkLets :: ([(Var, UntypedFeld)], UntypedFeld) -> UntypedFeld
+mkLets ([], body)        = body
+mkLets ((v, e):t, body) = In (Let e (In (Lambda v (mkLets (t, body)))))

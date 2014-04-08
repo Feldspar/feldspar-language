@@ -39,6 +39,7 @@ library
     Feldspar.Core.Types
     Feldspar.Core.UntypedRepresentation
     Feldspar.Core.Middleend.FromTyped
+    Feldspar.Core.Middleend.LetSinking
     Feldspar.Core.Interpretation.Typed
     Feldspar.Core.Interpretation
     Feldspar.Core.Constructs.Array
