@@ -274,8 +274,6 @@ data PrimOp2 =
    | Max
    -- RealFloat
    | Atan2
-   -- Trace
-   | Trace
    deriving (Eq, Show)
 
 -- 3-ary application heads.

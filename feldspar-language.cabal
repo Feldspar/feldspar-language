@@ -70,7 +70,6 @@ library
     Feldspar.Core.Constructs.SourceInfo
     Feldspar.Core.Constructs.Switch
     Feldspar.Core.Constructs.RealFloat
-    Feldspar.Core.Constructs.Trace
     Feldspar.Core.Constructs.Tuple
     Feldspar.Core.Constructs.FFI
     Feldspar.Core.Constructs.Save
@@ -104,7 +103,6 @@ library
     Feldspar.Core.Frontend.SourceInfo
     Feldspar.Core.Frontend.Switch
     Feldspar.Core.Frontend.RealFloat
-    Feldspar.Core.Frontend.Trace
     Feldspar.Core.Frontend.Tuple
     Feldspar.Core.Frontend.FFI
     Feldspar.Core.Frontend.Save
