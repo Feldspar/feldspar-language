@@ -6,7 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Feldspar.Core.Middleend.FromTyped (
-  untypeProg
+  untype
   )
   where
 
@@ -61,12 +61,13 @@ import Feldspar.Core.UntypedRepresentation hiding ( Lambda, UntypedFeldF(..)
                                                   , PrimOp2(..), PrimOp3(..)
                                                   )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
+import Feldspar.Core.Middleend.LetSinking
 
 -- A self contained translation from the Syntactic format into UntypedFeld.
 --
 -- The file begins with the necessary Untype-functions and
 -- Untype-instances and tucks in some local helper functions at the
--- end. "untypeProg" is the only exported function.
+-- end. "untype" is the only exported function.
 
 -- | A minimal complete instance has to define either 'untypeProgSym' or
 -- 'untypeExprSym'.
@@ -98,6 +99,10 @@ untypeProgDecor :: Untype dom dom
     -> Args (AST (Decor Info dom)) a
     -> UntypedFeld
 untypeProgDecor (Decor info a) args = untypeProgSym a info args
+
+-- | External module interface.
+untype :: Untype dom dom => ASTF (Decor Info dom) a -> UntypedFeld
+untype = sinkLets . untypeProg
 
 untypeProg :: Untype dom dom =>
     ASTF (Decor Info dom) a -> UntypedFeld
