@@ -25,9 +25,9 @@ module Feldspar.Core.UntypedRepresentation (
   )
   where
 
-import Data.List (nub)
+import Data.List (nub, intersperse)
 
-import Feldspar.Range (Range(..), singletonRange, fullRange)
+import Feldspar.Range (Range(..), singletonRange)
 import Feldspar.Core.Types (Length)
 
 -- This file contains the UntypedFeld format and associated
@@ -101,9 +101,39 @@ data Lit =
    | LTup5 Lit Lit Lit Lit Lit
    | LTup6 Lit Lit Lit Lit Lit Lit
    | LTup7 Lit Lit Lit Lit Lit Lit Lit
-   deriving (Eq,Show)
+   deriving (Eq)
 
--- 0-ary application heads.
+-- | Human readable show instance.
+instance Show Lit where
+   show LUnit                        = "()"
+   show (LBool b)                    = show b
+   show (LInt _ _ i)                 = show i
+   show (LFloat f)                   = show f
+   show (LDouble d)                  = show d
+   show (LComplex r c)               = "(" ++ show r ++ ", " ++ show c ++ "i)"
+   show (LArray _ ls)                = "[" ++ sls ++ "]"
+     where sls = concat $ intersperse "," $ map show ls
+   show (LTup2 l1 l2)                = "(" ++ show l1 ++ ", " ++ show l2 ++ ")"
+   show (LTup3 l1 l2 l3)             = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++
+                                        ")"
+   show (LTup4 l1 l2 l3 l4)          = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ")"
+   show (LTup5 l1 l2 l3 l4 l5)       = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++
+                                        ")"
+   show (LTup6 l1 l2 l3 l4 l5 l6)    = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++ ", " ++ show l6 ++
+                                        ")"
+   show (LTup7 l1 l2 l3 l4 l5 l6 l7) = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++ ", " ++ show l6 ++
+                                        ", " ++ show l7 ++ ")"
+
+-- | 0-ary application heads.
 data PrimOp0 =
    -- Elements
      ESkip
@@ -116,7 +146,7 @@ data PrimOp0 =
    | ParYield
    deriving (Eq,Show)
 
--- 1-ary application heads.
+-- | 1-ary application heads.
 data PrimOp1 =
    -- Array
      GetLength
@@ -199,7 +229,7 @@ data PrimOp1 =
    | Sel7
    deriving (Eq, Show)
 
--- 2-ary application heads.
+-- | 2-ary application heads.
 data PrimOp2 =
    -- Array
      Parallel
@@ -281,7 +311,7 @@ data PrimOp2 =
    | Atan2
    deriving (Eq, Show)
 
--- 3-ary application heads.
+-- | 3-ary application heads.
 data PrimOp3 =
    -- Array
      Sequential
@@ -296,7 +326,7 @@ data PrimOp3 =
    | SetArr
    deriving (Eq, Show)
 
--- The main type: Applications, Bindings and other leftovers that are not 0-3-ary.
+-- | The main type: Applications, Bindings and other leftovers that are not 0-3-ary.
 data UntypedFeldF e =
    -- Binding
      Variable Var
@@ -319,7 +349,42 @@ data UntypedFeldF e =
    | PrimApp1 PrimOp1 Type e
    | PrimApp2 PrimOp2 Type e e
    | PrimApp3 PrimOp3 Type e e e
-   deriving (Eq, Show)
+   deriving (Eq)
+
+instance (Show e) => Show (UntypedFeldF e) where
+   show (Variable v)                = show v
+   show (Lambda v e)                = "(\\" ++ show v ++ " -> " ++ show e ++ ")"
+   show (Let e1 e2)                 = "let (" ++ show e1 ++ ") in " ++ show e2
+   show (ForeignImport s _ es)      = s ++ " " ++ concatMap show es
+   show (Literal l) = show l
+   show (Tup2 e1 e2)                = "(" ++ show e1 ++ ", " ++ show e2 ++ ")"
+   show (Tup3 e1 e2 e3)             = "("   ++ show e1 ++ ", " ++ show e2 ++
+                                        ", " ++ show e3 ++
+                                        ")"
+   show (Tup4 e1 e2 e3 e4)          = "("   ++ show e1 ++ ", " ++ show e2 ++
+                                        ", " ++ show e3 ++ ", " ++ show e4 ++
+                                        ")"
+   show (Tup5 e1 e2 e3 e4 e5)       = "("   ++ show e1 ++ ", " ++ show e2 ++
+                                        ", " ++ show e3 ++ ", " ++ show e4 ++
+                                        ", " ++ show e5 ++
+                                        ")"
+   show (Tup6 e1 e2 e3 e4 e5 e6)    = "("   ++ show e1 ++ ", " ++ show e2 ++
+                                        ", " ++ show e3 ++ ", " ++ show e4 ++
+                                        ", " ++ show e5 ++ ", " ++ show e6 ++
+                                        ")"
+   show (Tup7 e1 e2 e3 e4 e5 e6 e7) = "("   ++ show e1 ++ ", " ++ show e2 ++
+                                        ", " ++ show e3 ++ ", " ++ show e4 ++
+                                        ", " ++ show e5 ++ ", " ++ show e6 ++
+                                        ", " ++ show e7 ++ ")"
+   show (PrimApp0 p _)              = show p
+   show (PrimApp1 p _ e)            = show p ++ " " ++ show e
+   show (PrimApp2 GetIx _ e1 e2)    = "(" ++ show e1 ++ " ! " ++ show e2 ++ ")"
+   show (PrimApp2 p@Then _ e1 e2)   = show p ++ " (" ++ show e1 ++ ") (" ++
+                                      show e2 ++ ")"
+   show (PrimApp2 p@Bind _ e1 e2)   = show p ++ " (" ++ show e1 ++ ") " ++ show e2
+   show (PrimApp2 p _ e1 e2)        = show p ++ " " ++ show e1 ++ " " ++ show e2
+   show (PrimApp3 p _ e1 e2 e3)     = show p ++ " " ++ show e1 ++ " " ++ show e2 ++
+                                      " " ++ show e3
 
 class HasType a where
     type TypeOf a
@@ -394,7 +459,7 @@ fvU' vs (In (Let e1 e2))                 = fvU' vs e1 ++ fvU' vs e2
    -- FFI
 fvU' vs (In (ForeignImport _ _ es))      = concatMap (fvU' vs) es
    -- Literal
-fvU' vs (In (Literal l))                 = []
+fvU' _  (In (Literal{}))                 = []
    -- Tuple
 fvU' vs (In (Tup2 e1 e2))                = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (Tup3 e1 e2 e3))             = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
@@ -408,7 +473,7 @@ fvU' vs (In (Tup7 e1 e2 e3 e4 e5 e6 e7)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e
                                            ++ fvU' vs e4 ++ fvU' vs e5 ++ fvU' vs e6
                                            ++ fvU' vs e7
 -- Common nodes.
-fvU' vs (In PrimApp0{})                  = []
+fvU' _  (In PrimApp0{})                  = []
 fvU' vs (In (PrimApp1 _ _ e))            = fvU' vs e
 fvU' vs (In (PrimApp2 _ _ e1 e2))        = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (PrimApp3 _ _ e1 e2 e3))     = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
