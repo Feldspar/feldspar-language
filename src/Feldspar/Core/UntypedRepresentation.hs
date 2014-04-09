@@ -396,6 +396,7 @@ instance HasType Var where
 
 instance HasType Lit where
     type TypeOf Lit      = Type
+    typeof LUnit         = UnitType
     typeof (LInt s n _)  = IntType s n
     typeof LDouble{}     = DoubleType
     typeof LFloat{}      = FloatType
