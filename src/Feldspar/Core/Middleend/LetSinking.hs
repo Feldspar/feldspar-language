@@ -9,6 +9,7 @@ sinkLets = go
   where go e@(In Variable{}) = e
         go (In (Lambda v e))
          | (bs1, In (Lambda v' body)) <- collectLetBinders e
+         , not $ null bs1
          = In (Lambda v (In (Lambda v' (mkLets (bs1, body)))))
         go (In (Lambda v e)) = In (Lambda v (go e))
         go (In (Let e1 e2)) = In (Let (go e1) (go e2))
