@@ -49,6 +49,10 @@ import Data.Complex (Complex(..))
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
+import Feldspar.Core.Constructs.Eq
+import Feldspar.Core.Constructs.Ord
+import Feldspar.Core.Constructs.Bits
+import Feldspar.Core.Constructs.Logic
 import Feldspar.Core.Constructs.Literal
 import Feldspar.Core.Constructs.Integral
 import Feldspar.Core.Constructs.Complex
@@ -91,8 +95,13 @@ instance SizeProp (NUM :|| Type)
     sizeProp (C' Mul)  (WrapFull a :* WrapFull b :* Nil) = infoSize a * infoSize b
 
 
-instance ( (NUM     :|| Type) :<: dom
-         , (Literal :|| Type) :<: dom
+instance ( Monotonic dom
+         , (NUM      :|| Type) :<: dom
+         , (ORD      :|| Type) :<: dom
+         , (EQ       :|| Type) :<: dom
+         , (BITS     :|| Type) :<: dom
+         , (Logic    :|| Type) :<: dom
+         , (Literal  :|| Type) :<: dom
          , (INTEGRAL :|| Type) :<: dom
          , (COMPLEX :|| Type) :<: dom
          , OptimizeSuper dom
@@ -223,11 +232,22 @@ instance ( (NUM     :|| Type) :<: dom
              constructFeatOpt opts (c' MkComplex) (iainv :* rainv :* Nil)
 
 
-    constructFeatOpt _ (C' Mul) (a :* b :* Nil)
+    constructFeatOpt opts (C' Mul) (a :* b :* Nil)
         | Just 0 <- viewLiteral a = return a
         | Just 1 <- viewLiteral a = return b
         | Just 0 <- viewLiteral b = return b
         | Just 1 <- viewLiteral b = return a
+        | IntType{} <- infoType (getInfo a)
+        , Just a' <- viewLiteral a
+        , Just k <- log2 (fromIntegral a')
+        = do
+             constructFeatOpt opts (c' ShiftL) (b :* literalDecor (fromIntegral k) :* Nil)
+        | IntType{} <- infoType (getInfo b)
+        , Just b' <- viewLiteral b
+        , Just k <- log2 (fromIntegral b')
+        = do
+             constructFeatOpt opts (c' ShiftL) (a :* literalDecor (fromIntegral k) :* Nil)
+
 
     constructFeatOpt opts s@(C' Mul) (a :* (op :$ b :$ c) :* Nil)
         | Just al       <- viewLiteral a
@@ -260,3 +280,10 @@ instance ( (NUM     :|| Type) :<: dom
     constructFeatOpt opts a args = constructFeatUnOpt opts a args
 
     constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
+
+log2 :: Integer -> Maybe Integer
+log2 n
+    | n == 2 Prelude.^ l = Just l
+    | otherwise          = Nothing
+  where
+    l = toInteger $ length $ takeWhile (<n) $ iterate (*2) 1

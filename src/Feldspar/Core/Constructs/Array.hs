@@ -48,9 +48,12 @@ import Feldspar.Range
 import Feldspar.Lattice
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
+import Feldspar.Core.Constructs.Bits
 import Feldspar.Core.Constructs.Binding
 import Feldspar.Core.Constructs.Complex
+import Feldspar.Core.Constructs.Eq
 import Feldspar.Core.Constructs.Integral
+import Feldspar.Core.Constructs.Logic
 import Feldspar.Core.Constructs.Num
 import Feldspar.Core.Constructs.Ord
 
@@ -135,12 +138,16 @@ instance SizeProp (Array :|| Type)
         _ :> el = infoSize arr
 
 instance
-    ( (Array    :|| Type) :<: dom
+    ( Monotonic dom
+    , (Array    :|| Type) :<: dom
+    , (BITS     :|| Type) :<: dom
+    , (EQ       :|| Type) :<: dom
     , (NUM      :|| Type) :<: dom
     , Let                 :<: dom
     , (ORD      :|| Type) :<: dom
     , (INTEGRAL :|| Type) :<: dom
     , (COMPLEX  :|| Type) :<: dom
+    , (Logic    :|| Type) :<: dom
     , (Variable :|| Type) :<: dom
     , CLambda Type :<: dom
     , OptimizeSuper dom
