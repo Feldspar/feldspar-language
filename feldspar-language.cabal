@@ -40,6 +40,7 @@ library
     Feldspar.Core.UntypedRepresentation
     Feldspar.Core.Middleend.FromTyped
     Feldspar.Core.Middleend.LetSinking
+    Feldspar.Core.Middleend.OptimizeUntyped
     Feldspar.Core.Interpretation.Typed
     Feldspar.Core.Interpretation
     Feldspar.Core.Constructs.Array
