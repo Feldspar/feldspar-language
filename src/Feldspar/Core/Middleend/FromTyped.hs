@@ -21,7 +21,7 @@ import Language.Syntactic.Constructs.Binding.HigherOrder hiding (Let)
 import Feldspar.Range (upperBound)
 
 import Feldspar.Core.Types
-import Feldspar.Core.Interpretation hiding (literal)
+import Feldspar.Core.Interpretation hiding (literal, optimize)
 import Feldspar.Core.Constructs (FeldDom(..))
 import Feldspar.Core.Constructs.Array
 import Feldspar.Core.Constructs.Bits
@@ -62,6 +62,7 @@ import Feldspar.Core.UntypedRepresentation hiding ( Lambda, UntypedFeldF(..)
                                                   )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
 import Feldspar.Core.Middleend.LetSinking
+import Feldspar.Core.Middleend.OptimizeUntyped
 
 -- A self contained translation from the Syntactic format into UntypedFeld.
 --
@@ -102,7 +103,7 @@ untypeProgDecor (Decor info a) args = untypeProgSym a info args
 
 -- | External module interface.
 untype :: Untype dom dom => ASTF (Decor Info dom) a -> UntypedFeld
-untype = sinkLets . untypeProg
+untype = optimize . sinkLets . untypeProg
 
 untypeProg :: Untype dom dom =>
     ASTF (Decor Info dom) a -> UntypedFeld
