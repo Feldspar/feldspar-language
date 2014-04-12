@@ -1,6 +1,6 @@
 module Feldspar.Core.Middleend.OptimizeUntyped ( optimize ) where
 
-import Feldspar.Core.UntypedRepresentation hiding (optimize)
+import Feldspar.Core.UntypedRepresentation
 
 -- | General simplification. Could in theory be done at earlier stages.
 optimize :: UntypedFeld -> UntypedFeld
