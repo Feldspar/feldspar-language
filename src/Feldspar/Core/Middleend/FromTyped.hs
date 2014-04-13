@@ -694,17 +694,23 @@ instance ( Untype dom dom
 instance Untype dom dom => Untype (Tuple :|| Type) dom
   where
     untypeProgSym (C' Tup2) info (m1 :* m2 :* Nil)
-      = In (Ut.Tup2 (untypeProg m1) (untypeProg m2))
+      = In (Ut.App Ut.Tup2 t' [untypeProg m1, untypeProg m2])
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Tup3) info (m1 :* m2 :* m3 :* Nil)
-      = In (Ut.Tup3 (untypeProg m1) (untypeProg m2) (untypeProg m3))
+      = In (Ut.App Ut.Tup3 t' [untypeProg m1, untypeProg m2, untypeProg m3])
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Tup4) info (m1 :* m2 :* m3 :* m4 :* Nil)
-      = In (Ut.Tup4 (untypeProg m1) (untypeProg m2) (untypeProg m3) (untypeProg m4))
+      = In (Ut.App Ut.Tup4 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4])
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Tup5) info (m1 :* m2 :* m3 :* m4 :* m5 :* Nil)
-      = In (Ut.Tup5 (untypeProg m1) (untypeProg m2) (untypeProg m3) (untypeProg m4) (untypeProg m5))
+      = In (Ut.App Ut.Tup5 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5])
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Tup6) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* Nil)
-      = In (Ut.Tup6 (untypeProg m1) (untypeProg m2) (untypeProg m3) (untypeProg m4) (untypeProg m5) (untypeProg m6))
+      = In (Ut.App Ut.Tup6 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6])
+          where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Tup7) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* m7 :* Nil)
-      = In (Ut.Tup7 (untypeProg m1) (untypeProg m2) (untypeProg m3) (untypeProg m4) (untypeProg m5) (untypeProg m6)  (untypeProg m7))
+      = In (Ut.App Ut.Tup7 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6, untypeProg m7])
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Select :|| Type) dom
   where

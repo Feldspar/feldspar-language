@@ -289,6 +289,12 @@ data Op =
    -- Switch
    | Switch
    -- Tuples
+   | Tup2
+   | Tup3
+   | Tup4
+   | Tup5
+   | Tup6
+   | Tup7
    | Sel1
    | Sel2
    | Sel3
@@ -306,14 +312,6 @@ data UntypedFeldF e =
    | Let e e
    -- Literal
    | Literal Lit
-   -- Tuple
-   -- Keep all tuples in the same place, although Tup2/Tup3 could live in PrimOp2/3.
-   | Tup2 e e
-   | Tup3 e e e
-   | Tup4 e e e e
-   | Tup5 e e e e e
-   | Tup6 e e e e e e
-   | Tup7 e e e e e e e
    -- Common nodes
    | App Op Type [e]
    deriving (Eq)
@@ -323,30 +321,14 @@ instance (Show e) => Show (UntypedFeldF e) where
    show (Lambda v e)                = "(\\" ++ show v ++ " -> " ++ show e ++ ")"
    show (Let e1 e2)                 = "let (" ++ show e1 ++ ") in " ++ show e2
    show (Literal l) = show l
-   show (Tup2 e1 e2)                = "(" ++ show e1 ++ ", " ++ show e2 ++ ")"
-   show (Tup3 e1 e2 e3)             = "("   ++ show e1 ++ ", " ++ show e2 ++
-                                        ", " ++ show e3 ++
-                                        ")"
-   show (Tup4 e1 e2 e3 e4)          = "("   ++ show e1 ++ ", " ++ show e2 ++
-                                        ", " ++ show e3 ++ ", " ++ show e4 ++
-                                        ")"
-   show (Tup5 e1 e2 e3 e4 e5)       = "("   ++ show e1 ++ ", " ++ show e2 ++
-                                        ", " ++ show e3 ++ ", " ++ show e4 ++
-                                        ", " ++ show e5 ++
-                                        ")"
-   show (Tup6 e1 e2 e3 e4 e5 e6)    = "("   ++ show e1 ++ ", " ++ show e2 ++
-                                        ", " ++ show e3 ++ ", " ++ show e4 ++
-                                        ", " ++ show e5 ++ ", " ++ show e6 ++
-                                        ")"
-   show (Tup7 e1 e2 e3 e4 e5 e6 e7) = "("   ++ show e1 ++ ", " ++ show e2 ++
-                                        ", " ++ show e3 ++ ", " ++ show e4 ++
-                                        ", " ++ show e5 ++ ", " ++ show e6 ++
-                                        ", " ++ show e7 ++ ")"
    show (App GetIx _ [e1,e2])       = "(" ++ show e1 ++ " ! " ++ show e2 ++ ")"
    show (App p@Then _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") (" ++
                                       show e2 ++ ")"
    show (App p@Bind _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") " ++ show e2
    show (App (ForeignImport s) _ es)= s ++ " " ++ (intercalate " " $ map show es)
+   show (App p _ es)
+    | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7]
+    = "("   ++ intercalate ", " (map show es) ++ ")"
    show (App p _ es)                = show p ++ " " ++ (intercalate " " $ map show es)
 
 class HasType a where
@@ -386,22 +368,6 @@ instance HasType UntypedFeld where
     typeof (In (Let _ (In (Lambda _ e))))  = typeof e
    -- Literal
     typeof (In (Literal l))                = typeof l
-   -- Tuple
-    typeof (In (Tup2 e1 e2))               = Tup2Type (typeof e1) (typeof e2)
-    typeof (In (Tup3 e1 e2 e3))            = Tup3Type (typeof e1) (typeof e2)
-                                                      (typeof e3)
-    typeof (In (Tup4 e1 e2 e3 e4))         = Tup4Type (typeof e1) (typeof e2)
-                                                      (typeof e3) (typeof e4)
-    typeof (In (Tup5 e1 e2 e3 e4 e5))      = Tup5Type (typeof e1) (typeof e2)
-                                                      (typeof e3) (typeof e4)
-                                                      (typeof e5)
-    typeof (In (Tup6 e1 e2 e3 e4 e5 e6))   = Tup6Type (typeof e1) (typeof e2)
-                                                      (typeof e3) (typeof e4)
-                                                      (typeof e5) (typeof e6)
-    typeof (In (Tup7 e1 e2 e3 e4 e5 e6 e7)) = Tup7Type (typeof e1) (typeof e2)
-                                                       (typeof e3) (typeof e4)
-                                                       (typeof e5) (typeof e6)
-                                                       (typeof e7)
     typeof (In (App _ t _))                 = t
     typeof e = error ("UntypedRepresentation: Missing match of: " ++ show e)
 
@@ -417,18 +383,6 @@ fvU' vs (In (Lambda v e))                = fvU' (v:vs) e
 fvU' vs (In (Let e1 e2))                 = fvU' vs e1 ++ fvU' vs e2
    -- Literal
 fvU' _  (In (Literal{}))                 = []
-   -- Tuple
-fvU' vs (In (Tup2 e1 e2))                = fvU' vs e1 ++ fvU' vs e2
-fvU' vs (In (Tup3 e1 e2 e3))             = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-fvU' vs (In (Tup4 e1 e2 e3 e4))          = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-                                           ++ fvU' vs e4
-fvU' vs (In (Tup5 e1 e2 e3 e4 e5))       = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-                                           ++ fvU' vs e4 ++ fvU' vs e5
-fvU' vs (In (Tup6 e1 e2 e3 e4 e5 e6))    = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-                                           ++ fvU' vs e4 ++ fvU' vs e5 ++ fvU' vs e6
-fvU' vs (In (Tup7 e1 e2 e3 e4 e5 e6 e7)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
-                                           ++ fvU' vs e4 ++ fvU' vs e5 ++ fvU' vs e6
-                                           ++ fvU' vs e7
 -- Common nodes.
 fvU' vs (In (App _ _ es))                = concatMap (fvU' vs) es
 
