@@ -57,7 +57,7 @@ import Feldspar.Core.Constructs.Tuple
 import qualified Feldspar.Core.Constructs.Binding as Core
 import Feldspar.Core.UntypedRepresentation hiding ( Lambda, UntypedFeldF(..)
                                                   , Size, Type(..), Signedness
-                                                  , PrimOp0(..), PrimOp1(..)
+                                                  , Op(..)
                                                   , PrimOp2(..), PrimOp3(..)
                                                   )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
@@ -149,7 +149,7 @@ instance ( Untype dom dom
         = In (Ut.PrimApp2 Ut.SetLength t' (untypeProg len) (untypeProg arr))
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' GetLength) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.GetLength t' (untypeProg a))
+        = In (Ut.App Ut.GetLength t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype (Core.Variable :|| Type) dom
@@ -186,7 +186,7 @@ instance Untype dom dom => Untype (ConditionM m) dom
 instance (Untype dom dom) => Untype (Error :|| Type) dom
   where
     untypeProgSym (C' Undefined)    info Nil
-        = In (Ut.PrimApp0 Ut.Undefined t')
+        = In (Ut.App Ut.Undefined t' [])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' (Assert msg)) info (cond :* a :* Nil)
         = In (Ut.PrimApp2 (Ut.Assert msg) t' (untypeProg cond) (untypeProg a))
@@ -215,7 +215,7 @@ instance ( Untype dom dom
       = In (Ut.PrimApp2 Ut.EparFor t' (untypeProg len) (untypeProg b))
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' ESkip) info Nil
-      = In (Ut.PrimApp0 Ut.ESkip t')
+      = In (Ut.App Ut.ESkip t' [])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance (Untype dom dom) => Untype (FFI :|| Type) dom
@@ -227,10 +227,10 @@ instance (Untype dom dom) => Untype (FFI :|| Type) dom
 instance Untype dom dom => Untype (FUTURE :|| Type) dom
   where
     untypeProgSym (C' MkFuture) info (p :* Nil)
-      = In (Ut.PrimApp1 Ut.MkFuture t' (untypeProg p))
+      = In (Ut.App Ut.MkFuture t' [untypeProg p])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Await) info (a :* Nil)
-      = In (Ut.PrimApp1 Ut.Await t' (untypeProg a))
+      = In (Ut.App Ut.Await t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype (Literal :|| Type) dom
@@ -280,7 +280,7 @@ instance ( Untype dom dom
         = In (Ut.PrimApp2 Ut.WithArray t' (untypeProg marr) (untypeProg b))
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym RunMutableArray info (marr :* Nil)
-        = In (Ut.PrimApp1 Ut.RunMutableArray t' (untypeProg marr))
+        = In (Ut.App Ut.RunMutableArray t' [untypeProg marr])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
@@ -296,7 +296,7 @@ instance ( Untype dom dom
         = In (Ut.PrimApp2 Ut.Then t' (untypeProg ma) (untypeProg mb))
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym Return info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Return t' (untypeProg a))
+        = In (Ut.App Ut.Return t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym When info (c :* action :* Nil)
         = In (Ut.PrimApp2 Ut.When t' (untypeProg c) (untypeProg action))
@@ -314,7 +314,7 @@ instance ( Untype dom dom
         = In (Ut.PrimApp2 Ut.Then t' (untypeProg ma) (untypeProg mb))
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym Return info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Return t' (untypeProg a))
+        = In (Ut.App Ut.Return t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym When info (c :* action :* Nil)
         = In (Ut.PrimApp2 Ut.When t' (untypeProg c) (untypeProg action))
@@ -325,7 +325,7 @@ instance ( Untype dom dom
          ) => Untype MutableArray dom
   where
     untypeProgSym NewArr_ info (len :* Nil)
-        = In (Ut.PrimApp1 Ut.NewArr_ t' (untypeProg len))
+        = In (Ut.App Ut.NewArr_ t' [untypeProg len])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym NewArr info (len :* a :* Nil)
         = In (Ut.PrimApp2 Ut.NewArr t' (untypeProg len) (untypeProg a))
@@ -337,13 +337,13 @@ instance ( Untype dom dom
         = In (Ut.PrimApp3 Ut.SetArr t' (untypeProg arr) (untypeProg i) (untypeProg a))
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym ArrLength info (arr :* Nil)
-        = In (Ut.PrimApp1 Ut.ArrLength t' (untypeProg arr))
+        = In (Ut.App Ut.ArrLength t' [untypeProg arr])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance (Untype dom dom, Project (CLambda Type) dom) => Untype Mutable dom
   where
     untypeProgSym Run info (ma :* Nil)
-      = In (Ut.PrimApp1 Ut.Run t' (untypeProg ma))
+      = In (Ut.App Ut.Run t' [untypeProg ma])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
@@ -351,10 +351,10 @@ instance ( Untype dom dom
          ) => Untype MutableReference dom
   where
     untypeProgSym NewRef info (a :* Nil)
-      = In (Ut.PrimApp1 Ut.NewRef t' (untypeProg a))
+      = In (Ut.App Ut.NewRef t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym GetRef info (r :* Nil)
-      = In (Ut.PrimApp1 Ut.GetRef t' (untypeProg r))
+      = In (Ut.App Ut.GetRef t' [untypeProg r])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym SetRef info (r :* a :* Nil)
       = In (Ut.PrimApp2 Ut.SetRef t' (untypeProg r) (untypeProg a))
@@ -366,7 +366,7 @@ instance ( Untype dom dom
 instance Untype dom dom => Untype (NoInline :|| Type) dom
   where
     untypeProgSym (C' NoInline) info (p :* Nil)
-      = In (Ut.PrimApp1 Ut.NoInline t' (untypeProg p))
+      = In (Ut.App Ut.NoInline t' [untypeProg p])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
@@ -375,22 +375,22 @@ instance ( Untype dom dom
       => Untype ParFeature dom
   where
     untypeProgSym ParRun info (p :* Nil)
-      = In (Ut.PrimApp1 Ut.ParRun t' (untypeProg p))
+      = In (Ut.App Ut.ParRun t' [untypeProg p])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym ParNew info Nil
-        = In (Ut.PrimApp0 Ut.ParNew t')
+        = In (Ut.App Ut.ParNew t' [])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym ParGet info (r :* Nil)
-      = In (Ut.PrimApp1 Ut.ParGet t' (untypeProg r))
+      = In (Ut.App Ut.ParGet t' [untypeProg r])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym ParPut info (r :* a :* Nil)
       = In (Ut.PrimApp2 Ut.ParPut t' (untypeProg r) (untypeProg a))
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym ParFork info (p :* Nil)
-      = In (Ut.PrimApp1 Ut.ParFork t' (untypeProg p))
+      = In (Ut.App Ut.ParFork t' [untypeProg p])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym ParYield info Nil
-        = In (Ut.PrimApp0 Ut.ParYield t')
+        = In (Ut.App Ut.ParYield t' [])
           where t' = untypeType (infoType info) (infoSize info)
 
 -- | Converts symbols to primitive function calls
@@ -418,10 +418,10 @@ instance Untype dom dom => Untype (BITS       :|| Type) dom
         = In (Ut.PrimApp2 Ut.BXor t' (untypeProg a) (untypeProg b))
           where t' = untypeType (infoType info) (infoSize info)
      untypeProgSym (C' Complement) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Complement t' (untypeProg a))
+        = In (Ut.App Ut.Complement t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
      untypeProgSym (C' Bit) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Bit t' (untypeProg a))
+        = In (Ut.App Ut.Bit t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
      untypeProgSym (C' SetBit) info (a :* b :* Nil)
         = In (Ut.PrimApp2 Ut.SetBit t' (untypeProg a) (untypeProg b))
@@ -460,13 +460,13 @@ instance Untype dom dom => Untype (BITS       :|| Type) dom
         = In (Ut.PrimApp2 Ut.RotateR t' (untypeProg a) (untypeProg b))
           where t' = untypeType (infoType info) (infoSize info)
      untypeProgSym (C' ReverseBits) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.ReverseBits t' (untypeProg a))
+        = In (Ut.App Ut.ReverseBits t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
      untypeProgSym (C' BitScan) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.BitScan t' (untypeProg a))
+        = In (Ut.App Ut.BitScan t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
      untypeProgSym (C' BitCount) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.BitCount t' (untypeProg a))
+        = In (Ut.App Ut.BitCount t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (COMPLEX    :|| Type) dom
@@ -475,46 +475,46 @@ instance Untype dom dom => Untype (COMPLEX    :|| Type) dom
         = In (Ut.PrimApp2 Ut.MkComplex t' (untypeProg a) (untypeProg b))
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' RealPart) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.RealPart t' (untypeProg a))
+        = In (Ut.App Ut.RealPart t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' ImagPart) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.ImagPart t' (untypeProg a))
+        = In (Ut.App Ut.ImagPart t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' MkPolar) info (a :* b :* Nil)
         = In (Ut.PrimApp2 Ut.MkPolar t' (untypeProg a) (untypeProg b))
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Conjugate) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Conjugate t' (untypeProg a))
+        = In (Ut.App Ut.Conjugate t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Magnitude) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Magnitude t' (untypeProg a))
+        = In (Ut.App Ut.Magnitude t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Phase) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Phase t' (untypeProg a))
+        = In (Ut.App Ut.Phase t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Cis) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Cis t' (untypeProg a))
+        = In (Ut.App Ut.Cis t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Conversion :|| Type) dom
   where
       untypeProgSym (C' F2I) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.F2I t' (untypeProg a))
+        = In (Ut.App Ut.F2I t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' I2N) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.I2N t' (untypeProg a))
+        = In (Ut.App Ut.I2N t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' B2I) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.B2I t' (untypeProg a))
+        = In (Ut.App Ut.B2I t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Round) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Round t' (untypeProg a))
+        = In (Ut.App Ut.Round t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Ceiling) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Ceiling t' (untypeProg a))
+        = In (Ut.App Ut.Ceiling t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Floor) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Floor t' (untypeProg a))
+        = In (Ut.App Ut.Floor t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (EQ         :|| Type) dom
@@ -529,16 +529,16 @@ instance Untype dom dom => Untype (EQ         :|| Type) dom
 instance Untype dom dom => Untype (FLOATING   :|| Type) dom
   where
       untypeProgSym (C' Pi) info Nil
-        = In (Ut.PrimApp0 Ut.Pi t')
+        = In (Ut.App Ut.Pi t' [])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Feldspar.Core.Constructs.Floating.Exp) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Exp t' (untypeProg a))
+        = In (Ut.App Ut.Exp t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Sqrt) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Sqrt t' (untypeProg a))
+        = In (Ut.App Ut.Sqrt t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Log) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Log t' (untypeProg a))
+        = In (Ut.App Ut.Log t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Pow) info (a :* b :* Nil)
         = In (Ut.PrimApp2 Ut.Pow t' (untypeProg a) (untypeProg b))
@@ -547,40 +547,40 @@ instance Untype dom dom => Untype (FLOATING   :|| Type) dom
         = In (Ut.PrimApp2 Ut.LogBase t' (untypeProg a) (untypeProg b))
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Sin) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Sin t' (untypeProg a))
+        = In (Ut.App Ut.Sin t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Tan) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Tan t' (untypeProg a))
+        = In (Ut.App Ut.Tan t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Cos) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Cos t' (untypeProg a))
+        = In (Ut.App Ut.Cos t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Asin) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Asin t' (untypeProg a))
+        = In (Ut.App Ut.Asin t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Atan) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Atan t' (untypeProg a))
+        = In (Ut.App Ut.Atan t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Acos) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Acos t' (untypeProg a))
+        = In (Ut.App Ut.Acos t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Sinh) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Sinh t' (untypeProg a))
+        = In (Ut.App Ut.Sinh t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Tanh) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Tanh t' (untypeProg a))
+        = In (Ut.App Ut.Tanh t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Cosh) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Cosh t' (untypeProg a))
+        = In (Ut.App Ut.Cosh t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Asinh) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Asinh t' (untypeProg a))
+        = In (Ut.App Ut.Asinh t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Atanh) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Atanh t' (untypeProg a))
+        = In (Ut.App Ut.Atanh t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Acosh) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Acosh t' (untypeProg a))
+        = In (Ut.App Ut.Acosh t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (FRACTIONAL :|| Type) dom
@@ -616,16 +616,16 @@ instance Untype dom dom => Untype (Logic      :|| Type) dom
         = In (Ut.PrimApp2 Ut.Or t' (untypeProg a) (untypeProg b))
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Not) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Not t' (untypeProg a))
+        = In (Ut.App Ut.Not t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (NUM        :|| Type) dom
   where
       untypeProgSym (C' Abs) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Abs t' (untypeProg a))
+        = In (Ut.App Ut.Abs t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Sign) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Sign t' (untypeProg a))
+        = In (Ut.App Ut.Sign t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
       untypeProgSym (C' Add) info (a :* b :* Nil)
         = In (Ut.PrimApp2 Ut.Add t' (untypeProg a) (untypeProg b))
@@ -667,19 +667,19 @@ instance Untype dom dom => Untype (REALFLOAT  :|| Type) dom
 instance Untype dom dom => Untype (Save :|| Type) dom
   where
     untypeProgSym (C' Save) info (a :* Nil)
-        = In (Ut.PrimApp1 Ut.Save t' (untypeProg a))
+        = In (Ut.App Ut.Save t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (PropSize :|| Type) dom
   where
     untypeProgSym (C' (PropSize _)) info (_ :* b :* Nil)
-        = In (Ut.PrimApp1 Ut.PropSize t' (untypeProg b))
+        = In (Ut.App Ut.PropSize t' [untypeProg b])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Decor SourceInfo1 Identity :|| Type) dom
   where
     untypeProgSym (C' (Decor (SourceInfo1 comment) Id)) info (a :* Nil)
-        = In (Ut.PrimApp1 (Ut.SourceInfo comment) t' (untypeProg a))
+        = In (Ut.App (Ut.SourceInfo comment) t' [untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
@@ -689,7 +689,7 @@ instance ( Untype dom dom
       => Untype (Switch :|| Type) dom
   where
     untypeProgSym (C' Switch) info (tree :* Nil)
-        = In (Ut.PrimApp1 Ut.Switch t' (untypeProg tree))
+        = In (Ut.App Ut.Switch t' [untypeProg tree])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Tuple :|| Type) dom
@@ -710,25 +710,25 @@ instance Untype dom dom => Untype (Tuple :|| Type) dom
 instance Untype dom dom => Untype (Select :|| Type) dom
   where
     untypeProgSym (C' Sel1) info (tup :* Nil)
-        = In (Ut.PrimApp1 Ut.Sel1 t' (untypeProg tup))
+        = In (Ut.App Ut.Sel1 t' [untypeProg tup])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Sel2) info (tup :* Nil)
-        = In (Ut.PrimApp1 Ut.Sel2 t' (untypeProg tup))
+        = In (Ut.App Ut.Sel2 t' [untypeProg tup])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Sel3) info (tup :* Nil)
-        = In (Ut.PrimApp1 Ut.Sel3 t' (untypeProg tup))
+        = In (Ut.App Ut.Sel3 t' [untypeProg tup])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Sel4) info (tup :* Nil)
-        = In (Ut.PrimApp1 Ut.Sel4 t' (untypeProg tup))
+        = In (Ut.App Ut.Sel4 t' [untypeProg tup])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Sel5) info (tup :* Nil)
-        = In (Ut.PrimApp1 Ut.Sel5 t' (untypeProg tup))
+        = In (Ut.App Ut.Sel5 t' [untypeProg tup])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Sel6) info (tup :* Nil)
-        = In (Ut.PrimApp1 Ut.Sel6 t' (untypeProg tup))
+        = In (Ut.App Ut.Sel6 t' [untypeProg tup])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Sel7) info (tup :* Nil)
-        = In (Ut.PrimApp1 Ut.Sel7 t' (untypeProg tup))
+        = In (Ut.App Ut.Sel7 t' [untypeProg tup])
           where t' = untypeType (infoType info) (infoSize info)
 
 untypeType :: TypeRep a -> Size a -> Ut.Type
