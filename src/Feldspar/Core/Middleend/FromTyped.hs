@@ -58,7 +58,6 @@ import qualified Feldspar.Core.Constructs.Binding as Core
 import Feldspar.Core.UntypedRepresentation hiding ( Lambda, UntypedFeldF(..)
                                                   , Size, Type(..), Signedness
                                                   , Op(..)
-                                                  , PrimOp3(..)
                                                   )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
 import Feldspar.Core.Middleend.LetSinking
@@ -134,13 +133,13 @@ instance ( Untype dom dom
         = In (Ut.App Ut.Parallel t' [untypeProg len, untypeProg ixf])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Sequential) info (len :* st :* ixf :* Nil)
-        = In (Ut.PrimApp3 Ut.Sequential t' (untypeProg len) (untypeProg st) (untypeProg ixf))
+        = In (Ut.App Ut.Sequential t' [untypeProg len, untypeProg st, untypeProg ixf])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' Append) info (a :* b :* Nil)
         = In (Ut.App Ut.Append t' [untypeProg a, untypeProg b])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' SetIx) info (arr :* i :* a :* Nil)
-        = In (Ut.PrimApp3 Ut.SetIx t' (untypeProg arr) (untypeProg i) (untypeProg a))
+        = In (Ut.App Ut.SetIx t' [untypeProg arr, untypeProg i, untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' GetIx) info (arr :* i :* Nil)
         = In (Ut.App Ut.GetIx t' [untypeProg arr, untypeProg i])
@@ -174,13 +173,13 @@ instance ( Untype dom dom
 instance Untype dom dom => Untype (Condition :|| Type) dom
   where
     untypeProgSym (C' Condition) info (cond :* tHEN :* eLSE :* Nil)
-      = In (Ut.PrimApp3 Ut.Condition t' (untypeProg cond) (untypeProg tHEN) (untypeProg eLSE))
+      = In (Ut.App Ut.Condition t' [untypeProg cond, untypeProg tHEN, untypeProg eLSE])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (ConditionM m) dom
   where
     untypeProgSym ConditionM info (cond :* tHEN :* eLSE :* Nil)
-      = In (Ut.PrimApp3 Ut.ConditionM t' (untypeProg cond) (untypeProg tHEN) (untypeProg eLSE))
+      = In (Ut.App Ut.ConditionM t' [untypeProg cond, untypeProg tHEN, untypeProg eLSE])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance (Untype dom dom) => Untype (Error :|| Type) dom
@@ -248,10 +247,10 @@ instance ( Untype dom dom
       => Untype (Loop :|| Type) dom
   where
     untypeProgSym (C' ForLoop) info (len :* init :* b :* Nil)
-         = In (Ut.PrimApp3 Ut.ForLoop t' (untypeProg len) (untypeProg init) (untypeProg b))
+         = In (Ut.App Ut.ForLoop t' [untypeProg len, untypeProg init, untypeProg b])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym (C' WhileLoop) info (init :* a :* b :* Nil)
-        = In (Ut.PrimApp3 Ut.WhileLoop t' (untypeProg init) (untypeProg a) (untypeProg b))
+        = In (Ut.App Ut.WhileLoop t' [untypeProg init, untypeProg a, untypeProg b])
           where t' = untypeType (infoType info) (infoSize info)
 
 instance ( Untype dom dom
@@ -334,7 +333,7 @@ instance ( Untype dom dom
         = In (Ut.App Ut.GetArr t' [untypeProg arr, untypeProg i])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym SetArr info (arr :* i :* a :* Nil)
-        = In (Ut.PrimApp3 Ut.SetArr t' (untypeProg arr) (untypeProg i) (untypeProg a))
+        = In (Ut.App Ut.SetArr t' [untypeProg arr, untypeProg i, untypeProg a])
           where t' = untypeType (infoType info) (infoSize info)
     untypeProgSym ArrLength info (arr :* Nil)
         = In (Ut.App Ut.ArrLength t' [untypeProg arr])

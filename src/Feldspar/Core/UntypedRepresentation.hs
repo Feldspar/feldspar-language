@@ -10,7 +10,6 @@ module Feldspar.Core.UntypedRepresentation (
   , UntypedFeld(..)
   , UntypedFeldF(..)
   , Op(..)
-  , PrimOp3(..)
   , Type(..)
   , Lit(..)
   , Var(..)
@@ -23,7 +22,7 @@ module Feldspar.Core.UntypedRepresentation (
   )
   where
 
-import Data.List (nub, intersperse)
+import Data.List (nub, intercalate)
 
 import Feldspar.Range (Range(..), singletonRange)
 import Feldspar.Core.Types (Length)
@@ -110,7 +109,7 @@ instance Show Lit where
    show (LDouble d)                  = show d
    show (LComplex r c)               = "(" ++ show r ++ ", " ++ show c ++ "i)"
    show (LArray _ ls)                = "[" ++ sls ++ "]"
-     where sls = concat $ intersperse "," $ map show ls
+     where sls = intercalate "," $ map show ls
    show (LTup2 l1 l2)                = "(" ++ show l1 ++ ", " ++ show l2 ++ ")"
    show (LTup3 l1 l2 l3)             = "("   ++ show l1 ++ ", " ++ show l2 ++
                                         ", " ++ show l3 ++
@@ -139,6 +138,8 @@ data Op =
    | Append
    | GetIx
    | SetLength
+   | Sequential
+   | SetIx
    -- Bits
    | Bit
    | Complement
@@ -169,6 +170,9 @@ data Op =
    | Cis
    | MkComplex
    | MkPolar
+   -- Condition
+   | Condition
+   | ConditionM
    -- Conversion
    | F2I
    | I2N
@@ -224,6 +228,9 @@ data Op =
    -- Logic
    | And
    | Or
+   -- Loop
+   | ForLoop
+   | WhileLoop
    -- LoopM
    | While
    | For
@@ -238,6 +245,7 @@ data Op =
    | ArrLength
    | NewArr
    | GetArr
+   | SetArr
    -- MutableToPure
    | RunMutableArray
    | WithArray
@@ -288,21 +296,6 @@ data Op =
    | Sel7
    deriving (Eq, Show)
 
--- | 3-ary application heads.
-data PrimOp3 =
-   -- Array
-     Sequential
-   | SetIx
-   -- Condition
-   | Condition
-   | ConditionM
-   -- Loop
-   | ForLoop
-   | WhileLoop
-   -- MutableArray
-   | SetArr
-   deriving (Eq, Show)
-
 -- | The main type: Applications, Bindings and other leftovers that are not 0-3-ary.
 data UntypedFeldF e =
    -- Binding
@@ -323,7 +316,6 @@ data UntypedFeldF e =
    | Tup7 e e e e e e e
    -- Common nodes
    | App Op Type [e]
-   | PrimApp3 PrimOp3 Type e e e
    deriving (Eq)
 
 instance (Show e) => Show (UntypedFeldF e) where
@@ -355,9 +347,7 @@ instance (Show e) => Show (UntypedFeldF e) where
    show (App p@Then _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") (" ++
                                       show e2 ++ ")"
    show (App p@Bind _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") " ++ show e2
-   show (App p _ es)                = show p ++ " " ++ concatMap show es
-   show (PrimApp3 p _ e1 e2 e3)     = show p ++ " " ++ show e1 ++ " " ++ show e2 ++
-                                      " " ++ show e3
+   show (App p _ es)                = show p ++ " " ++ (intercalate " " $ map show es)
 
 class HasType a where
     type TypeOf a
@@ -415,7 +405,6 @@ instance HasType UntypedFeld where
                                                        (typeof e5) (typeof e6)
                                                        (typeof e7)
     typeof (In (App _ t _))                 = t
-    typeof (In (PrimApp3 _ t _ _ _))        = t
     typeof e = error ("UntypedRepresentation: Missing match of: " ++ show e)
 
 
@@ -446,7 +435,6 @@ fvU' vs (In (Tup7 e1 e2 e3 e4 e5 e6 e7)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e
                                            ++ fvU' vs e7
 -- Common nodes.
 fvU' vs (In (App _ _ es))                = concatMap (fvU' vs) es
-fvU' vs (In (PrimApp3 _ _ e1 e2 e3))     = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
 
 -- | Collect nested let binders into the binders and the body.
 collectLetBinders :: UntypedFeld -> ([(Var, UntypedFeld)], UntypedFeld)
