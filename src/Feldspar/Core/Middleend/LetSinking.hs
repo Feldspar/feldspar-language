@@ -13,7 +13,6 @@ sinkLets = go
          = In (Lambda v (In (Lambda v' (go $ mkLets (bs1, body)))))
         go (In (Lambda v e)) = In (Lambda v (go e))
         go (In (Let e1 (In (Lambda v e2)))) = In (Let (go e1) (In (Lambda v (go e2))))
-        go (In (ForeignImport s t es)) = In (ForeignImport s t (map go es))
         go l@(In Literal{}) = l
         go (In (Tup2 e1 e2)) = In (Tup2 (go e1) (go e2))
         go (In (Tup3 e1 e2 e3)) = In (Tup3 (go e1) (go e2) (go e3))

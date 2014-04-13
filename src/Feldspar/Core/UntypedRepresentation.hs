@@ -192,6 +192,8 @@ data Op =
    -- Error
    | Undefined
    | Assert String
+   -- FFI
+   | ForeignImport String
    -- Floating
    | Exp
    | Sqrt
@@ -302,8 +304,6 @@ data UntypedFeldF e =
      Variable Var
    | Lambda Var e
    | Let e e
-   -- FFI
-   | ForeignImport String Type [e] -- The type is the return type of the function.
    -- Literal
    | Literal Lit
    -- Tuple
@@ -322,7 +322,6 @@ instance (Show e) => Show (UntypedFeldF e) where
    show (Variable v)                = show v
    show (Lambda v e)                = "(\\" ++ show v ++ " -> " ++ show e ++ ")"
    show (Let e1 e2)                 = "let (" ++ show e1 ++ ") in " ++ show e2
-   show (ForeignImport s _ es)      = s ++ " " ++ concatMap show es
    show (Literal l) = show l
    show (Tup2 e1 e2)                = "(" ++ show e1 ++ ", " ++ show e2 ++ ")"
    show (Tup3 e1 e2 e3)             = "("   ++ show e1 ++ ", " ++ show e2 ++
@@ -347,6 +346,7 @@ instance (Show e) => Show (UntypedFeldF e) where
    show (App p@Then _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") (" ++
                                       show e2 ++ ")"
    show (App p@Bind _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") " ++ show e2
+   show (App (ForeignImport s) _ es)= s ++ " " ++ (intercalate " " $ map show es)
    show (App p _ es)                = show p ++ " " ++ (intercalate " " $ map show es)
 
 class HasType a where
@@ -384,8 +384,6 @@ instance HasType UntypedFeld where
     typeof (In (Variable v))               = typeof v
     typeof (In (Lambda v e))               = FunType (typeof v) (typeof e)
     typeof (In (Let _ (In (Lambda _ e))))  = typeof e
-   -- FFI
-    typeof (In (ForeignImport _ t _))      = t
    -- Literal
     typeof (In (Literal l))                = typeof l
    -- Tuple
@@ -417,8 +415,6 @@ fvU' vs (In (Variable v)) | v `elem` vs  = []
                           | otherwise    = [v]
 fvU' vs (In (Lambda v e))                = fvU' (v:vs) e
 fvU' vs (In (Let e1 e2))                 = fvU' vs e1 ++ fvU' vs e2
-   -- FFI
-fvU' vs (In (ForeignImport _ _ es))      = concatMap (fvU' vs) es
    -- Literal
 fvU' _  (In (Literal{}))                 = []
    -- Tuple
