@@ -15,6 +15,7 @@ module Feldspar.Core.UntypedRepresentation (
   , Var(..)
   , Size(..)
   , Signedness(..)
+  , Fork(..)
   , HasType(..)
   , fv
   , collectLetBinders
@@ -46,6 +47,9 @@ data Size = S8 | S16 | S32 | S40 | S64
     deriving (Eq,Show)
 
 data Signedness = Signed | Unsigned
+    deriving (Eq,Show)
+
+data Fork = None | Future | Par
     deriving (Eq,Show)
 
 data Type =
@@ -140,6 +144,8 @@ data Op =
    | SetLength
    | Sequential
    | SetIx
+   -- Binding
+   | Let
    -- Bits
    | Bit
    | Complement
@@ -309,7 +315,7 @@ data UntypedFeldF e =
    -- Binding
      Variable Var
    | Lambda Var e
-   | Let e e
+   | LetFun (String, Fork, e) e
    -- Literal
    | Literal Lit
    -- Common nodes
@@ -319,7 +325,7 @@ data UntypedFeldF e =
 instance (Show e) => Show (UntypedFeldF e) where
    show (Variable v)                = show v
    show (Lambda v e)                = "(\\" ++ show v ++ " -> " ++ show e ++ ")"
-   show (Let e1 e2)                 = "let (" ++ show e1 ++ ") in " ++ show e2
+   show (LetFun (s, k, e1) e2)      = "letFun " ++ show k ++ " " ++ s ++" = "++ show e1 ++ " in " ++ show e2
    show (Literal l) = show l
    show (App GetIx _ [e1,e2])       = "(" ++ show e1 ++ " ! " ++ show e2 ++ ")"
    show (App p@Then _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") (" ++
@@ -365,7 +371,7 @@ instance HasType UntypedFeld where
    -- Binding
     typeof (In (Variable v))               = typeof v
     typeof (In (Lambda v e))               = FunType (typeof v) (typeof e)
-    typeof (In (Let _ (In (Lambda _ e))))  = typeof e
+    typeof (In (LetFun _ e))               = typeof e
    -- Literal
     typeof (In (Literal l))                = typeof l
     typeof (In (App _ t _))                 = t
@@ -380,7 +386,7 @@ fvU' :: [Var] -> UntypedFeld -> [Var]
 fvU' vs (In (Variable v)) | v `elem` vs  = []
                           | otherwise    = [v]
 fvU' vs (In (Lambda v e))                = fvU' (v:vs) e
-fvU' vs (In (Let e1 e2))                 = fvU' vs e1 ++ fvU' vs e2
+fvU' vs (In (LetFun (_, _, e1) e2))      = fvU' vs e1 ++ fvU' vs e2
    -- Literal
 fvU' _  (In (Literal{}))                 = []
 -- Common nodes.
@@ -389,10 +395,12 @@ fvU' vs (In (App _ _ es))                = concatMap (fvU' vs) es
 -- | Collect nested let binders into the binders and the body.
 collectLetBinders :: UntypedFeld -> ([(Var, UntypedFeld)], UntypedFeld)
 collectLetBinders e = go e []
-  where go (In (Let e (In (Lambda v b)))) acc = go b ((v, e):acc)
-        go e                              acc = (reverse acc, e)
+  where go (In (App Let _ [e, In (Lambda v b)])) acc = go b ((v, e):acc)
+        go e                                     acc = (reverse acc, e)
 
 -- | Inverse of collectLetBinders, put the term back together.
 mkLets :: ([(Var, UntypedFeld)], UntypedFeld) -> UntypedFeld
 mkLets ([], body)        = body
-mkLets ((v, e):t, body) = In (Let e (In (Lambda v (mkLets (t, body)))))
+mkLets ((v, e):t, body) = In (App Let t' [e, body'])
+  where body' = In (Lambda v (mkLets (t, body)))
+        t'    = typeof body'

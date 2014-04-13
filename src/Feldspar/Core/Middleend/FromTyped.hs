@@ -168,7 +168,8 @@ instance ( Untype dom dom
          ) => Untype Core.Let dom
   where
     untypeProgSym Core.Let info (a :* b :* Nil)
-        = In (Ut.Let (untypeProg a) (untypeProg b))
+        = In (Ut.App Ut.Let t' [untypeProg a, untypeProg b])
+          where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Condition :|| Type) dom
   where
