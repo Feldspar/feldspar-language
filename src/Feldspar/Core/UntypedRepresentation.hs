@@ -10,7 +10,6 @@ module Feldspar.Core.UntypedRepresentation (
   , UntypedFeld(..)
   , UntypedFeldF(..)
   , Op(..)
-  , PrimOp2(..)
   , PrimOp3(..)
   , Type(..)
   , Lit(..)
@@ -136,101 +135,16 @@ instance Show Lit where
 data Op =
    -- Array
      GetLength
+   | Parallel
+   | Append
+   | GetIx
+   | SetLength
    -- Bits
    | Bit
    | Complement
    | ReverseBits
    | BitScan
    | BitCount
-   -- Complex
-   | RealPart
-   | ImagPart
-   | Conjugate
-   | Magnitude
-   | Phase
-   | Cis
-   -- Conversion
-   | F2I
-   | I2N
-   | B2I
-   | Round
-   | Ceiling
-   | Floor
-   -- Elements
-   | ESkip
-   -- Error
-   | Undefined
-   -- Floating
-   | Exp
-   | Sqrt
-   | Log
-   | Sin
-   | Tan
-   | Cos
-   | Asin
-   | Atan
-   | Acos
-   | Sinh
-   | Tanh
-   | Cosh
-   | Asinh
-   | Atanh
-   | Acosh
-   -- Floating
-   | Pi
-   -- Future
-   | MkFuture
-   | Await
-   -- Logic
-   | Not
-   -- Mutable
-   | Run
-   | Return
-   -- MutableArray
-   | NewArr_
-   | ArrLength
-   -- MutableToPure
-   | RunMutableArray
-   -- MutableReference
-   | NewRef
-   | GetRef
-   -- Noinline
-   | NoInline
-   -- Num
-   | Abs
-   | Sign
-   -- Par
-   | ParRun
-   | ParGet
-   | ParFork
-   | ParNew
-   | ParYield
-   -- Save
-   | Save
-   -- SizeProp
-   | PropSize
-   -- SourceInfo
-   | SourceInfo String
-   -- Switch
-   | Switch
-   -- Tuples
-   | Sel1
-   | Sel2
-   | Sel3
-   | Sel4
-   | Sel5
-   | Sel6
-   | Sel7
-   deriving (Eq, Show)
-
--- | 2-ary application heads.
-data PrimOp2 =
-   -- Array
-     Parallel
-   | Append
-   | GetIx
-   | SetLength
-   -- Bits
    | BAnd
    | BOr
    | BXor
@@ -247,9 +161,23 @@ data PrimOp2 =
    | RotateL
    | RotateR
    -- Complex
+   | RealPart
+   | ImagPart
+   | Conjugate
+   | Magnitude
+   | Phase
+   | Cis
    | MkComplex
    | MkPolar
+   -- Conversion
+   | F2I
+   | I2N
+   | B2I
+   | Round
+   | Ceiling
+   | Floor
    -- Elements
+   | ESkip
    | EMaterialize
    | EWrite
    | EPar
@@ -258,12 +186,33 @@ data PrimOp2 =
    | Equal
    | NotEqual
    -- Error
+   | Undefined
    | Assert String
    -- Floating
+   | Exp
+   | Sqrt
+   | Log
+   | Sin
+   | Tan
+   | Cos
+   | Asin
+   | Atan
+   | Acos
+   | Sinh
+   | Tanh
+   | Cosh
+   | Asinh
+   | Atanh
+   | Acosh
    | Pow
    | LogBase
+   -- Floating
+   | Pi
    -- Fractional
    | DivFrac
+   -- Future
+   | MkFuture
+   | Await
    -- Integral
    | Quot
    | Rem
@@ -271,28 +220,46 @@ data PrimOp2 =
    | Mod
    | IExp
    -- Logic
+   | Not
+   -- Logic
    | And
    | Or
    -- LoopM
    | While
    | For
    -- Mutable
+   | Run
+   | Return
    | Bind
    | Then
    | When
    -- MutableArray
+   | NewArr_
+   | ArrLength
    | NewArr
    | GetArr
    -- MutableToPure
+   | RunMutableArray
    | WithArray
    -- MutableReference
+   | NewRef
+   | GetRef
    | SetRef
    | ModRef
+   -- Noinline
+   | NoInline
    -- Num
+   | Abs
+   | Sign
    | Add
    | Sub
    | Mul
    -- Par
+   | ParRun
+   | ParGet
+   | ParFork
+   | ParNew
+   | ParYield
    | ParPut
    -- Ord
    | LTH
@@ -303,6 +270,22 @@ data PrimOp2 =
    | Max
    -- RealFloat
    | Atan2
+   -- Save
+   | Save
+   -- SizeProp
+   | PropSize
+   -- SourceInfo
+   | SourceInfo String
+   -- Switch
+   | Switch
+   -- Tuples
+   | Sel1
+   | Sel2
+   | Sel3
+   | Sel4
+   | Sel5
+   | Sel6
+   | Sel7
    deriving (Eq, Show)
 
 -- | 3-ary application heads.
@@ -340,7 +323,6 @@ data UntypedFeldF e =
    | Tup7 e e e e e e e
    -- Common nodes
    | App Op Type [e]
-   | PrimApp2 PrimOp2 Type e e
    | PrimApp3 PrimOp3 Type e e e
    deriving (Eq)
 
@@ -369,12 +351,11 @@ instance (Show e) => Show (UntypedFeldF e) where
                                         ", " ++ show e3 ++ ", " ++ show e4 ++
                                         ", " ++ show e5 ++ ", " ++ show e6 ++
                                         ", " ++ show e7 ++ ")"
-   show (App p _ es)                = show p ++ " " ++ concatMap show es
-   show (PrimApp2 GetIx _ e1 e2)    = "(" ++ show e1 ++ " ! " ++ show e2 ++ ")"
-   show (PrimApp2 p@Then _ e1 e2)   = show p ++ " (" ++ show e1 ++ ") (" ++
+   show (App GetIx _ [e1,e2])       = "(" ++ show e1 ++ " ! " ++ show e2 ++ ")"
+   show (App p@Then _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") (" ++
                                       show e2 ++ ")"
-   show (PrimApp2 p@Bind _ e1 e2)   = show p ++ " (" ++ show e1 ++ ") " ++ show e2
-   show (PrimApp2 p _ e1 e2)        = show p ++ " " ++ show e1 ++ " " ++ show e2
+   show (App p@Bind _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") " ++ show e2
+   show (App p _ es)                = show p ++ " " ++ concatMap show es
    show (PrimApp3 p _ e1 e2 e3)     = show p ++ " " ++ show e1 ++ " " ++ show e2 ++
                                       " " ++ show e3
 
@@ -434,7 +415,6 @@ instance HasType UntypedFeld where
                                                        (typeof e5) (typeof e6)
                                                        (typeof e7)
     typeof (In (App _ t _))                 = t
-    typeof (In (PrimApp2 _ t _ _))          = t
     typeof (In (PrimApp3 _ t _ _ _))        = t
     typeof e = error ("UntypedRepresentation: Missing match of: " ++ show e)
 
@@ -466,7 +446,6 @@ fvU' vs (In (Tup7 e1 e2 e3 e4 e5 e6 e7)) = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e
                                            ++ fvU' vs e7
 -- Common nodes.
 fvU' vs (In (App _ _ es))                = concatMap (fvU' vs) es
-fvU' vs (In (PrimApp2 _ _ e1 e2))        = fvU' vs e1 ++ fvU' vs e2
 fvU' vs (In (PrimApp3 _ _ e1 e2 e3))     = fvU' vs e1 ++ fvU' vs e2 ++ fvU' vs e3
 
 -- | Collect nested let binders into the binders and the body.
