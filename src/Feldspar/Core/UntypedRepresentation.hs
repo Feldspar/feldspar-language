@@ -311,6 +311,8 @@ data Op =
    | Sel5
    | Sel6
    | Sel7
+   -- Common nodes
+   | Call Fork String
    deriving (Eq, Show)
 
 -- | The main type: Applications, Bindings and other leftovers that are not 0-3-ary.

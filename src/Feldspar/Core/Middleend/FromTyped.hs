@@ -60,6 +60,7 @@ import Feldspar.Core.UntypedRepresentation hiding ( Lambda, UntypedFeldF(..)
                                                   , Op(..)
                                                   )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
+import Feldspar.Core.Middleend.CreateTasks
 import Feldspar.Core.Middleend.LetSinking
 import Feldspar.Core.Middleend.OptimizeUntyped
 
@@ -102,7 +103,7 @@ untypeProgDecor (Decor info a) args = untypeProgSym a info args
 
 -- | External module interface.
 untype :: Untype dom dom => ASTF (Decor Info dom) a -> UntypedFeld
-untype = optimize . sinkLets . untypeProg
+untype = createTasks  . optimize . sinkLets . untypeProg
 
 untypeProg :: Untype dom dom =>
     ASTF (Decor Info dom) a -> UntypedFeld
