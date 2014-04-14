@@ -19,7 +19,10 @@ module Feldspar.Core.UntypedRepresentation (
   , HasType(..)
   , fv
   , collectLetBinders
+  , collectBinders
   , mkLets
+  , mkLam
+  , mkApp
   )
   where
 
@@ -398,9 +401,24 @@ collectLetBinders e = go e []
   where go (In (App Let _ [e, In (Lambda v b)])) acc = go b ((v, e):acc)
         go e                                     acc = (reverse acc, e)
 
+-- | Collect binders from nested lambda expressions.
+collectBinders :: UntypedFeld -> ([Var], UntypedFeld)
+collectBinders e = go [] e
+  where go acc (In (Lambda v e)) = go (v:acc) e
+        go acc e                 = (reverse acc, e)
+
 -- | Inverse of collectLetBinders, put the term back together.
 mkLets :: ([(Var, UntypedFeld)], UntypedFeld) -> UntypedFeld
 mkLets ([], body)        = body
 mkLets ((v, e):t, body) = In (App Let t' [e, body'])
   where body' = In (Lambda v (mkLets (t, body)))
         t'    = typeof body'
+
+-- | Inverse of collectBinders, make a lambda abstraction.
+mkLam :: [Var] -> UntypedFeld -> UntypedFeld
+mkLam []    e = e
+mkLam (h:t) e = In (Lambda h (mkLam t e))
+
+-- | Make an application.
+mkApp :: Type -> Op -> [UntypedFeld] -> UntypedFeld
+mkApp t p es = In (App p t es)
