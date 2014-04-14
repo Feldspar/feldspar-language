@@ -9,7 +9,7 @@ optimize = go
 go :: UntypedFeld -> UntypedFeld
 go e@(In Variable{}) = e
 go (In (Lambda v e)) = In (Lambda v (go e))
-go (In (Let e1 (In (Lambda v e2)))) = In (Let (go e1) (In (Lambda v (go e2))))
+go (In (LetFun (s, f, e1) e2)) = In (LetFun (s, f, go e1) (go e2))
 go l@(In Literal{}) = l
 go (In (App For _ [(In (Literal (LInt s sz 1))), e2@(In (Lambda _ body))]))
   = go $ In (App Bind (typeof body) [In (Literal (LInt s sz 0)), e2])
