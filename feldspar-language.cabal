@@ -38,6 +38,7 @@ library
     Feldspar.Range
     Feldspar.Core.Types
     Feldspar.Core.UntypedRepresentation
+    Feldspar.Core.Middleend.CreateTasks
     Feldspar.Core.Middleend.FromTyped
     Feldspar.Core.Middleend.LetSinking
     Feldspar.Core.Middleend.OptimizeUntyped

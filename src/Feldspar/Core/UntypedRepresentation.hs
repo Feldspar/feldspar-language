@@ -35,7 +35,7 @@ import Feldspar.Core.Types (Length)
 -- helper-formats and -functions that work on those formats, for
 -- example fv and typeof.
 --
--- THe format resembles the structure of the typed Syntactic format,
+-- The format resembles the structure of the typed Syntactic format,
 -- but it does not reflect into the host language type system.
 
 type UntypedFeld = Term UntypedFeldF
@@ -311,19 +311,34 @@ data Op =
    | Sel5
    | Sel6
    | Sel7
+   -- Common nodes
+   | Call Fork String
    deriving (Eq, Show)
 
--- | The main type: Applications, Bindings and other leftovers that are not 0-3-ary.
+-- | The main type: Variables, Bindings, Literals and Applications.
 data UntypedFeldF e =
    -- Binding
      Variable Var
    | Lambda Var e
-   | LetFun (String, Fork, e) e
+   | LetFun (String, Fork, e) e -- Note [Function bindings]
    -- Literal
    | Literal Lit
    -- Common nodes
    | App Op Type [e]
    deriving (Eq)
+
+{-
+
+Function bindings
+-----------------
+
+The LetFun constructor is different from the ordinary let-bindings,
+and therefore has its own node type. In an ordinary language the
+constructor would be called LetRec, but we do not have any
+recursion. Functions are created by the createTasks pass, and they can
+be run sequentially or concurrently depending on the "Fork".
+
+-}
 
 instance (Show e) => Show (UntypedFeldF e) where
    show (Variable v)                = show v
