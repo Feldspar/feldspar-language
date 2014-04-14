@@ -23,6 +23,7 @@ module Feldspar.Core.UntypedRepresentation (
   , mkLets
   , mkLam
   , mkApp
+  , subst
   )
   where
 
@@ -437,3 +438,14 @@ mkLam (h:t) e = In (Lambda h (mkLam t e))
 -- | Make an application.
 mkApp :: Type -> Op -> [UntypedFeld] -> UntypedFeld
 mkApp t p es = In (App p t es)
+
+-- | Substitute new for dst in e. Assumes no shadowing.
+subst :: UntypedFeld -> Var -> UntypedFeld -> UntypedFeld
+subst new dst e = go e
+  where go v@(In (Variable v')) | dst == v' = new -- Replace.
+                                | otherwise = v -- Stop.
+        go l@(In (Lambda v e')) | v == dst  = l -- Stop.
+                                | otherwise = In (Lambda v (go e'))
+        go (In (LetFun (s, k, e1) e2)) = In (LetFun (s, k, go e1) (go e2)) -- Recurse.
+        go l@(In Literal{})  = l -- Stop.
+        go (In (App p t es)) = In (App p t (map go es)) -- Recurse.
