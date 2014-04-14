@@ -26,6 +26,15 @@ go (In (App MkFuture _ [p])) = do
          vs' = map (In . Variable) vs
          p' = mkLam vs p
          t' = typeof p'
+go (In (App NoInline _ [p])) = do
+  p'' <- go p'
+  i <- freshId
+  let name = "noinline" ++ show i
+  return $ In (LetFun (name, None, p'') (In (App (Call None name) t' vs')))
+   where vs = fv p
+         vs' = map (In . Variable) vs
+         p' = mkLam vs p
+         t' = typeof p'
 go (In (App p t es)) = do
   es' <- mapM go es
   return $ In (App p t es')
