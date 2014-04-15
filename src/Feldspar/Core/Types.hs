@@ -851,6 +851,8 @@ data RangeSet a
     RangeSet  :: BoundedInt a => Range a -> RangeSet a
     Universal :: RangeSet a
 
+deriving instance (Show a) => Show (RangeSet a)
+
 -- | Cast a 'Size' to a 'RangeSet'
 sizeToRange :: forall a . Type a => Size a -> RangeSet a
 sizeToRange sz = case typeRep :: TypeRep a of
