@@ -12,6 +12,12 @@ go (In (Lambda v e)) = In (Lambda v (go e))
 go (In (LetFun (s, f, e1) e2)) = In (LetFun (s, f, go e1) (go e2))
 go l@(In Literal{}) = l
 
+go (In (App Let _ [e1, e2@(In (Lambda x body))]))
+ | (In Variable{}) <- e1 -- let x = y in e ==> [y/x]e
+ = go $ subst e1 x body
+ | linear x body
+ = go $ subst e1 x body
+
 -- For 1 (\v -> body) ==> [0/v]body
 go (In (App For _ [(In (Literal (LInt s sz 1))), e2@(In (Lambda v body))]))
   = go $ subst (In (Literal (LInt s sz 0))) v body
@@ -30,3 +36,21 @@ go e@(In (App GetIx _ [arr, (In (Literal (LInt _ _ 0)))]))
  , v1 == v3 = go e3
 
 go (In (App p t es)) = In (App p t $ map go es)
+
+linear :: Var -> UntypedFeld -> Bool
+linear v e = count v e <= 1
+
+-- | Occurence counter. Cares about dynamic behavior, so loops count as a lot.
+count :: Var -> UntypedFeld -> Integer
+count v (In (Variable v')) = if v == v' then 1 else 0
+count v (In (Lambda v' _)) = if v == v' then 0 else 100 -- Probably inside loop.
+count v (In (LetFun (_, _, e1) e2)) = count v e1 + count v e2
+count _ (In Literal{}) = 0
+count v (In (App Let _ [e1, In (Lambda x body)]))
+  | v == x    = count v e1
+  | otherwise = count v e1 + count v body
+count _ (In (App Await _ _)) = 100 -- Do not inline.
+count _ (In (App NoInline _ _)) = 100 -- Do not inline.
+count v (In (App _ _ es)) = sum $ map (count v) es
+
+-- TODO: Improve precision of switch.
