@@ -346,14 +346,22 @@ instance (Show e) => Show (UntypedFeldF e) where
    show (Lambda v e)                = "(\\" ++ show v ++ " -> " ++ show e ++ ")"
    show (LetFun (s, k, e1) e2)      = "letFun " ++ show k ++ " " ++ s ++" = "++ show e1 ++ " in " ++ show e2
    show (Literal l) = show l
+   show (App p@RunMutableArray _ [e]) = show p ++ " (" ++ show e ++ ")"
    show (App GetIx _ [e1,e2])       = "(" ++ show e1 ++ " ! " ++ show e2 ++ ")"
+   show (App Add _ [e1,e2])         = "(" ++ show e1 ++ " + " ++ show e2 ++ ")"
+   show (App Sub _ [e1,e2])         = "(" ++ show e1 ++ " - " ++ show e2 ++ ")"
+   show (App Mul _ [e1,e2])         = "(" ++ show e1 ++ " * " ++ show e2 ++ ")"
+   show (App Div _ [e1,e2])         = "(" ++ show e1 ++ " / " ++ show e2 ++ ")"
    show (App p@Then _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") (" ++
                                       show e2 ++ ")"
-   show (App p@Bind _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") " ++ show e2
+   show (App p _ [e1, e2])
+    | p `elem` [Bind, Let]          = show p ++ " (" ++ show e1 ++ ") " ++ show e2
    show (App (ForeignImport s) _ es)= s ++ " " ++ (intercalate " " $ map show es)
    show (App p _ es)
     | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7]
     = "("   ++ intercalate ", " (map show es) ++ ")"
+   show (App p@Parallel _ [e1,e2]) = show p ++ " (" ++ show e1 ++ ") " ++ show e2
+   show (App p@Sequential _ [e1,e2,e3]) = show p ++ " (" ++ show e1 ++ ") (" ++ show e2 ++ ") " ++ show e3
    show (App p _ es)                = show p ++ " " ++ (intercalate " " $ map show es)
 
 class HasType a where
