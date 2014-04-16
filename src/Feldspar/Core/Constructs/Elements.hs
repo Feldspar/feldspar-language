@@ -71,6 +71,12 @@ instance ( ElementsFeat :<: dom
          )
       => Optimize ElementsFeat dom
   where
+    constructFeatOpt _ EPar (a :* b :* Nil)
+     | Just ESkip <- prj b = return a
+     | Just ESkip <- prj a = return b
+
+    constructFeatOpt opts a args = constructFeatUnOpt opts a args
+
     constructFeatUnOpt opts EMaterialize = constructFeatUnOptDefaultTyp opts typeRep EMaterialize
     constructFeatUnOpt opts EWrite = constructFeatUnOptDefaultTyp opts typeRep EWrite
     constructFeatUnOpt opts ESkip = constructFeatUnOptDefaultTyp opts typeRep ESkip
