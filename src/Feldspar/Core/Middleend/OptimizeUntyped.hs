@@ -19,7 +19,8 @@ go (In (App Let _ [e1, e2@(In (Lambda x body))]))
  = go $ subst e1 x body
 
 -- For 1 (\v -> body) ==> [0/v]body
-go (In (App For _ [(In (Literal (LInt s sz 1))), e2@(In (Lambda v body))]))
+go (In (App p _ [(In (Literal (LInt s sz 1))), e2@(In (Lambda v body))]))
+  | p `elem` [For, EparFor]
   = go $ subst (In (Literal (LInt s sz 0))) v body
 
 -- Create a 1 element long array (frequent with MultiDim) and immediately select that
