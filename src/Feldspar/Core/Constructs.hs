@@ -121,7 +121,7 @@ type FeldSymbols
     :+: MutableToPure
     :+: MONAD Par
     :+: ParFeature
-    :+: (ElementsFeat :|| Type)
+    :+: ElementsFeat
     :+: Empty
 
 -- TODO We are currently a bit inconsistent in that `Type` constraints are sometimes attached

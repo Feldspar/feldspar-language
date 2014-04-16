@@ -24,7 +24,7 @@ data ElementsFeat a
     EWrite       :: Type a => ElementsFeat (Index :-> a :-> Full (Elements a))
     ESkip        :: Type a => ElementsFeat (Full (Elements a))
     EPar         :: Type a => ElementsFeat (Elements a :-> Elements a :-> Full (Elements a))
-    EparFor        :: Type a => ElementsFeat (Length :-> (Index -> Elements a) :-> Full (Elements a))
+    EparFor      :: Type a => ElementsFeat (Length :-> (Index -> Elements a) :-> Full (Elements a))
 
 instance Semantic ElementsFeat
   where
@@ -33,6 +33,10 @@ instance Semantic ElementsFeat
     semantics ESkip           = Sem "skip" (Elements [])
     semantics EPar            = Sem "par" (\(Elements l) (Elements r) -> Elements (l ++ r))
     semantics EparFor         = Sem "parFor" eparFor
+
+instance Typed ElementsFeat
+  where
+    typeDictSym _ = Nothing
 
 ematerialize :: Length -> Elements a -> [a]
 ematerialize l (Elements xs) = map snd xs'
@@ -54,17 +58,21 @@ instance Sharable ElementsFeat
 
 instance Monotonic ElementsFeat
 
-instance SizeProp (ElementsFeat :|| Type)
+instance SizeProp ElementsFeat
   where
-    sizeProp (C' EMaterialize) (WrapFull len :* WrapFull arr :* Nil) = infoSize arr
-    sizeProp (C' EWrite)       _                                     = universal
-    sizeProp (C' ESkip)        _                                     = universal
-    sizeProp (C' EPar)         (WrapFull p1 :* WrapFull p2 :* Nil)   = universal -- TODO: p1 U p2
-    sizeProp (C' EparFor)        _                                   = universal
+    sizeProp EMaterialize (WrapFull len :* WrapFull arr :* Nil) = infoSize arr
+    sizeProp EWrite       _                                     = universal
+    sizeProp ESkip        _                                     = universal
+    sizeProp EPar         (WrapFull p1 :* WrapFull p2 :* Nil)   = universal -- TODO: p1 U p2
+    sizeProp EparFor        _                                   = universal
 
-instance ( (ElementsFeat :|| Type) :<: dom
+instance ( ElementsFeat :<: dom
          , OptimizeSuper dom
          )
-      => Optimize (ElementsFeat :|| Type) dom
+      => Optimize ElementsFeat dom
   where
-    constructFeatUnOpt opts x@(C' _) = constructFeatUnOptDefault opts x
+    constructFeatUnOpt opts EMaterialize = constructFeatUnOptDefaultTyp opts typeRep EMaterialize
+    constructFeatUnOpt opts EWrite = constructFeatUnOptDefaultTyp opts typeRep EWrite
+    constructFeatUnOpt opts ESkip = constructFeatUnOptDefaultTyp opts typeRep ESkip
+    constructFeatUnOpt opts EPar = constructFeatUnOptDefaultTyp opts typeRep EPar
+    constructFeatUnOpt opts EparFor = constructFeatUnOptDefaultTyp opts typeRep EparFor

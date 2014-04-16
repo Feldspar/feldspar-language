@@ -199,23 +199,23 @@ instance ( Untype dom dom
          , Project (Core.Variable :|| Type) dom
          , Project (Literal :|| Type) dom
          , Project Core.Let dom
-         , Project (ElementsFeat :|| Type) dom
+         , Project ElementsFeat dom
          )
-      => Untype (ElementsFeat :|| Type) dom
+      => Untype ElementsFeat dom
   where
-    untypeProgSym (C' EMaterialize) info (len :* arr :* Nil)
+    untypeProgSym EMaterialize info (len :* arr :* Nil)
       = In (Ut.App Ut.EMaterialize t' [untypeProg len, untypeProg arr])
           where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' EWrite) info (ix :* e :* Nil)
+    untypeProgSym EWrite info (ix :* e :* Nil)
       = In (Ut.App Ut.EWrite t' [untypeProg ix, untypeProg e])
           where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' EPar) info (p1 :* p2 :* Nil)
+    untypeProgSym EPar info (p1 :* p2 :* Nil)
       = In (Ut.App Ut.EPar t' [untypeProg p1, untypeProg p2])
           where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' EparFor) info (len :* b :* Nil)
+    untypeProgSym EparFor info (len :* b :* Nil)
       = In (Ut.App Ut.EparFor t' [untypeProg len, untypeProg b])
           where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' ESkip) info Nil
+    untypeProgSym ESkip info Nil
       = In (Ut.App Ut.ESkip t' [])
           where t' = untypeType (infoType info) (infoSize info)
 

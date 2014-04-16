@@ -6,22 +6,24 @@ module Feldspar.Core.Frontend.Elements
   , skip
   ) where
 
+import Language.Syntactic
+
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Elements
 
 materialize :: Type a => Data Length -> Data (Elements a) -> Data [a]
-materialize = sugarSymF EMaterialize
+materialize = sugarSymC EMaterialize
 
 write :: Type a => Data Index -> Data a -> Data (Elements a)
-write = sugarSymF EWrite
+write = sugarSymC EWrite
 
 par :: Type a => Data (Elements a) -> Data (Elements a) -> Data (Elements a)
-par = sugarSymF EPar
+par = sugarSymC EPar
 
 parFor :: Type a => Data Length -> (Data Index -> Data (Elements a)) -> Data (Elements a)
-parFor = sugarSymF EparFor
+parFor = sugarSymC EparFor
 
 skip :: Type a => Data (Elements a)
-skip = sugarSymF ESkip
+skip = sugarSymC ESkip
 

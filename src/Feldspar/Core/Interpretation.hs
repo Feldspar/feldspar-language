@@ -236,6 +236,10 @@ instance LatticeSize1 Mut
   where
     mergeSize _ = (\/)
 
+instance LatticeSize1 Elements
+  where
+    mergeSize _ = (\/)
+
 -- | 'Info' with hidden result type
 data SomeInfo
   where
