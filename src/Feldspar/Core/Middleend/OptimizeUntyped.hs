@@ -18,8 +18,24 @@ go (In (App Let _ [e1, e2@(In (Lambda x body))]))
  | linear x body
  = go $ subst e1 x body
 
+go (In (App Mul _ [e1, e2]))
+ | (In (Literal (LInt _ _ 0))) <- e1 = e1
+ | (In (Literal (LInt _ _ 0))) <- e2 = e2
+ | (In (Literal (LInt _ _ 1))) <- e1 = e2
+ | (In (Literal (LInt _ _ 1))) <- e2 = e1
+
+go (In (App Add _ [e1, e2]))
+ | (In (Literal (LInt _ _ 0))) <- e1 = e2
+ | (In (Literal (LInt _ _ 0))) <- e2 = e1
+
+-- Basic constant folder.
+go e@(In (App p _ [In (Literal l1), In (Literal l2)]))
+  | p `elem` [Add, Sub, Mul]
+  = constFold e p l1 l2
+
 -- For 1 (\v -> body) ==> [0/v]body
-go (In (App For _ [(In (Literal (LInt s sz 1))), e2@(In (Lambda v body))]))
+go (In (App p _ [(In (Literal (LInt s sz 1))), e2@(In (Lambda v body))]))
+  | p `elem` [For, EparFor]
   = go $ subst (In (Literal (LInt s sz 0))) v body
 
 -- Create a 1 element long array (frequent with MultiDim) and immediately select that
@@ -54,3 +70,9 @@ count _ (In (App NoInline _ _)) = 100 -- Do not inline.
 count v (In (App _ _ es)) = sum $ map (count v) es
 
 -- TODO: Improve precision of switch.
+
+constFold :: UntypedFeld -> Op -> Lit -> Lit -> UntypedFeld
+constFold _ Add (LInt sz n n1) (LInt _ _ n2) = In (Literal (LInt sz n (n1 + n2)))
+constFold _ Sub (LInt sz n n1) (LInt _ _ n2) = In (Literal (LInt sz n (n1 - n2)))
+constFold _ Mul (LInt sz n n1) (LInt _ _ n2) = In (Literal (LInt sz n (n1 * n2)))
+constFold e _ _ _ = e

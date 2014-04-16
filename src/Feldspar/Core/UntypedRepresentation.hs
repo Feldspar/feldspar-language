@@ -355,7 +355,7 @@ instance (Show e) => Show (UntypedFeldF e) where
    show (App p@Then _ [e1, e2])     = show p ++ " (" ++ show e1 ++ ") (" ++
                                       show e2 ++ ")"
    show (App p _ [e1, e2])
-    | p `elem` [Bind, Let]          = show p ++ " (" ++ show e1 ++ ") " ++ show e2
+    | p `elem` [Bind, Let, EPar]    = show p ++ " (" ++ show e1 ++ ") " ++ show e2
    show (App (ForeignImport s) _ es)= s ++ " " ++ (intercalate " " $ map show es)
    show (App p _ es)
     | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7]
