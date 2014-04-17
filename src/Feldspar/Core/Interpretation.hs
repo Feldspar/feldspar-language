@@ -250,8 +250,8 @@ data Env = Env
     , sourceEnv :: SourceInfo
     }
 
--- | Possible compilation targets.
-data Target = RegionInf | SICS
+-- | Possible compilation targets in a broad sense.
+data Target = RegionInf | Wool | CSE | SICS | BA
   deriving Eq
 
 -- | A record with options for explicit passing in rewrite rules.
