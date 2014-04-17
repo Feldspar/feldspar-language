@@ -107,6 +107,70 @@ instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f, Latt
     (a1,a2,a3,a4,a5,a6,a7) \/ (b1,b2,b3,b4,b5,b6,b7) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6, a7 \/ b7)
     (a1,a2,a3,a4,a5,a6,a7) /\ (b1,b2,b3,b4,b5,b6,b7) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6, a7 /\ b7)
 
+-- | Eight-way product
+instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f, Lattice g, Lattice h) => Lattice (a,b,c,d,e,f,g,h)
+  where
+    bot = (bot,bot,bot,bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top,top,top,top)
+    (a1,a2,a3,a4,a5,a6,a7,a8) \/ (b1,b2,b3,b4,b5,b6,b7,b8) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6, a7 \/ b7, a8 \/ b8)
+    (a1,a2,a3,a4,a5,a6,a7,a8) /\ (b1,b2,b3,b4,b5,b6,b7,b8) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6, a7 /\ b7, a8 /\ b8)
+
+-- | Nine-way product
+instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f, Lattice g, Lattice h, Lattice i) => Lattice (a,b,c,d,e,f,g,h,i)
+  where
+    bot = (bot,bot,bot,bot,bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top,top,top,top,top)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9) \/ (b1,b2,b3,b4,b5,b6,b7,b8,b9) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6, a7 \/ b7, a8 \/ b8, a9 \/ b9)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9) /\ (b1,b2,b3,b4,b5,b6,b7,b8,b9) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6, a7 /\ b7, a8 /\ b8, a9 /\ b9)
+
+-- | Ten-way product
+instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f, Lattice g, Lattice h, Lattice i, Lattice j) => Lattice (a,b,c,d,e,f,g,h,i,j)
+  where
+    bot = (bot,bot,bot,bot,bot,bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top,top,top,top,top,top)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) \/ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6, a7 \/ b7, a8 \/ b8, a9 \/ b9, a10 \/ b10)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) /\ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6, a7 /\ b7, a8 /\ b8, a9 /\ b9, a10 /\ b10)
+
+-- | Eleven-way product
+instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f, Lattice g, Lattice h, Lattice i, Lattice j, Lattice k) => Lattice (a,b,c,d,e,f,g,h,i,j,k)
+  where
+    bot = (bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top,top,top,top,top,top,top)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) \/ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6, a7 \/ b7, a8 \/ b8, a9 \/ b9, a10 \/ b10, a11 \/ b11)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) /\ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6, a7 /\ b7, a8 /\ b8, a9 /\ b9, a10 /\ b10, a11 /\ b11)
+
+-- | Twelve-way product
+instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f, Lattice g, Lattice h, Lattice i, Lattice j, Lattice k, Lattice l) => Lattice (a,b,c,d,e,f,g,h,i,j,k,l)
+  where
+    bot = (bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top,top,top,top,top,top,top,top)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) \/ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6, a7 \/ b7, a8 \/ b8, a9 \/ b9, a10 \/ b10, a11 \/ b11, a12 \/ b12)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) /\ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6, a7 /\ b7, a8 /\ b8, a9 /\ b9, a10 /\ b10, a11 /\ b11, a12 /\ b12)
+
+-- | Thirteen-way product
+instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f, Lattice g, Lattice h, Lattice i, Lattice j, Lattice k, Lattice l, Lattice m) => Lattice (a,b,c,d,e,f,g,h,i,j,k,l,m)
+  where
+    bot = (bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top,top,top,top,top,top,top,top,top)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13) \/ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6, a7 \/ b7, a8 \/ b8, a9 \/ b9, a10 \/ b10, a11 \/ b11, a12 \/ b12, a13 \/ b13)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13) /\ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6, a7 /\ b7, a8 /\ b8, a9 /\ b9, a10 /\ b10, a11 /\ b11, a12 /\ b12, a13 /\ b13)
+
+-- | Fourteen-way product
+instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f, Lattice g, Lattice h, Lattice i, Lattice j, Lattice k, Lattice l, Lattice m, Lattice n) => Lattice (a,b,c,d,e,f,g,h,i,j,k,l,m,n)
+  where
+    bot = (bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top,top,top,top,top,top,top,top,top,top)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14) \/ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6, a7 \/ b7, a8 \/ b8, a9 \/ b9, a10 \/ b10, a11 \/ b11, a12 \/ b12, a13 \/ b13, a14 \/ b14)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14) /\ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6, a7 /\ b7, a8 /\ b8, a9 /\ b9, a10 /\ b10, a11 /\ b11, a12 /\ b12, a13 /\ b13, a14 /\ b14)
+
+-- | Fifteen-way product
+instance (Lattice a, Lattice b, Lattice c, Lattice d, Lattice e, Lattice f, Lattice g, Lattice h, Lattice i, Lattice j, Lattice k, Lattice l, Lattice m, Lattice n, Lattice o) => Lattice (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o)
+  where
+    bot = (bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot,bot)
+    top = (top,top,top,top,top,top,top,top,top,top,top,top,top,top,top)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15) \/ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15) = (a1 \/ b1, a2 \/ b2, a3 \/ b3, a4 \/ b4, a5 \/ b5, a6 \/ b6, a7 \/ b7, a8 \/ b8, a9 \/ b9, a10 \/ b10, a11 \/ b11, a12 \/ b12, a13 \/ b13, a14 \/ b14, a15 \/ b15)
+    (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15) /\ (b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15) = (a1 /\ b1, a2 /\ b2, a3 /\ b3, a4 /\ b4, a5 /\ b5, a6 /\ b6, a7 /\ b7, a8 /\ b8, a9 /\ b9, a10 /\ b10, a11 /\ b11, a12 /\ b12, a13 /\ b13, a14 /\ b14, a15 /\ b15)
+
 -- | Accumulated join
 unions :: Lattice a => [a] -> a
 unions = foldr (\/) bot

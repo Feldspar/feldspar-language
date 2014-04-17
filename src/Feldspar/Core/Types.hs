@@ -55,7 +55,7 @@ import Data.List
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
 import Data.Typeable (Typeable)
 #else
-import Data.Typeable (Typeable,Typeable1)
+import Data.Typeable (Typeable,Typeable1,mkTyCon3,mkTyConApp,typeOf)
 #endif
 import Data.Word
 import Data.Default
@@ -384,6 +384,14 @@ data TypeRep a
     Tup5Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep (a,b,c,d,e)
     Tup6Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep (a,b,c,d,e,f)
     Tup7Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep (a,b,c,d,e,f,g)
+    Tup8Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep (a,b,c,d,e,f,g,h)
+    Tup9Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep (a,b,c,d,e,f,g,h,i)
+    Tup10Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep (a,b,c,d,e,f,g,h,i,j)
+    Tup11Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep k -> TypeRep (a,b,c,d,e,f,g,h,i,j,k)
+    Tup12Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep k -> TypeRep l -> TypeRep (a,b,c,d,e,f,g,h,i,j,k,l)
+    Tup13Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep k -> TypeRep l -> TypeRep m -> TypeRep (a,b,c,d,e,f,g,h,i,j,k,l,m)
+    Tup14Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep k -> TypeRep l -> TypeRep m -> TypeRep n -> TypeRep (a,b,c,d,e,f,g,h,i,j,k,l,m,n)
+    Tup15Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep k -> TypeRep l -> TypeRep m -> TypeRep n -> TypeRep o -> TypeRep (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o)
     FunType       :: TypeRep a -> TypeRep b -> TypeRep (a -> b)
     MutType       :: TypeRep a -> TypeRep (Mut a)
     RefType       :: TypeRep a -> TypeRep (IORef a)
@@ -412,6 +420,14 @@ instance Show (TypeRep a)
     show (Tup5Type ta tb tc td te)       = showTup [show ta, show tb, show tc, show td, show te]
     show (Tup6Type ta tb tc td te tf)    = showTup [show ta, show tb, show tc, show td, show te, show tf]
     show (Tup7Type ta tb tc td te tf tg) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg]
+    show (Tup8Type ta tb tc td te tf tg th) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th]
+    show (Tup9Type ta tb tc td te tf tg th ti) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti]
+    show (Tup10Type ta tb tc td te tf tg th ti tj) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj]
+    show (Tup11Type ta tb tc td te tf tg th ti tj tk) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj, show tk]
+    show (Tup12Type ta tb tc td te tf tg th ti tj tk tl) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj, show tk, show tl]
+    show (Tup13Type ta tb tc td te tf tg th ti tj tk tl tm) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj, show tk, show tl, show tm]
+    show (Tup14Type ta tb tc td te tf tg th ti tj tk tl tm tn) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj, show tk, show tl, show tm, show tn]
+    show (Tup15Type ta tb tc td te tf tg th ti tj tk tl tm tn to) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj, show tk, show tl, show tm, show tn, show to]
     show (FunType ta tb)                 = show ta ++ " -> " ++ show tb
     show (MutType ta)                    = unwords ["Mut", show ta]
     show (RefType ta)                    = unwords ["Ref", show ta]
@@ -473,6 +489,114 @@ defaultSize (Tup7Type ta tb tc td te tf tg) = ( defaultSize ta
                                               , defaultSize te
                                               , defaultSize tf
                                               , defaultSize tg
+                                              )
+defaultSize (Tup8Type ta tb tc td te tf tg th) =
+                                              ( defaultSize ta
+                                              , defaultSize tb
+                                              , defaultSize tc
+                                              , defaultSize td
+                                              , defaultSize te
+                                              , defaultSize tf
+                                              , defaultSize tg
+                                              , defaultSize th
+                                              )
+defaultSize (Tup9Type ta tb tc td te tf tg th ti) =
+                                              ( defaultSize ta
+                                              , defaultSize tb
+                                              , defaultSize tc
+                                              , defaultSize td
+                                              , defaultSize te
+                                              , defaultSize tf
+                                              , defaultSize tg
+                                              , defaultSize th
+                                              , defaultSize ti
+                                              )
+defaultSize (Tup10Type ta tb tc td te tf tg th ti tj) =
+                                              ( defaultSize ta
+                                              , defaultSize tb
+                                              , defaultSize tc
+                                              , defaultSize td
+                                              , defaultSize te
+                                              , defaultSize tf
+                                              , defaultSize tg
+                                              , defaultSize th
+                                              , defaultSize ti
+                                              , defaultSize tj
+                                              )
+defaultSize (Tup11Type ta tb tc td te tf tg th ti tj tk) =
+                                              ( defaultSize ta
+                                              , defaultSize tb
+                                              , defaultSize tc
+                                              , defaultSize td
+                                              , defaultSize te
+                                              , defaultSize tf
+                                              , defaultSize tg
+                                              , defaultSize th
+                                              , defaultSize ti
+                                              , defaultSize tj
+                                              , defaultSize tk
+                                              )
+defaultSize (Tup12Type ta tb tc td te tf tg th ti tj tk tl) =
+                                              ( defaultSize ta
+                                              , defaultSize tb
+                                              , defaultSize tc
+                                              , defaultSize td
+                                              , defaultSize te
+                                              , defaultSize tf
+                                              , defaultSize tg
+                                              , defaultSize th
+                                              , defaultSize ti
+                                              , defaultSize tj
+                                              , defaultSize tk
+                                              , defaultSize tl
+                                              )
+defaultSize (Tup13Type ta tb tc td te tf tg th ti tj tk tl tm) =
+                                              ( defaultSize ta
+                                              , defaultSize tb
+                                              , defaultSize tc
+                                              , defaultSize td
+                                              , defaultSize te
+                                              , defaultSize tf
+                                              , defaultSize tg
+                                              , defaultSize th
+                                              , defaultSize ti
+                                              , defaultSize tj
+                                              , defaultSize tk
+                                              , defaultSize tl
+                                              , defaultSize tm
+                                              )
+defaultSize (Tup14Type ta tb tc td te tf tg th ti tj tk tl tm tn) =
+                                              ( defaultSize ta
+                                              , defaultSize tb
+                                              , defaultSize tc
+                                              , defaultSize td
+                                              , defaultSize te
+                                              , defaultSize tf
+                                              , defaultSize tg
+                                              , defaultSize th
+                                              , defaultSize ti
+                                              , defaultSize tj
+                                              , defaultSize tk
+                                              , defaultSize tl
+                                              , defaultSize tm
+                                              , defaultSize tn
+                                              )
+defaultSize (Tup15Type ta tb tc td te tf tg th ti tj tk tl tm tn to) =
+                                              ( defaultSize ta
+                                              , defaultSize tb
+                                              , defaultSize tc
+                                              , defaultSize td
+                                              , defaultSize te
+                                              , defaultSize tf
+                                              , defaultSize tg
+                                              , defaultSize th
+                                              , defaultSize ti
+                                              , defaultSize tj
+                                              , defaultSize tk
+                                              , defaultSize tl
+                                              , defaultSize tm
+                                              , defaultSize tn
+                                              , defaultSize to
                                               )
 defaultSize (FunType ta tb) = (defaultSize ta, defaultSize tb)
 defaultSize (MutType ta) = defaultSize ta
@@ -557,6 +681,114 @@ typeEq (Tup7Type a1 b1 c1 d1 e1 f1 g1) (Tup7Type a2 b2 c2 d2 e2 f2 g2) = do
     TypeEq <- typeEq f1 f2
     TypeEq <- typeEq g1 g2
     return TypeEq
+typeEq (Tup8Type a1 b1 c1 d1 e1 f1 g1 h1) (Tup8Type a2 b2 c2 d2 e2 f2 g2 h2) = do
+    TypeEq <- typeEq a1 a2
+    TypeEq <- typeEq b1 b2
+    TypeEq <- typeEq c1 c2
+    TypeEq <- typeEq d1 d2
+    TypeEq <- typeEq e1 e2
+    TypeEq <- typeEq f1 f2
+    TypeEq <- typeEq g1 g2
+    TypeEq <- typeEq h1 h2
+    return TypeEq
+typeEq (Tup9Type a1 b1 c1 d1 e1 f1 g1 h1 i1) (Tup9Type a2 b2 c2 d2 e2 f2 g2 h2 i2) = do
+    TypeEq <- typeEq a1 a2
+    TypeEq <- typeEq b1 b2
+    TypeEq <- typeEq c1 c2
+    TypeEq <- typeEq d1 d2
+    TypeEq <- typeEq e1 e2
+    TypeEq <- typeEq f1 f2
+    TypeEq <- typeEq g1 g2
+    TypeEq <- typeEq h1 h2
+    TypeEq <- typeEq i1 i2
+    return TypeEq
+typeEq (Tup10Type a1 b1 c1 d1 e1 f1 g1 h1 i1 j1) (Tup10Type a2 b2 c2 d2 e2 f2 g2 h2 i2 j2) = do
+    TypeEq <- typeEq a1 a2
+    TypeEq <- typeEq b1 b2
+    TypeEq <- typeEq c1 c2
+    TypeEq <- typeEq d1 d2
+    TypeEq <- typeEq e1 e2
+    TypeEq <- typeEq f1 f2
+    TypeEq <- typeEq g1 g2
+    TypeEq <- typeEq h1 h2
+    TypeEq <- typeEq i1 i2
+    TypeEq <- typeEq j1 j2
+    return TypeEq
+typeEq (Tup11Type a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 k1) (Tup11Type a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2) = do
+    TypeEq <- typeEq a1 a2
+    TypeEq <- typeEq b1 b2
+    TypeEq <- typeEq c1 c2
+    TypeEq <- typeEq d1 d2
+    TypeEq <- typeEq e1 e2
+    TypeEq <- typeEq f1 f2
+    TypeEq <- typeEq g1 g2
+    TypeEq <- typeEq h1 h2
+    TypeEq <- typeEq i1 i2
+    TypeEq <- typeEq j1 j2
+    TypeEq <- typeEq k1 k2
+    return TypeEq
+typeEq (Tup12Type a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 k1 l1) (Tup12Type a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2) = do
+    TypeEq <- typeEq a1 a2
+    TypeEq <- typeEq b1 b2
+    TypeEq <- typeEq c1 c2
+    TypeEq <- typeEq d1 d2
+    TypeEq <- typeEq e1 e2
+    TypeEq <- typeEq f1 f2
+    TypeEq <- typeEq g1 g2
+    TypeEq <- typeEq h1 h2
+    TypeEq <- typeEq i1 i2
+    TypeEq <- typeEq j1 j2
+    TypeEq <- typeEq k1 k2
+    TypeEq <- typeEq l1 l2
+    return TypeEq
+typeEq (Tup13Type a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 k1 l1 m1) (Tup13Type a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2) = do
+    TypeEq <- typeEq a1 a2
+    TypeEq <- typeEq b1 b2
+    TypeEq <- typeEq c1 c2
+    TypeEq <- typeEq d1 d2
+    TypeEq <- typeEq e1 e2
+    TypeEq <- typeEq f1 f2
+    TypeEq <- typeEq g1 g2
+    TypeEq <- typeEq h1 h2
+    TypeEq <- typeEq i1 i2
+    TypeEq <- typeEq j1 j2
+    TypeEq <- typeEq k1 k2
+    TypeEq <- typeEq l1 l2
+    TypeEq <- typeEq m1 m2
+    return TypeEq
+typeEq (Tup14Type a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 k1 l1 m1 n1) (Tup14Type a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2 n2) = do
+    TypeEq <- typeEq a1 a2
+    TypeEq <- typeEq b1 b2
+    TypeEq <- typeEq c1 c2
+    TypeEq <- typeEq d1 d2
+    TypeEq <- typeEq e1 e2
+    TypeEq <- typeEq f1 f2
+    TypeEq <- typeEq g1 g2
+    TypeEq <- typeEq h1 h2
+    TypeEq <- typeEq i1 i2
+    TypeEq <- typeEq j1 j2
+    TypeEq <- typeEq k1 k2
+    TypeEq <- typeEq l1 l2
+    TypeEq <- typeEq m1 m2
+    TypeEq <- typeEq n1 n2
+    return TypeEq
+typeEq (Tup15Type a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 k1 l1 m1 n1 o1) (Tup15Type a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2 n2 o2) = do
+    TypeEq <- typeEq a1 a2
+    TypeEq <- typeEq b1 b2
+    TypeEq <- typeEq c1 c2
+    TypeEq <- typeEq d1 d2
+    TypeEq <- typeEq e1 e2
+    TypeEq <- typeEq f1 f2
+    TypeEq <- typeEq g1 g2
+    TypeEq <- typeEq h1 h2
+    TypeEq <- typeEq i1 i2
+    TypeEq <- typeEq j1 j2
+    TypeEq <- typeEq k1 k2
+    TypeEq <- typeEq l1 l2
+    TypeEq <- typeEq m1 m2
+    TypeEq <- typeEq n1 n2
+    TypeEq <- typeEq o1 o2
+    return TypeEq
 typeEq (FunType a1 b1) (FunType a2 b2) = do
     TypeEq <- typeEq a1 a2
     TypeEq <- typeEq b1 b2
@@ -611,6 +843,14 @@ type instance TargetType n (a,b,c,d)       = (TargetType n a, TargetType n b, Ta
 type instance TargetType n (a,b,c,d,e)     = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e)
 type instance TargetType n (a,b,c,d,e,f)   = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f)
 type instance TargetType n (a,b,c,d,e,f,g) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g)
+type instance TargetType n (a,b,c,d,e,f,g,h) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h)
+type instance TargetType n (a,b,c,d,e,f,g,h,i) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i)
+type instance TargetType n (a,b,c,d,e,f,g,h,i,j) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j)
+type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k)
+type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k,l) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l)
+type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m)
+type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m,n') = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m, TargetType n n')
+type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m, TargetType n n', TargetType n o)
 type instance TargetType n (IORef a)       = IORef (TargetType n a)
 type instance TargetType n (MArr a)        = MArr (TargetType n a)
 type instance TargetType n (Elements a)    = Elements (TargetType n a)
@@ -766,6 +1006,271 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g) => Type (a,b,c
         , toTarget n g
         )
 
+
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h) => Type (a,b,c,d,e,f,g,h)
+  where
+    typeRep = Tup8Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
+
+    sizeOf (a,b,c,d,e,f,g,h) =
+        ( sizeOf a
+        , sizeOf b
+        , sizeOf c
+        , sizeOf d
+        , sizeOf e
+        , sizeOf f
+        , sizeOf g
+        , sizeOf h
+        )
+
+    toTarget n (a,b,c,d,e,f,g,h) =
+        ( toTarget n a
+        , toTarget n b
+        , toTarget n c
+        , toTarget n d
+        , toTarget n e
+        , toTarget n f
+        , toTarget n g
+        , toTarget n h
+        )
+
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i) => Type (a,b,c,d,e,f,g,h,i)
+  where
+    typeRep = Tup9Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
+
+    sizeOf (a,b,c,d,e,f,g,h,i) =
+        ( sizeOf a
+        , sizeOf b
+        , sizeOf c
+        , sizeOf d
+        , sizeOf e
+        , sizeOf f
+        , sizeOf g
+        , sizeOf h
+        , sizeOf i
+        )
+
+    toTarget n (a,b,c,d,e,f,g,h,i) =
+        ( toTarget n a
+        , toTarget n b
+        , toTarget n c
+        , toTarget n d
+        , toTarget n e
+        , toTarget n f
+        , toTarget n g
+        , toTarget n h
+        , toTarget n i
+        )
+
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j) => Type (a,b,c,d,e,f,g,h,i,j)
+  where
+    typeRep = Tup10Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
+
+    sizeOf (a,b,c,d,e,f,g,h,i,j) =
+        ( sizeOf a
+        , sizeOf b
+        , sizeOf c
+        , sizeOf d
+        , sizeOf e
+        , sizeOf f
+        , sizeOf g
+        , sizeOf h
+        , sizeOf i
+        , sizeOf j
+        )
+
+    toTarget n (a,b,c,d,e,f,g,h,i,j) =
+        ( toTarget n a
+        , toTarget n b
+        , toTarget n c
+        , toTarget n d
+        , toTarget n e
+        , toTarget n f
+        , toTarget n g
+        , toTarget n h
+        , toTarget n i
+        , toTarget n j
+        )
+
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k) => Type (a,b,c,d,e,f,g,h,i,j,k)
+  where
+    typeRep = Tup11Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
+
+    sizeOf (a,b,c,d,e,f,g,h,i,j,k) =
+        ( sizeOf a
+        , sizeOf b
+        , sizeOf c
+        , sizeOf d
+        , sizeOf e
+        , sizeOf f
+        , sizeOf g
+        , sizeOf h
+        , sizeOf i
+        , sizeOf j
+        , sizeOf k
+        )
+
+    toTarget n (a,b,c,d,e,f,g,h,i,j,k) =
+        ( toTarget n a
+        , toTarget n b
+        , toTarget n c
+        , toTarget n d
+        , toTarget n e
+        , toTarget n f
+        , toTarget n g
+        , toTarget n h
+        , toTarget n i
+        , toTarget n j
+        , toTarget n k
+        )
+
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l) => Type (a,b,c,d,e,f,g,h,i,j,k,l)
+  where
+    typeRep = Tup12Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
+
+    sizeOf (a,b,c,d,e,f,g,h,i,j,k,l) =
+        ( sizeOf a
+        , sizeOf b
+        , sizeOf c
+        , sizeOf d
+        , sizeOf e
+        , sizeOf f
+        , sizeOf g
+        , sizeOf h
+        , sizeOf i
+        , sizeOf j
+        , sizeOf k
+        , sizeOf l
+        )
+
+    toTarget n (a,b,c,d,e,f,g,h,i,j,k,l) =
+        ( toTarget n a
+        , toTarget n b
+        , toTarget n c
+        , toTarget n d
+        , toTarget n e
+        , toTarget n f
+        , toTarget n g
+        , toTarget n h
+        , toTarget n i
+        , toTarget n j
+        , toTarget n k
+        , toTarget n l
+        )
+
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l, Type m) => Type (a,b,c,d,e,f,g,h,i,j,k,l,m)
+  where
+    typeRep = Tup13Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
+
+    sizeOf (a,b,c,d,e,f,g,h,i,j,k,l,m) =
+        ( sizeOf a
+        , sizeOf b
+        , sizeOf c
+        , sizeOf d
+        , sizeOf e
+        , sizeOf f
+        , sizeOf g
+        , sizeOf h
+        , sizeOf i
+        , sizeOf j
+        , sizeOf k
+        , sizeOf l
+        , sizeOf m
+        )
+
+    toTarget n (a,b,c,d,e,f,g,h,i,j,k,l,m) =
+        ( toTarget n a
+        , toTarget n b
+        , toTarget n c
+        , toTarget n d
+        , toTarget n e
+        , toTarget n f
+        , toTarget n g
+        , toTarget n h
+        , toTarget n i
+        , toTarget n j
+        , toTarget n k
+        , toTarget n l
+        , toTarget n m
+        )
+
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l, Type m,Type n') => Type (a,b,c,d,e,f,g,h,i,j,k,l,m,n')
+  where
+    typeRep = Tup14Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
+
+    sizeOf (a,b,c,d,e,f,g,h,i,j,k,l,m,n') =
+        ( sizeOf a
+        , sizeOf b
+        , sizeOf c
+        , sizeOf d
+        , sizeOf e
+        , sizeOf f
+        , sizeOf g
+        , sizeOf h
+        , sizeOf i
+        , sizeOf j
+        , sizeOf k
+        , sizeOf l
+        , sizeOf m
+        , sizeOf n'
+        )
+
+    toTarget n (a,b,c,d,e,f,g,h,i,j,k,l,m,n') =
+        ( toTarget n a
+        , toTarget n b
+        , toTarget n c
+        , toTarget n d
+        , toTarget n e
+        , toTarget n f
+        , toTarget n g
+        , toTarget n h
+        , toTarget n i
+        , toTarget n j
+        , toTarget n k
+        , toTarget n l
+        , toTarget n m
+        , toTarget n n'
+        )
+
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l, Type m, Type n', Type o) => Type (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o)
+  where
+    typeRep = Tup15Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
+
+    sizeOf (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o) =
+        ( sizeOf a
+        , sizeOf b
+        , sizeOf c
+        , sizeOf d
+        , sizeOf e
+        , sizeOf f
+        , sizeOf g
+        , sizeOf h
+        , sizeOf i
+        , sizeOf j
+        , sizeOf k
+        , sizeOf l
+        , sizeOf m
+        , sizeOf n'
+        , sizeOf o
+        )
+
+    toTarget n (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o) =
+        ( toTarget n a
+        , toTarget n b
+        , toTarget n c
+        , toTarget n d
+        , toTarget n e
+        , toTarget n f
+        , toTarget n g
+        , toTarget n h
+        , toTarget n i
+        , toTarget n j
+        , toTarget n k
+        , toTarget n l
+        , toTarget n m
+        , toTarget n n'
+        , toTarget n o
+        )
+
 instance (Type a, Show (IORef a)) => Type (IORef a)
   where
     typeRep = RefType typeRep
@@ -867,6 +1372,14 @@ type instance Size (a,b,c,d)       = (Size a, Size b, Size c, Size d)
 type instance Size (a,b,c,d,e)     = (Size a, Size b, Size c, Size d, Size e)
 type instance Size (a,b,c,d,e,f)   = (Size a, Size b, Size c, Size d, Size e, Size f)
 type instance Size (a,b,c,d,e,f,g) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g)
+type instance Size (a,b,c,d,e,f,g,h) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h)
+type instance Size (a,b,c,d,e,f,g,h,i) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i)
+type instance Size (a,b,c,d,e,f,g,h,i,j) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j)
+type instance Size (a,b,c,d,e,f,g,h,i,j,k) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k)
+type instance Size (a,b,c,d,e,f,g,h,i,j,k,l) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l)
+type instance Size (a,b,c,d,e,f,g,h,i,j,k,l,m) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m)
+type instance Size (a,b,c,d,e,f,g,h,i,j,k,l,m,n) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m, Size n)
+type instance Size (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m, Size n, Size o)
 type instance Size (a -> b)        = (Size a, Size b)
 type instance Size (Mut a)         = Size a
 type instance Size (IORef a)       = Size a
@@ -909,3 +1422,40 @@ tLength = id
 tArr :: Patch a a -> Patch [a] [a]
 tArr _ = id
 
+
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 708
+
+-- Typeable instances for 8+-tuples for GHC 7.6.x.
+
+instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h) => Typeable (a,b,c,d,e,f,g,h) where
+  typeOf (a,b,c,d,e,f,g,h) =
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h ]
+
+instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i) => Typeable (a,b,c,d,e,f,g,h,i) where
+  typeOf (a,b,c,d,e,f,g,h,i) =
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i ]
+
+instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j) => Typeable (a,b,c,d,e,f,g,h,i,j) where
+  typeOf (a,b,c,d,e,f,g,h,i,j) =
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j ]
+
+instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k) => Typeable (a,b,c,d,e,f,g,h,i,j,k) where
+  typeOf (a,b,c,d,e,f,g,h,i,j,k) =
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k ]
+
+instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l) where
+  typeOf (a,b,c,d,e,f,g,h,i,j,k,l) =
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l ]
+
+instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l, Typeable m) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l,m) where
+  typeOf (a,b,c,d,e,f,g,h,i,j,k,l,m) =
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m ]
+
+instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l, Typeable m, Typeable n) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l,m,n) where
+  typeOf (a,b,c,d,e,f,g,h,i,j,k,l,m,n) =
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m, typeOf n ]
+
+instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l, Typeable m, Typeable n, Typeable o) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) where
+  typeOf (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) =
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m, typeOf n, typeOf o ]
+#endif
