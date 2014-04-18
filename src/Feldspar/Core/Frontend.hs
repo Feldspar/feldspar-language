@@ -100,6 +100,7 @@ import qualified Language.Syntactic.Constructs.Decoration as Syntactic
 import Language.Syntactic.Constructs.Binding
 import Language.Syntactic.Constructs.Binding.HigherOrder
 import Language.Syntactic.Sharing.SimpleCodeMotion
+import Language.Syntactic.Sharing.CodeMotion2
 
 import Feldspar.Range
 import Feldspar.Core.Types
@@ -164,6 +165,14 @@ mkId opts a b
 mkId _ _ _ = Nothing
 
 
+hoister opts
+ | CSE `inTarget` opts
+ = cm1 . optimize opts . stripDecor <=< cm2
+ | otherwise = cm1
+  where cm1 = codeMotion (simpleMatch (const . hoistOver)) prjDict (mkId opts)
+        cm2 = codeMotion2 (simpleMatch (const . hoistOver)) prjDict (mkId opts)
+
+
 -- | Reification and optimization of a Feldspar program
 reifyFeld :: SyntacticFeld a
     => FeldOpts
@@ -174,7 +183,7 @@ reifyFeld opts n = flip evalState 0 .
     (   return
     .   optimize opts
     .   stripDecor
-    <=< codeMotion (simpleMatch (const . hoistOver)) prjDict (mkId opts)
+    <=< hoister opts
     .   optimize opts
     .   targetSpecialization n
     <=< reifyM
