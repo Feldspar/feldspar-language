@@ -70,6 +70,14 @@ data Type =
    | Tup5Type Type Type Type Type Type
    | Tup6Type Type Type Type Type Type Type
    | Tup7Type Type Type Type Type Type Type Type
+   | Tup8Type Type Type Type Type Type Type Type Type
+   | Tup9Type Type Type Type Type Type Type Type Type Type
+   | Tup10Type Type Type Type Type Type Type Type Type Type Type
+   | Tup11Type Type Type Type Type Type Type Type Type Type Type Type
+   | Tup12Type Type Type Type Type Type Type Type Type Type Type Type Type
+   | Tup13Type Type Type Type Type Type Type Type Type Type Type Type Type Type
+   | Tup14Type Type Type Type Type Type Type Type Type Type Type Type Type Type Type
+   | Tup15Type Type Type Type Type Type Type Type Type Type Type Type Type Type Type Type
    | MutType Type
    | RefType Type
    | ArrayType (Range Length) Type
@@ -106,6 +114,14 @@ data Lit =
    | LTup5 Lit Lit Lit Lit Lit
    | LTup6 Lit Lit Lit Lit Lit Lit
    | LTup7 Lit Lit Lit Lit Lit Lit Lit
+   | LTup8 Lit Lit Lit Lit Lit Lit Lit Lit
+   | LTup9 Lit Lit Lit Lit Lit Lit Lit Lit Lit
+   | LTup10 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
+   | LTup11 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
+   | LTup12 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
+   | LTup13 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
+   | LTup14 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
+   | LTup15 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
    deriving (Eq)
 
 -- | Human readable show instance.
@@ -137,6 +153,58 @@ instance Show Lit where
                                         ", " ++ show l3 ++ ", " ++ show l4 ++
                                         ", " ++ show l5 ++ ", " ++ show l6 ++
                                         ", " ++ show l7 ++ ")"
+   show (LTup8 l1 l2 l3 l4 l5 l6 l7 l8) = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++ ", " ++ show l6 ++
+                                        ", " ++ show l7 ++ ", " ++ show l8 ++
+                                        ")"
+   show (LTup9 l1 l2 l3 l4 l5 l6 l7 l8 l9) = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++ ", " ++ show l6 ++
+                                        ", " ++ show l7 ++ ", " ++ show l8 ++
+                                        ", " ++ show l9 ++ ")"
+   show (LTup10 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10) = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++ ", " ++ show l6 ++
+                                        ", " ++ show l7 ++ ", " ++ show l8 ++
+                                        ", " ++ show l9 ++ ", " ++ show l10 ++
+                                        ")"
+   show (LTup11 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11) = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++ ", " ++ show l6 ++
+                                        ", " ++ show l7 ++ ", " ++ show l8 ++
+                                        ", " ++ show l9 ++ ", " ++ show l10 ++
+                                        ", " ++ show l11 ++ ")"
+   show (LTup12 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12) = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++ ", " ++ show l6 ++
+                                        ", " ++ show l7 ++ ", " ++ show l8 ++
+                                        ", " ++ show l9 ++ ", " ++ show l10 ++
+                                        ", " ++ show l11 ++ ", " ++ show l12 ++
+                                        ")"
+   show (LTup13 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13) = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++ ", " ++ show l6 ++
+                                        ", " ++ show l7 ++ ", " ++ show l8 ++
+                                        ", " ++ show l9 ++ ", " ++ show l10 ++
+                                        ", " ++ show l11 ++ ", " ++ show l12 ++
+                                        ", " ++ show l13 ++ ")"
+   show (LTup14 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14) = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++ ", " ++ show l6 ++
+                                        ", " ++ show l7 ++ ", " ++ show l8 ++
+                                        ", " ++ show l9 ++ ", " ++ show l10 ++
+                                        ", " ++ show l11 ++ ", " ++ show l12 ++
+                                        ", " ++ show l13 ++ ", " ++ show l14 ++
+                                        ")"
+   show (LTup15 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14 l15) = "("   ++ show l1 ++ ", " ++ show l2 ++
+                                        ", " ++ show l3 ++ ", " ++ show l4 ++
+                                        ", " ++ show l5 ++ ", " ++ show l6 ++
+                                        ", " ++ show l7 ++ ", " ++ show l8 ++
+                                        ", " ++ show l9 ++ ", " ++ show l10 ++
+                                        ", " ++ show l11 ++ ", " ++ show l12 ++
+                                        ", " ++ show l13 ++ ", " ++ show l14 ++
+                                        ", " ++ show l15 ++ ")"
 
 -- | Application heads.
 data Op =
@@ -305,6 +373,14 @@ data Op =
    | Tup5
    | Tup6
    | Tup7
+   | Tup8
+   | Tup9
+   | Tup10
+   | Tup11
+   | Tup12
+   | Tup13
+   | Tup14
+   | Tup15
    | Sel1
    | Sel2
    | Sel3
@@ -312,6 +388,14 @@ data Op =
    | Sel5
    | Sel6
    | Sel7
+   | Sel8
+   | Sel9
+   | Sel10
+   | Sel11
+   | Sel12
+   | Sel13
+   | Sel14
+   | Sel15
    -- Common nodes
    | Call Fork String
    deriving (Eq, Show)
