@@ -339,6 +339,28 @@ instance Eq a => Eq (Elements a)
     _ == _ = False
 
 --------------------------------------------------------------------------------
+-- * Multidimensional Arrays
+--------------------------------------------------------------------------------
+
+data MultiDim a = MultiDim { mdDim :: [Length]
+                           , mdArr :: [a]
+                           }
+
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+deriving instance Typeable MultiDim
+#else
+deriving instance Typeable1 MultiDim
+#endif
+
+instance Show a => Show (MultiDim a)
+  where
+    show (MultiDim ls as) = "MultDim " ++ show ls ++ " :" ++ show as
+
+instance Eq a => Eq (MultiDim a)
+  where
+    _ == _ = False
+
+--------------------------------------------------------------------------------
 -- * Future values
 --------------------------------------------------------------------------------
 
@@ -398,6 +420,7 @@ data TypeRep a
     MArrType      :: TypeRep a -> TypeRep (MArr a)
     ParType       :: TypeRep a -> TypeRep (Par a)
     ElementsType  :: TypeRep a -> TypeRep (Elements a)
+    MultiDimType  :: TypeRep a -> TypeRep (MultiDim a)
     IVarType      :: TypeRep a -> TypeRep (IV a)
     FValType      :: TypeRep a -> TypeRep (FVal a)
       -- TODO `MArrType` Should have a target-specialized version. Or perhaps
@@ -434,6 +457,7 @@ instance Show (TypeRep a)
     show (MArrType ta)                   = unwords ["MArr", show ta]
     show (ParType ta)                    = unwords ["Par", show ta]
     show (ElementsType ta)               = unwords ["Elements", show ta]
+    show (MultiDimType ta)               = unwords ["MultiDimType", show ta]
     show (IVarType ta)                   = unwords ["IVar", show ta]
     show (FValType ta)                   = unwords ["FVal", show ta]
 
@@ -604,6 +628,7 @@ defaultSize (RefType ta) = defaultSize ta
 defaultSize (MArrType ta) = universal :> defaultSize ta
 defaultSize (ParType ta) = defaultSize ta
 defaultSize (ElementsType ta) = universal :> defaultSize ta
+defaultSize (MultiDimType ta) = universal :> defaultSize ta
 defaultSize (IVarType ta) = defaultSize ta
 defaultSize (FValType ta) = defaultSize ta
 
@@ -808,6 +833,9 @@ typeEq (ParType t1) (ParType t2) = do
 typeEq (ElementsType t1) (ElementsType t2) = do
     TypeEq <- typeEq t1 t2
     return TypeEq
+typeEq (MultiDimType t1) (MultiDimType t2) = do
+    TypeEq <- typeEq t1 t2
+    return TypeEq
 typeEq (IVarType t1) (IVarType t2) = do
     TypeEq <- typeEq t1 t2
     return TypeEq
@@ -854,6 +882,7 @@ type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o) = (TargetType n a, T
 type instance TargetType n (IORef a)       = IORef (TargetType n a)
 type instance TargetType n (MArr a)        = MArr (TargetType n a)
 type instance TargetType n (Elements a)    = Elements (TargetType n a)
+type instance TargetType n (MultiDim a)    = MultiDim (TargetType n a)
 type instance TargetType n (IV a)          = IV (TargetType n a)
 type instance TargetType n (FVal a)        = FVal (TargetType n a)
 
@@ -1295,6 +1324,14 @@ instance Type a => Type (Elements a)
 
     toTarget = error "toTarget: Elements"  -- TODO Requires IO
 
+instance Type a => Type (MultiDim a)
+  where
+    typeRep = MultiDimType typeRep
+
+    sizeOf _ = universal
+
+    toTarget = error "toTarget: MultDim"  -- TODO Requires IO
+
 instance Type a => Type (IV a)
   where
     typeRep = IVarType typeRep
@@ -1386,6 +1423,7 @@ type instance Size (IORef a)       = Size a
 type instance Size (MArr a)        = Range Length :> Size a
 type instance Size (Par a)         = Size a
 type instance Size (Elements a)    = Range Length :> Size a
+type instance Size (MultiDim a)    = Range Length :> Size a
 type instance Size (IV a)          = Size a
 type instance Size (FVal a)        = Size a
 
