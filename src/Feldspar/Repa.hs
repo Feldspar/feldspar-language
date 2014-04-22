@@ -306,7 +306,7 @@ fold' f x vec = Vector sh ixf
           ixf i = forLoop n (x!:i) (\ix s -> f s (vec !: (i :. ix)))
 
 -- | Summing a vector along its last dimension
-sum :: (Shape sh, Type a, Numeric a) =>
+sum :: (Shape sh, Type a, Numeric a, Num (Size a)) =>
        DVector (sh :. Data Length) a -> DVector sh a
 sum = fold (+) 0
 
@@ -353,7 +353,7 @@ transpose2D vec
         new_extent        = swp (extent vec)
 
 -- | Matrix multiplication
-mmMult :: (Type e, Numeric e) =>
+mmMult :: (Type e, Numeric e, Num (Size e)) =>
           DVector DIM2 e -> DVector DIM2 e
        -> DVector DIM2 e
 mmMult vA vB
@@ -476,10 +476,10 @@ fold1 f a = foldl f (head a) (tail a)
 sum1 :: (Syntax a, Num a) => Vector DIM1 a -> a
 sum1  = foldl (+) 0
 
-maximum :: Ord a => Vector DIM1 (Data a) -> Data a
+maximum :: (Type a, P.Ord a, P.Ord (Size a)) => Vector DIM1 (Data a) -> Data a
 maximum = fold1 max
 
-minimum :: Ord a => Vector DIM1 (Data a) -> Data a
+minimum :: (Type a, P.Ord a, P.Ord (Size a)) => Vector DIM1 (Data a) -> Data a
 minimum = fold1 min
 
 -- | Scalar product of two vectors

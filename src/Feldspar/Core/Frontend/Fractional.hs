@@ -40,7 +40,7 @@ import Feldspar.Core.Constructs.Fractional
 
 import Feldspar.Core.Frontend.Literal
 import Feldspar.Core.Frontend.Num
-
+{-
 -- | Fractional types. The relation to the standard 'Fractional' class is
 --
 -- @instance `Fraction` a => `Fractional` (`Data` a)@
@@ -53,9 +53,9 @@ class (Numeric a) => Fraction a
 instance (Fractional a, Type a, Num (Size a)) => Fraction (Data a) where
   fromRationalFrac = value . fromRational
   divFrac = sugarSymF DivFrac
-
-instance (Fraction a, Fractional a, Type a, Num (Size a)) => Fractional (Data a)
+-}
+instance (Fractional a, Type a, Num (Size a)) => Fractional (Data a)
   where
-    fromRational = fromRationalFrac
-    (/)          = divFrac
+    fromRational = value . fromRational
+    (/)          = sugarSymF DivFrac
 

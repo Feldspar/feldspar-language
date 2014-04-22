@@ -69,6 +69,9 @@ import Data.Tuple.Curry
 import Control.Monad (zipWithM_)
 import Data.Proxy
 
+import qualified Data.Bits as B
+import qualified Feldspar.Range as R
+
 -- $intro
 -- The Feldspar Vector library.
 --
@@ -622,7 +625,13 @@ replicate1 :: Data Length -> a -> Pull DIM1 a
 replicate1 n a = Pull (const a) (Z :. n)
 
 -- | A vector which enumerates numbers consecutively
-enumFromTo :: forall a. (Type a, Integral a)
+enumFromTo :: forall a. (Type a, Integral a, P.Ord a, P.Integral a
+                        ,Size a ~ Range a
+                        ,Bounded a, Bounded (R.UnsignedRep a)
+                        ,B.Bits a,B.Bits (R.UnsignedRep a)
+                        ,Num (R.UnsignedRep a)
+                        ,P.Integral (R.UnsignedRep a)
+                        ,P.Ord (R.UnsignedRep a))
            => Data a -> Data a -> Pull DIM1 (Data a)
 enumFromTo 0 n
     | IntType U _ <- typeRep :: TypeRep a
@@ -638,7 +647,12 @@ enumFromTo m n = indexed1 (i2n l) ((+m) . i2n)
 enumFrom m = enumFromTo m (value maxBound)
 
 -- | An infix version of 'enumFromTo'.
-(...) :: forall a. (Type a, Integral a)
+(...) :: forall a. (Type a, Integral a, P.Ord a, P.Integral a
+                   ,Size a ~ Range a
+                   ,Bounded a, Bounded (R.UnsignedRep a)
+                   ,P.Ord (R.UnsignedRep a), Num (R.UnsignedRep a)
+                   ,P.Integral (R.UnsignedRep a)
+                   ,B.Bits a, B.Bits (R.UnsignedRep a))
       => Data a -> Data a -> Pull DIM1 (Data a)
 (...) = enumFromTo
 
@@ -654,11 +668,11 @@ fold1 f a = fromZero $ fold f (head a) (tail a)
 
 
 -- | Get the maximum element from a vector
-maximum :: (Ord a, Pully vec DIM1) => vec DIM1 (Data a) -> (Data a)
+maximum :: (Type a, Ord a, P.Ord a, P.Ord (Size a), Pully vec DIM1) => vec DIM1 (Data a) -> (Data a)
 maximum = fold1 max
 
 -- | Get the minimum element from a vector
-minimum :: (Ord a, Pully vec DIM1) => vec DIM1 (Data a) -> (Data a)
+minimum :: (Type a, Ord a, P.Ord a, P.Ord (Size a), Pully vec DIM1) => vec DIM1 (Data a) -> (Data a)
 minimum = fold1 min
 
 -- TODO: Generalize or and and to arbitrary dimensions and Pushy vectors
@@ -690,7 +704,7 @@ all p = and . fmap p
 -- TODO: Generalize eqVectors, once 'and' is generalized
 
 -- | Testing equality between two one-dimensional vectors
-eqVector :: (Eq a, Pully vec1 DIM1, Pully vec2 DIM1) =>
+eqVector :: (Eq a, Type a, Pully vec1 DIM1, Pully vec2 DIM1) =>
             vec1 DIM1 (Data a) -> vec2 DIM1 (Data a) -> Data Bool
 eqVector a b = length a == length b && and (zipWith (==) a b)
 

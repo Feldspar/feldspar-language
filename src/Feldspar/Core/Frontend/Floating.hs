@@ -32,6 +32,7 @@
 module Feldspar.Core.Frontend.Floating where
 
 import qualified Prelude
+import Prelude (Fractional(..))
 import Prelude (Float,Double)
 import Data.Complex
 
@@ -42,7 +43,7 @@ import Feldspar.Core.Frontend.Fractional
 
 infixr 8 **
 
-class (Fraction a) => Floating a where
+class (Fractional a) => Floating a where
   pi        :: a
   exp       :: a -> a
   sqrt      :: a -> a

@@ -87,7 +87,7 @@ module Feldspar.Core.Frontend
 import Prelude as P
 
 import Control.Monad.State
-import Test.QuickCheck
+import Test.QuickCheck hiding ((===))
 
 import Data.Patch
 
