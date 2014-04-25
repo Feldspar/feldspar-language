@@ -102,8 +102,8 @@ untypeProgDecor :: Untype dom dom
 untypeProgDecor (Decor info a) args = untypeProgSym a info args
 
 -- | External module interface.
-untype :: Untype dom dom => ASTF (Decor Info dom) a -> UntypedFeld
-untype = createTasks  . optimize . sinkLets . untypeProg
+untype :: Untype dom dom => FeldOpts -> ASTF (Decor Info dom) a -> UntypedFeld
+untype opts = createTasks opts . optimize . sinkLets . untypeProg
 
 untypeProg :: Untype dom dom =>
     ASTF (Decor Info dom) a -> UntypedFeld

@@ -53,7 +53,7 @@ data Size = S8 | S16 | S32 | S40 | S64
 data Signedness = Signed | Unsigned
     deriving (Eq,Show)
 
-data Fork = None | Future | Par
+data Fork = None | Future | Par | Loop
     deriving (Eq,Show)
 
 data Type =
