@@ -156,6 +156,11 @@ instance CollMap (Vector a) (Vector b)
 newLen :: Syntax a => Data Length -> Vector a -> Vector a
 newLen l vec = (mergeSegments vec) {segmentLength = l}
 
+-- | Change the length of the vector before and after calling the function.
+withLen :: (Syntax a, Syntax b)
+        => Data Length -> (Vector a -> Vector b) -> Vector a -> Vector b
+withLen l f = newLen l . f . newLen l
+
 (++) :: Vector a -> Vector a -> Vector a
 Empty              ++ v     = v
 v                  ++ Empty = v
