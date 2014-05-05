@@ -31,29 +31,29 @@
 
 module Feldspar.Stream
     (Stream
---     ,head
---     ,tail
---     ,map,mapNth
---     ,maps
---     ,intersperse
---     ,interleave
---     ,downsample
---     ,duplicate
---     ,scan, scan1
---     ,mapAccum
---     ,iterate
---     ,repeat
---     ,unfold
---     ,drop
---     ,zip,zipWith
---     ,unzip
---     ,take
---     ,splitAt
---     ,cycle
---     ,streamAsVector, streamAsVectorSize
---     ,recurrenceO, recurrenceI, recurrenceIO, recurrenceIIO
---     ,slidingAvg
---     ,iir,fir
+    ,head
+    ,tail
+    ,map,mapNth
+    ,maps
+    ,intersperse
+    ,interleave
+    ,downsample
+    ,duplicate
+    ,scan, scan1
+    ,mapAccum
+    ,iterate
+    ,repeat
+    ,unfold
+    ,drop
+    ,zip,zipWith
+    ,unzip
+    ,take
+    ,splitAt
+    ,cycle
+    ,streamAsVector, streamAsVectorSize
+    ,recurrenceO, recurrenceI, recurrenceIO, recurrenceIIO
+    ,slidingAvg
+    ,iir,fir
     )
     where
 
