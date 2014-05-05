@@ -70,7 +70,7 @@ import Feldspar.Vector.Shape (Shape(..),DIM1)
 
 -- | Infinite streams.
 data Stream a where
-  Stream :: Syntax state => (state -> M a) -> M state -> Stream a
+  Stream :: (state -> M a) -> M state -> Stream a
 
 type instance Elem      (Stream a) = a
 type instance CollIndex (Stream a) = Data Index
@@ -92,7 +92,7 @@ pre v (Stream next init) = Stream newNext newInit
         newNext (r,s) = do a <- next s
                            b <- getRef r
                            setRef r a
-                           return b                           
+                           return b
 
 -- | 'map f str' transforms every element of the stream 'str' using the
 --   function 'f'
