@@ -71,6 +71,8 @@ import Feldspar.Vector.Shape (Shape(..),DIM1)
 -- | Infinite streams.
 data Stream a where
   Stream :: M (M a) -> Stream a
+    -- The outer monadic layer is for initialization and the inner layer
+    -- for extracting elements.
 
 type instance Elem      (Stream a) = a
 type instance CollIndex (Stream a) = Data Index
