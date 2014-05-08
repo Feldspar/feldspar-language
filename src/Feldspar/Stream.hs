@@ -70,64 +70,62 @@ import Feldspar.Vector.Shape (Shape(..),DIM1)
 
 -- | Infinite streams.
 data Stream a where
-  Stream :: (state -> M a) -> M state -> Stream a
+  Stream :: M (M a) -> Stream a
+    -- The outer monadic layer is for initialization and the inner layer
+    -- for extracting elements.
 
 type instance Elem      (Stream a) = a
 type instance CollIndex (Stream a) = Data Index
 
 -- | Take the first element of a stream
 head :: Syntax a => Stream a -> a
-head (Stream next init) = runMutable (init >>= next)
+head (Stream init) = runMutable (init >>= id)
 
 -- | Drop the first element of a stream
 tail :: Syntax a => Stream a -> Stream a
-tail (Stream next init) = Stream next (init >>= \st -> next st >> return st)
+tail (Stream init) = Stream $ do
+    next <- init
+    next
+    return next
 
 -- | The stream 'pre v s' first returns 'v' and then behaves like 's'.
 pre :: Syntax a => a -> Stream a -> Stream a
-pre v (Stream next init) = Stream newNext newInit
-  where newInit = do i <- init
-                     r <- newRef v
-                     return (r,i)
-        newNext (r,s) = do a <- next s
-                           b <- getRef r
-                           setRef r a
-                           return b
+pre v (Stream init) = Stream $ do
+    next <- init
+    r <- newRef v
+    return $ do
+      a <- next
+      b <- getRef r
+      setRef r a
+      return b
 
 -- | 'map f str' transforms every element of the stream 'str' using the
 --   function 'f'
 map :: (a -> b) -> Stream a -> Stream b
-map f (Stream next init) = Stream newNext init
-  where newNext st = do a <- next st
-                        return (f a)
+map f (Stream init) = Stream $ fmap (fmap f) init
 
 -- | 'mapNth f n k str' transforms every 'n'th element with offset 'k'
 --    of the stream 'str' using the function 'f'
 mapNth :: (Syntax a) =>
           (a -> a) -> Data Index -> Data Index -> Stream a -> Stream a
-mapNth f n k (Stream next init) = Stream newNext newInit
-  where
-    newInit = do st <- init
-                 r  <- newRef (0 :: Data WordN)
-                 return (st,r)
-    newNext (st,r) = do a <- next st
-                        i <- getRef r
-                        setRef r ((i+1) `mod` n)
-                        return (i==k ? f a $ a)
+mapNth f n k (Stream init) = Stream $ do
+    next <- init
+    r <- newRef 0
+    return $ do
+      a <- next
+      i <- getRef r
+      setRef r ((i+1) `mod` n)
+      return (i==k ? f a $ a)
 
 -- | 'maps fs str' uses one of the functions from 'fs' successively to modify
 --   the elements of 'str'
 maps :: (Syntax a) =>
         [a -> a] -> Stream a -> Stream a
-maps fs (Stream next initial) = Stream newNext newInit
-  where
-    newInit = do
-      r  <- newRef (0 :: Data Index)
-      st <- initial
-      return (r,st)
-
-    newNext (r,st) = do
-      a <- next st
+maps fs (Stream init) = Stream $ do
+    next <- init
+    r <- newRef (0 :: Data Index)
+    return $ do
+      a <- next
       i <- getRef r
       setRef r ((i+1) `mod` P.fromIntegral (P.length fs))
       return $
@@ -143,68 +141,61 @@ intersperse a s = interleave s (repeat a)
 -- | Create a new stream by alternating between the elements from
 --   the two input streams
 interleave :: Syntax a => Stream a -> Stream a -> Stream a
-interleave (Stream next1 init1) (Stream next2 init2)
-    = Stream next init
-  where
-    init = do st1 <- init1
-              st2 <- init2
-              r   <- newRef true
-              return (r,st1,st2)
-    next (r,st1,st2) = do b <- getRef r
-                          setRef r (not b)
-                          ifM b (next1 st1) (next2 st2)
+interleave (Stream init1) (Stream init2) = Stream $ do
+    next1 <- init1
+    next2 <- init2
+    r <- newRef true
+    return $ do
+      b <- getRef r
+      setRef r (not b)
+      ifM b next1 next2
 
 -- | 'downsample n str' takes every 'n'th element of the input stream
 downsample :: Syntax a => Data Index -> Stream a -> Stream a
-downsample n (Stream next init) = Stream newNext init
-  where newNext st = do forM (n-1) (\_ -> next st)
-                        next st
+downsample n (Stream init) = Stream $ do
+    next <- init
+    return $ do
+      forM (n-1) (\_ -> next)
+      next
 
 -- | 'duplicate n str' stretches the stream by duplicating the elements 'n' times
 duplicate :: Syntax a => Data Index -> Stream a -> Stream a
-duplicate n (Stream next init) = Stream newNext newInit
-  where
-    newInit = do st <- init
-                 a  <- next st
-                 r1 <- newRef a
-                 r2 <- newRef (1 :: Data Index)
-                 return (st,r1,r2)
-    newNext (st,r1,r2) = do i <- getRef r2
-                            setRef r2 ((i+1)`mod`n)
-                            ifM (i==0)
-                              (do a <- next st
-                                  setRef r1 a
-                                  return a)
-                              (getRef r1)
+duplicate n (Stream init) = Stream $ do
+    next <- init
+    a    <- next
+    r1   <- newRef a
+    r2   <- newRef (1 :: Data Index)
+    return $ do
+        i <- getRef r2
+        setRef r2 ((i+1)`mod`n)
+        ifM (i==0)
+          (do a <- next
+              setRef r1 a
+              return a)
+          (getRef r1)
 
 -- | 'scan f a str' produces a stream by successively applying 'f' to
 --   each element of the input stream 'str' and the previous element of
 --   the output stream.
 scan :: Syntax a => (a -> b -> a) -> a -> Stream b -> Stream a
-scan f a (Stream next init) = Stream newNext newInit
-  where
-    newInit = do st <- init
-                 r  <- newRef a
-                 return (st,r)
-    newNext (st,r) = do x   <- next st
-                        acc <- getRef r
-                        setRef r (f acc x)
-                        return acc
-
+scan f a (Stream init) = Stream $ do
+    next <- init
+    r <- newRef a
+    return $ do
+      x <- next
+      acc <- getRef r
+      setRef r (f acc x)
+      return acc
 
 -- | A scan but without an initial element.
 scan1 :: Syntax a => (a -> a -> a) -> Stream a -> Stream a
-scan1 f (Stream next init)
-    = Stream newNext newInit
-  where
-    newInit = do
-      st <- init
-      a  <- next st
-      r  <- newRef a
-      return (st,r)
-    newNext (st,r) = do
+scan1 f (Stream init) = Stream $ do
+    next <- init
+    a    <- next
+    r    <- newRef a
+    return $ do
       a <- getRef r
-      b <- next st
+      b <- next
       let c = f a b
       setRef r c
       return c
@@ -212,16 +203,12 @@ scan1 f (Stream next init)
 -- | Maps a function over a stream using an accumulator.
 mapAccum :: (Syntax acc, Syntax b) =>
             (acc -> a -> (acc,b)) -> acc -> Stream a -> Stream b
-mapAccum f acc (Stream next init)
-    = Stream newNext newInit
-  where
-    newInit = do
-      st <- init
-      r  <- newRef acc
-      return (st,r)
-    newNext (st,r) = do
+mapAccum f acc (Stream init) = Stream $ do
+    next <- init
+    r <- newRef acc
+    return $ do
       x <- getRef r
-      a <- next st
+      a <- next
       let (acc',b) = f x a
       setRef r acc'
       return b
@@ -231,36 +218,36 @@ mapAccum f acc (Stream next init)
 --
 -- @iterate f a == [a, f a, f (f a), f (f (f a)) ...]@
 iterate :: Syntax a => (a -> a) -> a -> Stream a
-iterate f a = Stream next init
-  where
-    init = newRef a
-    next r = do x <- getRef r
-                setRef r (f x)
-                return x
+iterate f a = Stream $ do
+    r <- newRef a
+    return $ do
+      x <- getRef r
+      setRef r (f x)
+      return x
 
 -- | Repeat an element indefinitely.
 --
 -- @repeat a = [a, a, a, ...]@
 repeat :: a -> Stream a
-repeat a = Stream (const (return a)) (return ())
+repeat a = Stream $ return $ return a
 
 -- | @unfold f acc@ creates a new stream by successively applying 'f' to
 --   to the accumulator 'acc'.
 unfold :: (Syntax a, Syntax c) => (c -> (a,c)) -> c -> Stream a
-unfold next init = Stream newNext newInit
-  where
-    newInit = newRef init
-    newNext r = do c <- getRef r
-                   let (a,c') = next c
-                   setRef r c'
-                   return a
+unfold next init = Stream $ do
+    r <- newRef init
+    return $ do
+      c <- getRef r
+      let (a,c') = next c
+      setRef r c'
+      return a
 
 -- | Drop a number of elements from the front of a stream
 drop :: Syntax a => Data Length -> Stream a -> Stream a
-drop i (Stream next init) = Stream next newInit
-  where newInit = do st <- init
-                     forM i (\_ -> next st)
-                     return st
+drop i (Stream init) = Stream $ do
+    next <- init
+    forM i (\_ -> next)
+    return next
 
 -- | Pairs together two streams into one.
 zip :: Stream a -> Stream b -> Stream (a,b)
@@ -269,14 +256,13 @@ zip = zipWith (,)
 -- | Pairs together two streams using a function to combine the
 --   corresponding elements.
 zipWith :: (a -> b -> c) -> Stream a -> Stream b -> Stream c
-zipWith f (Stream next1 init1) (Stream next2 init2) = Stream next init
-  where
-    init = do st1 <- init1
-              st2 <- init2
-              return (st1,st2)
-    next (st1,st2) = do a <- next1 st1
-                        b <- next2 st2
-                        return (f a b)
+zipWith f (Stream init1) (Stream init2) = Stream $ do
+    next1 <- init1
+    next2 <- init2
+    return $ do
+      a <- next1
+      b <- next2
+      return (f a b)
 
 -- | Given a stream of pairs, split it into two stream.
 unzip :: (Syntax a, Syntax b) => Stream (a,b) -> (Stream a, Stream b)
@@ -293,10 +279,10 @@ instance Applicative Stream where
   (<*>) = app
 
 instance Syntax a => Indexed (Stream a) where
-  (Stream next init) ! n = runMutable $ do
-                             st <- init
-                             forM (n-1) (\_ -> next st)
-                             next st
+  (Stream init) ! n = runMutable $ do
+                        next <- init
+                        forM (n-1) (\_ -> next)
+                        next
 
 instance Num a => Num (Stream a) where
   (+) = liftA2 (+)
@@ -310,12 +296,12 @@ instance Num a => Num (Stream a) where
 -- | 'take n str' allocates 'n' elements from the stream 'str' into a
 --   core array.
 take :: (Syntax a) => Data Length -> Stream a -> Data [Internal a]
-take n (Stream next init)
+take n (Stream init)
     = runMutableArray $ do
         marr <- newArr_ n
-        st   <- init
+        next <- init
         forM n $ \ix -> do
-          a <- next st
+          a <- next
           setArr marr ix (desugar a)
         return marr
 
@@ -328,20 +314,20 @@ splitAt n stream = (take n stream,drop n stream)
 
 -- | Loops through a vector indefinitely to produce a stream.
 cycle :: Syntax a => Pull DIM1 a -> Stream a
-cycle vec = Stream next init
-  where
-    init = newRef (0 :: Data Index)
-    next r = do i <- getRef r
-                setRef r ((i + 1) `rem` length vec)
-                return (vec ! (Z :. i))
+cycle vec = Stream $ do
+    c <- newRef (0 :: Data Index)
+    return $ do
+      i <- getRef c
+      setRef c ((i + 1) `rem` length vec)
+      return (vec ! (Z :. i))
 
 unsafeVectorToStream :: Syntax a => Pull DIM1 a -> Stream a
-unsafeVectorToStream vec = Stream next init
-  where
-    init = newRef (0 :: Data Index)
-    next r = do i <- getRef r
-                setRef r (i + 1)
-                return (vec ! (Z :. i))
+unsafeVectorToStream vec = Stream $ do
+    r <- newRef 0
+    return $ do
+      i <- getRef r
+      setRef r (i + 1)
+      return (vec ! (Z :. i))
 
 -- | A convenience function for translating an algorithm on streams to an algorithm on vectors.
 --   The result vector will have the same length as the input vector.
@@ -378,23 +364,20 @@ recurrenceO :: Type a =>
                Pull1 a ->
                (Pull1 a -> Data a) ->
                Stream (Data a)
-recurrenceO initV mkExpr = Stream next init
-  where
-    len  = length initV
-    init = do
+recurrenceO initV mkExpr = Stream $ do
       buf <- thawArray (freezePull1 initV)
       r   <- newRef (0 :: Data Index)
-      return (buf,r)
-
-    next (buf,r) = do
-      ix <- getRef r
-      setRef r (ix + 1)
-      a <- withArray buf
-           (\ibuf -> return $ mkExpr
-                     (indexed1 len (\i -> getIx ibuf ((i + ix) `rem` len))))
-      result <- getArr buf (ix `rem` len)
-      setArr buf (ix `rem` len) a
-      return result
+      return $ do
+        ix <- getRef r
+        setRef r (ix + 1)
+        a <- withArray buf
+             (\ibuf -> return $ mkExpr
+                       (indexed1 len (\i -> getIx ibuf ((i + ix) `rem` len))))
+        result <- getArr buf (ix `rem` len)
+        setArr buf (ix `rem` len) a
+        return result
+  where
+    len  = length initV
 
 -- | A recurrence combinator with input. The function 'recurrenceI' is
 --   similar to 'recurrenceO'. The difference is that that it has an input
@@ -423,21 +406,15 @@ recurrenceIO :: (Type a, Type b) =>
                 Pull1 a -> Stream (Data a) -> Pull1 b ->
                 (Pull1 a -> Pull1 b -> Data b) ->
                 Stream (Data b)
-recurrenceIO ii (Stream nxt int) io mkExpr
-    = Stream next init
-  where
-    lenI = length ii
-    lenO = length io
-    init = do
-      ibuf <- thawArray (freezePull1 ii)
-      obuf <- thawArray (freezePull1 io)
-      st   <- int
-      r    <- newRef (0 :: Data Index)
-      return (ibuf,obuf,st,r)
-    next (ibuf,obuf,st,r) = do
+recurrenceIO ii (Stream init) io mkExpr = Stream $ do
+    ibuf <- thawArray (freezePull1 ii)
+    obuf <- thawArray (freezePull1 io)
+    next <- init
+    r    <- newRef (0 :: Data Index)
+    return $ do
       ix <- getRef r
       setRef r (ix + 1)
-      a <- nxt st
+      a <- next
       when (lenI /= 0) $ setArr ibuf (ix `rem` lenI) a
       b <- withArray ibuf (\ib ->
              withArray obuf (\ob ->
@@ -450,6 +427,9 @@ recurrenceIO ii (Stream nxt int) io mkExpr
             setArr obuf (ix `rem` lenO) b
             return o)
         (return b)
+  where
+    lenI = length ii
+    lenO = length io
 
 -- | Similar to 'recurrenceIO' but takes two input streams.
 recurrenceIIO :: (Type a, Type b, Type c) =>
@@ -457,25 +437,18 @@ recurrenceIIO :: (Type a, Type b, Type c) =>
                  Pull1 c ->
                  (Pull1 a -> Pull1 b -> Pull1 c -> Data c) ->
                  Stream (Data c)
-recurrenceIIO i1 (Stream next1 init1) i2 (Stream next2 init2) io mkExpr
-    = Stream next init
-  where
-    len1 = length i1
-    len2 = length i2
-    lenO = length io
-    init = do
-      ibuf1 <- thawArray (freezePull1 i1)
-      st1   <- init1
-      ibuf2 <- thawArray (freezePull1 i2)
-      st2   <- init2
-      obuf  <- thawArray (freezePull1 io)
-      c     <- newRef (0 :: Data Index)
-      return (ibuf1,st1,ibuf2,st2,obuf,c)
-    next (ibuf1,st1,ibuf2,st2,obuf,c) = do
+recurrenceIIO i1 (Stream init1) i2 (Stream init2) io mkExpr = Stream $ do
+    ibuf1 <- thawArray (freezePull1 i1)
+    next1 <- init1
+    ibuf2 <- thawArray (freezePull1 i2)
+    next2 <- init2
+    obuf  <- thawArray (freezePull1 io)
+    c     <- newRef (0 :: Data Index)
+    return $ do
       ix <- getRef c
       setRef c (ix + 1)
-      a <- next1 st1
-      b <- next2 st2
+      a <- next1
+      b <- next2
       when (len1 /= 0) $ setArr ibuf1 (ix `rem` len1) a
       when (len2 /= 0) $ setArr ibuf2 (ix `rem` len2) b
       out <- withArray ibuf1 (\ib1 ->
@@ -490,6 +463,10 @@ recurrenceIIO i1 (Stream next1 init1) i2 (Stream next2 init2) io mkExpr
               setArr obuf (ix `rem` lenO) out
               return o)
           (return out)
+  where
+    len1 = length i1
+    len2 = length i2
+    lenO = length io
 
 slidingAvg :: Data WordN -> Stream (Data WordN) -> Stream (Data WordN)
 slidingAvg n str = recurrenceI (replicate1 n 0) str
