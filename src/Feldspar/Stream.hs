@@ -77,6 +77,8 @@ data Stream a where
 type instance Elem      (Stream a) = a
 type instance CollIndex (Stream a) = Data Index
 
+loop = return
+
 -- | Take the first element of a stream
 head :: Syntax a => Stream a -> a
 head (Stream init) = runMutable (init >>= id)
@@ -86,14 +88,14 @@ tail :: Syntax a => Stream a -> Stream a
 tail (Stream init) = Stream $ do
     next <- init
     next
-    return next
+    loop next
 
 -- | The stream 'pre v s' first returns 'v' and then behaves like 's'.
 pre :: Syntax a => a -> Stream a -> Stream a
 pre v (Stream init) = Stream $ do
     next <- init
     r <- newRef v
-    return $ do
+    loop $ do
       a <- next
       b <- getRef r
       setRef r a
@@ -111,7 +113,7 @@ mapNth :: (Syntax a) =>
 mapNth f n k (Stream init) = Stream $ do
     next <- init
     r <- newRef 0
-    return $ do
+    loop $ do
       a <- next
       i <- getRef r
       setRef r ((i+1) `mod` n)
@@ -124,7 +126,7 @@ maps :: (Syntax a) =>
 maps fs (Stream init) = Stream $ do
     next <- init
     r <- newRef (0 :: Data Index)
-    return $ do
+    loop $ do
       a <- next
       i <- getRef r
       setRef r ((i+1) `mod` P.fromIntegral (P.length fs))
@@ -145,7 +147,7 @@ interleave (Stream init1) (Stream init2) = Stream $ do
     next1 <- init1
     next2 <- init2
     r <- newRef true
-    return $ do
+    loop $ do
       b <- getRef r
       setRef r (not b)
       ifM b next1 next2
@@ -154,7 +156,7 @@ interleave (Stream init1) (Stream init2) = Stream $ do
 downsample :: Syntax a => Data Index -> Stream a -> Stream a
 downsample n (Stream init) = Stream $ do
     next <- init
-    return $ do
+    loop $ do
       forM (n-1) (\_ -> next)
       next
 
@@ -165,7 +167,7 @@ duplicate n (Stream init) = Stream $ do
     a    <- next
     r1   <- newRef a
     r2   <- newRef (1 :: Data Index)
-    return $ do
+    loop $ do
         i <- getRef r2
         setRef r2 ((i+1)`mod`n)
         ifM (i==0)
@@ -181,7 +183,7 @@ scan :: Syntax a => (a -> b -> a) -> a -> Stream b -> Stream a
 scan f a (Stream init) = Stream $ do
     next <- init
     r <- newRef a
-    return $ do
+    loop $ do
       x <- next
       acc <- getRef r
       setRef r (f acc x)
@@ -193,7 +195,7 @@ scan1 f (Stream init) = Stream $ do
     next <- init
     a    <- next
     r    <- newRef a
-    return $ do
+    loop $ do
       a <- getRef r
       b <- next
       let c = f a b
@@ -206,7 +208,7 @@ mapAccum :: (Syntax acc, Syntax b) =>
 mapAccum f acc (Stream init) = Stream $ do
     next <- init
     r <- newRef acc
-    return $ do
+    loop $ do
       x <- getRef r
       a <- next
       let (acc',b) = f x a
@@ -220,7 +222,7 @@ mapAccum f acc (Stream init) = Stream $ do
 iterate :: Syntax a => (a -> a) -> a -> Stream a
 iterate f a = Stream $ do
     r <- newRef a
-    return $ do
+    loop $ do
       x <- getRef r
       setRef r (f x)
       return x
@@ -229,14 +231,14 @@ iterate f a = Stream $ do
 --
 -- @repeat a = [a, a, a, ...]@
 repeat :: a -> Stream a
-repeat a = Stream $ return $ return a
+repeat a = Stream $ loop $ return a
 
 -- | @unfold f acc@ creates a new stream by successively applying 'f' to
 --   to the accumulator 'acc'.
 unfold :: (Syntax a, Syntax c) => (c -> (a,c)) -> c -> Stream a
 unfold next init = Stream $ do
     r <- newRef init
-    return $ do
+    loop $ do
       c <- getRef r
       let (a,c') = next c
       setRef r c'
@@ -247,7 +249,7 @@ drop :: Syntax a => Data Length -> Stream a -> Stream a
 drop i (Stream init) = Stream $ do
     next <- init
     forM i (\_ -> next)
-    return next
+    loop next
 
 -- | Pairs together two streams into one.
 zip :: Stream a -> Stream b -> Stream (a,b)
@@ -259,7 +261,7 @@ zipWith :: (a -> b -> c) -> Stream a -> Stream b -> Stream c
 zipWith f (Stream init1) (Stream init2) = Stream $ do
     next1 <- init1
     next2 <- init2
-    return $ do
+    loop $ do
       a <- next1
       b <- next2
       return (f a b)
@@ -316,7 +318,7 @@ splitAt n stream = (take n stream,drop n stream)
 cycle :: Syntax a => Pull DIM1 a -> Stream a
 cycle vec = Stream $ do
     c <- newRef (0 :: Data Index)
-    return $ do
+    loop $ do
       i <- getRef c
       setRef c ((i + 1) `rem` length vec)
       return (vec ! (Z :. i))
@@ -324,7 +326,7 @@ cycle vec = Stream $ do
 unsafeVectorToStream :: Syntax a => Pull DIM1 a -> Stream a
 unsafeVectorToStream vec = Stream $ do
     r <- newRef 0
-    return $ do
+    loop $ do
       i <- getRef r
       setRef r (i + 1)
       return (vec ! (Z :. i))
@@ -367,7 +369,7 @@ recurrenceO :: Type a =>
 recurrenceO initV mkExpr = Stream $ do
       buf <- thawArray (freezePull1 initV)
       r   <- newRef (0 :: Data Index)
-      return $ do
+      loop $ do
         ix <- getRef r
         setRef r (ix + 1)
         a <- withArray buf
@@ -411,7 +413,7 @@ recurrenceIO ii (Stream init) io mkExpr = Stream $ do
     obuf <- thawArray (freezePull1 io)
     next <- init
     r    <- newRef (0 :: Data Index)
-    return $ do
+    loop $ do
       ix <- getRef r
       setRef r (ix + 1)
       a <- next
@@ -444,7 +446,7 @@ recurrenceIIO i1 (Stream init1) i2 (Stream init2) io mkExpr = Stream $ do
     next2 <- init2
     obuf  <- thawArray (freezePull1 io)
     c     <- newRef (0 :: Data Index)
-    return $ do
+    loop $ do
       ix <- getRef c
       setRef c (ix + 1)
       a <- next1
