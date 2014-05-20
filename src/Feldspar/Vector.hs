@@ -254,8 +254,8 @@ reshape sh' vec
   where Pull ixf sh = toPull vec
 
 -- | A scalar (zero dimensional) vector
-unit :: a -> Pull Z a
-unit a = Pull (const a) Z
+unit :: Shapely sh => a -> Pull sh a
+unit a = Pull (const a) unitDim
 
 -- | Get the one element from a zero-dimensional vector
 fromZero :: Pully vec Z => vec Z a -> a
