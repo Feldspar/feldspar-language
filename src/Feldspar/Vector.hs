@@ -1048,10 +1048,10 @@ instance Storable Manifest where
   store m = m
 
 instance Storable Pull where
-  store vec@(Pull ixf sh) = Manifest (fromPull (fmap F.desugar vec)) (fromList (toList sh))
+  store vec@(Pull ixf sh) = Manifest (save $ fromPull (fmap F.desugar vec)) (fromList (toList sh))
 
 instance Storable Push where
-  store vec@(Push f sh) = Manifest (fromPush (fmap F.desugar vec)) (fromList (toList sh))
+  store vec@(Push f sh) = Manifest (save $ fromPush (fmap F.desugar vec)) (fromList (toList sh))
 
 instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where
   type Domain   (Manifest sh a) = FeldDomain
