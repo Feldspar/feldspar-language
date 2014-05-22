@@ -242,7 +242,7 @@ slice vec sl
 --- | Change the length of the vector to the supplied value. If the supplied
 --- length is greater than the old length, the new elements will have undefined
 --- value. Useful function for patches.
-newLen1 :: Syntax a => Data Length -> Pull1 a -> Pull1 a
+newLen1 :: Data Length -> Pull1 a -> Pull1 a
 newLen1 l vec = reshape (Z :. l) vec
 
 -- | Change the shape of a vector. This function is potentially unsafe, the
