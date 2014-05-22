@@ -434,8 +434,8 @@ flatten :: forall a sh1 sh2.
            Pull (ShapeConcT sh1 sh2) a
 flatten (Pull ixf1 sh1) = Pull ixf sh
   where ixf i = let (i1,i2) = splitIndex i sh1
-  	       	    (Pull ixf2 _) = ixf1 i1
-  	       	in ixf2 i2
+                    (Pull ixf2 _) = ixf1 i1
+                in ixf2 i2
         sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh1
                  (Pull _ sh2) = ixf1 i1
              in shapeConc sh1 sh2
@@ -950,7 +950,7 @@ instance Pushy Push sh where
 instance Pushy Pull sh where
   toPush (Pull ixf l) = Push f l
     where f k = forShape l $ \i ->
-    	    	  k i (ixf i)
+                 k i (ixf i)
 
 -- | Store a vector in memory as a flat array
 fromPush :: Type a
@@ -983,9 +983,9 @@ instance (Syntax a, Shapely sh) => Syntactic (Push sh a)
 flattenList :: Shapely sh => Pull sh [a] -> Push (sh :. Data Length) a
 flattenList (Pull ixf sh) = Push f sz
   where f k = forShape sh $ \i ->
-  	      	do let indices = fmap (\j -> i :. j) $
+               do let indices = fmap (\j -> i :. j) $
                                  fmap value [0..l-1]
-    	           zipWithM_ k indices (ixf i)
+                  zipWithM_ k indices (ixf i)
         sz  = sh :. value l
         l   = P.fromIntegral $
               P.length (ixf fakeShape)
