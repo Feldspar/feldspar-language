@@ -52,7 +52,7 @@ module Feldspar.Vector (
   -- * Overloaded functions
   Shaped(..),ShapeMap(..),
   -- * Patches
-  tVec,tVec1,
+  tVec,tVec1,tPull,tPull1,
   -- * Semiquestionable things
   scan,
   -- * Ugly hacks
@@ -1194,9 +1194,15 @@ instance ShapeMap Push where
 
 tVec :: Patch a a -> Patch (Pull sh a) (Pull sh a)
 tVec _ = id
+{-# DEPRECATED tVec "Use tPull instead" #-}
 
 tVec1 :: Patch a a -> Patch (Pull1 a) (Pull1 a)
 tVec1 _ = id
+{-# DEPRECATED tVec1 "Use tPull1 instead" #-}
 
--- tVec2 :: Patch a a -> Patch (Pull (Vector (Data a))) (Vector (Vector (Data a)))
--- tVec2 _ = id
+tPull :: Patch a a -> Patch (Pull sh a) (Pull sh a)
+tPull _ = id
+
+tPull1 :: Patch a a -> Patch (Pull1 a) (Pull1 a)
+tPull1 _ = id
+
