@@ -19,8 +19,8 @@ import Feldspar.Vector
 Scalar product:
 
 \begin{code}
-scProd :: (Syntax a, Num a) => Pull1 a -> Pull1 a -> a
-scProd a b = sum (zipWith (*) a b)
+scProd :: (Numeric a) => Pull1 a -> Pull1 a -> Data a
+scProd a b = fromZero $ sum (zipWith (*) a b)
 \end{code}
 
 Specialize the type:
