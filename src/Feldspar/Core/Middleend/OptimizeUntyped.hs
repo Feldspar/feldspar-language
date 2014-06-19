@@ -21,12 +21,12 @@ go (In (App Let _ [e1, e2@(In (Lambda x body))]))
 go (In (App Mul _ [e1, e2]))
  | (In (Literal (LInt _ _ 0))) <- e1 = e1
  | (In (Literal (LInt _ _ 0))) <- e2 = e2
- | (In (Literal (LInt _ _ 1))) <- e1 = e2
- | (In (Literal (LInt _ _ 1))) <- e2 = e1
+ | (In (Literal (LInt _ _ 1))) <- e1 = go e2
+ | (In (Literal (LInt _ _ 1))) <- e2 = go e1
 
 go (In (App Add _ [e1, e2]))
- | (In (Literal (LInt _ _ 0))) <- e1 = e2
- | (In (Literal (LInt _ _ 0))) <- e2 = e1
+ | (In (Literal (LInt _ _ 0))) <- e1 = go e2
+ | (In (Literal (LInt _ _ 0))) <- e2 = go e1
 
 -- Basic constant folder.
 go e@(In (App p _ [In (Literal l1), In (Literal l2)]))
