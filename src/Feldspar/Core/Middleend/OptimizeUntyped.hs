@@ -21,12 +21,12 @@ go (In (App Let _ [e1, e2@(In (Lambda x body))]))
 go (In (App Mul _ [e1, e2]))
  | (In (Literal (LInt _ _ 0))) <- e1 = e1
  | (In (Literal (LInt _ _ 0))) <- e2 = e2
- | (In (Literal (LInt _ _ 1))) <- e1 = e2
- | (In (Literal (LInt _ _ 1))) <- e2 = e1
+ | (In (Literal (LInt _ _ 1))) <- e1 = go e2
+ | (In (Literal (LInt _ _ 1))) <- e2 = go e1
 
 go (In (App Add _ [e1, e2]))
- | (In (Literal (LInt _ _ 0))) <- e1 = e2
- | (In (Literal (LInt _ _ 0))) <- e2 = e1
+ | (In (Literal (LInt _ _ 0))) <- e1 = go e2
+ | (In (Literal (LInt _ _ 0))) <- e2 = go e1
 
 -- Basic constant folder.
 go e@(In (App p _ [In (Literal l1), In (Literal l2)]))
@@ -50,6 +50,9 @@ go e@(In (App GetIx _ [arr, (In (Literal (LInt _ _ 0)))]))
  , (In (App Return _ [In (Variable v2)])) <- ret
  , v1 == v2
  , v1 == v3 = go e3
+
+-- save (materialize ..) => materialize ..
+go (In (App Save _ [e@(In (App EMaterialize _ _))])) = go e
 
 go (In (App p t es)) = In (App p t $ map go es)
 
