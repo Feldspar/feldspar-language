@@ -60,7 +60,7 @@ instance AlphaEq dom dom dom env => AlphaEq NoInline NoInline dom env
 
 instance Sharable NoInline
 
-instance Creases NoInline
+instance Cumulative NoInline
 
 instance SizeProp (NoInline :|| Type)
   where

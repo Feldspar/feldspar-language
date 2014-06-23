@@ -62,7 +62,7 @@ instance AlphaEq dom dom dom env => AlphaEq FFI FFI dom env
 
 instance Sharable FFI
 
-instance Creases FFI
+instance Cumulative FFI
 
 instance SizeProp (FFI :|| Type)
   where

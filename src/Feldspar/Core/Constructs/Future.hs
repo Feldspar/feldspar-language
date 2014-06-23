@@ -65,7 +65,7 @@ instance Sharable FUTURE
     hoistOver MkFuture = False
     hoistOver _        = True
 
-instance Creases FUTURE
+instance Cumulative FUTURE
 
 instance SizeProp (FUTURE :|| Type)
   where

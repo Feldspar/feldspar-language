@@ -82,7 +82,7 @@ instance AlphaEq dom dom dom env => AlphaEq MutableArray MutableArray dom env
 
 instance Sharable MutableArray
 
-instance Creases MutableArray
+instance Cumulative MutableArray
 
 instance SizeProp MutableArray
   where

@@ -96,7 +96,7 @@ instance AlphaEq dom dom dom env => AlphaEq Conversion Conversion dom env
 
 instance Sharable Conversion
 
-instance Creases Conversion
+instance Cumulative Conversion
 
 instance SizeProp (Conversion :|| Type)
   where

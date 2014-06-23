@@ -77,7 +77,7 @@ instance AlphaEq dom dom dom env => AlphaEq Mutable Mutable dom env
 
 instance Sharable (MONAD Mut)
 
-instance Creases (MONAD Mut)
+instance Cumulative (MONAD Mut)
 
 instance SizeProp (MONAD Mut)
   where
@@ -88,7 +88,7 @@ instance SizeProp (MONAD Mut)
 
 instance Sharable Mutable
 
-instance Creases Mutable
+instance Cumulative Mutable
 
 instance SizeProp Mutable
   where

@@ -51,7 +51,7 @@ import Feldspar.Core.Constructs.Binding
 
 instance Sharable Tuple
 
-instance Creases Tuple
+instance Cumulative Tuple
 
 instance SizeProp (Tuple :|| Type)
   where
@@ -332,7 +332,7 @@ instance Sharable Select
   where
     sharable _ = False
 
-instance Creases Select
+instance Cumulative Select
 
 sel1Size :: (Sel1' a ~ b) => TypeRep a -> Size a -> Size b
 sel1Size Tup2Type{} = sel1

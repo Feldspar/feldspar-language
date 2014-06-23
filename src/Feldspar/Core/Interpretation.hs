@@ -79,9 +79,9 @@ module Feldspar.Core.Interpretation
     , optimizeFeatDefault
     , prjF
     , c'
-    , Creases (..)
-    , viewIncreases
-    , viewDecreases
+    , Cumulative (..)
+    , viewCumulativeInc
+    , viewCumulativeDec
     ) where
 
 
@@ -524,57 +524,57 @@ optimizeFeatDefault opts feat args
     = constructFeat opts feat =<< mapArgsM (optimizeM opts) args
 
 
--- | The 'Creases' class captures the concept of functions that always increase or decrease their
+-- | The 'Cumulative' class captures the concept of functions that always increase or decrease their
 -- arguments (not the same as monotonicity)
-class Creases feature where
-    -- | Return the arguments which the symbol weakly increases
+class Cumulative feature where
+    -- | Return the arguments which the symbol weakly cumulativeInc
     --
-    -- prop> forAll a. [a] = increases (f a) ==> f a >= a
+    -- prop> forAll a. [a] = cumulativeInc (f a) ==> f a >= a
     --
-    increases :: feature a
+    cumulativeInc :: feature a
               -> Args (AST (Decor Info (dom :|| Typeable))) a
               -> [ASTF (Decor Info (dom :|| Typeable)) (DenResult a)]
-    increases _ _ = []
+    cumulativeInc _ _ = []
 
     -- | Return the arguments for which the symbol is monotonic decreasing
     --
-    -- prop> forAll a. [a] = decreases (f a) ==> f a <= a
+    -- prop> forAll a. [a] = cumulativeDec (f a) ==> f a <= a
     --
-    decreases :: feature a
+    cumulativeDec :: feature a
                  -> Args (AST (Decor Info (dom :|| Typeable))) a
                  -> [ASTF (Decor Info (dom :|| Typeable)) (DenResult a)]
-    decreases _ _ = []
+    cumulativeDec _ _ = []
 
-instance (Creases sub1, Creases sub2) => Creases (sub1 :+: sub2) where
-    increases (InjL a) = increases a
-    increases (InjR a) = increases a
-    decreases (InjL a) = decreases a
-    decreases (InjR a) = decreases a
+instance (Cumulative sub1, Cumulative sub2) => Cumulative (sub1 :+: sub2) where
+    cumulativeInc (InjL a) = cumulativeInc a
+    cumulativeInc (InjR a) = cumulativeInc a
+    cumulativeDec (InjL a) = cumulativeDec a
+    cumulativeDec (InjR a) = cumulativeDec a
 
-instance (Creases sym) => Creases (sym :|| pred) where
-    increases (C' s) = increases s
-    decreases (C' s) = decreases s
+instance (Cumulative sym) => Cumulative (sym :|| pred) where
+    cumulativeInc (C' s) = cumulativeInc s
+    cumulativeDec (C' s) = cumulativeDec s
 
-instance (Creases sym) => Creases (SubConstr2 c sym p1 p2) where
-    increases (SubConstr2 s) = increases s
-    decreases (SubConstr2 s) = decreases s
+instance (Cumulative sym) => Cumulative (SubConstr2 c sym p1 p2) where
+    cumulativeInc (SubConstr2 s) = cumulativeInc s
+    cumulativeDec (SubConstr2 s) = cumulativeDec s
 
-instance (Creases dom) => Creases (Decor Info dom) where
-    increases = increases . decorExpr
-    decreases = decreases . decorExpr
+instance (Cumulative dom) => Cumulative (Decor Info dom) where
+    cumulativeInc = cumulativeInc . decorExpr
+    cumulativeDec = cumulativeDec . decorExpr
 
-instance Creases Empty
+instance Cumulative Empty
 
 -- | Extract sub-expressions for which the expression is (weak) monotonic
 -- increasing
-viewIncreases :: (Creases dom)
-                 => ASTF (Decor Info (dom :|| Typeable)) a
-                 -> [ASTF (Decor Info (dom :|| Typeable)) a]
-viewIncreases = simpleMatch increases
+viewCumulativeInc :: (Cumulative dom)
+                  => ASTF (Decor Info (dom :|| Typeable)) a
+                  -> [ASTF (Decor Info (dom :|| Typeable)) a]
+viewCumulativeInc = simpleMatch cumulativeInc
 
 -- | Extract sub-expressions for which the expression is (weak) monotonic
 -- decreasing
-viewDecreases :: (Creases dom)
-                 => ASTF (Decor Info (dom :|| Typeable)) a
-                 -> [ASTF (Decor Info (dom :|| Typeable)) a]
-viewDecreases = simpleMatch decreases
+viewCumulativeDec :: (Cumulative dom)
+                  => ASTF (Decor Info (dom :|| Typeable)) a
+                  -> [ASTF (Decor Info (dom :|| Typeable)) a]
+viewCumulativeDec = simpleMatch cumulativeDec

@@ -56,7 +56,7 @@ instance AlphaEq dom dom dom env => AlphaEq ElementsFeat ElementsFeat dom env
 
 instance Sharable ElementsFeat
 
-instance Creases ElementsFeat
+instance Cumulative ElementsFeat
 
 instance SizeProp ElementsFeat
   where

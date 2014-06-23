@@ -96,7 +96,7 @@ instance AlphaEq dom dom dom env => AlphaEq FLOATING FLOATING dom env
 
 instance Sharable FLOATING
 
-instance Creases FLOATING
+instance Cumulative FLOATING
 
 instance SizeProp (FLOATING :|| Type)
   where

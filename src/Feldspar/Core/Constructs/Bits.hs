@@ -156,14 +156,14 @@ instance AlphaEq dom dom dom env => AlphaEq BITS BITS dom env
 
 instance Sharable BITS
 
-instance Creases BITS where
-    increases _ _ = []
+instance Cumulative BITS where
+    cumulativeInc _ _ = []
 
-    decreases ShiftRU (a :* b :* Nil)
+    cumulativeDec ShiftRU (a :* b :* Nil)
         | RangeSet r <- infoRange $ getInfo b
         , isNatural r
         = [a]
-    decreases _ _ = []
+    cumulativeDec _ _ = []
 
 instance SizeProp (BITS :|| Type)
   where
@@ -183,7 +183,7 @@ instance ( (BITS  :|| Type) :<: dom
          , (Logic :|| Type) :<: dom
          , (EQ    :|| Type) :<: dom
          , (ORD   :|| Type) :<: dom
-         , Creases dom
+         , Cumulative dom
          , OptimizeSuper dom
          )
       => Optimize (BITS :|| Type) dom

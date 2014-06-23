@@ -64,7 +64,7 @@ instance SizeProp (PropSize :|| Type)
 
 instance Sharable PropSize
 
-instance Creases PropSize
+instance Cumulative PropSize
 
 instance AlphaEq dom dom dom env => AlphaEq PropSize PropSize dom env
   where

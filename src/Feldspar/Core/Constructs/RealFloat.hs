@@ -33,7 +33,7 @@ instance AlphaEq dom dom dom env => AlphaEq REALFLOAT REALFLOAT dom env
 
 instance Sharable REALFLOAT
 
-instance Creases REALFLOAT
+instance Cumulative REALFLOAT
 
 instance SizeProp (REALFLOAT :|| Type)
   where

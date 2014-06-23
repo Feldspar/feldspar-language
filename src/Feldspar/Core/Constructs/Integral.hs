@@ -81,7 +81,7 @@ instance AlphaEq dom dom dom env => AlphaEq INTEGRAL INTEGRAL dom env
 
 instance Sharable INTEGRAL
 
-instance Creases INTEGRAL
+instance Cumulative INTEGRAL
 
 instance SizeProp (INTEGRAL :|| Type)
   where
@@ -99,7 +99,7 @@ instance
     , (COMPLEX :|| Type) :<: dom
     , (Condition :||Type) :<: dom
     , (Logic     :||Type) :<: dom
-    , Creases dom
+    , Cumulative dom
     , OptimizeSuper dom
     , Optimize (Condition :|| Type) dom
     ) =>
