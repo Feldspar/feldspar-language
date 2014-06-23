@@ -74,7 +74,7 @@ instance AlphaEq dom dom dom env => AlphaEq Logic Logic dom env
 
 instance Sharable Logic
 
-instance Monotonic Logic
+instance Creases Logic
 
 instance SizeProp (Logic :|| Type)
   where
@@ -83,7 +83,7 @@ instance SizeProp (Logic :|| Type)
 instance ( (Logic :|| Type) :<: dom
          , (EQ    :|| Type) :<: dom
          , (ORD   :|| Type) :<: dom
-         , Monotonic dom
+         , Creases dom
          , OptimizeSuper dom
          )
       => Optimize (Logic :|| Type) dom

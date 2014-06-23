@@ -61,7 +61,7 @@ instance AlphaEq dom dom dom env => AlphaEq Save Save dom env
 
 instance Sharable Save
 
-instance Monotonic Save
+instance Creases Save
 
 instance SizeProp (Save :|| Type)
   where

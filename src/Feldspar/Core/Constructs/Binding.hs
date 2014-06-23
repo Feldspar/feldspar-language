@@ -72,9 +72,9 @@ instance Sharable Variable  -- `codeMotion` will not share variables anyway
 instance Sharable Lambda    -- Will not be shared anyway because we disallow variables of `->` type
 instance Sharable Let
 
-instance Monotonic Variable
-instance Monotonic Lambda
-instance Monotonic Let
+instance Creases Variable
+instance Creases Lambda
+instance Creases Let
 
 subst :: forall dom a b
     .  ( Constrained dom

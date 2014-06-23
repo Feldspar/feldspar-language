@@ -79,9 +79,9 @@ module Feldspar.Core.Interpretation
     , optimizeFeatDefault
     , prjF
     , c'
-    , Monotonic (..)
-    , viewMonotonicInc
-    , viewMonotonicDec
+    , Creases (..)
+    , viewIncreases
+    , viewDecreases
     ) where
 
 
@@ -524,56 +524,57 @@ optimizeFeatDefault opts feat args
     = constructFeat opts feat =<< mapArgsM (optimizeM opts) args
 
 
--- | The 'Monotonic' class represents (weak) monotonicity
-class Monotonic feature where
-    -- | Return the arguments for which the symbol is monotonic increasing
+-- | The 'Creases' class captures the concept of functions that always increase or decrease their
+-- arguments (not the same as monotonicity)
+class Creases feature where
+    -- | Return the arguments which the symbol weakly increases
     --
-    -- prop> forAll a. [a] = monotonicInc (f a) ==> f a >= a
+    -- prop> forAll a. [a] = increases (f a) ==> f a >= a
     --
-    monotonicInc :: feature a
-                 -> Args (AST (Decor Info (dom :|| Typeable))) a
-                 -> [ASTF (Decor Info (dom :|| Typeable)) (DenResult a)]
-    monotonicInc _ _ = []
+    increases :: feature a
+              -> Args (AST (Decor Info (dom :|| Typeable))) a
+              -> [ASTF (Decor Info (dom :|| Typeable)) (DenResult a)]
+    increases _ _ = []
 
     -- | Return the arguments for which the symbol is monotonic decreasing
     --
-    -- prop> forAll a. [a] = monotonicDec (f a) ==> f a <= a
+    -- prop> forAll a. [a] = decreases (f a) ==> f a <= a
     --
-    monotonicDec :: feature a
+    decreases :: feature a
                  -> Args (AST (Decor Info (dom :|| Typeable))) a
                  -> [ASTF (Decor Info (dom :|| Typeable)) (DenResult a)]
-    monotonicDec _ _ = []
+    decreases _ _ = []
 
-instance (Monotonic sub1, Monotonic sub2) => Monotonic (sub1 :+: sub2) where
-    monotonicInc (InjL a) = monotonicInc a
-    monotonicInc (InjR a) = monotonicInc a
-    monotonicDec (InjL a) = monotonicDec a
-    monotonicDec (InjR a) = monotonicDec a
+instance (Creases sub1, Creases sub2) => Creases (sub1 :+: sub2) where
+    increases (InjL a) = increases a
+    increases (InjR a) = increases a
+    decreases (InjL a) = decreases a
+    decreases (InjR a) = decreases a
 
-instance (Monotonic sym) => Monotonic (sym :|| pred) where
-    monotonicInc (C' s) = monotonicInc s
-    monotonicDec (C' s) = monotonicDec s
+instance (Creases sym) => Creases (sym :|| pred) where
+    increases (C' s) = increases s
+    decreases (C' s) = decreases s
 
-instance (Monotonic sym) => Monotonic (SubConstr2 c sym p1 p2) where
-    monotonicInc (SubConstr2 s) = monotonicInc s
-    monotonicDec (SubConstr2 s) = monotonicDec s
+instance (Creases sym) => Creases (SubConstr2 c sym p1 p2) where
+    increases (SubConstr2 s) = increases s
+    decreases (SubConstr2 s) = decreases s
 
-instance (Monotonic dom) => Monotonic (Decor Info dom) where
-    monotonicInc = monotonicInc . decorExpr
-    monotonicDec = monotonicDec . decorExpr
+instance (Creases dom) => Creases (Decor Info dom) where
+    increases = increases . decorExpr
+    decreases = decreases . decorExpr
 
-instance Monotonic Empty
+instance Creases Empty
 
 -- | Extract sub-expressions for which the expression is (weak) monotonic
 -- increasing
-viewMonotonicInc :: (Monotonic dom)
+viewIncreases :: (Creases dom)
                  => ASTF (Decor Info (dom :|| Typeable)) a
                  -> [ASTF (Decor Info (dom :|| Typeable)) a]
-viewMonotonicInc = simpleMatch monotonicInc
+viewIncreases = simpleMatch increases
 
 -- | Extract sub-expressions for which the expression is (weak) monotonic
 -- decreasing
-viewMonotonicDec :: (Monotonic dom)
+viewDecreases :: (Creases dom)
                  => ASTF (Decor Info (dom :|| Typeable)) a
                  -> [ASTF (Decor Info (dom :|| Typeable)) a]
-viewMonotonicDec = simpleMatch monotonicDec
+viewDecreases = simpleMatch decreases

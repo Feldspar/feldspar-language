@@ -156,14 +156,14 @@ instance AlphaEq dom dom dom env => AlphaEq BITS BITS dom env
 
 instance Sharable BITS
 
-instance Monotonic BITS where
-    monotonicInc _ _ = []
+instance Creases BITS where
+    increases _ _ = []
 
-    monotonicDec ShiftRU (a :* b :* Nil)
+    decreases ShiftRU (a :* b :* Nil)
         | RangeSet r <- infoRange $ getInfo b
         , isNatural r
         = [a]
-    monotonicDec _ _ = []
+    decreases _ _ = []
 
 instance SizeProp (BITS :|| Type)
   where
@@ -183,7 +183,7 @@ instance ( (BITS  :|| Type) :<: dom
          , (Logic :|| Type) :<: dom
          , (EQ    :|| Type) :<: dom
          , (ORD   :|| Type) :<: dom
-         , Monotonic dom
+         , Creases dom
          , OptimizeSuper dom
          )
       => Optimize (BITS :|| Type) dom

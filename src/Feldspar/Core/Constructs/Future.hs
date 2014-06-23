@@ -65,7 +65,7 @@ instance Sharable FUTURE
     hoistOver MkFuture = False
     hoistOver _        = True
 
-instance Monotonic FUTURE
+instance Creases FUTURE
 
 instance SizeProp (FUTURE :|| Type)
   where

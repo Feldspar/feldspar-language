@@ -77,7 +77,7 @@ instance AlphaEq dom dom dom env => AlphaEq COMPLEX COMPLEX dom env
 
 instance Sharable COMPLEX
 
-instance Monotonic COMPLEX
+instance Creases COMPLEX
 
 instance SizeProp (COMPLEX :|| Type)
   where

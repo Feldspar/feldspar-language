@@ -89,7 +89,7 @@ instance AlphaEq dom dom dom env => AlphaEq MutableToPure MutableToPure dom env
 
 instance Sharable MutableToPure
 
-instance Monotonic MutableToPure
+instance Creases MutableToPure
 
 instance SizeProp MutableToPure
   where

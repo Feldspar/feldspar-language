@@ -84,7 +84,7 @@ instance AlphaEq dom dom dom env => AlphaEq NUM NUM dom env
 
 instance Sharable NUM
 
-instance Monotonic NUM
+instance Creases NUM
 
 instance SizeProp (NUM :|| Type)
   where
@@ -95,7 +95,7 @@ instance SizeProp (NUM :|| Type)
     sizeProp (C' Mul)  (WrapFull a :* WrapFull b :* Nil) = infoSize a * infoSize b
 
 
-instance ( Monotonic dom
+instance ( Creases dom
          , (NUM      :|| Type) :<: dom
          , (ORD      :|| Type) :<: dom
          , (EQ       :|| Type) :<: dom

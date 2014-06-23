@@ -82,9 +82,9 @@ instance Sharable ParFeature
 
 instance Sharable (MONAD Par)
 
-instance Monotonic ParFeature
+instance Creases ParFeature
 
-instance Monotonic (MONAD Par)
+instance Creases (MONAD Par)
 
 instance SizeProp ParFeature
   where

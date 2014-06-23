@@ -62,7 +62,7 @@ instance StringTree Error
 instance Eval       Error where evaluate = evaluateDefault
 instance EvalBind   Error where evalBindSym = evalBindSymDefault
 instance Sharable   Error
-instance Monotonic  Error
+instance Creases  Error
 
 instance SizeProp (Error :|| Type)
   where

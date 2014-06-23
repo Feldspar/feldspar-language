@@ -109,7 +109,7 @@ instance AlphaEq dom dom dom env => AlphaEq Array Array dom env
 
 instance Sharable Array
 
-instance Monotonic Array
+instance Creases Array
 
 instance SizeProp (Array :|| Type)
   where
@@ -138,7 +138,7 @@ instance SizeProp (Array :|| Type)
         _ :> el = infoSize arr
 
 instance
-    ( Monotonic dom
+    ( Creases dom
     , (Array    :|| Type) :<: dom
     , (BITS     :|| Type) :<: dom
     , (EQ       :|| Type) :<: dom
