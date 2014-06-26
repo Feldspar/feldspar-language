@@ -33,6 +33,7 @@ source-repository head
 
 library
   exposed-modules:
+    Feldspar
     Feldspar.Prelude
     Feldspar.Lattice
     Feldspar.Range
@@ -107,7 +108,6 @@ library
     Feldspar.Core.Frontend
     Feldspar.Core.Collection
     Feldspar.Core
-    Feldspar
     Feldspar.BitVector
     Feldspar.FixedPoint
     Feldspar.Future
