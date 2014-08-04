@@ -12,7 +12,7 @@ go (In (Lambda v e)) = In (Lambda v (go e))
 go (In (LetFun (s, f, e1) e2)) = In (LetFun (s, f, go e1) (go e2))
 go l@(In Literal{}) = l
 
-go (In (App Let _ [e1, e2@(In (Lambda x body))]))
+go (In (App Let _ [e1, In (Lambda x body)]))
  | (In Variable{}) <- e1 -- let x = y in e ==> [y/x]e
  = go $ subst e1 x body
  | linear x body
@@ -34,7 +34,7 @@ go e@(In (App p _ [In (Literal l1), In (Literal l2)]))
   = constFold e p l1 l2
 
 -- For 1 (\v -> body) ==> [0/v]body
-go (In (App p _ [(In (Literal (LInt s sz 1))), e2@(In (Lambda v body))]))
+go (In (App p _ [In (Literal (LInt s sz 1)), In (Lambda v body)]))
   | p `elem` [For, EparFor]
   = go $ subst (In (Literal (LInt s sz 0))) v body
 
@@ -42,7 +42,7 @@ go (In (App p _ [(In (Literal (LInt s sz 1))), e2@(In (Lambda v body))]))
 -- element. Can e seen in the metrics test in feldspar-compiler.
 -- (RunMutableArray (Bind (NewArr_ 1)
 --                        (\v3 -> Then (SetArr v3 0 e3) (Return v3)))) ! 0
-go e@(In (App GetIx _ [arr, (In (Literal (LInt _ _ 0)))]))
+go (In (App GetIx _ [arr, In (Literal (LInt _ _ 0))]))
  | (In (App RunMutableArray _ [In (App Bind _ [In (App NewArr_ _ [l]), e'])])) <- arr
  , (In (Literal (LInt _ _ 1))) <- l
  , (In (Lambda v1 (In (App Then _  [sarr, ret])))) <- e'
