@@ -62,7 +62,9 @@ linear v e = count v e <= 1
 -- | Occurence counter. Cares about dynamic behavior, so loops count as a lot.
 count :: Var -> UntypedFeld -> Integer
 count v (In (Variable v')) = if v == v' then 1 else 0
-count v (In (Lambda v' _)) = if v == v' then 0 else 100 -- Probably inside loop.
+count v e@(In (Lambda v' _))
+  | v == v' || v `notElem` fv e = 0
+  | otherwise                  = 100 -- Possibly inside loop
 count v (In (LetFun (_, _, e1) e2)) = count v e1 + count v e2
 count _ (In Literal{}) = 0
 count v (In (App Let _ [e1, In (Lambda x body)]))
