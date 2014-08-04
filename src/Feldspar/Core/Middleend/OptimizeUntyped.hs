@@ -51,11 +51,8 @@ go e@(In (App GetIx _ [arr, (In (Literal (LInt _ _ 0)))]))
  , v1 == v2
  , v1 == v3 = go e3
 
--- save (materialize ..) => materialize ..
-go (In (App Save _ [e@(In (App EMaterialize _ _))])) = go e
-
--- Let (Save e1) e2 => Let e1 e2
-go (In (App Let t [In (App Save _ [e1]), e2])) = go (In (App Let t [e1, e2]))
+-- The optimizer does not duplicate expressions. Rewrite save e => e.
+go (In (App Save _ [e])) = go e
 
 go (In (App p t es)) = In (App p t $ map go es)
 
