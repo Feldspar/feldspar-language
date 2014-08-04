@@ -440,13 +440,14 @@ instance (Show e) => Show (UntypedFeldF e) where
                                       show e2 ++ ")"
    show (App p _ [e1, e2])
     | p `elem` [Bind, Let, EPar]    = show p ++ " (" ++ show e1 ++ ") " ++ show e2
-   show (App (ForeignImport s) _ es)= s ++ " " ++ (intercalate " " $ map show es)
+   show (App (ForeignImport s) _ es)= s ++ " " ++ unwords (map show es)
    show (App p _ es)
-    | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7]
+    | p `elem` [ Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10, Tup11
+               , Tup12, Tup13, Tup14, Tup15]
     = "("   ++ intercalate ", " (map show es) ++ ")"
    show (App p@Parallel _ [e1,e2]) = show p ++ " (" ++ show e1 ++ ") " ++ show e2
    show (App p@Sequential _ [e1,e2,e3]) = show p ++ " (" ++ show e1 ++ ") (" ++ show e2 ++ ") " ++ show e3
-   show (App p _ es)                = show p ++ " " ++ (intercalate " " $ map show es)
+   show (App p _ es)                = show p ++ " " ++ unwords (map show es)
 
 class HasType a where
     type TypeOf a
