@@ -4,7 +4,7 @@ import Feldspar.Core.UntypedRepresentation
 
 -- | General simplification. Could in theory be done at earlier stages.
 optimize :: UntypedFeld -> UntypedFeld
-optimize = go
+optimize = go . go
 
 go :: UntypedFeld -> UntypedFeld
 go e@(In Variable{}) = e
@@ -50,6 +50,11 @@ go (In (App GetIx _ [arr, In (Literal (LInt _ _ 0))]))
  , (In (App Return _ [In (Variable v2)])) <- ret
  , v1 == v2
  , v1 == v3 = go e3
+
+-- Same rule as previous rule but with Elements as backing write.
+go (In (App GetIx _ [arr, In (Literal (LInt _ _ n))]))
+ | In (App EMaterialize _ [In Literal{}, e@(In (App EPar _ _))]) <- arr
+ , Just e3 <- grabWrite n e = go e3
 
 -- Tuple selections, 1..15. Deliberately avoiding take 1 . drop k which will
 -- result in funny things with broken input.
@@ -142,3 +147,13 @@ constFold _ Add (LInt sz n n1) (LInt _ _ n2) = In (Literal (LInt sz n (n1 + n2))
 constFold _ Sub (LInt sz n n1) (LInt _ _ n2) = In (Literal (LInt sz n (n1 - n2)))
 constFold _ Mul (LInt sz n n1) (LInt _ _ n2) = In (Literal (LInt sz n (n1 * n2)))
 constFold e _ _ _ = e
+
+-- | Scan an Epar/Ewrite-nest and return the element written to a position.
+grabWrite :: Integer -> UntypedFeld -> Maybe UntypedFeld
+grabWrite n (In (App EPar _ [e1,e2]))
+ | Nothing <- r1 = grabWrite n e2
+ | otherwise = r1
+   where r1 = grabWrite n e1
+grabWrite n (In (App EWrite _ [In (Literal (LInt _ _ k)), e]))
+ | k == n = Just e
+grabWrite _ _ = Nothing
