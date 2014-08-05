@@ -51,9 +51,6 @@ go (In (App GetIx _ [arr, In (Literal (LInt _ _ 0))]))
  , v1 == v2
  , v1 == v3 = go e3
 
--- The optimizer does not duplicate expressions. Rewrite save e => e.
-go (In (App Save _ [e])) = go e
-
 -- Tuple selections, 1..15. Deliberately avoiding take 1 . drop k which will
 -- result in funny things with broken input.
 go (In (App Sel1 _ [In (App p _ (e:_))]))

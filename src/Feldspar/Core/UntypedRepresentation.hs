@@ -358,8 +358,7 @@ data Op =
    | Max
    -- RealFloat
    | Atan2
-   -- Save
-   | Save
+   -- Save is an artificial node for the frontend, but we're beyond that now.
    -- SizeProp
    | PropSize
    -- SourceInfo

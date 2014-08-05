@@ -667,9 +667,7 @@ instance Untype dom dom => Untype (REALFLOAT  :|| Type) dom
 
 instance Untype dom dom => Untype (Save :|| Type) dom
   where
-    untypeProgSym (C' Save) info (a :* Nil)
-        = In (Ut.App Ut.Save t' [untypeProg a])
-          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym (C' Save) info (a :* Nil) = untypeProg a
 
 instance Untype dom dom => Untype (PropSize :|| Type) dom
   where
