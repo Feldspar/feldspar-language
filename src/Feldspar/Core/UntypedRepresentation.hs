@@ -7,7 +7,7 @@
 
 module Feldspar.Core.UntypedRepresentation (
     Term(..)
-  , UntypedFeld(..)
+  , UntypedFeld
   , UntypedFeldF(..)
   , Op(..)
   , Type(..)
@@ -505,19 +505,19 @@ fvU' vs (In (App _ _ es))                = concatMap (fvU' vs) es
 
 -- | Collect nested let binders into the binders and the body.
 collectLetBinders :: UntypedFeld -> ([(Var, UntypedFeld)], UntypedFeld)
-collectLetBinders e = go e []
-  where go (In (App Let _ [e, In (Lambda v b)])) acc = go b ((v, e):acc)
-        go e                                     acc = (reverse acc, e)
+collectLetBinders = go []
+  where go acc (In (App Let _ [e, In (Lambda v b)])) = go ((v, e):acc) b
+        go acc e                                     = (reverse acc, e)
 
 -- | Collect binders from nested lambda expressions.
 collectBinders :: UntypedFeld -> ([Var], UntypedFeld)
-collectBinders e = go [] e
+collectBinders = go []
   where go acc (In (Lambda v e)) = go (v:acc) e
         go acc e                 = (reverse acc, e)
 
 -- | Inverse of collectLetBinders, put the term back together.
 mkLets :: ([(Var, UntypedFeld)], UntypedFeld) -> UntypedFeld
-mkLets ([], body)        = body
+mkLets ([], body)       = body
 mkLets ((v, e):t, body) = In (App Let t' [e, body'])
   where body' = In (Lambda v (mkLets (t, body)))
         t'    = typeof body'
@@ -533,7 +533,7 @@ mkApp t p es = In (App p t es)
 
 -- | Substitute new for dst in e. Assumes no shadowing.
 subst :: UntypedFeld -> Var -> UntypedFeld -> UntypedFeld
-subst new dst e = go e
+subst new dst = go
   where go v@(In (Variable v')) | dst == v' = new -- Replace.
                                 | otherwise = v -- Stop.
         go l@(In (Lambda v e')) | v == dst  = l -- Stop.

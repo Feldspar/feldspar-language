@@ -186,7 +186,7 @@ intersections = foldr (/\) top
 -- | Generalization of 'fixedPoint' to functions whose argument and result
 -- contain (i.e has a lens to) a common lattice
 lensedFixedPoint :: Lattice lat =>
-    Lens a lat -> Lens b lat -> (a -> b) -> (a -> b)
+    Lens a lat -> Lens b lat -> (a -> b) -> a -> b
 lensedFixedPoint aLens bLens f a
     | aLat == bLat = (bLens ^= aLat) b
     | otherwise    = lensedFixedPoint aLens bLens f a'
@@ -199,7 +199,7 @@ lensedFixedPoint aLens bLens f a
 -- | Generalization of 'indexedFixedPoint' to functions whose argument and
 -- result contain (i.e has a lens to) a common lattice
 lensedIndexedFixedPoint :: Lattice lat =>
-    Lens a lat -> Lens b lat -> (Int -> a -> b) -> (a -> (b,Int))
+    Lens a lat -> Lens b lat -> (Int -> a -> b) -> a -> (b,Int)
 lensedIndexedFixedPoint aLens bLens f = go 0
   where
     go i a
@@ -228,7 +228,7 @@ indexedFixedPoint = lensedIndexedFixedPoint (iso id id) (iso id id)
 --   function that is subject to fixed point analysis. A widening
 --   operator introduces approximations in order to guarantee (fast)
 --   termination of the fixed point analysis.
-type Widening a = (Int -> a -> a) -> (Int -> a -> a)
+type Widening a = (Int -> a -> a) -> Int -> a -> a
 
 -- | A widening operator which defaults to 'top' when the number of
 --   iterations goes over the specified value.
@@ -240,7 +240,7 @@ cutOffAt n f i a | i >= n    = top
 -- iteration regardless of the provided bound (in order to return something of
 -- the right type).
 boundedLensedFixedPoint :: Lattice lat =>
-    Int -> Lens a lat -> Lens b lat -> (a -> b) -> (a -> (b,Int))
+    Int -> Lens a lat -> Lens b lat -> (a -> b) -> a -> (b,Int)
 boundedLensedFixedPoint n aLens bLens f = go 0
   where
     go i a

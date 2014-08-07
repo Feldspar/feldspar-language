@@ -98,7 +98,7 @@ unsigned = fromIntegral
 --   @handleSign propU propS@ chooses @propU@ for unsigned types and
 --   @propS@ for signed types.
 handleSign :: forall a b . BoundedInt a =>
-    (Range a -> b) -> (Range a -> b) -> (Range a -> b)
+    (Range a -> b) -> (Range a -> b) -> Range a -> b
 handleSign u s
     | isSigned (undefined::a) = s
     | otherwise               = u
@@ -213,12 +213,12 @@ inRange a r = singletonRange a `isSubRangeOf` r
 
 -- | A convenience function for defining range propagation. If the input
 --   range is empty then the result is also empty.
-rangeOp :: BoundedInt a => (Range a -> Range a) -> (Range a -> Range a)
+rangeOp :: BoundedInt a => (Range a -> Range a) -> Range a -> Range a
 rangeOp f r = if isEmpty r then r else f r
 
 -- | See 'rangeOp'.
 rangeOp2 :: BoundedInt a =>
-    (Range a -> Range a -> Range a) -> (Range a -> Range a -> Range a)
+    (Range a -> Range a -> Range a) -> Range a -> Range a -> Range a
 rangeOp2 f r1 r2
   | isEmpty r1 = r1
   | isEmpty r2 = r2
@@ -229,7 +229,7 @@ rangeUnion :: BoundedInt a => Range a -> Range a -> Range a
 r1 `rangeUnion` r2
     | isEmpty r1 = r2
     | isEmpty r2 = r1
-    | otherwise  = union r1 r2
+    | otherwise  = r1 `union` r2
   where
     union (Range l1 u1) (Range l2 u2) = Range (min l1 l2) (max u1 u2)
 

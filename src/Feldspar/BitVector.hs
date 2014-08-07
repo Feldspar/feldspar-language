@@ -317,11 +317,11 @@ boolFun2 f c =
         ? ( f false true
             ? ( f false false
                 ? (c $ \_ _ -> complement 0)
-                $ (c $ (.|.))
+                $ (c (.|.))
               )
             $ ( f false false
                 ? (c $ \x y -> x .|. complement y)
-                $ (c $ \x _ -> x)
+                $ (c const)
               )
           )
         $ ( f false true
@@ -331,7 +331,7 @@ boolFun2 f c =
               )
             $ ( f false false
                 ? (c $ \x y -> complement (x `xor` y))
-                $ (c $ (.&.))
+                $ (c (.&.))
               )
           )
       )

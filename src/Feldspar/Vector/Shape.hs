@@ -87,8 +87,8 @@ instance Shapely Z where
 instance Shapely sh => Shapely (sh :. Data Length) where
   zeroDim   = zeroDim   :. 0
   unitDim   = unitDim   :. 1
-  fakeShape = fakeShape :. (P.error "You shall not inspect the syntax tree!")
-  toShape i arr = toShape (i+1) arr :. (arr ! (P.fromIntegral i))
+  fakeShape = fakeShape :. P.error "You shall not inspect the syntax tree!"
+  toShape i arr = toShape (i+1) arr :. (arr ! P.fromIntegral i)
 
 -- KFFs extensions
 

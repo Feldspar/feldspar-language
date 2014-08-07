@@ -350,7 +350,7 @@ sel1Size Tup13Type{} = sel1
 sel1Size Tup14Type{} = sel1
 sel1Size Tup15Type{} = sel1
 
-sel2Size :: (Sel2' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel2Size :: (Sel2' a ~ b) => TypeRep a -> Size a -> Size b
 sel2Size Tup2Type{} = sel2
 sel2Size Tup3Type{} = sel2
 sel2Size Tup4Type{} = sel2
@@ -366,7 +366,7 @@ sel2Size Tup13Type{} = sel2
 sel2Size Tup14Type{} = sel2
 sel2Size Tup15Type{} = sel2
 
-sel3Size :: (Sel3' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel3Size :: (Sel3' a ~ b) => TypeRep a -> Size a -> Size b
 sel3Size Tup3Type{} = sel3
 sel3Size Tup4Type{} = sel3
 sel3Size Tup5Type{} = sel3
@@ -381,7 +381,7 @@ sel3Size Tup13Type{} = sel3
 sel3Size Tup14Type{} = sel3
 sel3Size Tup15Type{} = sel3
 
-sel4Size :: (Sel4' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel4Size :: (Sel4' a ~ b) => TypeRep a -> Size a -> Size b
 sel4Size Tup4Type{} = sel4
 sel4Size Tup5Type{} = sel4
 sel4Size Tup6Type{} = sel4
@@ -395,7 +395,7 @@ sel4Size Tup13Type{} = sel4
 sel4Size Tup14Type{} = sel4
 sel4Size Tup15Type{} = sel4
 
-sel5Size :: (Sel5' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel5Size :: (Sel5' a ~ b) => TypeRep a -> Size a -> Size b
 sel5Size Tup5Type{} = sel5
 sel5Size Tup6Type{} = sel5
 sel5Size Tup7Type{} = sel5
@@ -408,7 +408,7 @@ sel5Size Tup13Type{} = sel5
 sel5Size Tup14Type{} = sel5
 sel5Size Tup15Type{} = sel5
 
-sel6Size :: (Sel6' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel6Size :: (Sel6' a ~ b) => TypeRep a -> Size a -> Size b
 sel6Size Tup6Type{} = sel6
 sel6Size Tup7Type{} = sel6
 sel6Size Tup8Type{} = sel6
@@ -420,7 +420,7 @@ sel6Size Tup13Type{} = sel6
 sel6Size Tup14Type{} = sel6
 sel6Size Tup15Type{} = sel6
 
-sel7Size :: (Sel7' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel7Size :: (Sel7' a ~ b) => TypeRep a -> Size a -> Size b
 sel7Size Tup7Type{} = sel7
 sel7Size Tup8Type{} = sel7
 sel7Size Tup9Type{} = sel7
@@ -431,7 +431,7 @@ sel7Size Tup13Type{} = sel7
 sel7Size Tup14Type{} = sel7
 sel7Size Tup15Type{} = sel7
 
-sel8Size :: (Sel8' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel8Size :: (Sel8' a ~ b) => TypeRep a -> Size a -> Size b
 sel8Size Tup8Type{} = sel8
 sel8Size Tup9Type{} = sel8
 sel8Size Tup10Type{} = sel8
@@ -441,7 +441,7 @@ sel8Size Tup13Type{} = sel8
 sel8Size Tup14Type{} = sel8
 sel8Size Tup15Type{} = sel8
 
-sel9Size :: (Sel9' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel9Size :: (Sel9' a ~ b) => TypeRep a -> Size a -> Size b
 sel9Size Tup9Type{} = sel9
 sel9Size Tup10Type{} = sel9
 sel9Size Tup11Type{} = sel9
@@ -450,7 +450,7 @@ sel9Size Tup13Type{} = sel9
 sel9Size Tup14Type{} = sel9
 sel9Size Tup15Type{} = sel9
 
-sel10Size :: (Sel10' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel10Size :: (Sel10' a ~ b) => TypeRep a -> Size a -> Size b
 sel10Size Tup10Type{} = sel10
 sel10Size Tup11Type{} = sel10
 sel10Size Tup12Type{} = sel10
@@ -458,29 +458,29 @@ sel10Size Tup13Type{} = sel10
 sel10Size Tup14Type{} = sel10
 sel10Size Tup15Type{} = sel10
 
-sel11Size :: (Sel11' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel11Size :: (Sel11' a ~ b) => TypeRep a -> Size a -> Size b
 sel11Size Tup11Type{} = sel11
 sel11Size Tup12Type{} = sel11
 sel11Size Tup13Type{} = sel11
 sel11Size Tup14Type{} = sel11
 sel11Size Tup15Type{} = sel11
 
-sel12Size :: (Sel12' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel12Size :: (Sel12' a ~ b) => TypeRep a -> Size a -> Size b
 sel12Size Tup12Type{} = sel12
 sel12Size Tup13Type{} = sel12
 sel12Size Tup14Type{} = sel12
 sel12Size Tup15Type{} = sel12
 
-sel13Size :: (Sel13' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel13Size :: (Sel13' a ~ b) => TypeRep a -> Size a -> Size b
 sel13Size Tup13Type{} = sel13
 sel13Size Tup14Type{} = sel13
 sel13Size Tup15Type{} = sel13
 
-sel14Size :: (Sel14' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel14Size :: (Sel14' a ~ b) => TypeRep a -> Size a -> Size b
 sel14Size Tup14Type{} = sel14
 sel14Size Tup15Type{} = sel14
 
-sel15Size :: (Sel15' a ~ b) => TypeRep a -> (Size a -> Size b)
+sel15Size :: (Sel15' a ~ b) => TypeRep a -> Size a -> Size b
 sel15Size Tup15Type{} = sel15
 
 instance SizeProp (Select :|| Type)

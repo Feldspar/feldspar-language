@@ -115,10 +115,10 @@ instance Semantic BITS
     semantics BitScan       = Sem "bitScan"  evalBitScan
     semantics BitCount      = Sem "bitCount" evalBitCount
 
-liftIntWord :: (a -> Int -> b) -> (a -> WordN -> b)
+liftIntWord :: (a -> Int -> b) -> a -> WordN -> b
 liftIntWord f x = f x . fromIntegral
 
-liftInt :: (a -> Int -> b) -> (a -> IntN -> b)
+liftInt :: (a -> Int -> b) -> a -> IntN -> b
 liftInt f x = f x . fromIntegral
 
 evalReverseBits :: (Num b, FiniteBits b) => b -> b
