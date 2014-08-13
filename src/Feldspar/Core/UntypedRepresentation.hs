@@ -467,15 +467,45 @@ instance HasType Lit where
     typeof (LComplex r _) = ComplexType $ typeof r
     typeof (LTup2 l1 l2) = Tup2Type (typeof l1) (typeof l2)
     typeof (LTup3 l1 l2 l3) = Tup3Type (typeof l1) (typeof l2) (typeof l3)
-    typeof (LTup4 l1 l2 l3 l4) = Tup4Type (typeof l1) (typeof l2) (typeof l3)
-                                          (typeof l4)
-    typeof (LTup5 l1 l2 l3 l4 l5) = Tup5Type (typeof l1) (typeof l2) (typeof l3)
-                                             (typeof l4) (typeof l5)
-    typeof (LTup6 l1 l2 l3 l4 l5 l6) = Tup6Type (typeof l1) (typeof l2) (typeof l3)
-                                                (typeof l4) (typeof l5) (typeof l6)
-    typeof (LTup7 l1 l2 l3 l4 l5 l6 l7) = Tup7Type (typeof l1) (typeof l2) (typeof l3)
-                                                   (typeof l4) (typeof l5) (typeof l6)
-                                                   (typeof l7)
+    typeof (LTup4 l1 l2 l3 l4)
+      = Tup4Type (typeof l1) (typeof l2) (typeof l3) (typeof l4)
+    typeof (LTup5 l1 l2 l3 l4 l5)
+      = Tup5Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+    typeof (LTup6 l1 l2 l3 l4 l5 l6)
+      = Tup6Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                 (typeof l6)
+    typeof (LTup7 l1 l2 l3 l4 l5 l6 l7)
+      = Tup7Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                 (typeof l6) (typeof l7)
+    typeof (LTup8 l1 l2 l3 l4 l5 l6 l7 l8)
+      = Tup8Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                 (typeof l6) (typeof l7) (typeof l8)
+    typeof (LTup9 l1 l2 l3 l4 l5 l6 l7 l8 l9)
+      = Tup9Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                 (typeof l6) (typeof l7) (typeof l8) (typeof l9)
+    typeof (LTup10 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10)
+      = Tup10Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+    typeof (LTup11 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11)
+      = Tup11Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+                  (typeof l11)
+    typeof (LTup12 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12)
+      = Tup12Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+                  (typeof l11) (typeof l12)
+    typeof (LTup13 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13)
+      = Tup13Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+                  (typeof l11) (typeof l12) (typeof l13)
+    typeof (LTup14 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14)
+      = Tup14Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+                  (typeof l11) (typeof l12) (typeof l13) (typeof l14)
+    typeof (LTup15 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14 l15)
+      = Tup15Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+                  (typeof l11) (typeof l12) (typeof l13) (typeof l14) (typeof l15)
 
 instance HasType UntypedFeld where
     type TypeOf UntypedFeld                = Type
@@ -485,9 +515,7 @@ instance HasType UntypedFeld where
     typeof (In (LetFun _ e))               = typeof e
    -- Literal
     typeof (In (Literal l))                = typeof l
-    typeof (In (App _ t _))                 = t
-    typeof e = error ("UntypedRepresentation: Missing match of: " ++ show e)
-
+    typeof (In (App _ t _))                = t
 
 fv :: UntypedFeld -> [Var]
 fv = nub . fvU' []
