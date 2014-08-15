@@ -628,7 +628,7 @@ defaultSize (RefType ta) = defaultSize ta
 defaultSize (MArrType ta) = universal :> defaultSize ta
 defaultSize (ParType ta) = defaultSize ta
 defaultSize (ElementsType ta) = universal :> defaultSize ta
-defaultSize (MultiDimType ta) = universal :> defaultSize ta
+defaultSize (MultiDimType ta) = (universal :> universal,universal :> defaultSize ta)
 defaultSize (IVarType ta) = defaultSize ta
 defaultSize (FValType ta) = defaultSize ta
 
@@ -1423,7 +1423,7 @@ type instance Size (IORef a)       = Size a
 type instance Size (MArr a)        = Range Length :> Size a
 type instance Size (Par a)         = Size a
 type instance Size (Elements a)    = Range Length :> Size a
-type instance Size (MultiDim a)    = Range Length :> Size a
+type instance Size (MultiDim a)    = (Range Length :> Range Length, Range Length :> Size a)
 type instance Size (IV a)          = Size a
 type instance Size (FVal a)        = Size a
 

@@ -66,6 +66,7 @@ import Feldspar.Core.Constructs.Integral
 import Feldspar.Core.Constructs.Literal
 import Feldspar.Core.Constructs.Logic
 import Feldspar.Core.Constructs.Loop
+import Feldspar.Core.Constructs.MultiDim
 import Feldspar.Core.Constructs.Mutable
 import Feldspar.Core.Constructs.MutableArray
 import Feldspar.Core.Constructs.MutableReference
@@ -111,6 +112,7 @@ type FeldSymbols
     :+: (PropSize   :|| Type)
     :+: (Save       :|| Type)
     :+: (Switch     :|| Type)
+    :+: MultiDIM
     :+: Let
     :+: ConditionM Mut
     :+: LoopM Mut
