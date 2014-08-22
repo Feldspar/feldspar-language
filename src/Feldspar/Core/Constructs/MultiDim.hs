@@ -32,7 +32,7 @@ instance AlphaEq dom dom dom env => AlphaEq MultiDIM MultiDIM dom env
 
 instance Sharable MultiDIM
 
-instance Monotonic MultiDIM
+instance Cumulative MultiDIM
 
 instance SizeProp (MultiDIM :|| Type) where
   sizeProp (C' MDShape) (WrapFull md :* Nil) = len
