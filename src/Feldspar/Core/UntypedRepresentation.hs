@@ -7,7 +7,7 @@
 
 module Feldspar.Core.UntypedRepresentation (
     Term(..)
-  , UntypedFeld(..)
+  , UntypedFeld
   , UntypedFeldF(..)
   , Op(..)
   , Type(..)
@@ -53,7 +53,7 @@ data Size = S8 | S16 | S32 | S40 | S64
 data Signedness = Signed | Unsigned
     deriving (Eq,Show)
 
-data Fork = None | Future | Par
+data Fork = None | Future | Par | Loop
     deriving (Eq,Show)
 
 data Type =
@@ -358,8 +358,7 @@ data Op =
    | Max
    -- RealFloat
    | Atan2
-   -- Save
-   | Save
+   -- Save is an artificial node for the frontend, but we're beyond that now.
    -- SizeProp
    | PropSize
    -- SourceInfo
@@ -440,13 +439,14 @@ instance (Show e) => Show (UntypedFeldF e) where
                                       show e2 ++ ")"
    show (App p _ [e1, e2])
     | p `elem` [Bind, Let, EPar]    = show p ++ " (" ++ show e1 ++ ") " ++ show e2
-   show (App (ForeignImport s) _ es)= s ++ " " ++ (intercalate " " $ map show es)
+   show (App (ForeignImport s) _ es)= s ++ " " ++ unwords (map show es)
    show (App p _ es)
-    | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7]
+    | p `elem` [ Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10, Tup11
+               , Tup12, Tup13, Tup14, Tup15]
     = "("   ++ intercalate ", " (map show es) ++ ")"
    show (App p@Parallel _ [e1,e2]) = show p ++ " (" ++ show e1 ++ ") " ++ show e2
    show (App p@Sequential _ [e1,e2,e3]) = show p ++ " (" ++ show e1 ++ ") (" ++ show e2 ++ ") " ++ show e3
-   show (App p _ es)                = show p ++ " " ++ (intercalate " " $ map show es)
+   show (App p _ es)                = show p ++ " " ++ unwords (map show es)
 
 class HasType a where
     type TypeOf a
@@ -467,15 +467,45 @@ instance HasType Lit where
     typeof (LComplex r _) = ComplexType $ typeof r
     typeof (LTup2 l1 l2) = Tup2Type (typeof l1) (typeof l2)
     typeof (LTup3 l1 l2 l3) = Tup3Type (typeof l1) (typeof l2) (typeof l3)
-    typeof (LTup4 l1 l2 l3 l4) = Tup4Type (typeof l1) (typeof l2) (typeof l3)
-                                          (typeof l4)
-    typeof (LTup5 l1 l2 l3 l4 l5) = Tup5Type (typeof l1) (typeof l2) (typeof l3)
-                                             (typeof l4) (typeof l5)
-    typeof (LTup6 l1 l2 l3 l4 l5 l6) = Tup6Type (typeof l1) (typeof l2) (typeof l3)
-                                                (typeof l4) (typeof l5) (typeof l6)
-    typeof (LTup7 l1 l2 l3 l4 l5 l6 l7) = Tup7Type (typeof l1) (typeof l2) (typeof l3)
-                                                   (typeof l4) (typeof l5) (typeof l6)
-                                                   (typeof l7)
+    typeof (LTup4 l1 l2 l3 l4)
+      = Tup4Type (typeof l1) (typeof l2) (typeof l3) (typeof l4)
+    typeof (LTup5 l1 l2 l3 l4 l5)
+      = Tup5Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+    typeof (LTup6 l1 l2 l3 l4 l5 l6)
+      = Tup6Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                 (typeof l6)
+    typeof (LTup7 l1 l2 l3 l4 l5 l6 l7)
+      = Tup7Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                 (typeof l6) (typeof l7)
+    typeof (LTup8 l1 l2 l3 l4 l5 l6 l7 l8)
+      = Tup8Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                 (typeof l6) (typeof l7) (typeof l8)
+    typeof (LTup9 l1 l2 l3 l4 l5 l6 l7 l8 l9)
+      = Tup9Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                 (typeof l6) (typeof l7) (typeof l8) (typeof l9)
+    typeof (LTup10 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10)
+      = Tup10Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+    typeof (LTup11 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11)
+      = Tup11Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+                  (typeof l11)
+    typeof (LTup12 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12)
+      = Tup12Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+                  (typeof l11) (typeof l12)
+    typeof (LTup13 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13)
+      = Tup13Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+                  (typeof l11) (typeof l12) (typeof l13)
+    typeof (LTup14 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14)
+      = Tup14Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+                  (typeof l11) (typeof l12) (typeof l13) (typeof l14)
+    typeof (LTup15 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14 l15)
+      = Tup15Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
+                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
+                  (typeof l11) (typeof l12) (typeof l13) (typeof l14) (typeof l15)
 
 instance HasType UntypedFeld where
     type TypeOf UntypedFeld                = Type
@@ -485,9 +515,7 @@ instance HasType UntypedFeld where
     typeof (In (LetFun _ e))               = typeof e
    -- Literal
     typeof (In (Literal l))                = typeof l
-    typeof (In (App _ t _))                 = t
-    typeof e = error ("UntypedRepresentation: Missing match of: " ++ show e)
-
+    typeof (In (App _ t _))                = t
 
 fv :: UntypedFeld -> [Var]
 fv = nub . fvU' []
@@ -505,19 +533,19 @@ fvU' vs (In (App _ _ es))                = concatMap (fvU' vs) es
 
 -- | Collect nested let binders into the binders and the body.
 collectLetBinders :: UntypedFeld -> ([(Var, UntypedFeld)], UntypedFeld)
-collectLetBinders e = go e []
-  where go (In (App Let _ [e, In (Lambda v b)])) acc = go b ((v, e):acc)
-        go e                                     acc = (reverse acc, e)
+collectLetBinders = go []
+  where go acc (In (App Let _ [e, In (Lambda v b)])) = go ((v, e):acc) b
+        go acc e                                     = (reverse acc, e)
 
 -- | Collect binders from nested lambda expressions.
 collectBinders :: UntypedFeld -> ([Var], UntypedFeld)
-collectBinders e = go [] e
+collectBinders = go []
   where go acc (In (Lambda v e)) = go (v:acc) e
         go acc e                 = (reverse acc, e)
 
 -- | Inverse of collectLetBinders, put the term back together.
 mkLets :: ([(Var, UntypedFeld)], UntypedFeld) -> UntypedFeld
-mkLets ([], body)        = body
+mkLets ([], body)       = body
 mkLets ((v, e):t, body) = In (App Let t' [e, body'])
   where body' = In (Lambda v (mkLets (t, body)))
         t'    = typeof body'
@@ -533,7 +561,7 @@ mkApp t p es = In (App p t es)
 
 -- | Substitute new for dst in e. Assumes no shadowing.
 subst :: UntypedFeld -> Var -> UntypedFeld -> UntypedFeld
-subst new dst e = go e
+subst new dst = go
   where go v@(In (Variable v')) | dst == v' = new -- Replace.
                                 | otherwise = v -- Stop.
         go l@(In (Lambda v e')) | v == dst  = l -- Stop.

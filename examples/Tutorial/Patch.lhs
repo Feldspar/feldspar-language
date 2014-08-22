@@ -43,10 +43,10 @@ The solution is to provide a type signature for `scalarProd`:
 An alternative --- and less verbose --- way of specifying type constraints is to use *type patches* instead:
 
 \begin{code}
-test1 = printExpr $ scalarProd -:: tVec1 tFloat >-> id
+test1 = printExpr $ scalarProd -:: tPull1 tFloat >-> tPull1 tFloat >-> id
 \end{code}
 
-The part to the right of `-::` is the "patch", which is applied as a wrapper around `scalarProd`. In general, patches can change the behavior of the wrapped function, but type patches, such as the one above, only have the effect of constraining the function's type. The patch `tVec1 tFloat >-> id` is composed of two smaller patches: `tVec1 tFloat` and `id` (the identity function). The first of these is applied to the first argument and constrains its type to `Vector1 Float`. The `id` patch simply leaves the result (that is, the partially applied `scalarProd`) untouched. Thus, the whole patch can be thought of as the following *partial type signature* for `scalarProd`:
+The part to the right of `-::` is the "patch", which is applied as a wrapper around `scalarProd`. In general, patches can change the behavior of the wrapped function, but type patches, such as the one above, only have the effect of constraining the function's type. The patch `tPull1 tFloat >-> id` is composed of two smaller patches: `tPull1 tFloat` and `id` (the identity function). The first of these is applied to the first argument and constrains its type to `Vector1 Float`. The `id` patch simply leaves the result (that is, the partially applied `scalarProd`) untouched. Thus, the whole patch can be thought of as the following *partial type signature* for `scalarProd`:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.haskell}
 scalarProd :: Pull1 Float -> _  -- Not legal Haskell
@@ -61,7 +61,7 @@ In the expression printed by `test1`, we see a `min` function computing the numb
 
 \begin{code}
 test2 = printExpr $ scalarProd
-    -:: tVec1 tFloat >-> id
+    -:: tPull1 tFloat >-> tPull1 tFloat >-> id
     -:: name (\a -> id >-> newLen1 (length a) >-> id)
 \end{code}
 

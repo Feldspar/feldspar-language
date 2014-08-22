@@ -1496,4 +1496,13 @@ instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f
 instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l, Typeable m, Typeable n, Typeable o) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) where
   typeOf (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) =
      mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m, typeOf n, typeOf o ]
+#else
+deriving instance Typeable (,,,,,,,)
+deriving instance Typeable (,,,,,,,,)
+deriving instance Typeable (,,,,,,,,,)
+deriving instance Typeable (,,,,,,,,,,)
+deriving instance Typeable (,,,,,,,,,,,)
+deriving instance Typeable (,,,,,,,,,,,,)
+deriving instance Typeable (,,,,,,,,,,,,,)
+deriving instance Typeable (,,,,,,,,,,,,,,)
 #endif

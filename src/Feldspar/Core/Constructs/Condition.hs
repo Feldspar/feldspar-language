@@ -56,7 +56,7 @@ import Data.Typeable (Typeable)
 
 instance Sharable Condition
 
-instance Monotonic Condition
+instance Cumulative Condition
 
 instance SizeProp (Condition :|| Type)
   where
@@ -69,7 +69,7 @@ instance ( (Condition :|| Type) :<: dom
          , (ORD       :|| Type) :<: dom
          , (Variable  :|| Type) :<: dom
          , CLambda Type :<: dom
-         , Monotonic dom
+         , Cumulative dom
          , OptimizeSuper dom
          )
       => Optimize (Condition :|| Type) dom

@@ -36,7 +36,7 @@ instance AlphaEq dom dom dom env => AlphaEq Switch Switch dom env
 
 instance Sharable Switch
 
-instance Monotonic Switch
+instance Cumulative Switch
 
 instance SizeProp (Switch :|| Type)
   where

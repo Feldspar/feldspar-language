@@ -58,7 +58,7 @@ Size constraints
 Imagine we want to generate code for the `drop` function in such a way that we can statically allocate the result. Let us see what size inference gives us:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*Tutorial.Size> drawDecor (drop :: Data Index -> Vector (Data Word8) -> Vector (Data Word8))
+*Tutorial.Size> drawDecor (drop :: Data Index -> Pull1 Word8 -> Pull1 Word8)
 <<WordN -> [Word8] -> [Word8] | Range {lowerBound = 0, upperBound = 4294967295} :> Range {lowerBound = 0, upperBound = 255}>>
 ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,7 +68,7 @@ The root has a size of the form `rl :> re`, where `rl` is the range of the vecto
 In cases where we --- the programmers --- have additional information about the sizes of the inputs, it is possible to help size inference to achieve more accurate results. Imagine that we know that the input has at most 200 elements and that we will always drop at least 100 elements. Then we can make a specialized version of `drop` that has this information hard-coded:
 
 \begin{code}
-drop2 :: Data Index -> Vector (Data Word8) -> Vector (Data Word8)
+drop2 :: Data Index -> Pull1 Word8 -> Pull1 Word8
 drop2 n v = drop n' v'
   where
     n' = max 100 n
@@ -91,7 +91,7 @@ Avoiding run-time checks
 The down-side of the technique used in `drop2` is that the use of `max` and `min` incurs a run-time overhead. If we are certain that the input has at most 200 elements and that we will always drop at least 100 elements, these checks are useless, and could just as well be removed. To do this, we simply replace `max` and `min` with `notBelow` and `notAbove` respectively:
 
 \begin{code}
-drop3 :: Data Index -> Vector (Data Word8) -> Vector (Data Word8)
+drop3 :: Data Index -> Pull1 Word8 -> Pull1 Word8
 drop3 n v = drop n' v'
   where
     n' = notBelow 100 n
@@ -115,7 +115,7 @@ If we look at the core expression resulting from `drop3`, we see that it still c
 The `min` function is used to check that we don't try to drop more elements than we have in the array. If we know that we will never try to drop too many elements, we can get rid of this check as well. To do this, we have to supply an upper bound for first argument and a lower bound for the length, using the `between` function:
 
 \begin{code}
-drop4 :: Data Index -> Vector (Data Word8) -> Vector (Data Word8)
+drop4 :: Data Index -> Pull1 Word8 -> Pull1 Word8
 drop4 n v = drop n' v'
   where
     n' = between 100 120 n

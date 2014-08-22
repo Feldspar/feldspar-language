@@ -42,5 +42,5 @@ whenM :: Data Bool -> M () -> M ()
 whenM c ma = ifM c ma (return ())
 
 unlessM :: Data Bool -> M () -> M ()
-unlessM c mb = ifM c (return ()) mb
+unlessM c = ifM c (return ())
 

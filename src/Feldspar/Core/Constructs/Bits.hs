@@ -115,10 +115,10 @@ instance Semantic BITS
     semantics BitScan       = Sem "bitScan"  evalBitScan
     semantics BitCount      = Sem "bitCount" evalBitCount
 
-liftIntWord :: (a -> Int -> b) -> (a -> WordN -> b)
+liftIntWord :: (a -> Int -> b) -> a -> WordN -> b
 liftIntWord f x = f x . fromIntegral
 
-liftInt :: (a -> Int -> b) -> (a -> IntN -> b)
+liftInt :: (a -> Int -> b) -> a -> IntN -> b
 liftInt f x = f x . fromIntegral
 
 evalReverseBits :: (Num b, FiniteBits b) => b -> b
@@ -156,14 +156,14 @@ instance AlphaEq dom dom dom env => AlphaEq BITS BITS dom env
 
 instance Sharable BITS
 
-instance Monotonic BITS where
-    monotonicInc _ _ = []
+instance Cumulative BITS where
+    cumulativeInc _ _ = []
 
-    monotonicDec ShiftRU (a :* b :* Nil)
+    cumulativeDec ShiftRU (a :* b :* Nil)
         | RangeSet r <- infoRange $ getInfo b
         , isNatural r
         = [a]
-    monotonicDec _ _ = []
+    cumulativeDec _ _ = []
 
 instance SizeProp (BITS :|| Type)
   where
@@ -183,7 +183,7 @@ instance ( (BITS  :|| Type) :<: dom
          , (Logic :|| Type) :<: dom
          , (EQ    :|| Type) :<: dom
          , (ORD   :|| Type) :<: dom
-         , Monotonic dom
+         , Cumulative dom
          , OptimizeSuper dom
          )
       => Optimize (BITS :|| Type) dom

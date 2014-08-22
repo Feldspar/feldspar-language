@@ -80,7 +80,7 @@ instance AlphaEq dom dom dom env => AlphaEq ORD ORD dom env
 
 instance Sharable ORD
 
-instance Monotonic ORD
+instance Cumulative ORD
 
 instance SizeProp (ORD :|| Type)
   where
@@ -90,7 +90,7 @@ instance SizeProp (ORD :|| Type)
 
 
 instance ( (ORD :|| Type) :<: dom
-         , Monotonic dom
+         , Cumulative dom
          , OptimizeSuper dom
          )
       => Optimize (ORD :|| Type) dom
@@ -168,10 +168,10 @@ instance ( (ORD :|| Type) :<: dom
         = return a
 
     constructFeatOpt _ (C' Min) (a :* b :* Nil)
-        | as <- viewMonotonicDec a
+        | as <- viewCumulativeDec a
         , any (alphaEq b) as = return a
 
-        | bs <- viewMonotonicDec b
+        | bs <- viewCumulativeDec b
         , any (alphaEq a) bs = return b
 
 

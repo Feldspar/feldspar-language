@@ -53,9 +53,9 @@ instance Sharable (Decor SourceInfo1 Identity)
   where
     sharable _ = True
 
-instance Monotonic (Decor SourceInfo1 Identity)
+instance Cumulative (Decor SourceInfo1 Identity)
 
-instance Monotonic Identity
+instance Cumulative Identity
 
 instance SizeProp Identity
   where

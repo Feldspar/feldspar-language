@@ -52,7 +52,7 @@ module Feldspar.Vector (
   -- * Overloaded functions
   Shaped(..),ShapeMap(..),
   -- * Patches
-  tVec,tVec1,
+  tVec,tVec1,tPull,tPull1,
   -- * Semiquestionable things
   scan,
   -- * Ugly hacks
@@ -242,7 +242,7 @@ slice vec sl
 --- | Change the length of the vector to the supplied value. If the supplied
 --- length is greater than the old length, the new elements will have undefined
 --- value. Useful function for patches.
-newLen1 :: Syntax a => Data Length -> Pull1 a -> Pull1 a
+newLen1 :: Data Length -> Pull1 a -> Pull1 a
 newLen1 l vec = reshape (Z :. l) vec
 
 -- | Change the shape of a vector. This function is potentially unsafe, the
@@ -254,8 +254,8 @@ reshape sh' vec
   where Pull ixf sh = toPull vec
 
 -- | A scalar (zero dimensional) vector
-unit :: a -> Pull Z a
-unit a = Pull (const a) Z
+unit :: Shapely sh => a -> Pull sh a
+unit a = Pull (const a) unitDim
 
 -- | Get the one element from a zero-dimensional vector
 fromZero :: Pully vec Z => vec Z a -> a
@@ -434,8 +434,8 @@ flatten :: forall a sh1 sh2.
            Pull (ShapeConcT sh1 sh2) a
 flatten (Pull ixf1 sh1) = Pull ixf sh
   where ixf i = let (i1,i2) = splitIndex i sh1
-  	       	    (Pull ixf2 _) = ixf1 i1
-  	       	in ixf2 i2
+                    (Pull ixf2 _) = ixf1 i1
+                in ixf2 i2
         sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh1
                  (Pull _ sh2) = ixf1 i1
              in shapeConc sh1 sh2
@@ -950,7 +950,7 @@ instance Pushy Push sh where
 instance Pushy Pull sh where
   toPush (Pull ixf l) = Push f l
     where f k = forShape l $ \i ->
-    	    	  k i (ixf i)
+                 k i (ixf i)
 
 -- | Store a vector in memory as a flat array
 fromPush :: Type a
@@ -983,9 +983,9 @@ instance (Syntax a, Shapely sh) => Syntactic (Push sh a)
 flattenList :: Shapely sh => Pull sh [a] -> Push (sh :. Data Length) a
 flattenList (Pull ixf sh) = Push f sz
   where f k = forShape sh $ \i ->
-  	      	do let indices = fmap (\j -> i :. j) $
+               do let indices = fmap (\j -> i :. j) $
                                  fmap value [0..l-1]
-    	           zipWithM_ k indices (ixf i)
+                  zipWithM_ k indices (ixf i)
         sz  = sh :. value l
         l   = P.fromIntegral $
               P.length (ixf fakeShape)
@@ -1048,10 +1048,10 @@ instance Storable Manifest where
   store m = m
 
 instance Storable Pull where
-  store vec@(Pull ixf sh) = Manifest (fromPull (fmap F.desugar vec)) (fromList (toList sh))
+  store vec@(Pull ixf sh) = Manifest (save $ fromPull (fmap F.desugar vec)) (fromList (toList sh))
 
 instance Storable Push where
-  store vec@(Push f sh) = Manifest (fromPush (fmap F.desugar vec)) (fromList (toList sh))
+  store vec@(Push f sh) = Manifest (save $ fromPush (fmap F.desugar vec)) (fromList (toList sh))
 
 instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where
   type Domain   (Manifest sh a) = FeldDomain
@@ -1194,9 +1194,15 @@ instance ShapeMap Push where
 
 tVec :: Patch a a -> Patch (Pull sh a) (Pull sh a)
 tVec _ = id
+{-# DEPRECATED tVec "Use tPull instead" #-}
 
 tVec1 :: Patch a a -> Patch (Pull1 a) (Pull1 a)
 tVec1 _ = id
+{-# DEPRECATED tVec1 "Use tPull1 instead" #-}
 
--- tVec2 :: Patch a a -> Patch (Pull (Vector (Data a))) (Vector (Vector (Data a)))
--- tVec2 _ = id
+tPull :: Patch a a -> Patch (Pull sh a) (Pull sh a)
+tPull _ = id
+
+tPull1 :: Patch a a -> Patch (Pull1 a) (Pull1 a)
+tPull1 _ = id
+

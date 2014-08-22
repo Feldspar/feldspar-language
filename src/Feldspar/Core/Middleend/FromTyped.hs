@@ -99,11 +99,11 @@ untypeProgDecor :: Untype dom dom
     => Decor Info dom a
     -> Args (AST (Decor Info dom)) a
     -> UntypedFeld
-untypeProgDecor (Decor info a) args = untypeProgSym a info args
+untypeProgDecor (Decor info a) = untypeProgSym a info
 
 -- | External module interface.
-untype :: Untype dom dom => ASTF (Decor Info dom) a -> UntypedFeld
-untype = createTasks  . optimize . sinkLets . untypeProg
+untype :: Untype dom dom => FeldOpts -> ASTF (Decor Info dom) a -> UntypedFeld
+untype opts = createTasks opts . optimize . sinkLets . untypeProg
 
 untypeProg :: Untype dom dom =>
     ASTF (Decor Info dom) a -> UntypedFeld
@@ -405,7 +405,7 @@ untypePrim :: (Semantic expr, Untype dom dom)
     -> Info (DenResult a)
     -> Args (AST (Decor Info dom)) a
     -> UntypedFeld
-untypePrim (C' s) info = untypeProgSym (semantics s) info
+untypePrim (C' s) = untypeProgSym (semantics s)
 
 instance Untype dom dom => Untype (BITS       :|| Type) dom
    where
@@ -667,9 +667,7 @@ instance Untype dom dom => Untype (REALFLOAT  :|| Type) dom
 
 instance Untype dom dom => Untype (Save :|| Type) dom
   where
-    untypeProgSym (C' Save) info (a :* Nil)
-        = In (Ut.App Ut.Save t' [untypeProg a])
-          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym (C' Save) info (a :* Nil) = untypeProg a
 
 instance Untype dom dom => Untype (PropSize :|| Type) dom
   where
@@ -860,7 +858,7 @@ untypeType (ElementsType a) (rs :> es) = Ut.ElementsType (untypeType a es)
 untypeType (IVarType a) sz          = Ut.IVarType $ untypeType a sz
 untypeType (FunType a b) (sa, sz)   = Ut.FunType (untypeType a sa) (untypeType b sz)
 untypeType (FValType a) sz          = Ut.FValType (untypeType a sz)
-untypeType typ _                    = error $ "untypeType: missing "
+untypeType typ _                    = error "untypeType: missing "
 
 
 -- Helper functions.

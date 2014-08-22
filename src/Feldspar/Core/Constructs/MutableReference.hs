@@ -76,7 +76,7 @@ instance AlphaEq dom dom dom env =>
 
 instance Sharable MutableReference
 
-instance Monotonic MutableReference
+instance Cumulative MutableReference
 
 instance SizeProp MutableReference
   where

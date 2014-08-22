@@ -79,9 +79,9 @@ module Feldspar.Core.Interpretation
     , optimizeFeatDefault
     , prjF
     , c'
-    , Monotonic (..)
-    , viewMonotonicInc
-    , viewMonotonicDec
+    , Cumulative (..)
+    , viewCumulativeInc
+    , viewCumulativeDec
     ) where
 
 
@@ -524,56 +524,57 @@ optimizeFeatDefault opts feat args
     = constructFeat opts feat =<< mapArgsM (optimizeM opts) args
 
 
--- | The 'Monotonic' class represents (weak) monotonicity
-class Monotonic feature where
-    -- | Return the arguments for which the symbol is monotonic increasing
+-- | The 'Cumulative' class captures the concept of functions that always increase or decrease their
+-- arguments (not the same as monotonicity)
+class Cumulative feature where
+    -- | Return the arguments which the symbol weakly cumulativeInc
     --
-    -- prop> forAll a. [a] = monotonicInc (f a) ==> f a >= a
+    -- prop> forAll a. [a] = cumulativeInc (f a) ==> f a >= a
     --
-    monotonicInc :: feature a
-                 -> Args (AST (Decor Info (dom :|| Typeable))) a
-                 -> [ASTF (Decor Info (dom :|| Typeable)) (DenResult a)]
-    monotonicInc _ _ = []
+    cumulativeInc :: feature a
+              -> Args (AST (Decor Info (dom :|| Typeable))) a
+              -> [ASTF (Decor Info (dom :|| Typeable)) (DenResult a)]
+    cumulativeInc _ _ = []
 
     -- | Return the arguments for which the symbol is monotonic decreasing
     --
-    -- prop> forAll a. [a] = monotonicDec (f a) ==> f a <= a
+    -- prop> forAll a. [a] = cumulativeDec (f a) ==> f a <= a
     --
-    monotonicDec :: feature a
+    cumulativeDec :: feature a
                  -> Args (AST (Decor Info (dom :|| Typeable))) a
                  -> [ASTF (Decor Info (dom :|| Typeable)) (DenResult a)]
-    monotonicDec _ _ = []
+    cumulativeDec _ _ = []
 
-instance (Monotonic sub1, Monotonic sub2) => Monotonic (sub1 :+: sub2) where
-    monotonicInc (InjL a) = monotonicInc a
-    monotonicInc (InjR a) = monotonicInc a
-    monotonicDec (InjL a) = monotonicDec a
-    monotonicDec (InjR a) = monotonicDec a
+instance (Cumulative sub1, Cumulative sub2) => Cumulative (sub1 :+: sub2) where
+    cumulativeInc (InjL a) = cumulativeInc a
+    cumulativeInc (InjR a) = cumulativeInc a
+    cumulativeDec (InjL a) = cumulativeDec a
+    cumulativeDec (InjR a) = cumulativeDec a
 
-instance (Monotonic sym) => Monotonic (sym :|| pred) where
-    monotonicInc (C' s) = monotonicInc s
-    monotonicDec (C' s) = monotonicDec s
+instance (Cumulative sym) => Cumulative (sym :|| pred) where
+    cumulativeInc (C' s) = cumulativeInc s
+    cumulativeDec (C' s) = cumulativeDec s
 
-instance (Monotonic sym) => Monotonic (SubConstr2 c sym p1 p2) where
-    monotonicInc (SubConstr2 s) = monotonicInc s
-    monotonicDec (SubConstr2 s) = monotonicDec s
+instance (Cumulative sym) => Cumulative (SubConstr2 c sym p1 p2) where
+    cumulativeInc (SubConstr2 s) = cumulativeInc s
+    cumulativeDec (SubConstr2 s) = cumulativeDec s
 
-instance (Monotonic dom) => Monotonic (Decor Info dom) where
-    monotonicInc = monotonicInc . decorExpr
-    monotonicDec = monotonicDec . decorExpr
+instance (Cumulative dom) => Cumulative (Decor Info dom) where
+    cumulativeInc = cumulativeInc . decorExpr
+    cumulativeDec = cumulativeDec . decorExpr
 
-instance Monotonic Empty
+instance Cumulative Empty
 
 -- | Extract sub-expressions for which the expression is (weak) monotonic
 -- increasing
-viewMonotonicInc :: (Monotonic dom)
-                 => ASTF (Decor Info (dom :|| Typeable)) a
-                 -> [ASTF (Decor Info (dom :|| Typeable)) a]
-viewMonotonicInc = simpleMatch monotonicInc
+viewCumulativeInc :: (Cumulative dom)
+                  => ASTF (Decor Info (dom :|| Typeable)) a
+                  -> [ASTF (Decor Info (dom :|| Typeable)) a]
+viewCumulativeInc = simpleMatch cumulativeInc
 
 -- | Extract sub-expressions for which the expression is (weak) monotonic
 -- decreasing
-viewMonotonicDec :: (Monotonic dom)
-                 => ASTF (Decor Info (dom :|| Typeable)) a
-                 -> [ASTF (Decor Info (dom :|| Typeable)) a]
-viewMonotonicDec = simpleMatch monotonicDec
+viewCumulativeDec :: (Cumulative dom)
+                  => ASTF (Decor Info (dom :|| Typeable)) a
+                  -> [ASTF (Decor Info (dom :|| Typeable)) a]
+viewCumulativeDec = simpleMatch cumulativeDec
