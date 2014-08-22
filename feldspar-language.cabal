@@ -76,6 +76,7 @@ library
     Feldspar.Core.Constructs.Tuple
     Feldspar.Core.Constructs.FFI
     Feldspar.Core.Constructs.Save
+    Feldspar.Core.Constructs.MultiDim
     Feldspar.Core.Constructs
     Feldspar.Core.Frontend.Array
     Feldspar.Core.Frontend.Binding
