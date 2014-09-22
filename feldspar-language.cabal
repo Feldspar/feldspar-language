@@ -133,7 +133,7 @@ library
     base                        >= 4      && < 4.8,
     containers                  >= 0.4    && < 0.6,
     data-hash                   >= 0.1    && < 0.3,
-    data-lens                   >= 2.10   && < 2.11,
+    comonad                     >= 4.2    && < 5.0,
     mtl                         >= 2.0    && < 2.2,
     QuickCheck                  >= 2.7    && < 3,
     patch-combinators           >= 0.2    && < 0.3,

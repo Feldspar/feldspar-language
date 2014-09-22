@@ -58,8 +58,6 @@ import Data.Maybe
 import Data.Map
 import Data.Typeable (Typeable, gcast)
 
---import Data.Lens.Common
-
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding hiding (subst,betaReduce)
 import Language.Syntactic.Constructs.Binding.HigherOrder (CLambda)

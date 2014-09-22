@@ -32,7 +32,7 @@ module Feldspar.Lattice where
 
 
 
-import Data.Lens.Common
+import Control.Comonad.Trans.Store
 
 
 
@@ -266,3 +266,24 @@ boundedLensedFixedPoint n aLens bLens f = go 0
   -- single-iteration fixed point is an important special case as it avoids
   -- exponential blowup when performing several nested iterations.)
 
+
+-- Self-contained lens defintions. Cut&paste from data-lens.
+
+newtype Lens a b = Lens { runLens :: a -> Store b a }
+
+-- | build a lens out of an isomorphism
+iso :: (a -> b) -> (b -> a) -> Lens a b
+iso f g = Lens (store g . f)
+
+infixl 9 ^!
+-- | functional getter, which acts like a field accessor
+(^!) :: a -> Lens a b -> b
+a ^! Lens f = pos (f $! a)
+
+-- | Gets the setter function from a lens.
+setL :: Lens a b -> b -> a -> a
+setL (Lens f) b = peek b . f
+
+infixr 4 ^=
+(^=) :: Lens a b -> b -> a -> a
+(^=) = setL
