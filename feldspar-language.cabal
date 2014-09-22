@@ -139,7 +139,7 @@ library
     patch-combinators           >= 0.2    && < 0.3,
     syntactic                   >= 1.12   && < 2.0,
     tagged                      >= 0.4    && < 0.8,
-    tuple                       >= 0.2    && < 0.3,
+    tuple                       >= 0.2    && < 0.5,
     monad-par                   >= 0.3.4.5,
     deepseq,
     random                      >= 1.0    && < 1.1,
