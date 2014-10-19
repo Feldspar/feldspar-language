@@ -261,7 +261,7 @@ data FeldOpts = FeldOpts
 
 -- | Default options.
 defaultFeldOpts :: FeldOpts
-defaultFeldOpts = FeldOpts { targets = [] }
+defaultFeldOpts = FeldOpts { targets = [CSE] }
 
 -- | Decide whether a Target is enabled in FeldOpts.
 inTarget :: Target -> FeldOpts -> Bool
