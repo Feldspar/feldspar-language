@@ -48,6 +48,16 @@ go env (In (App Parallel t [l, e@(In (Lambda v body))])) | Wool `inTarget` env =
          vs' = map (In . Variable) vs
          p'  = mkLam vs body
          t'  = typeof body
+go env (In (App EparFor t [l, e@(In (Lambda v body))])) | Wool `inTarget` env = do
+  p'' <- go env p'
+  i <- freshId
+  let name  = "wool" ++ show i
+      body' = In (Lambda v (In (App (Call Loop name) t' $ tail vs')))
+  return $ In (LetFun (name, Loop, p'') (In (App EparFor t [l, body'])))
+   where vs  = v:fv e
+         vs' = map (In . Variable) vs
+         p'  = mkLam vs body
+         t'  = typeof body
 go env (In (App p t es)) = do
   es' <- mapM (go env) es
   return $ In (App p t es')
