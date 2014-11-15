@@ -215,13 +215,13 @@ instance ( (Variable :|| Type) :<: dom
          , OptimizeSuper dom)
       => Optimize (Variable :|| Type) dom
   where
-    constructFeatUnOpt _ (C' (Variable v)) Nil
-        = reader $ \env -> case Prelude.lookup v (varEnv env) of
-            Nothing -> error $
-                "optimizeFeat: can't get size of free variable: v" ++ show v
-            Just (SomeInfo info) ->
-                let info' = (fromJust $ gcast info) {infoVars = singleton v (SomeType $ infoType info) }
-                 in Sym $ Decor info' $ C' $ inj $ c' (Variable v)
+    constructFeatUnOpt _ (C' var@(Variable v)) Nil
+        = reader $ \env ->
+            let build info = let info' = info { infoVars = singleton v (SomeType $ infoType info) }
+                              in Sym $ Decor info' $ C' $ inj $ c' var
+             in build $ case Prelude.lookup v (varEnv env) of
+                  Nothing              -> mkInfoTy typeRep
+                  Just (SomeInfo info) -> fromJust $ gcast info
 
 instance ( CLambda Type :<: dom
          , OptimizeSuper dom)
