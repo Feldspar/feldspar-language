@@ -4,9 +4,9 @@
 
 
 
-*[This document needs to be extended.]*
+*[This document is just a port of [Simple vector library](SimpleVector.html), but it should be extended to cover the multi-dimensional aspects of the vector library.]*
 
-The vector library provides an interface for vector operations similar to Haskell's list library. It is available through the module `Feldspar.Vector`:
+The vector library provides an interface for multi-dimensional vectors. It is available in the module `Feldspar.Vector`:
 
 \begin{code}
 module Tutorial.Vector where
