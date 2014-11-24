@@ -42,7 +42,7 @@ go env (In (App Parallel t [l, e@(In (Lambda v body))])) | Wool `inTarget` env =
   p'' <- go env p'
   i <- freshId
   let name  = "wool" ++ show i
-      body' = In (Lambda v (In (App (Call Loop name)  t' $ tail vs')))
+      body' = In (Lambda v (In (App (Call Loop name) t' vs')))
   return $ In (LetFun (name, Loop, p'') (In (App Parallel t [l,body'])))
    where vs  = v:fv e -- Make sure index is outermost parameter.
          vs' = map (In . Variable) vs
@@ -52,7 +52,7 @@ go env (In (App EparFor t [l, e@(In (Lambda v body))])) | Wool `inTarget` env = 
   p'' <- go env p'
   i <- freshId
   let name  = "wool" ++ show i
-      body' = In (Lambda v (In (App (Call Loop name) t' $ tail vs')))
+      body' = In (Lambda v (In (App (Call Loop name) t' vs')))
   return $ In (LetFun (name, Loop, p'') (In (App EparFor t [l, body'])))
    where vs  = v:fv e
          vs' = map (In . Variable) vs
