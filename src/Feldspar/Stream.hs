@@ -374,7 +374,7 @@ recurrenceO initV mkExpr = Stream $ do
         setRef r (ix + 1)
         a <- withArray buf
              (\ibuf -> return $ mkExpr
-                       (indexed1 len (\i -> getIx ibuf ((i + ix) `rem` len))))
+                       (indexed1 len (\i -> getIx ibuf ((len + ix - i) `rem` len))))
         result <- getArr buf (ix `rem` len)
         setArr buf (ix `rem` len) a
         return result
@@ -421,8 +421,8 @@ recurrenceIO ii (Stream init) io mkExpr = Stream $ do
       b <- withArray ibuf (\ib ->
              withArray obuf (\ob ->
                return $ mkExpr
-                          (indexed1 lenI (\i -> getIx ib ((i + ix) `rem` lenI)))
-                          (indexed1 lenO (\i -> getIx ob ((i + ix - 1) `rem` lenO)))
+                          (indexed1 lenI (\i -> getIx ib ((lenI + ix - i) `rem` lenI)))
+                          (indexed1 lenO (\i -> getIx ob ((lenO + ix - i - 1) `rem` lenO)))
                             ))
       ifM (lenO /= 0)
         (do o <- getArr obuf (ix `rem` lenO)
@@ -456,9 +456,9 @@ recurrenceIIO i1 (Stream init1) i2 (Stream init2) io mkExpr = Stream $ do
       out <- withArray ibuf1 (\ib1 ->
                withArray ibuf2 (\ib2 ->
                  withArray obuf (\ob ->
-                   return $ mkExpr (indexed1 len1 (\i -> getIx ib1 ((i + ix) `rem` len1)))
-                                   (indexed1 len2 (\i -> getIx ib2 ((i + ix) `rem` len2)))
-                                   (indexed1 lenO (\i -> getIx ob  ((i + ix) `rem` lenO)))
+                   return $ mkExpr (indexed1 len1 (\i -> getIx ib1 ((len1 + ix - i) `rem` len1)))
+                                   (indexed1 len2 (\i -> getIx ib2 ((len2 + ix - i) `rem` len2)))
+                                   (indexed1 lenO (\i -> getIx ob  ((lenO + ix - i - 1) `rem` lenO)))
                                 )))
       ifM (lenO /= 0)
           (do o <- getArr obuf (ix `rem` lenO)
