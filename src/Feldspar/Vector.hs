@@ -56,7 +56,7 @@ module Feldspar.Vector (
   -- * Semiquestionable things
   scan,
   -- * Ugly hacks
-  freezePull1,arrToManifest,arrToPull,thawPull,thawPush,
+  freezePull1,arrToManifest,arrToPull,thawPull,thawPull1,thawPush,
   fromList,fromPush,fromPull,freezePull,freezePush
   ) where
 
@@ -191,6 +191,10 @@ fromList ls = runMutableArray $ newListArr ls
 -- | Restore a vector and its shape from memory
 thawPull :: (Type a, Shapely sh) => (Data [Length], Data [a]) -> DPull sh a
 thawPull (l,arr) = arrToPull (toShape 0 l) arr
+
+-- | Restore a vector and its shape from memory
+thawPull1 :: Type a => Data [a] -> DPull DIM1 a
+thawPull1 arr = arrToPull (toShape 0 (fromList [getLength arr])) arr
 
 -- | A shape-aware version of parallel (though this implementation is
 --   sequental).
