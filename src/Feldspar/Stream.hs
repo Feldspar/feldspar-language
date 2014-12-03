@@ -476,8 +476,10 @@ slidingAvg n str = recurrenceI (replicate1 n 0) str
 fir :: Pull1 Float ->
        Stream (Data Float) -> Stream (Data Float)
 fir b inp =
-    recurrenceI (replicate1 (length b) 0) inp
-                (scalarProd b)
+    recurrenceIO (replicate1 (length b) 0) inp (replicate1 1 0)
+                 (\i _ -> scalarProd b i)
+  -- Temporarily using recurrenceIO instead of recurrenceI, because the latter uses an empty output
+  -- buffer, which triggers https://github.com/Feldspar/feldspar-language/issues/24
 
 -- | An iir filter on streams
 iir :: Data Float -> Pull1 Float -> Pull1 Float ->
