@@ -424,11 +424,10 @@ recurrenceIO ii (Stream init) io mkExpr = Stream $ do
                           (indexed1 lenI (\i -> getIx ib ((lenI + ix - i) `rem` lenI)))
                           (indexed1 lenO (\i -> getIx ob ((lenO + ix - i - 1) `rem` lenO)))
                             ))
-      ifM (lenO /= 0)
+      whenM (lenO /= 0)
         (do o <- getArr obuf (ix `rem` lenO)
-            setArr obuf (ix `rem` lenO) b
-            return o)
-        (return b)
+            setArr obuf (ix `rem` lenO) b)
+      return b
   where
     lenI = length ii
     lenO = length io
@@ -460,11 +459,10 @@ recurrenceIIO i1 (Stream init1) i2 (Stream init2) io mkExpr = Stream $ do
                                    (indexed1 len2 (\i -> getIx ib2 ((len2 + ix - i) `rem` len2)))
                                    (indexed1 lenO (\i -> getIx ob  ((lenO + ix - i - 1) `rem` lenO)))
                                 )))
-      ifM (lenO /= 0)
+      whenM (lenO /= 0)
           (do o <- getArr obuf (ix `rem` lenO)
-              setArr obuf (ix `rem` lenO) out
-              return o)
-          (return out)
+              setArr obuf (ix `rem` lenO) out)
+      return out
   where
     len1 = length i1
     len2 = length i2
