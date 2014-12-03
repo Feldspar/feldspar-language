@@ -17,6 +17,7 @@ This is a light-weight introduction to the [Feldspar](http://hackage.haskell.org
 
   * [Basic usage](Basic.html)
   * [Core arrays](Array.html)
+  * [Simple vector library](SimpleVector.html)
   * [Vector library](Vector.html)
   * [Size analysis](Size.html)
   * [Type and size patches](Patch.html)

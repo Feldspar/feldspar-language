@@ -123,6 +123,9 @@ library
     Feldspar.Stream
     Feldspar.Vector
     Feldspar.Vector.Shape
+    Feldspar.SimpleVector
+    Feldspar.SimpleVector.Internal
+    Feldspar.SimpleVector.Push
     Feldspar.Par
     Feldspar.Algorithm.CRC
     Feldspar.Algorithm.FFT
