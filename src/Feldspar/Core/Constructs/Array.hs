@@ -70,8 +70,19 @@ data Array a
 
 instance Semantic Array
   where
-    semantics Append    = Sem "(++)"      (++)
-    semantics GetIx     = Sem "(!)"       genericIndex
+    semantics Append    = Sem "(++)" (++)
+    semantics GetIx     = Sem "(!)" evalGetIx
+      where
+        evalGetIx as i
+            | 0 <= i && i < len = genericIndex as i
+            | otherwise = error $ unwords
+                [ "getIx: accessing index"
+                , show i
+                , "outside the bounds of an array of length"
+                , show len
+                ]
+          where
+            len = genericLength as
     semantics GetLength = Sem "getLength" genericLength
     semantics SetLength = Sem "setLength"
         (\n as -> genericTake n (as ++ repeat err))
@@ -89,11 +100,11 @@ instance Semantic Array
     semantics SetIx = Sem "setIx" evalSetIx
       where
         evalSetIx as i v
-            | i < len   = genericTake i as ++ [v] ++ genericDrop (i+1) as
+            | 0 <= i && i < len = genericTake i as ++ [v] ++ genericDrop (i+1) as
             | otherwise = error $ unwords
                 [ "setIx: assigning index"
                 , show i
-                , "past the end of an array of length"
+                , "outside the bounds of an array of length"
                 , show len
                 ]
           where
