@@ -43,6 +43,29 @@ import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Num
 import Feldspar.Core.Frontend.Literal
 
+
+
+-- There are three possibilities for making a `Num` instance for `Data`:
+--
+--   1. instance (Type a, Num a, Num (Size a)) => Num (Data a)
+--
+--   2. instance Num (Data Word8)
+--      instance Num (Data Word16)
+--      instance Num (Data Word32)
+--      ...
+--
+--   3. The implementation in this module
+--
+-- #1 has the problem with #1 that it leaks implementation details.
+--
+-- #2 has the problem that it is verbose: The methods have to be implemented in each instance
+-- (which, of course, can be taken care of using TemplateHaskell).
+--
+-- #3 avoids the above problems, but does so at the expense of having two numeric classes, which may
+-- be confusing to the user.
+
+
+
 class (Type a, Num a, Num (Size a)) => Numeric a
   where
     fromIntegerNum :: Integer -> Data a
