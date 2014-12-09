@@ -765,7 +765,7 @@ chunk c f g vec = Push loop (Z :. (noc * c))
         noc = l `div` c
         loop func = forM noc $ \i ->
                       do let (Push k _) = toPush $ f (take c (drop (c*i) v))
-                         k (\(Z :. j) a -> func (Z :. (c*i + j)) a)
+                         k (\(Z :. j) a -> func (Z :. (j + c*i)) a)
         v = toPull vec
 
 -- | Permutes the elements of a one-dimensional vector according to the
