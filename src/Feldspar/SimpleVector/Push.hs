@@ -110,8 +110,8 @@ everyOther :: (Data Index -> a -> M b)
 everyOther f = \ix (a1,a2) -> f (ix * 2) a1 >> f (ix * 2 + 1) a2
 
 -- | Interleaves the elements of two vectors.
-zipUnpair :: Syntax a => V.Vector a -> V.Vector a -> PushVector a
-zipUnpair v1 v2 = unpair (V.zip v1 v2)
+interleave :: Syntax a => V.Vector a -> V.Vector a -> PushVector a
+interleave v1 v2 = unpair (V.zip v1 v2)
 
 -- | An overloaded function for reordering elements of a vector.
 class Ixmap arr where

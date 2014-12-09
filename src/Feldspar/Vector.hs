@@ -40,7 +40,7 @@ module Feldspar.Vector (
   -- * Push vectors
   Push(..),
   DPush,Pushy(..),
-  empty,(++),(+=+),unpair,unpairWith,zipUnpair,riffle,interleave,flattenList,
+  empty,(++),(+=+),unpair,unpairWith,riffle,interleave,flattenList,
   forwardPermute,
   expandS,expandST,contractS,contractST,uncurryS,
   -- * Manifest vectors
@@ -849,14 +849,6 @@ unpairWith ix1 ix2 vec = Push f' (sh :. (l*2))
   where (Push f ex) = toPush vec
         (sh,l) = uncons ex
         f' k = f (\ix (a,b) -> k (ix1 ix) a >> k (ix2 ix) b)
-
--- | Interleaves the elements of two vectors.
-zipUnpair :: (Pully vec1 (sh :. Data Length),
-              Pully vec2 (sh :. Data Length),
-              Shapely sh) =>
-             vec1 (sh :. Data Length) a -> vec2 (sh :. Data Length) a ->
-             Push (sh :. Data Length) a
-zipUnpair vec1 vec2 = unpair (zip vec1 vec2)
 
 -- Some helper functions in Repa to help us define riffle
 
