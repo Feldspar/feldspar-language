@@ -991,12 +991,23 @@ thawPush (l,arr) = Push f sh
         f k = forShape sh $ \i ->
                 k i (arr ! (toIndex sh i))
 
+thawPush1 :: (Type a) => Data [a] -> Push DIM1 (Data a)
+thawPush1 = toPush . thawPull1
+
 instance (Syntax a, Shapely sh) => Syntactic (Push sh a)
   where
     type Domain (Push sh a) = FeldDomain
-    type Internal (Push sh a) = ([Length],[Internal a])
-    desugar = desugar . freezePush . fmap resugar
-    sugar   = fmap resugar . thawPush . sugar
+    type Internal (Push sh a) = InternalShape sh a
+
+    desugar v@(Push _ sh) = case sh of
+        Z             -> desugar v
+        (Z :. _)      -> desugar $ fromPush $ fmap resugar v
+        (Z :. _ :. _) -> desugar $ freezePush $ fmap resugar v
+
+    sugar v = case fakeShape :: Shape sh of
+        Z           -> toPush $ unit $ sugar v
+        Z :. _      -> fmap resugar $ thawPush1 $ sugar v
+        _ :. _ :. _ -> fmap resugar $ thawPush $ sugar v
 
 -- | Flatten a pull vector of lists so that the lists become an extra dimension
 flattenList :: Shapely sh => Pull sh [a] -> Push (sh :. Data Length) a
