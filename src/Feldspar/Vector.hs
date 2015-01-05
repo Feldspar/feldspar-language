@@ -6,6 +6,7 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts      #-}
+
 module Feldspar.Vector (
   -- $intro
 
@@ -143,12 +144,25 @@ instance Functor (Pull sh)
   where
     fmap f (Pull ixf sh) = Pull (f . ixf) sh
 
+type family InternalShape sh a where
+    InternalShape Z         a = Internal a
+    InternalShape (Z  :. l) a = [Internal a]
+    InternalShape (sh :. l) a = ([Length], [Internal a])
+
 instance (Syntax a, Shapely sh) => Syntactic (Pull sh a)
   where
     type Domain (Pull sh a) = FeldDomain
-    type Internal (Pull sh a) = ([Length],[Internal a])
-    desugar = desugar . freezePull . fmap resugar
-    sugar   = fmap resugar . thawPull . sugar
+    type Internal (Pull sh a) = InternalShape sh a
+
+    desugar v@(Pull _ sh) = case sh of
+        Z             -> desugar $ fromZero v
+        (Z :. _)      -> desugar $ freezePull1 $ fmap resugar v
+        (Z :. _ :. _) -> desugar $ freezePull $ fmap resugar v
+
+    sugar v = case fakeShape :: Shape sh of
+        Z           -> unit $ sugar v
+        Z :. _      -> fmap resugar $ thawPull1 $ sugar v
+        _ :. _ :. _ -> fmap resugar $ thawPull $ sugar v
 
 type instance Elem (Pull sh a) = a
 type instance CollIndex (Pull sh a) = Shape sh
@@ -182,7 +196,7 @@ freezePull v   = (shapeArr, fromPull v) -- TODO should be fromPull' to remove di
   where shapeArr = fromList (toList $ extent v)
 
 freezePull1 :: (Type a) => DPull DIM1 a -> Data [a]
-freezePull1 = snd . freezePull
+freezePull1 = fromPull
 
 -- | Create an array from a Haskell list.
 fromList :: Type a => [Data a] -> Data [a]
@@ -194,7 +208,7 @@ thawPull (l,arr) = arrToPull (toShape 0 l) arr
 
 -- | Restore a vector and its shape from memory
 thawPull1 :: Type a => Data [a] -> DPull DIM1 a
-thawPull1 arr = arrToPull (toShape 0 (fromList [getLength arr])) arr
+thawPull1 arr = arrToPull (Z :. getLength arr) arr
 
 -- | A shape-aware version of parallel (though this implementation is
 --   sequental).
