@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -144,10 +145,18 @@ instance Functor (Pull sh)
   where
     fmap f (Pull ixf sh) = Pull (f . ixf) sh
 
+-- Closed type families are only available in GHC 7.8 and above
+#if (__GLASGOW_HASKELL__ >= 708)
 type family InternalShape sh a where
     InternalShape Z         a = Internal a
     InternalShape (Z  :. l) a = [Internal a]
     InternalShape (sh :. l) a = ([Length], [Internal a])
+#else
+type family InternalShape sh a
+type instance InternalShape Z                a = Internal a
+type instance InternalShape (Z :. l)         a = [Internal a]
+type instance InternalShape (sh :. l1 :. l2) a = ([Length],[Internal a])
+#endif
 
 instance (Syntax a, Shapely sh) => Syntactic (Pull sh a)
   where
