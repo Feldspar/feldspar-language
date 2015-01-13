@@ -129,17 +129,7 @@ envDictDefault pd = EnvDict ed
 -- in the whole expression under consideration
 data Chosen dom a
   where
-    Chosen
-      :: Int  -- Size
-      -> InjDict dom b a -> ASTF dom b -> Chosen dom a
-
--- | Choose between two chosen expressions. If both are defined, the largest one is chosen.
-pick :: Maybe (Chosen dom a) -> Maybe (Chosen dom a) -> Maybe (Chosen dom a)
-pick Nothing b = b
-pick a Nothing = a
-pick a@(Just (Chosen sza _ _)) b@(Just (Chosen szb _ _))
-    | sza > szb = a
-    | otherwise = b
+    Chosen :: InjDict dom b a -> ASTF dom b -> Chosen dom a
 
 -- | Choose a sub-expression to share
 choose :: forall dom a
@@ -164,7 +154,7 @@ choose hoistOver pd mkId ed a = chooseEnvSub initEnv a
         this = do
             guard $ liftable pd env b
             id <- mkId b a
-            return $ Chosen (size b) id b
+            return $ Chosen id b
         that = do
             guard $ hoistOver b
             chooseEnvSub env b
@@ -172,7 +162,7 @@ choose hoistOver pd mkId ed a = chooseEnvSub initEnv a
     -- | Like 'chooseEnv', but does not consider the top expression for sharing
     chooseEnvSub :: Env dom -> ASTF dom b -> Maybe (Chosen dom a)
     chooseEnvSub env a
-        = Prelude.foldr (\(ASTE b, e) a -> chooseEnv e b `pick` a) Nothing
+        = Prelude.foldr (\(ASTE b, e) a -> chooseEnv e b `mplus` a) Nothing
         $ simpleMatch (envDict ed env) a
 
 
@@ -190,7 +180,7 @@ codeMotion3 :: forall dom a
     -> ASTF dom a
     -> State VarId (ASTF dom a)
 codeMotion3 hoistOver pd mkId ed a
-    | Just (Chosen _ id b) <- choose hoistOver pd mkId ed a = share id b
+    | Just (Chosen id b) <- choose hoistOver pd mkId ed a = share id b
     | otherwise = descend a
   where
     share :: InjDict dom b a -> ASTF dom b -> State VarId (ASTF dom a)
