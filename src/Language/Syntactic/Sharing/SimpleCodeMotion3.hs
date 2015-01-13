@@ -12,7 +12,7 @@
 -- The code is based on an implementation by Gergely Dévai.
 
 module Language.Syntactic.Sharing.SimpleCodeMotion3
-    ( envDictDefault
+    ( mkSubEnvDefault
     , codeMotion3
     , reifySmart
     ) where
@@ -107,22 +107,42 @@ lamEnvOneShot v env = env
     , dependencies = insert v (dependencies env)
     }
 
-data EnvDict dom = EnvDict
-    { envDict :: forall sig . Env dom -> dom sig -> Args (AST dom) sig -> [(ASTE dom, Env dom)]
+-- | Function that gives a list of sub-expressions and their environment. A 'Nothing' result means
+-- \"default behavior\" (see 'mkSubEnvDefault').
+--
+-- The purpose of this function is to be able to declare certain binding constructs as "one-shot".
+-- This is done by not setting the 'inLambda' flag for sub-expressions that are under one-shot
+-- lambdas but rather inherit it from the parent environment.
+data MkSubEnv dom = MkSubEnv
+    { mkSubEnv :: forall sig .
+        Env dom -> dom sig -> Args (AST dom) sig -> Maybe [(ASTE dom, Env dom)]
     }
 
-envDictDefault :: forall dom . Project Let dom => PrjDict dom -> EnvDict dom
-envDictDefault pd = EnvDict ed
-  where
-    ed :: Env dom -> dom sig -> Args (AST dom) sig -> [(ASTE dom, Env dom)]
-    ed env lt (a :* (Sym lam :$ b) :* Nil)
-        | Just Let <- prj lt
-        , Just v   <- prjLambda pd lam
-        = [(ASTE a, env), (ASTE b, lamEnvOneShot v env)]
-    ed env lam (body :* Nil)
-        | Just v <- prjLambda pd lam
-        = [(ASTE body, lamEnv v env)]
-    ed env _ args = listArgs (\a -> (ASTE a, env)) args
+-- | Default implementation of 'MkSubEnv'
+mkSubEnvDefault :: MkSubEnv dom
+mkSubEnvDefault = MkSubEnv $ \_ _ _ -> Nothing
+
+-- | List the sub-expressions and their environments. 'Let' bindings are handled first, to make sure
+-- that these are always treated as one-shot binders. Next, the supplied 'MkSubEnv' is given the
+-- chance to compute the result. If it doesn't, the expression is handled in a standard way.
+subTermsEnv :: Project Let dom
+    => PrjDict dom
+    -> MkSubEnv dom
+    -> Env dom
+    -> dom sig
+    -> Args (AST dom) sig
+    -> [(ASTE dom, Env dom)]
+subTermsEnv pd ed env lt (a :* (Sym lam :$ b) :* Nil)
+    | Just Let <- prj lt
+    , Just v   <- prjLambda pd lam
+    = [(ASTE a, env), (ASTE b, lamEnvOneShot v env)]
+subTermsEnv pd ed env s args
+    | Just as <- mkSubEnv ed env s args = as
+subTermsEnv pd ed env lam (body :* Nil)
+    | Just v <- prjLambda pd lam
+    = [(ASTE body, lamEnv v env)]
+subTermsEnv pd ed env _ args = listArgs (\a -> (ASTE a, env)) args
+
 
 
 -- | A sub-expression chosen to be shared together with an evidence that it can actually be shared
@@ -137,10 +157,10 @@ choose :: forall dom a
     => (forall c. ASTF dom c -> Bool)
     -> PrjDict dom
     -> MkInjDict dom
-    -> EnvDict dom
+    -> MkSubEnv dom
     -> ASTF dom a
     -> Maybe (Chosen dom a)
-choose hoistOver pd mkId ed a = chooseEnvSub initEnv a
+choose hoistOver pd mkId mkSub a = chooseEnvSub initEnv a
   where
     initEnv = Env
         { inLambda     = False
@@ -163,7 +183,7 @@ choose hoistOver pd mkId ed a = chooseEnvSub initEnv a
     chooseEnvSub :: Env dom -> ASTF dom b -> Maybe (Chosen dom a)
     chooseEnvSub env a
         = Prelude.foldr (\(ASTE b, e) a -> chooseEnv e b `mplus` a) Nothing
-        $ simpleMatch (envDict ed env) a
+        $ simpleMatch (subTermsEnv pd mkSub env) a
 
 
 
@@ -173,29 +193,30 @@ codeMotion3 :: forall dom a
        , AlphaEq dom dom dom [(VarId,VarId)]
        , Project Let dom
        )
-    => (forall c. ASTF dom c -> Bool)  -- ^ Control wether a sub-expression can be hoisted over the given expression
+    => (forall c. ASTF dom c -> Bool)
+         -- ^ Control wether a sub-expression can be hoisted over the given expression
     -> PrjDict dom
     -> MkInjDict dom
-    -> EnvDict dom
+    -> MkSubEnv dom
     -> ASTF dom a
     -> State VarId (ASTF dom a)
-codeMotion3 hoistOver pd mkId ed a
-    | Just (Chosen id b) <- choose hoistOver pd mkId ed a = share id b
+codeMotion3 hoistOver pd mkId mkSub a
+    | Just (Chosen id b) <- choose hoistOver pd mkId mkSub a = share id b
     | otherwise = descend a
   where
     share :: InjDict dom b a -> ASTF dom b -> State VarId (ASTF dom a)
     share id b = do
-        b' <- codeMotion3 hoistOver pd mkId ed b
+        b' <- codeMotion3 hoistOver pd mkId mkSub b
         v  <- get; put (v+1)
         let x = Sym (injVariable id v)
-        body <- codeMotion3 hoistOver pd mkId ed $ substitute b x a
+        body <- codeMotion3 hoistOver pd mkId mkSub $ substitute b x a
         return
             $  Sym (injLet id)
             :$ b'
             :$ (Sym (injLambda id v) :$ body)
 
     descend :: AST dom b -> State VarId (AST dom b)
-    descend (f :$ a) = liftM2 (:$) (descend f) (codeMotion3 hoistOver pd mkId ed a)
+    descend (f :$ a) = liftM2 (:$) (descend f) (codeMotion3 hoistOver pd mkId mkSub a)
     descend a        = return a
 
 
@@ -210,9 +231,9 @@ reifySmart :: forall dom p pVar a
        )
     => (forall c. ASTF (FODomain dom p pVar) c -> Bool)
     -> MkInjDict (FODomain dom p pVar)
-    -> EnvDict (FODomain dom p pVar)
+    -> MkSubEnv (FODomain dom p pVar)
     -> a
     -> ASTF (FODomain dom p pVar) (Internal a)
-reifySmart hoistOver mkId ed =
-    flip evalState 0 . (codeMotion3 hoistOver prjDictFO mkId ed <=< reifyM . desugar)
+reifySmart hoistOver mkId mkSub =
+    flip evalState 0 . (codeMotion3 hoistOver prjDictFO mkId mkSub <=< reifyM . desugar)
 
