@@ -188,7 +188,7 @@ choose hoistOver pd mkId mkSub a = chooseEnvSub initEnv a
 
 
 -- | Perform common sub-expression elimination and variable hoisting
-codeMotion3 :: forall dom a
+codeMotion :: forall dom a
     .  ( ConstrainedBy dom Typeable
        , AlphaEq dom dom dom [(VarId,VarId)]
        , Project Let dom
@@ -200,25 +200,55 @@ codeMotion3 :: forall dom a
     -> MkSubEnv dom
     -> ASTF dom a
     -> State VarId (ASTF dom a)
-codeMotion3 hoistOver pd mkId mkSub a
+codeMotion hoistOver pd mkId mkSub a
     | Just (Chosen id b) <- choose hoistOver pd mkId mkSub a = share id b
     | otherwise = descend a
   where
     share :: InjDict dom b a -> ASTF dom b -> State VarId (ASTF dom a)
     share id b = do
-        b' <- codeMotion3 hoistOver pd mkId mkSub b
+        b' <- codeMotion hoistOver pd mkId mkSub b
         v  <- get; put (v+1)
         let x = Sym (injVariable id v)
-        body <- codeMotion3 hoistOver pd mkId mkSub $ substitute b x a
+        body <- codeMotion hoistOver pd mkId mkSub $ substitute b x a
         return
             $  Sym (injLet id)
             :$ b'
             :$ (Sym (injLambda id v) :$ body)
 
     descend :: AST dom b -> State VarId (AST dom b)
-    descend (f :$ a) = liftM2 (:$) (descend f) (codeMotion3 hoistOver pd mkId mkSub a)
+    descend (f :$ a) = liftM2 (:$) (descend f) (codeMotion hoistOver pd mkId mkSub a)
     descend a        = return a
 
+
+
+fixIter :: (AlphaEq dom dom dom [(VarId, VarId)], Monad m)
+    => Int
+    -> (ASTF dom a -> m (ASTF dom a))
+    -> (ASTF dom a -> m (ASTF dom a))
+fixIter 0 f a = return a
+fixIter limit f a = do
+    a' <- f a
+    if alphaEq a a'
+      then return a
+      else fixIter (limit-1) f a'
+
+
+
+-- | Perform common sub-expression elimination and variable hoisting
+codeMotion3 :: forall dom a
+    .  ( ConstrainedBy dom Typeable
+       , AlphaEq dom dom dom [(VarId,VarId)]
+       , Project Let dom
+       )
+    => Int  -- Max number of iterations
+    -> (forall c. ASTF dom c -> Bool)
+         -- ^ Control wether a sub-expression can be hoisted over the given expression
+    -> PrjDict dom
+    -> MkInjDict dom
+    -> MkSubEnv dom
+    -> ASTF dom a
+    -> State VarId (ASTF dom a)
+codeMotion3 limit hoistOver pd mkId mkSub = fixIter limit $ codeMotion hoistOver pd mkId mkSub
 
 
 -- | Like 'reify' but with common sub-expression elimination and variable hoisting
@@ -229,11 +259,12 @@ reifySmart :: forall dom p pVar a
        , p :< Typeable
        , Project Let (FODomain dom p pVar)
        )
-    => (forall c. ASTF (FODomain dom p pVar) c -> Bool)
+    => Int  -- Max number of iterations
+    -> (forall c. ASTF (FODomain dom p pVar) c -> Bool)
     -> MkInjDict (FODomain dom p pVar)
     -> MkSubEnv (FODomain dom p pVar)
     -> a
     -> ASTF (FODomain dom p pVar) (Internal a)
-reifySmart hoistOver mkId mkSub =
-    flip evalState 0 . (codeMotion3 hoistOver prjDictFO mkId mkSub <=< reifyM . desugar)
+reifySmart limit hoistOver mkId mkSub =
+    flip evalState 0 . (codeMotion3 limit hoistOver prjDictFO mkId mkSub <=< reifyM . desugar)
 
