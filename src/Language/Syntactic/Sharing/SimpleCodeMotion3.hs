@@ -216,6 +216,11 @@ codeMotion hoistOver pd mkId mkSub a
             :$ (Sym (injLambda id v) :$ body)
 
     descend :: AST dom b -> State VarId (AST dom b)
+    descend (a :$ (Sym lam :$ b))
+        | Just _ <- prjLambda pd lam = do
+            a' <- descend a
+            b' <- codeMotion hoistOver pd mkId mkSub b
+            return $ a' :$ (Sym lam :$ b')
     descend (f :$ a) = liftM2 (:$) (descend f) (codeMotion hoistOver pd mkId mkSub a)
     descend a        = return a
 
