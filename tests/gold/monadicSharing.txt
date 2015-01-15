@@ -45,16 +45,10 @@
                                                                 └╴<<WordN -> Mut WordN | ([*,*],[*,*])>>
                                                                    └╴Lambda 4
                                                                       └╴<<Mut WordN | [*,*]>>
-                                                                         └╴Let
-                                                                            ├╴<<WordN | [*,*]>>
-                                                                            │  └╴(+)
-                                                                            │     ├╴<<WordN | [*,*]>>
-                                                                            │     │  └╴var:4
-                                                                            │     └╴<<WordN | [*,*]>>
-                                                                            │        └╴var:5
-                                                                            └╴<<WordN -> Mut WordN | ([*,*],[*,*])>>
-                                                                               └╴Lambda 6
-                                                                                  └╴<<Mut WordN | [*,*]>>
-                                                                                     └╴return
-                                                                                        └╴<<WordN | [*,*]>>
-                                                                                           └╴var:6
+                                                                         └╴return
+                                                                            └╴<<WordN | [*,*]>>
+                                                                               └╴(+)
+                                                                                  ├╴<<WordN | [*,*]>>
+                                                                                  │  └╴var:4
+                                                                                  └╴<<WordN | [*,*]>>
+                                                                                     └╴var:5

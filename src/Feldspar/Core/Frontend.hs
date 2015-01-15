@@ -101,6 +101,7 @@ import Language.Syntactic.Constructs.Binding
 import Language.Syntactic.Constructs.Binding.HigherOrder
 import Language.Syntactic.Sharing.SimpleCodeMotion
 import Language.Syntactic.Sharing.CodeMotion2
+import Language.Syntactic.Sharing.SimpleCodeMotion3
 
 import Feldspar.Range
 import Feldspar.Core.Types
@@ -168,9 +169,10 @@ mkId _ _ _ = Nothing
 hoister opts
  | CSE `inTarget` opts
  = cm1 . optimize opts . stripDecor <=< cm2
- | otherwise = cm1
+ | otherwise = cm3
   where cm1 = codeMotion (simpleMatch (const . hoistOver)) prjDict (mkId opts)
         cm2 = codeMotion2 (simpleMatch (const . hoistOver)) prjDict (mkId opts)
+        cm3 = codeMotion3 10 (simpleMatch (const . hoistOver)) prjDict (mkId opts) mkSubEnvDefault
 
 
 -- | Reification and optimization of a Feldspar program
