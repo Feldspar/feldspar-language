@@ -167,12 +167,9 @@ mkId _ _ _ = Nothing
 
 
 hoister opts
- | True = cm3
- | True = cm2
- | True = cm1
  | CSE `inTarget` opts
  = cm1 . optimize opts . stripDecor <=< cm2
- | otherwise = cm1
+ | otherwise = cm3
   where cm1 = codeMotion (simpleMatch (const . hoistOver)) prjDict (mkId opts)
         cm2 = codeMotion2 (simpleMatch (const . hoistOver)) prjDict (mkId opts)
         cm3 = codeMotion3 10 (simpleMatch (const . hoistOver)) prjDict (mkId opts) mkSubEnvDefault
