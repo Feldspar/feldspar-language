@@ -5,8 +5,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Feldspar.Core.Middleend.FromTyped (
-  untype
+module Feldspar.Core.Middleend.FromTyped
+  ( untype
+  , untypeType
   )
   where
 
