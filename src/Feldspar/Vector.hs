@@ -164,9 +164,9 @@ instance (Syntax a, Shapely sh) => Syntactic (Pull sh a)
     type Internal (Pull sh a) = InternalShape sh a
 
     desugar v@(Pull _ sh) = case sh of
-        Z             -> desugar $ fromZero v
-        (Z :. _)      -> desugar $ freezePull1 $ fmap resugar v
-        (Z :. _ :. _) -> desugar $ freezePull $ fmap resugar v
+        Z           -> desugar $ fromZero v
+        Z :. _      -> desugar $ freezePull1 $ fmap resugar v
+        _ :. _ :. _ -> desugar $ freezePull $ fmap resugar v
 
     sugar v = case fakeShape :: Shape sh of
         Z           -> unit $ sugar v
