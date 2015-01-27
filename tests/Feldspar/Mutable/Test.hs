@@ -13,18 +13,21 @@ import Test.Tasty.QuickCheck
 
 
 
+hash :: Num a => [a] -> a
+hash = Prelude.foldr (\a b -> 3*a-b) 0
+
 buffProg :: Length -> Data Length -> Data WordN
 buffProg bl n = runMutable $ do
     buf <- newBuffer (value bl) (0 :: Data WordN)
     forM n $ \i -> putBuf buf i
     as <- Prelude.sequence [indexBuf buf (value j) | j <- [0 .. bl-1]]
-    return (Prelude.foldr (+) 0 as)
+    return (hash as)
 
 prop_buff =
     forAll (choose (1,10)) $ \bl ->
       forAll (choose (1,100)) $ \n ->
         let bl' = fromIntegral bl
-        in  eval (buffProg bl) n Prelude.== (sum $ take bl' $ reverse $ replicate bl' 0 ++ [0..n-1])
+        in  eval (buffProg bl) n Prelude.== (hash $ take bl' $ reverse $ replicate bl' 0 ++ [0..n-1])
 
 -- Test that `withBuf` followed by indexing behaves like `indexBuf`
 prop_withBuf =
