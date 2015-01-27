@@ -26,5 +26,25 @@ prop_buff =
         let bl' = fromIntegral bl
         in  eval (buffProg bl) n Prelude.== (sum $ take bl' $ reverse $ replicate bl' 0 ++ [0..n-1])
 
+-- Test that `withBuf` followed by indexing behaves like `indexBuf`
+prop_withBuf =
+    forAll (choose (1,5)) $ \bl ->
+      forAll (choose (1,15)) $ \n ->
+        forAll (vector n) $ \as ->
+          forAll (choose (0,15)) $ \i ->
+            eval (prog1 as) bl i Prelude.== eval (prog2 as) bl i
+  where
+    prog1 :: [Data Word32] -> Data Length -> Data Index -> Data Word32
+    prog1 as bl i = runMutable $ do
+        buf <- newBuffer bl 0
+        sequence_ [putBuf buf a | a <- as]
+        indexBuf buf i
+
+    prog2 :: [Data Word32] -> Data Length -> Data Index -> Data Word32
+    prog2 as bl i = runMutable $ do
+        buf <- newBuffer bl 0
+        sequence_ [putBuf buf a | a <- as]
+        withBuf buf $ \b -> return (b!i)
+
 tests = $(testGroupGenerator)
 
