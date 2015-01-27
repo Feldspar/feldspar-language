@@ -67,6 +67,7 @@ import Feldspar.Vector
           ,freezePull1, indexed1, value1, fromList
           ,sum,length,replicate1,scalarProd)
 import Feldspar.Vector.Shape (Shape(..),DIM1)
+import Feldspar.Mutable
 
 -- | Infinite streams.
 data Stream a where
@@ -367,18 +368,11 @@ recurrenceO :: Type a =>
                (Pull1 a -> Data a) ->
                Stream (Data a)
 recurrenceO initV mkExpr = Stream $ do
-      buf <- thawArray (freezePull1 initV)
-      r   <- newRef (0 :: Data Index)
+      buf <- initBuffer initV
       loop $ do
-        ix <- getRef r
-        setRef r (ix + 1)
-        a <- withArray buf
-             (\ibuf -> return $ mkExpr
-                       (indexed1 len (\i -> getIx ibuf ((len + ix - i) `rem` len))))
-        setArr buf (ix `rem` len) a
+        a <- withBuf buf (return . mkExpr)
+        putBuf buf a
         return a
-  where
-    len  = length initV
 
 -- | A recurrence combinator with input. The function 'recurrenceI' is
 --   similar to 'recurrenceO'. The difference is that that it has an input
@@ -408,22 +402,16 @@ recurrenceIO :: (Type a, Type b) =>
                 (Pull1 a -> Pull1 b -> Data b) ->
                 Stream (Data b)
 recurrenceIO ii (Stream init) io mkExpr = Stream $ do
-    ibuf <- thawArray (freezePull1 ii)
-    obuf <- thawArray (freezePull1 io)
     next <- init
-    r    <- newRef (0 :: Data Index)
+    ibuf <- initBuffer ii
+    obuf <- initBuffer io
     loop $ do
-      ix <- getRef r
-      setRef r (ix + 1)
       a <- next
-      when (lenI /= 0) $ setArr ibuf (ix `rem` lenI) a
-      b <- withArray ibuf (\ib ->
-             withArray obuf (\ob ->
-               return $ mkExpr
-                          (indexed1 lenI (\i -> getIx ib ((lenI + ix - i) `rem` lenI)))
-                          (indexed1 lenO (\i -> getIx ob ((lenO + ix - i - 1) `rem` lenO)))
-                            ))
-      whenM (lenO /= 0) $ setArr obuf (ix `rem` lenO) b
+      when (lenI /= 0) $ putBuf ibuf a
+      b <- withBuf ibuf $ \ib ->
+             withBuf obuf $ \ob ->
+               return $ mkExpr ib ob
+      whenM (lenO /= 0) $ putBuf obuf b
       return b
   where
     lenI = length ii
@@ -436,27 +424,21 @@ recurrenceIIO :: (Type a, Type b, Type c) =>
                  (Pull1 a -> Pull1 b -> Pull1 c -> Data c) ->
                  Stream (Data c)
 recurrenceIIO i1 (Stream init1) i2 (Stream init2) io mkExpr = Stream $ do
-    ibuf1 <- thawArray (freezePull1 i1)
     next1 <- init1
-    ibuf2 <- thawArray (freezePull1 i2)
     next2 <- init2
-    obuf  <- thawArray (freezePull1 io)
-    c     <- newRef (0 :: Data Index)
+    ibuf1 <- initBuffer i1
+    ibuf2 <- initBuffer i2
+    obuf  <- initBuffer io
     loop $ do
-      ix <- getRef c
-      setRef c (ix + 1)
       a <- next1
       b <- next2
-      when (len1 /= 0) $ setArr ibuf1 (ix `rem` len1) a
-      when (len2 /= 0) $ setArr ibuf2 (ix `rem` len2) b
-      out <- withArray ibuf1 (\ib1 ->
-               withArray ibuf2 (\ib2 ->
-                 withArray obuf (\ob ->
-                   return $ mkExpr (indexed1 len1 (\i -> getIx ib1 ((len1 + ix - i) `rem` len1)))
-                                   (indexed1 len2 (\i -> getIx ib2 ((len2 + ix - i) `rem` len2)))
-                                   (indexed1 lenO (\i -> getIx ob  ((lenO + ix - i - 1) `rem` lenO)))
-                                )))
-      whenM (lenO /= 0) $ setArr obuf (ix `rem` lenO) out
+      when (len1 /= 0) $ putBuf ibuf1 a
+      when (len2 /= 0) $ putBuf ibuf2 b
+      out <- withBuf ibuf1 $ \ib1 ->
+               withBuf ibuf2 $ \ib2 ->
+                 withBuf obuf $ \ob ->
+                   return $ mkExpr ib1 ib2 ob
+      whenM (lenO /= 0) $ putBuf obuf out
       return out
   where
     len1 = length i1
