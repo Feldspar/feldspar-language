@@ -10,7 +10,7 @@ module Feldspar.Mutable where
 import qualified Prelude
 
 import Feldspar
-import Feldspar.SimpleVector
+import Feldspar.Vector
 
 
 
@@ -18,7 +18,7 @@ import Feldspar.SimpleVector
 data Buffer a = Buffer
     { indexBuf :: Data Index -> M a
     , putBuf   :: a -> M ()
-    , withBuf  :: forall b . Syntax b => (Vector a -> M b) -> M b
+    , withBuf  :: forall b . Syntax b => (Pull DIM1 a -> M b) -> M b
     }
 
 -- Another option would be to represent a buffer as its state (the counter and the array), but the
@@ -36,7 +36,7 @@ initBuffer' buf = do
           i <- getRef ir
           setRef ir ((i+1) `mod` l)
           setArr buf i $ desugar a
-        with :: Syntax b => (Vector a -> M b) -> M b
+        with :: Syntax b => (Pull DIM1 a -> M b) -> M b
         with f = do
           i <- getRef ir
           withArray buf (f . freeze i)
@@ -44,12 +44,12 @@ initBuffer' buf = do
   where
     calcIndex l i j = (l+i-j-1) `mod` l
 
-    freeze :: Syntax b => Data Index -> Data [Internal b] -> Vector b
-    freeze i = permute (\l -> calcIndex l i) . sugar
+    freeze :: Syntax b => Data Index -> Data [Internal b] -> Pull DIM1 b
+    freeze i = permute (\l -> calcIndex l i) . map sugar . thawPull1
 
 -- | Create a new cyclic buffer initalized by the given vector (which also determines the size)
-initBuffer :: Syntax a => Vector a -> M (Buffer a)
-initBuffer buf = thawArray (desugar buf) >>= initBuffer'
+initBuffer :: Syntax a => Pull DIM1 a -> M (Buffer a)
+initBuffer buf = thawArray (freezePull1 $ map desugar buf) >>= initBuffer'
 
 -- | Create a new cyclic buffer of the given length initialized by the given element
 newBuffer :: Syntax a => Data Length -> a -> M (Buffer a)

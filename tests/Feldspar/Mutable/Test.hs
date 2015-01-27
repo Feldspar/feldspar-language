@@ -5,6 +5,7 @@ module Feldspar.Mutable.Test where
 
 
 import Feldspar
+import qualified Feldspar.Vector as V
 import Feldspar.Mutable
 
 import Test.Tasty
@@ -47,7 +48,7 @@ prop_withBuf =
     prog2 as bl i = runMutable $ do
         buf <- newBuffer bl 0
         sequence_ [putBuf buf a | a <- as]
-        withBuf buf $ \b -> return (b!i)
+        withBuf buf $ \b -> return (b V.!! i)
 
 tests = $(testGroupGenerator)
 
