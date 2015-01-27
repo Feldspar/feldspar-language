@@ -283,7 +283,7 @@ instance Applicative Stream where
 instance Syntax a => Indexed (Stream a) where
   (Stream init) ! n = runMutable $ do
                         next <- init
-                        forM (n-1) (\_ -> next)
+                        forM n (\_ -> next)
                         next
 
 instance Num a => Num (Stream a) where
@@ -358,9 +358,9 @@ streamAsVectorSize f s v = toPull $ arrToManifest (fromList [lv], take lv $ f $ 
 --
 -- For exaple one can define the fibonacci sequence as follows:
 --
--- > fib = recurrenceO (vector [0,1]) (\fib -> fib!0 + fib!1)
+-- > fib = recurrenceO (thawPull1 $ fromList [0,1]) (\fib -> fib!!0 + fib!!1)
 --
--- The expressions @fib!0@ and @fib!1@ refer to previous elements in the
+-- The expressions @fib!!0@ and @fib!!1@ refer to previous elements in the
 -- stream defined one step back and two steps back respectively.
 recurrenceO :: Type a =>
                Pull1 a ->
@@ -375,9 +375,8 @@ recurrenceO initV mkExpr = Stream $ do
         a <- withArray buf
              (\ibuf -> return $ mkExpr
                        (indexed1 len (\i -> getIx ibuf ((len + ix - i) `rem` len))))
-        result <- getArr buf (ix `rem` len)
         setArr buf (ix `rem` len) a
-        return result
+        return a
   where
     len  = length initV
 
@@ -424,9 +423,7 @@ recurrenceIO ii (Stream init) io mkExpr = Stream $ do
                           (indexed1 lenI (\i -> getIx ib ((lenI + ix - i) `rem` lenI)))
                           (indexed1 lenO (\i -> getIx ob ((lenO + ix - i - 1) `rem` lenO)))
                             ))
-      whenM (lenO /= 0)
-        (do o <- getArr obuf (ix `rem` lenO)
-            setArr obuf (ix `rem` lenO) b)
+      whenM (lenO /= 0) $ setArr obuf (ix `rem` lenO) b
       return b
   where
     lenI = length ii
@@ -459,9 +456,7 @@ recurrenceIIO i1 (Stream init1) i2 (Stream init2) io mkExpr = Stream $ do
                                    (indexed1 len2 (\i -> getIx ib2 ((len2 + ix - i) `rem` len2)))
                                    (indexed1 lenO (\i -> getIx ob  ((lenO + ix - i - 1) `rem` lenO)))
                                 )))
-      whenM (lenO /= 0)
-          (do o <- getArr obuf (ix `rem` lenO)
-              setArr obuf (ix `rem` lenO) out)
+      whenM (lenO /= 0) $ setArr obuf (ix `rem` lenO) out
       return out
   where
     len1 = length i1

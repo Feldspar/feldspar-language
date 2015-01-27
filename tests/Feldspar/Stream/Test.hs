@@ -24,6 +24,19 @@ scProd a b = P.sum $ P.zipWith (*) a b
 
 
 
+-- Reference implementation of Fibonacci
+fibRef :: Num a => Int -> a
+fibRef i = fibs P.!! i
+  where
+    fibs = 0 : 1 : P.zipWith (+) fibs (P.tail fibs)
+
+fibFeld :: Numeric a => Int -> a
+fibFeld = eval (recurrenceO (thawPull1 $ fromList [0,1]) (\fib -> fib!!0 + fib!!1) !) . P.toEnum
+
+prop_fib = forAll (choose (0,20)) $ \i -> fibRef (i+2) P.== (fibFeld i :: WordN)
+
+
+
 -- Reference implementation of FIR filter
 firRef :: Num a => [a] -> [a] -> [a]
 firRef coeffs inp = [scProd coeffs is | is <- P.map P.reverse $ P.tail $ List.inits inp]
