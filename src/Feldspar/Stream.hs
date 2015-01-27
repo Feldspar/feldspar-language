@@ -375,9 +375,8 @@ recurrenceO initV mkExpr = Stream $ do
         a <- withArray buf
              (\ibuf -> return $ mkExpr
                        (indexed1 len (\i -> getIx ibuf ((len + ix - i) `rem` len))))
-        result <- getArr buf (ix `rem` len)
         setArr buf (ix `rem` len) a
-        return result
+        return a
   where
     len  = length initV
 
