@@ -283,7 +283,7 @@ instance Applicative Stream where
 instance Syntax a => Indexed (Stream a) where
   (Stream init) ! n = runMutable $ do
                         next <- init
-                        forM (n-1) (\_ -> next)
+                        forM n (\_ -> next)
                         next
 
 instance Num a => Num (Stream a) where
