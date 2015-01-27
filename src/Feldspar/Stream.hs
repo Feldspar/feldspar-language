@@ -424,11 +424,10 @@ recurrenceIO ii (Stream init) io mkExpr = Stream $ do
                           (indexed1 lenI (\i -> getIx ib ((lenI + ix - i) `rem` lenI)))
                           (indexed1 lenO (\i -> getIx ob ((lenO + ix - i - 1) `rem` lenO)))
                             ))
-      ifM (lenO /= 0)
+      whenM (lenO /= 0)
         (do o <- getArr obuf (ix `rem` lenO)
-            setArr obuf (ix `rem` lenO) b
-            return o)
-        (return b)
+            setArr obuf (ix `rem` lenO) b)
+      return b
   where
     lenI = length ii
     lenO = length io
@@ -460,11 +459,10 @@ recurrenceIIO i1 (Stream init1) i2 (Stream init2) io mkExpr = Stream $ do
                                    (indexed1 len2 (\i -> getIx ib2 ((len2 + ix - i) `rem` len2)))
                                    (indexed1 lenO (\i -> getIx ob  ((lenO + ix - i - 1) `rem` lenO)))
                                 )))
-      ifM (lenO /= 0)
+      whenM (lenO /= 0)
           (do o <- getArr obuf (ix `rem` lenO)
-              setArr obuf (ix `rem` lenO) out
-              return o)
-          (return out)
+              setArr obuf (ix `rem` lenO) out)
+      return out
   where
     len1 = length i1
     len2 = length i2
@@ -475,15 +473,17 @@ slidingAvg n str = recurrenceI (replicate1 n 0) str
                    (\input -> (fromZero $ sum input) `quot` n)
 
 -- | A fir filter on streams
-fir :: Pull1 Float ->
-       Stream (Data Float) -> Stream (Data Float)
+fir :: Numeric a => Pull1 a ->
+       Stream (Data a) -> Stream (Data a)
 fir b inp =
-    recurrenceI (replicate1 (length b) 0) inp
-                (scalarProd b)
+    recurrenceIO (replicate1 (length b) 0) inp (replicate1 1 0)
+                 (\i _ -> scalarProd b i)
+  -- Temporarily using recurrenceIO instead of recurrenceI, because the latter uses an empty output
+  -- buffer, which triggers https://github.com/Feldspar/feldspar-language/issues/24
 
 -- | An iir filter on streams
-iir :: Data Float -> Pull1 Float -> Pull1 Float ->
-       Stream (Data Float) -> Stream (Data Float)
+iir :: Fraction a => Data a -> Pull1 a -> Pull1 a ->
+       Stream (Data a) -> Stream (Data a)
 iir a0 a b inp =
     recurrenceIO (replicate1 (length b) 0) inp
                  (replicate1 (length a) 0)
