@@ -358,9 +358,9 @@ streamAsVectorSize f s v = toPull $ arrToManifest (fromList [lv], take lv $ f $ 
 --
 -- For exaple one can define the fibonacci sequence as follows:
 --
--- > fib = recurrenceO (vector [0,1]) (\fib -> fib!0 + fib!1)
+-- > fib = recurrenceO (thawPull1 $ fromList [0,1]) (\fib -> fib!!0 + fib!!1)
 --
--- The expressions @fib!0@ and @fib!1@ refer to previous elements in the
+-- The expressions @fib!!0@ and @fib!!1@ refer to previous elements in the
 -- stream defined one step back and two steps back respectively.
 recurrenceO :: Type a =>
                Pull1 a ->
