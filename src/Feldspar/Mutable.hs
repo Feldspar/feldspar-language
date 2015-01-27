@@ -25,9 +25,8 @@ data Buffer a = Buffer
 -- above representation leaves room for other implementations.
 
 --- | Create a new cyclic buffer
-newBuffer :: forall a . Syntax a => Data Length -> a -> M (Buffer a)
-newBuffer l init = do
-    buf <- newArr l (desugar init)
+initBuffer' :: forall a . Syntax a => Data (MArr (Internal a)) -> M (Buffer a)
+initBuffer' buf = do
     l  <- arrLength buf
     ir <- newRef 0
     let get j = do
@@ -47,4 +46,12 @@ newBuffer l init = do
 
     freeze :: Syntax b => Data Index -> Data [Internal b] -> Vector b
     freeze i = permute (\l -> calcIndex l i) . sugar
+
+-- | Create a new cyclic buffer initalized by the given vector (which also determines the size)
+initBuffer :: Syntax a => Vector a -> M (Buffer a)
+initBuffer buf = thawArray (desugar buf) >>= initBuffer'
+
+-- | Create a new cyclic buffer of the given length initialized by the given element
+newBuffer :: Syntax a => Data Length -> a -> M (Buffer a)
+newBuffer l init = newArr l (desugar init) >>= initBuffer'
 
