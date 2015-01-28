@@ -24,10 +24,12 @@ module Feldspar.Core.UntypedRepresentation (
   , mkLam
   , mkApp
   , subst
+  , stringTree
   )
   where
 
 import Data.List (nub, intercalate)
+import Data.Tree
 
 import Feldspar.Range (Range(..), singletonRange)
 import Feldspar.Core.Types (Length)
@@ -447,6 +449,16 @@ instance (Show e) => Show (UntypedFeldF e) where
    show (App p@Parallel _ [e1,e2]) = show p ++ " (" ++ show e1 ++ ") " ++ show e2
    show (App p@Sequential _ [e1,e2,e3]) = show p ++ " (" ++ show e1 ++ ") (" ++ show e2 ++ ") " ++ show e3
    show (App p _ es)                = show p ++ " " ++ unwords (map show es)
+
+-- | Convert an untyped syntax tree into a @Tree@ of @String@s
+stringTree :: UntypedFeld -> Tree String
+stringTree = unfoldTree go
+  where
+    go (In (Variable v))         = (show v, [])
+    go (In (Lambda v e))         = ("Lambda "++show v, [e])
+    go (In (LetFun (s,k,e1) e2)) = (unwords ["LetFun", show k, s], [e1,e2])
+    go (In (Literal l))          = (show l, [])
+    go (In (App p _ es))         = (show p,es)
 
 class HasType a where
     type TypeOf a
