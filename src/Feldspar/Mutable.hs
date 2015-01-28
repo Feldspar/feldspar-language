@@ -55,3 +55,6 @@ initBuffer buf = thawArray (freezePull1 $ map desugar buf) >>= initBuffer'
 newBuffer :: Syntax a => Data Length -> a -> M (Buffer a)
 newBuffer l init = newArr l (desugar init) >>= initBuffer'
 
+-- | Create a new cyclic buffer of the given length without initialization
+newBuffer_ :: Syntax a => Data Length -> M (Buffer a)
+newBuffer_ l = newArr_ l >>= initBuffer'
