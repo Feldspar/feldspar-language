@@ -56,6 +56,12 @@ go (In (App GetIx _ [arr, In (Literal (LInt _ _ n))]))
  | In (App EMaterialize _ [In Literal{}, e@(In (App EPar _ _))]) <- arr
  , Just e3 <- grabWrite n e = go e3
 
+-- withArray arr (\v -> body), arr is free in body ==> subst arr v body
+go (In (App WithArray t [arr, In (Lambda v body)]))
+  | In (Variable a) <- arr
+  , a `notElem` (fv body)
+  = go $ subst arr v body
+
 -- Tuple selections, 1..15. Deliberately avoiding take 1 . drop k which will
 -- result in funny things with broken input.
 go (In (App Sel1 _ [In (App p _ (e:_))]))
