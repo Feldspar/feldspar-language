@@ -56,7 +56,7 @@ go (In (App GetIx _ [arr, In (Literal (LInt _ _ n))]))
  | In (App EMaterialize _ [In Literal{}, e@(In (App EPar _ _))]) <- arr
  , Just e3 <- grabWrite n e = go e3
 
--- withArray arr (\v -> body), arr is free in body ==> subst arr v body
+-- withArray arr (\v -> body), arr is not used in body ==> subst arr v body
 go (In (App WithArray t [arr, In (Lambda v body)]))
   | In (Variable a) <- arr
   , a `notElem` (fv body)
