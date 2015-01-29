@@ -60,6 +60,8 @@ module Feldspar.Core.Frontend
     , printExprWith
     , printExpr2With
     , printExprUnOpt
+    , drawUntyped
+    , drawUntypedWith
     , showAST
     , drawAST
     , writeHtmlAST
@@ -92,9 +94,10 @@ import Control.Monad.State
 import Test.QuickCheck
 
 import Data.Patch
+import Data.Tree.View
 
 import Language.Syntactic hiding
-    (desugar, sugar, resugar, showAST, drawAST, writeHtmlAST)
+    (desugar, sugar, resugar, showAST, drawAST, writeHtmlAST, stringTree)
 import qualified Language.Syntactic as Syntactic
 import qualified Language.Syntactic.Constructs.Decoration as Syntactic
 import Language.Syntactic.Constructs.Binding
@@ -107,6 +110,7 @@ import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Middleend.FromTyped
+import Feldspar.Core.UntypedRepresentation (stringTree)
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Binding (cLambda)
 import Feldspar.Core.Frontend.Array            as Frontend
@@ -216,7 +220,15 @@ showExpr = render . reifyFeld defaultFeldOpts N32
 
 -- | Print an optimized untyped expression
 printExpr2 :: SyntacticFeld a => a -> IO ()
-printExpr2 = print . untype defaultFeldOpts . reifyFeld defaultFeldOpts N32
+printExpr2 = printExpr2With defaultFeldOpts
+
+-- | Draw the untyped syntax tree using unicode art
+drawUntyped :: SyntacticFeld a => a -> IO ()
+drawUntyped = drawUntypedWith defaultFeldOpts
+
+-- | Draw the untyped syntax tree using unicode art
+drawUntypedWith :: SyntacticFeld a => FeldOpts -> a -> IO ()
+drawUntypedWith opts = drawTree . stringTree . untype opts . reifyFeld opts N32
 
 -- | Print an optimized expression
 printExpr :: SyntacticFeld a => a -> IO ()

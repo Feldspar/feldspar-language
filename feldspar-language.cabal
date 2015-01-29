@@ -148,7 +148,8 @@ library
     monad-par                   >= 0.3.4.5,
     deepseq,
     random                      >= 1.0    && < 1.2,
-    data-default                >= 0.5.3  && < 0.6
+    data-default                >= 0.5.3  && < 0.6,
+    tree-view
 
   other-extensions:
     ConstraintKinds
