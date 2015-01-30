@@ -49,10 +49,12 @@ import System.IO.Unsafe
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
+import Language.Syntactic.Constructs.Binding.HigherOrder (CLambda)
 
 import Feldspar.Lattice
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
+import Feldspar.Core.Constructs.Binding
 
 data MutableToPure a where
   RunMutableArray :: Type a => MutableToPure (Mut (MArr a) :-> Full [a])
@@ -94,10 +96,29 @@ instance Cumulative MutableToPure
 instance SizeProp MutableToPure
   where
     sizeProp RunMutableArray (WrapFull arr :* Nil) = infoSize arr
-    sizeProp WithArray _ = universal
+    sizeProp WithArray (_ :* WrapFull fun :* Nil) = snd $ infoSize fun
 
-instance (MutableToPure :<: dom, Optimize dom dom) => Optimize MutableToPure dom
+
+instance ( MutableToPure :<: dom
+         , Let :<: dom
+         , (Variable :|| Type) :<: dom
+         , CLambda Type :<: dom
+         , OptimizeSuper dom
+         ) =>
+           Optimize MutableToPure dom
   where
+    optimizeFeat opts sym@WithArray (arr :* fun@(lam :$ body) :* Nil)
+      | Dict <- exprDict fun
+      , Dict <- exprDict body
+      , Just (SubConstr2 (Lambda _)) <- prjLambda lam
+      = do
+          arr' <- optimizeM opts arr
+          let (szl :> sze) = infoSize (getInfo arr')
+          fun' <- optimizeFunction opts (optimizeM opts) (mkInfo (szl :> sze)) fun
+          constructFeat opts sym (arr' :* fun' :* Nil)
+
+    optimizeFeat opts sym args = optimizeFeatDefault opts sym args
+
     constructFeatUnOpt opts RunMutableArray args = constructFeatUnOptDefaultTyp opts typeRep RunMutableArray args
     constructFeatUnOpt opts WithArray args       = constructFeatUnOptDefaultTyp opts (MutType typeRep) WithArray args
 
