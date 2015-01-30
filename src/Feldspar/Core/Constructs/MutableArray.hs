@@ -87,6 +87,7 @@ instance Cumulative MutableArray
 instance SizeProp MutableArray
   where
     sizeProp NewArr  (WrapFull len :* _ :* Nil) = infoSize len :> universal
+      -- Note: The length isn't mutable, so it can be given a non-universal size.
     sizeProp NewArr_ (WrapFull len :* Nil)      = infoSize len :> universal
     sizeProp GetArr  _                          = universal
     sizeProp SetArr  _                          = universal
