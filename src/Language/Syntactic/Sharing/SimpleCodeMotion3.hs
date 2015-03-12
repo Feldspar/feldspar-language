@@ -188,10 +188,11 @@ choose hoistOver pd mkId mkSub a = chooseEnvSub initEnv a
 
 
 -- | Perform common sub-expression elimination and variable hoisting
-codeMotion :: forall dom a
+codeMotion :: forall dom m a
     .  ( ConstrainedBy dom Typeable
        , AlphaEq dom dom dom [(VarId,VarId)]
        , Project Let dom
+       , MonadState VarId m
        )
     => (forall c. ASTF dom c -> Bool)
          -- ^ Control wether a sub-expression can be hoisted over the given expression
@@ -199,12 +200,12 @@ codeMotion :: forall dom a
     -> MkInjDict dom
     -> MkSubEnv dom
     -> ASTF dom a
-    -> State VarId (ASTF dom a)
+    -> m (ASTF dom a)
 codeMotion hoistOver pd mkId mkSub a
     | Just (Chosen id b) <- choose hoistOver pd mkId mkSub a = share id b
     | otherwise = descend a
   where
-    share :: InjDict dom b a -> ASTF dom b -> State VarId (ASTF dom a)
+    share :: InjDict dom b a -> ASTF dom b -> m (ASTF dom a)
     share id b = do
         b' <- codeMotion hoistOver pd mkId mkSub b
         v  <- get; put (v+1)
@@ -215,7 +216,7 @@ codeMotion hoistOver pd mkId mkSub a
             :$ b'
             :$ (Sym (injLambda id v) :$ body)
 
-    descend :: AST dom b -> State VarId (AST dom b)
+    descend :: AST dom b -> m (AST dom b)
     descend (lt :$ a :$ (Sym lam :$ b))
         | Just Let <- prj lt
         , Just _ <- prjLambda pd lam = do
@@ -241,10 +242,11 @@ fixIter limit f a = do
 
 
 -- | Perform common sub-expression elimination and variable hoisting
-codeMotion3 :: forall dom a
+codeMotion3 :: forall dom m a
     .  ( ConstrainedBy dom Typeable
        , AlphaEq dom dom dom [(VarId,VarId)]
        , Project Let dom
+       , MonadState VarId m
        )
     => Int  -- Max number of iterations
     -> (forall c. ASTF dom c -> Bool)
@@ -253,7 +255,7 @@ codeMotion3 :: forall dom a
     -> MkInjDict dom
     -> MkSubEnv dom
     -> ASTF dom a
-    -> State VarId (ASTF dom a)
+    -> m (ASTF dom a)
 codeMotion3 limit hoistOver pd mkId mkSub = fixIter limit $ codeMotion hoistOver pd mkId mkSub
 
 
