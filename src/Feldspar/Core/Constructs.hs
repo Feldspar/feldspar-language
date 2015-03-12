@@ -183,14 +183,14 @@ deriving instance Typeable Data
 deriving instance Typeable1 Data
 #endif
 
-instance Type a => Syntactic (Data a)
+instance Syntactic (Data a)
   where
     type Domain (Data a)   = FeldDomain
     type Internal (Data a) = a
     desugar = unData
     sugar   = Data
 
-type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomain, Typeable (Internal a))
+type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomain)
 
 -- | Specialization of the 'Syntactic' class for the Feldspar domain
 class    (SyntacticFeld a, Type (Internal a)) => Syntax a
