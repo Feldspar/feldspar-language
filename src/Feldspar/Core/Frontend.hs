@@ -53,6 +53,7 @@ module Feldspar.Core.Frontend
     , FeldOpts
     , defaultFeldOpts
     , reifyFeld
+    , reifyFeldM
     , reifyFeldUnOpt
     , showExpr
     , printExpr
@@ -179,13 +180,12 @@ hoister opts
         cm3 = codeMotion3 10 (simpleMatch (const . hoistOver)) prjDict (mkId opts) mkSubEnvDefault
 
 
--- | Reification and optimization of a Feldspar program
-reifyFeld :: SyntacticFeld a
+reifyFeldM :: (SyntacticFeld a, MonadState VarId m)
     => FeldOpts
     -> BitWidth n
     -> a
-    -> ASTF (Decor Info FeldDom) (Internal a)
-reifyFeld opts n = flip evalState 0 .
+    -> m (ASTF (Decor Info FeldDom) (Internal a))
+reifyFeldM opts n =
     (   return
     .   optimize opts
     .   stripDecor
@@ -201,6 +201,14 @@ reifyFeld opts n = flip evalState 0 .
   -- where 'optimize' removes all but one occurrence. If 'codeMotion' was run
   -- first, these sub-expressions would be let bound, preventing subsequent
   -- optimizations.
+
+-- | Reification and optimization of a Feldspar program
+reifyFeld :: SyntacticFeld a
+    => FeldOpts
+    -> BitWidth n
+    -> a
+    -> ASTF (Decor Info FeldDom) (Internal a)
+reifyFeld opts n = flip evalState 0 . reifyFeldM opts n
 
 -- | Reification of a Feldspar program
 reifyFeldUnOpt :: SyntacticFeld a
