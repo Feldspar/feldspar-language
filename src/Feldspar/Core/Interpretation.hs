@@ -469,9 +469,7 @@ optimizeM opts a
 
 -- | Optimization of an expression. This function runs 'optimizeM' and extracts
 -- the result.
-optimize :: ( Typeable a
-            , OptimizeSuper dom
-            )
+optimize :: (OptimizeSuper dom)
          => FeldOpts -> ASTF (dom :|| Typeable) a -> ASTF (Decor Info (dom :|| Typeable)) a
 optimize opts = flip runReader initEnv . optimizeM opts
 
