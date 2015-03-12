@@ -224,3 +224,7 @@ sugarSymF :: ( ApplySym sig b FeldDomain
           => feature sig -> c
 sugarSymF sym = sugarN $ appSym' $ Sym $ FeldDomain $ injC $ c' sym
 
+-- | Create a variable from an identifier
+mkVariable :: Type a => Integer -> Data a
+mkVariable v = sugarSymF (Variable (fromInteger v))
+
