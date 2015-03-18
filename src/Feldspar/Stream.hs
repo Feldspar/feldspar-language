@@ -53,6 +53,7 @@ module Feldspar.Stream
     ,streamAsVector, streamAsVectorSize
     ,recurrenceO, recurrenceI, recurrenceIO, recurrenceIIO
     ,slidingAvg
+    ,movingAvg
     ,iir,fir
     ,recurrenceIO2, fir2
     )
@@ -470,6 +471,11 @@ recurrenceIIO i1 (Stream init1) i2 (Stream init2) io mkExpr = Stream $ do
 slidingAvg :: Data WordN -> Stream (Data WordN) -> Stream (Data WordN)
 slidingAvg n str = recurrenceI (replicate1 n 0) str
                    (\input -> (fromZero $ sum input) `quot` n)
+
+movingAvg :: (Fraction a, RealFloat a)
+          => Data WordN -> Stream (Data a) -> Stream (Data a)
+movingAvg n str = recurrenceIO (replicate1 n 0) str (replicate1 1 0)
+                  (\input _ -> (fromZero $ sum input) / i2f n)
 
 -- | A fir filter on streams
 fir :: Numeric a => Pull1 a ->
