@@ -56,6 +56,7 @@ module Feldspar.Stream
     ,movingAvg
     ,iir,fir
     ,recurrenceIO2, fir2
+    ,movingAvg2
     )
     where
 
@@ -476,6 +477,11 @@ movingAvg :: (Fraction a, RealFloat a)
           => Data WordN -> Stream (Data a) -> Stream (Data a)
 movingAvg n str = recurrenceIO (replicate1 n 0) str (replicate1 1 0)
                   (\input _ -> (fromZero $ sum input) / i2f n)
+
+movingAvg2 :: (Fraction a, RealFloat a)
+           => WordN -> Stream (Data a) -> Stream (Data a)
+movingAvg2 n str = recurrenceIO2 (P.replicate (P.fromIntegral n) 0) str []
+                   (\input _ -> (P.sum input) / i2f (value n))
 
 -- | A fir filter on streams
 fir :: Numeric a => Pull1 a ->
