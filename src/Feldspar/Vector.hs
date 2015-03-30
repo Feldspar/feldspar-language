@@ -610,7 +610,7 @@ type Vector1 a = Pull1 a
 {-# DEPRECATED Vector1 "Use Pull1 instead" #-}
 
 value1 :: Syntax a => [Internal a] -> Manifest DIM1 a
-value1 ls = value ([P.fromIntegral (P.length ls)],ls)
+value1 ls = value ls
 
 -- | Create a one-dimensional Pull vector
 indexed1 :: Data Length -> (Data Index -> a) -> Pull DIM1 a
@@ -1067,7 +1067,7 @@ contractST a = contractS $ transS $ a
 
 -- | Manifest vectors live in memory. Pull- and Push vectors can be allocated
 --   as Manifest using the 'store' function.
-data Manifest sh a = Syntax a => Manifest (Data [Internal a]) (Data [Length])
+data Manifest sh a = Syntax a => Manifest (Data [Internal a]) (Shape sh)
 
 -- | A class for memory allocation. All vectors are instances of this class.
 class Shaped vec => Storable vec where
@@ -1078,22 +1078,35 @@ instance Storable Manifest where
   store m = m
 
 instance Storable Pull where
-  store vec@(Pull ixf sh) = Manifest (save $ fromPull (fmap F.desugar vec)) (fromList (toList sh))
+  store vec@(Pull ixf sh) = Manifest (save $ fromPull (fmap F.desugar vec)) sh
 
 instance Storable Push where
-  store vec@(Push f sh) = Manifest (save $ fromPush (fmap F.desugar vec)) (fromList (toList sh))
+  store vec@(Push f sh) = Manifest (save $ fromPush (fmap F.desugar vec)) sh
 
 instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where
   type Domain   (Manifest sh a) = FeldDomain
-  type Internal (Manifest sh a) = ([Length],[Internal a])
-  desugar = desugar . manifestToArr
-  sugar   = arrToManifest . sugar
+  type Internal (Manifest sh a) = InternalShape sh a
+  desugar v@(Manifest _ sh) = case sh of
+      Z           -> desugar $ fromZero v
+      Z :. _      -> desugar $ manifestToArr1 v
+      _ :. _ :. _ -> desugar $ manifestToArr v
+
+  sugar v = case fakeShape :: Shape sh of
+      Z           -> store $ unit $ sugar v
+      Z :. _      -> arrToManifest1 $ sugar v
+      _ :. _ :. _ -> arrToManifest $ sugar v
+
+manifestToArr1 :: Syntax a => Manifest DIM1 a -> Data [Internal a]
+manifestToArr1 (Manifest arr _) = arr
 
 manifestToArr :: Syntax a => Manifest sh a -> (Data [Length],Data [Internal a])
-manifestToArr (Manifest arr sh) = (sh,arr)
+manifestToArr (Manifest arr sh) = (fromList $ toList sh,arr)
 
-arrToManifest :: Syntax a => (Data [Length], Data [Internal a]) -> Manifest sh a
-arrToManifest (ls,arr) = Manifest arr ls
+arrToManifest1 :: Syntax a => Data [Internal a] -> Manifest DIM1 a
+arrToManifest1 arr = Manifest arr (Z:.getLength arr)
+
+arrToManifest :: (Syntax a, Shapely sh) => (Data [Length], Data [Internal a]) -> Manifest sh a
+arrToManifest (ls,arr) = Manifest arr (toShape 0 ls)
 
 -- | A typeclass for types of array elements which can be flattened. An example
 --   is an array of pairs, which can be flattened into a pair of arrays.
@@ -1109,7 +1122,7 @@ instance Type a => Flat sh (Data a) where
   type Arr (Data a) = Data (MArr a)
   allocArray _ _ = newArr_
   writeArray _ marr f = f (\i a -> setArr marr i a)
-  freezeArr _ sh arr = fmap (\a -> Manifest a (fromList (toList sh))) $
+  freezeArr _ sh arr = fmap (\a -> Manifest a sh) $
                        freezeArray arr
 
 instance (Flat sh a, Flat sh b) => Flat sh (a,b) where
@@ -1166,8 +1179,7 @@ class (Shaped vec) => Pully vec sh where
   toPull :: vec sh a -> Pull sh a
 
 instance Shapely sh => Pully Manifest sh where
-  toPull (Manifest arr shA) = Pull (\i -> F.sugar $ arr ! toIndex sh i) sh
-    where sh = toShape 0 shA
+  toPull (Manifest arr sh) = Pull (\i -> F.sugar $ arr ! toIndex sh i) sh
 
 instance Pully Pull sh where
   toPull vec = vec
@@ -1186,7 +1198,7 @@ instance Shaped Push where
   extent (Push _ sh) = sh
 
 instance Shaped Manifest where
-  extent (Manifest _ sh) = toShape 0 sh
+  extent (Manifest _ sh) = sh
 
 -- Overloaded operations
 
