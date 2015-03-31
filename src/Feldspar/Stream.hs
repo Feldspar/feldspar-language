@@ -411,7 +411,7 @@ recurrenceIO ii (Stream init) io mkExpr = Stream $ do
     obuf <- initBuffer io
     loop $ do
       a <- next
-      when (lenI /= 0) $ putBuf ibuf a
+      whenM (lenI /= 0) $ putBuf ibuf a
       b <- withBuf ibuf $ \ib ->
              withBuf obuf $ \ob ->
                return $ mkExpr ib ob
@@ -456,8 +456,8 @@ recurrenceIIO i1 (Stream init1) i2 (Stream init2) io mkExpr = Stream $ do
     loop $ do
       a <- next1
       b <- next2
-      when (len1 /= 0) $ putBuf ibuf1 a
-      when (len2 /= 0) $ putBuf ibuf2 b
+      whenM (len1 /= 0) $ putBuf ibuf1 a
+      whenM (len2 /= 0) $ putBuf ibuf2 b
       out <- withBuf ibuf1 $ \ib1 ->
                withBuf ibuf2 $ \ib2 ->
                  withBuf obuf $ \ob ->
