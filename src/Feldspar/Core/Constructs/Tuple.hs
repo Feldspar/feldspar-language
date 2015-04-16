@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -35,10 +36,11 @@
 --
 
 module Feldspar.Core.Constructs.Tuple
-    ( module Language.Syntactic.Constructs.Tuple
+    ( Select(..)
+    , Tuple(..)
     ) where
 
-import Data.Tuple.Select
+import TupleTH
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding
@@ -335,153 +337,153 @@ instance Sharable Select
 instance Cumulative Select
 
 sel1Size :: (Sel1' a ~ b) => TypeRep a -> Size a -> Size b
-sel1Size Tup2Type{} = sel1
-sel1Size Tup3Type{} = sel1
-sel1Size Tup4Type{} = sel1
-sel1Size Tup5Type{} = sel1
-sel1Size Tup6Type{} = sel1
-sel1Size Tup7Type{} = sel1
-sel1Size Tup8Type{} = sel1
-sel1Size Tup9Type{} = sel1
-sel1Size Tup10Type{} = sel1
-sel1Size Tup11Type{} = sel1
-sel1Size Tup12Type{} = sel1
-sel1Size Tup13Type{} = sel1
-sel1Size Tup14Type{} = sel1
-sel1Size Tup15Type{} = sel1
+sel1Size Tup2Type{}  = $(proj 2 0)
+sel1Size Tup3Type{}  = $(proj 3 0)
+sel1Size Tup4Type{}  = $(proj 4 0)
+sel1Size Tup5Type{}  = $(proj 5 0)
+sel1Size Tup6Type{}  = $(proj 6 0)
+sel1Size Tup7Type{}  = $(proj 7 0)
+sel1Size Tup8Type{}  = $(proj 8 0)
+sel1Size Tup9Type{}  = $(proj 9 0)
+sel1Size Tup10Type{} = $(proj 10 0)
+sel1Size Tup11Type{} = $(proj 11 0)
+sel1Size Tup12Type{} = $(proj 12 0)
+sel1Size Tup13Type{} = $(proj 13 0)
+sel1Size Tup14Type{} = $(proj 14 0)
+sel1Size Tup15Type{} = $(proj 15 0)
 
 sel2Size :: (Sel2' a ~ b) => TypeRep a -> Size a -> Size b
-sel2Size Tup2Type{} = sel2
-sel2Size Tup3Type{} = sel2
-sel2Size Tup4Type{} = sel2
-sel2Size Tup5Type{} = sel2
-sel2Size Tup6Type{} = sel2
-sel2Size Tup7Type{} = sel2
-sel2Size Tup8Type{} = sel2
-sel2Size Tup9Type{} = sel2
-sel2Size Tup10Type{} = sel2
-sel2Size Tup11Type{} = sel2
-sel2Size Tup12Type{} = sel2
-sel2Size Tup13Type{} = sel2
-sel2Size Tup14Type{} = sel2
-sel2Size Tup15Type{} = sel2
+sel2Size Tup2Type{}  = $(proj 2 1)
+sel2Size Tup3Type{}  = $(proj 3 1)
+sel2Size Tup4Type{}  = $(proj 4 1)
+sel2Size Tup5Type{}  = $(proj 5 1)
+sel2Size Tup6Type{}  = $(proj 6 1)
+sel2Size Tup7Type{}  = $(proj 7 1)
+sel2Size Tup8Type{}  = $(proj 8 1)
+sel2Size Tup9Type{}  = $(proj 9 1)
+sel2Size Tup10Type{} = $(proj 10 1)
+sel2Size Tup11Type{} = $(proj 11 1)
+sel2Size Tup12Type{} = $(proj 12 1)
+sel2Size Tup13Type{} = $(proj 13 1)
+sel2Size Tup14Type{} = $(proj 14 1)
+sel2Size Tup15Type{} = $(proj 15 1)
 
 sel3Size :: (Sel3' a ~ b) => TypeRep a -> Size a -> Size b
-sel3Size Tup3Type{} = sel3
-sel3Size Tup4Type{} = sel3
-sel3Size Tup5Type{} = sel3
-sel3Size Tup6Type{} = sel3
-sel3Size Tup7Type{} = sel3
-sel3Size Tup8Type{} = sel3
-sel3Size Tup9Type{} = sel3
-sel3Size Tup10Type{} = sel3
-sel3Size Tup11Type{} = sel3
-sel3Size Tup12Type{} = sel3
-sel3Size Tup13Type{} = sel3
-sel3Size Tup14Type{} = sel3
-sel3Size Tup15Type{} = sel3
+sel3Size Tup3Type{}  = $(proj 3 2)
+sel3Size Tup4Type{}  = $(proj 4 2)
+sel3Size Tup5Type{}  = $(proj 5 2)
+sel3Size Tup6Type{}  = $(proj 6 2)
+sel3Size Tup7Type{}  = $(proj 7 2)
+sel3Size Tup8Type{}  = $(proj 8 2)
+sel3Size Tup9Type{}  = $(proj 9 2)
+sel3Size Tup10Type{} = $(proj 10 2)
+sel3Size Tup11Type{} = $(proj 11 2)
+sel3Size Tup12Type{} = $(proj 12 2)
+sel3Size Tup13Type{} = $(proj 13 2)
+sel3Size Tup14Type{} = $(proj 14 2)
+sel3Size Tup15Type{} = $(proj 15 2)
 
 sel4Size :: (Sel4' a ~ b) => TypeRep a -> Size a -> Size b
-sel4Size Tup4Type{} = sel4
-sel4Size Tup5Type{} = sel4
-sel4Size Tup6Type{} = sel4
-sel4Size Tup7Type{} = sel4
-sel4Size Tup8Type{} = sel4
-sel4Size Tup9Type{} = sel4
-sel4Size Tup10Type{} = sel4
-sel4Size Tup11Type{} = sel4
-sel4Size Tup12Type{} = sel4
-sel4Size Tup13Type{} = sel4
-sel4Size Tup14Type{} = sel4
-sel4Size Tup15Type{} = sel4
+sel4Size Tup4Type{}  = $(proj 4 3)
+sel4Size Tup5Type{}  = $(proj 5 3)
+sel4Size Tup6Type{}  = $(proj 6 3)
+sel4Size Tup7Type{}  = $(proj 7 3)
+sel4Size Tup8Type{}  = $(proj 8 3)
+sel4Size Tup9Type{}  = $(proj 9 3)
+sel4Size Tup10Type{} = $(proj 10 3)
+sel4Size Tup11Type{} = $(proj 11 3)
+sel4Size Tup12Type{} = $(proj 12 3)
+sel4Size Tup13Type{} = $(proj 13 3)
+sel4Size Tup14Type{} = $(proj 14 3)
+sel4Size Tup15Type{} = $(proj 15 3)
 
 sel5Size :: (Sel5' a ~ b) => TypeRep a -> Size a -> Size b
-sel5Size Tup5Type{} = sel5
-sel5Size Tup6Type{} = sel5
-sel5Size Tup7Type{} = sel5
-sel5Size Tup8Type{} = sel5
-sel5Size Tup9Type{} = sel5
-sel5Size Tup10Type{} = sel5
-sel5Size Tup11Type{} = sel5
-sel5Size Tup12Type{} = sel5
-sel5Size Tup13Type{} = sel5
-sel5Size Tup14Type{} = sel5
-sel5Size Tup15Type{} = sel5
+sel5Size Tup5Type{}  = $(proj 5 4)
+sel5Size Tup6Type{}  = $(proj 6 4)
+sel5Size Tup7Type{}  = $(proj 7 4)
+sel5Size Tup8Type{}  = $(proj 8 4)
+sel5Size Tup9Type{}  = $(proj 9 4)
+sel5Size Tup10Type{} = $(proj 10 4)
+sel5Size Tup11Type{} = $(proj 11 4)
+sel5Size Tup12Type{} = $(proj 12 4)
+sel5Size Tup13Type{} = $(proj 13 4)
+sel5Size Tup14Type{} = $(proj 14 4)
+sel5Size Tup15Type{} = $(proj 15 4)
 
 sel6Size :: (Sel6' a ~ b) => TypeRep a -> Size a -> Size b
-sel6Size Tup6Type{} = sel6
-sel6Size Tup7Type{} = sel6
-sel6Size Tup8Type{} = sel6
-sel6Size Tup9Type{} = sel6
-sel6Size Tup10Type{} = sel6
-sel6Size Tup11Type{} = sel6
-sel6Size Tup12Type{} = sel6
-sel6Size Tup13Type{} = sel6
-sel6Size Tup14Type{} = sel6
-sel6Size Tup15Type{} = sel6
+sel6Size Tup6Type{}  = $(proj 6 5)
+sel6Size Tup7Type{}  = $(proj 7 5)
+sel6Size Tup8Type{}  = $(proj 8 5)
+sel6Size Tup9Type{}  = $(proj 9 5)
+sel6Size Tup10Type{} = $(proj 10 5)
+sel6Size Tup11Type{} = $(proj 11 5)
+sel6Size Tup12Type{} = $(proj 12 5)
+sel6Size Tup13Type{} = $(proj 13 5)
+sel6Size Tup14Type{} = $(proj 14 5)
+sel6Size Tup15Type{} = $(proj 15 5)
 
 sel7Size :: (Sel7' a ~ b) => TypeRep a -> Size a -> Size b
-sel7Size Tup7Type{} = sel7
-sel7Size Tup8Type{} = sel7
-sel7Size Tup9Type{} = sel7
-sel7Size Tup10Type{} = sel7
-sel7Size Tup11Type{} = sel7
-sel7Size Tup12Type{} = sel7
-sel7Size Tup13Type{} = sel7
-sel7Size Tup14Type{} = sel7
-sel7Size Tup15Type{} = sel7
+sel7Size Tup7Type{}  = $(proj 7 6)
+sel7Size Tup8Type{}  = $(proj 8 6)
+sel7Size Tup9Type{}  = $(proj 9 6)
+sel7Size Tup10Type{} = $(proj 10 6)
+sel7Size Tup11Type{} = $(proj 11 6)
+sel7Size Tup12Type{} = $(proj 12 6)
+sel7Size Tup13Type{} = $(proj 13 6)
+sel7Size Tup14Type{} = $(proj 14 6)
+sel7Size Tup15Type{} = $(proj 15 6)
 
 sel8Size :: (Sel8' a ~ b) => TypeRep a -> Size a -> Size b
-sel8Size Tup8Type{} = sel8
-sel8Size Tup9Type{} = sel8
-sel8Size Tup10Type{} = sel8
-sel8Size Tup11Type{} = sel8
-sel8Size Tup12Type{} = sel8
-sel8Size Tup13Type{} = sel8
-sel8Size Tup14Type{} = sel8
-sel8Size Tup15Type{} = sel8
+sel8Size Tup8Type{}  = $(proj 8 7)
+sel8Size Tup9Type{}  = $(proj 9 7)
+sel8Size Tup10Type{} = $(proj 10 7)
+sel8Size Tup11Type{} = $(proj 11 7)
+sel8Size Tup12Type{} = $(proj 12 7)
+sel8Size Tup13Type{} = $(proj 13 7)
+sel8Size Tup14Type{} = $(proj 14 7)
+sel8Size Tup15Type{} = $(proj 15 7)
 
 sel9Size :: (Sel9' a ~ b) => TypeRep a -> Size a -> Size b
-sel9Size Tup9Type{} = sel9
-sel9Size Tup10Type{} = sel9
-sel9Size Tup11Type{} = sel9
-sel9Size Tup12Type{} = sel9
-sel9Size Tup13Type{} = sel9
-sel9Size Tup14Type{} = sel9
-sel9Size Tup15Type{} = sel9
+sel9Size Tup9Type{}  = $(proj 9 8)
+sel9Size Tup10Type{} = $(proj 10 8)
+sel9Size Tup11Type{} = $(proj 11 8)
+sel9Size Tup12Type{} = $(proj 12 8)
+sel9Size Tup13Type{} = $(proj 13 8)
+sel9Size Tup14Type{} = $(proj 14 8)
+sel9Size Tup15Type{} = $(proj 15 8)
 
 sel10Size :: (Sel10' a ~ b) => TypeRep a -> Size a -> Size b
-sel10Size Tup10Type{} = sel10
-sel10Size Tup11Type{} = sel10
-sel10Size Tup12Type{} = sel10
-sel10Size Tup13Type{} = sel10
-sel10Size Tup14Type{} = sel10
-sel10Size Tup15Type{} = sel10
+sel10Size Tup10Type{} = $(proj 10 9)
+sel10Size Tup11Type{} = $(proj 11 9)
+sel10Size Tup12Type{} = $(proj 12 9)
+sel10Size Tup13Type{} = $(proj 13 9)
+sel10Size Tup14Type{} = $(proj 14 9)
+sel10Size Tup15Type{} = $(proj 15 9)
 
 sel11Size :: (Sel11' a ~ b) => TypeRep a -> Size a -> Size b
-sel11Size Tup11Type{} = sel11
-sel11Size Tup12Type{} = sel11
-sel11Size Tup13Type{} = sel11
-sel11Size Tup14Type{} = sel11
-sel11Size Tup15Type{} = sel11
+sel11Size Tup11Type{} = $(proj 11 10)
+sel11Size Tup12Type{} = $(proj 12 10)
+sel11Size Tup13Type{} = $(proj 13 10)
+sel11Size Tup14Type{} = $(proj 14 10)
+sel11Size Tup15Type{} = $(proj 15 10)
 
 sel12Size :: (Sel12' a ~ b) => TypeRep a -> Size a -> Size b
-sel12Size Tup12Type{} = sel12
-sel12Size Tup13Type{} = sel12
-sel12Size Tup14Type{} = sel12
-sel12Size Tup15Type{} = sel12
+sel12Size Tup12Type{} = $(proj 12 11)
+sel12Size Tup13Type{} = $(proj 13 11)
+sel12Size Tup14Type{} = $(proj 14 11)
+sel12Size Tup15Type{} = $(proj 15 11)
 
 sel13Size :: (Sel13' a ~ b) => TypeRep a -> Size a -> Size b
-sel13Size Tup13Type{} = sel13
-sel13Size Tup14Type{} = sel13
-sel13Size Tup15Type{} = sel13
+sel13Size Tup13Type{} = $(proj 13 12)
+sel13Size Tup14Type{} = $(proj 14 12)
+sel13Size Tup15Type{} = $(proj 15 12)
 
 sel14Size :: (Sel14' a ~ b) => TypeRep a -> Size a -> Size b
-sel14Size Tup14Type{} = sel14
-sel14Size Tup15Type{} = sel14
+sel14Size Tup14Type{} = $(proj 14 13)
+sel14Size Tup15Type{} = $(proj 15 13)
 
 sel15Size :: (Sel15' a ~ b) => TypeRep a -> Size a -> Size b
-sel15Size Tup15Type{} = sel15
+sel15Size Tup15Type{} = $(proj 15 14)
 
 instance SizeProp (Select :|| Type)
   where

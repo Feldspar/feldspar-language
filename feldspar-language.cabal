@@ -135,16 +135,15 @@ library
 
   build-depends:
     array,
-    base                        >= 4      && < 4.8,
+    base                        >= 4      && < 4.9,
     containers                  >= 0.4    && < 0.6,
-    data-hash                   >= 0.1    && < 0.3,
     comonad                     >= 4.2    && < 5.0,
     mtl                         >= 2.0    && < 2.3,
     QuickCheck                  >= 2.7    && < 3,
     patch-combinators           >= 0.2    && < 0.3,
     syntactic                   >= 1.15   && < 2.0,
-    tagged                      >= 0.4    && < 0.9,
     tuple                       >= 0.2    && < 0.5,
+    tuple-th,
     monad-par                   >= 0.3.4.5,
     deepseq,
     random                      >= 1.0    && < 1.2,
