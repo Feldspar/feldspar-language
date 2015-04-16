@@ -183,7 +183,7 @@ choose hoistOver pd mkId mkSub a = chooseEnvSub initEnv a
     chooseEnvSub :: Env dom -> ASTF dom b -> Maybe (Chosen dom a)
     chooseEnvSub env a
         = Prelude.foldr (\(ASTE b, e) a -> chooseEnv e b `mplus` a) Nothing
-        $ simpleMatch (subTermsEnv pd mkSub env) a
+        (simpleMatch (subTermsEnv pd mkSub env) a :: [(ASTE dom, Env dom)])
 
 
 

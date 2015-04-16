@@ -26,8 +26,6 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# LANGUAGE OverlappingInstances #-}
-
 -- | Source-code annotations
 
 module Feldspar.Core.Frontend.SourceInfo where
