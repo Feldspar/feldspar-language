@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -6,6 +7,7 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts      #-}
+
 module Feldspar.Vector (
   -- $intro
 
@@ -143,12 +145,33 @@ instance Functor (Pull sh)
   where
     fmap f (Pull ixf sh) = Pull (f . ixf) sh
 
+-- Closed type families are only available in GHC 7.8 and above
+#if (__GLASGOW_HASKELL__ >= 708)
+type family InternalShape sh a where
+    InternalShape Z         a = Internal a
+    InternalShape (Z  :. l) a = [Internal a]
+    InternalShape (sh :. l) a = ([Length], [Internal a])
+#else
+type family InternalShape sh a
+type instance InternalShape Z                a = Internal a
+type instance InternalShape (Z :. l)         a = [Internal a]
+type instance InternalShape (sh :. l1 :. l2) a = ([Length],[Internal a])
+#endif
+
 instance (Syntax a, Shapely sh) => Syntactic (Pull sh a)
   where
     type Domain (Pull sh a) = FeldDomain
-    type Internal (Pull sh a) = ([Length],[Internal a])
-    desugar = desugar . freezePull . fmap resugar
-    sugar   = fmap resugar . thawPull . sugar
+    type Internal (Pull sh a) = InternalShape sh a
+
+    desugar v@(Pull _ sh) = case sh of
+        Z           -> desugar $ fromZero v
+        Z :. _      -> desugar $ freezePull1 $ fmap resugar v
+        _ :. _ :. _ -> desugar $ freezePull $ fmap resugar v
+
+    sugar v = case fakeShape :: Shape sh of
+        Z           -> unit $ sugar v
+        Z :. _      -> fmap resugar $ thawPull1 $ sugar v
+        _ :. _ :. _ -> fmap resugar $ thawPull $ sugar v
 
 type instance Elem (Pull sh a) = a
 type instance CollIndex (Pull sh a) = Shape sh
@@ -182,7 +205,7 @@ freezePull v   = (shapeArr, fromPull v) -- TODO should be fromPull' to remove di
   where shapeArr = fromList (toList $ extent v)
 
 freezePull1 :: (Type a) => DPull DIM1 a -> Data [a]
-freezePull1 = snd . freezePull
+freezePull1 = fromPull
 
 -- | Create an array from a Haskell list.
 fromList :: Type a => [Data a] -> Data [a]
@@ -194,7 +217,7 @@ thawPull (l,arr) = arrToPull (toShape 0 l) arr
 
 -- | Restore a vector and its shape from memory
 thawPull1 :: Type a => Data [a] -> DPull DIM1 a
-thawPull1 arr = arrToPull (toShape 0 (fromList [getLength arr])) arr
+thawPull1 arr = arrToPull (Z :. getLength arr) arr
 
 -- | A shape-aware version of parallel (though this implementation is
 --   sequental).
@@ -587,7 +610,7 @@ type Vector1 a = Pull1 a
 {-# DEPRECATED Vector1 "Use Pull1 instead" #-}
 
 value1 :: Syntax a => [Internal a] -> Manifest DIM1 a
-value1 ls = value ([P.fromIntegral (P.length ls)],ls)
+value1 ls = value ls
 
 -- | Create a one-dimensional Pull vector
 indexed1 :: Data Length -> (Data Index -> a) -> Pull DIM1 a
@@ -968,12 +991,23 @@ thawPush (l,arr) = Push f sh
         f k = forShape sh $ \i ->
                 k i (arr ! (toIndex sh i))
 
+thawPush1 :: (Type a) => Data [a] -> Push DIM1 (Data a)
+thawPush1 = toPush . thawPull1
+
 instance (Syntax a, Shapely sh) => Syntactic (Push sh a)
   where
     type Domain (Push sh a) = FeldDomain
-    type Internal (Push sh a) = ([Length],[Internal a])
-    desugar = desugar . freezePush . fmap resugar
-    sugar   = fmap resugar . thawPush . sugar
+    type Internal (Push sh a) = InternalShape sh a
+
+    desugar v@(Push _ sh) = case sh of
+        Z             -> desugar v
+        (Z :. _)      -> desugar $ fromPush $ fmap resugar v
+        (Z :. _ :. _) -> desugar $ freezePush $ fmap resugar v
+
+    sugar v = case fakeShape :: Shape sh of
+        Z           -> toPush $ unit $ sugar v
+        Z :. _      -> fmap resugar $ thawPush1 $ sugar v
+        _ :. _ :. _ -> fmap resugar $ thawPush $ sugar v
 
 -- | Flatten a pull vector of lists so that the lists become an extra dimension
 flattenList :: Shapely sh => Pull sh [a] -> Push (sh :. Data Length) a
@@ -1033,7 +1067,7 @@ contractST a = contractS $ transS $ a
 
 -- | Manifest vectors live in memory. Pull- and Push vectors can be allocated
 --   as Manifest using the 'store' function.
-data Manifest sh a = Syntax a => Manifest (Data [Internal a]) (Data [Length])
+data Manifest sh a = Syntax a => Manifest (Data [Internal a]) (Shape sh)
 
 -- | A class for memory allocation. All vectors are instances of this class.
 class Shaped vec => Storable vec where
@@ -1044,22 +1078,35 @@ instance Storable Manifest where
   store m = m
 
 instance Storable Pull where
-  store vec@(Pull ixf sh) = Manifest (save $ fromPull (fmap F.desugar vec)) (fromList (toList sh))
+  store vec@(Pull ixf sh) = Manifest (save $ fromPull (fmap F.desugar vec)) sh
 
 instance Storable Push where
-  store vec@(Push f sh) = Manifest (save $ fromPush (fmap F.desugar vec)) (fromList (toList sh))
+  store vec@(Push f sh) = Manifest (save $ fromPush (fmap F.desugar vec)) sh
 
 instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where
   type Domain   (Manifest sh a) = FeldDomain
-  type Internal (Manifest sh a) = ([Length],[Internal a])
-  desugar = desugar . manifestToArr
-  sugar   = arrToManifest . sugar
+  type Internal (Manifest sh a) = InternalShape sh a
+  desugar v@(Manifest _ sh) = case sh of
+      Z           -> desugar $ fromZero v
+      Z :. _      -> desugar $ manifestToArr1 v
+      _ :. _ :. _ -> desugar $ manifestToArr v
+
+  sugar v = case fakeShape :: Shape sh of
+      Z           -> store $ unit $ sugar v
+      Z :. _      -> arrToManifest1 $ sugar v
+      _ :. _ :. _ -> arrToManifest $ sugar v
+
+manifestToArr1 :: Syntax a => Manifest DIM1 a -> Data [Internal a]
+manifestToArr1 (Manifest arr _) = arr
 
 manifestToArr :: Syntax a => Manifest sh a -> (Data [Length],Data [Internal a])
-manifestToArr (Manifest arr sh) = (sh,arr)
+manifestToArr (Manifest arr sh) = (fromList $ toList sh,arr)
 
-arrToManifest :: Syntax a => (Data [Length], Data [Internal a]) -> Manifest sh a
-arrToManifest (ls,arr) = Manifest arr ls
+arrToManifest1 :: Syntax a => Data [Internal a] -> Manifest DIM1 a
+arrToManifest1 arr = Manifest arr (Z:.getLength arr)
+
+arrToManifest :: (Syntax a, Shapely sh) => (Data [Length], Data [Internal a]) -> Manifest sh a
+arrToManifest (ls,arr) = Manifest arr (toShape 0 ls)
 
 -- | A typeclass for types of array elements which can be flattened. An example
 --   is an array of pairs, which can be flattened into a pair of arrays.
@@ -1075,7 +1122,7 @@ instance Type a => Flat sh (Data a) where
   type Arr (Data a) = Data (MArr a)
   allocArray _ _ = newArr_
   writeArray _ marr f = f (\i a -> setArr marr i a)
-  freezeArr _ sh arr = fmap (\a -> Manifest a (fromList (toList sh))) $
+  freezeArr _ sh arr = fmap (\a -> Manifest a sh) $
                        freezeArray arr
 
 instance (Flat sh a, Flat sh b) => Flat sh (a,b) where
@@ -1132,8 +1179,7 @@ class (Shaped vec) => Pully vec sh where
   toPull :: vec sh a -> Pull sh a
 
 instance Shapely sh => Pully Manifest sh where
-  toPull (Manifest arr shA) = Pull (\i -> F.sugar $ arr ! toIndex sh i) sh
-    where sh = toShape 0 shA
+  toPull (Manifest arr sh) = Pull (\i -> F.sugar $ arr ! toIndex sh i) sh
 
 instance Pully Pull sh where
   toPull vec = vec
@@ -1152,7 +1198,7 @@ instance Shaped Push where
   extent (Push _ sh) = sh
 
 instance Shaped Manifest where
-  extent (Manifest _ sh) = toShape 0 sh
+  extent (Manifest _ sh) = sh
 
 -- Overloaded operations
 

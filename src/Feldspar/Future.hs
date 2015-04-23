@@ -35,7 +35,9 @@ withFuture :: (Syntax a, Syntax b)
            => a -> (Future a -> b) -> b
 withFuture = share . future
 
-withFutures :: (Syntax a, Syntax b, Shapely sh)
-            => Pull sh a -> (Manifest sh (Future a) -> b) -> b
-withFutures coll = share $ store $ V.map future coll
+
+-- TODO enable again
+-- withFutures :: (Syntax a, Syntax b, Shapely sh)
+--             => Pull sh a -> (Manifest sh (Future a) -> b) -> b
+-- withFutures coll = share $ store $ V.map future coll
 

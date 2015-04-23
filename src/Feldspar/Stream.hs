@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -53,11 +54,15 @@ module Feldspar.Stream
     ,streamAsVector, streamAsVectorSize
     ,recurrenceO, recurrenceI, recurrenceIO, recurrenceIIO
     ,slidingAvg
+    ,movingAvg
     ,iir,fir
+    ,recurrenceIO2, fir2
+    ,movingAvg2
     )
     where
 
 import qualified Prelude as P
+import qualified Control.Monad as P
 
 import Control.Applicative
 
@@ -407,7 +412,7 @@ recurrenceIO ii (Stream init) io mkExpr = Stream $ do
     obuf <- initBuffer io
     loop $ do
       a <- next
-      when (lenI /= 0) $ putBuf ibuf a
+      whenM (lenI /= 0) $ putBuf ibuf a
       b <- withBuf ibuf $ \ib ->
              withBuf obuf $ \ob ->
                return $ mkExpr ib ob
@@ -416,6 +421,26 @@ recurrenceIO ii (Stream init) io mkExpr = Stream $ do
   where
     lenI = length ii
     lenO = length io
+
+recurrenceIO2 :: (Type a, Type b)
+              => [Data a] -> Stream (Data a) -> [Data b] ->
+                 ([Data a] -> [Data b] -> Data b) ->
+                 Stream (Data b)
+recurrenceIO2 ii (Stream init) io mkExpr = Stream $ do
+    next <- init
+    ris <- P.mapM newRef ii
+    ros <- P.mapM newRef io
+    loop $ do
+      a <- next
+      if (P.not $ P.null ii) then pBuf ris a else return ()
+      b <- wBuf ris $ \ib ->
+             wBuf ros $ \ob ->
+               return $ mkExpr ib ob
+      if (P.not $ P.null io) then pBuf ros b else return ()
+      return b
+  where
+    pBuf rs a = P.zipWithM (\r1 r2 -> getRef r1 >>= setRef r2) (P.tail $ P.reverse rs) (P.reverse rs) >> setRef (P.head rs) a
+    wBuf rs f = P.mapM getRef rs >>= f
 
 -- | Similar to 'recurrenceIO' but takes two input streams.
 recurrenceIIO :: (Type a, Type b, Type c) =>
@@ -432,8 +457,8 @@ recurrenceIIO i1 (Stream init1) i2 (Stream init2) io mkExpr = Stream $ do
     loop $ do
       a <- next1
       b <- next2
-      when (len1 /= 0) $ putBuf ibuf1 a
-      when (len2 /= 0) $ putBuf ibuf2 b
+      whenM (len1 /= 0) $ putBuf ibuf1 a
+      whenM (len2 /= 0) $ putBuf ibuf2 b
       out <- withBuf ibuf1 $ \ib1 ->
                withBuf ibuf2 $ \ib2 ->
                  withBuf obuf $ \ob ->
@@ -449,6 +474,16 @@ slidingAvg :: Data WordN -> Stream (Data WordN) -> Stream (Data WordN)
 slidingAvg n str = recurrenceI (replicate1 n 0) str
                    (\input -> (fromZero $ sum input) `quot` n)
 
+movingAvg :: (Fraction a, RealFloat a)
+          => Data WordN -> Stream (Data a) -> Stream (Data a)
+movingAvg n str = recurrenceIO (replicate1 n 0) str (replicate1 1 0)
+                  (\input _ -> (fromZero $ sum input) / i2f n)
+
+movingAvg2 :: (Fraction a, RealFloat a)
+           => WordN -> Stream (Data a) -> Stream (Data a)
+movingAvg2 n str = recurrenceIO2 (P.replicate (P.fromIntegral n) 0) str []
+                   (\input _ -> (P.sum input) / i2f (value n))
+
 -- | A fir filter on streams
 fir :: Numeric a => Pull1 a ->
        Stream (Data a) -> Stream (Data a)
@@ -457,6 +492,10 @@ fir b inp =
                  (\i _ -> scalarProd b i)
   -- Temporarily using recurrenceIO instead of recurrenceI, because the latter uses an empty output
   -- buffer, which triggers https://github.com/Feldspar/feldspar-language/issues/24
+
+fir2 :: Numeric a => [Data a] -> Stream (Data a) -> Stream (Data a)
+fir2 b inp =
+  recurrenceIO2 (P.replicate (P.length b) 0) inp [] (\x _ -> P.sum $ P.zipWith (*) x b)
 
 -- | An iir filter on streams
 iir :: Fraction a => Data a -> Pull1 a -> Pull1 a ->
