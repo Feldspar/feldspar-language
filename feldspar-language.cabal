@@ -129,6 +129,9 @@ library
     Feldspar.Par
     Feldspar.Algorithm.CRC
     Feldspar.Algorithm.FFT
+    Feldspar.Algorithm.FFT.Push
+    Feldspar.Algorithm.FFT.Twids
+    Feldspar.Algorithm.FFT.Utils
     Language.Syntactic.Sharing.SimpleCodeMotion3
 
   default-language: Haskell2010
