@@ -49,6 +49,8 @@ module Feldspar.Core.Frontend
     , Syntax
 
     , module Frontend
+    , forLoop
+    , whileLoop
 
     , FeldOpts
     , defaultFeldOpts
@@ -82,7 +84,6 @@ module Feldspar.Core.Frontend
     , tData
     , tArr1
     , tArr2
-    , tM
 
     -- * Functions
     , ilog2
@@ -119,7 +120,6 @@ import Feldspar.Core.Frontend.Binding          as Frontend
 import Feldspar.Core.Frontend.Bits             as Frontend
 import Feldspar.Core.Frontend.Complex          as Frontend
 import Feldspar.Core.Frontend.Condition        as Frontend
-import Feldspar.Core.Frontend.ConditionM       as Frontend
 import Feldspar.Core.Frontend.Conversion       as Frontend
 import Feldspar.Core.Frontend.Elements         as Frontend
 import Feldspar.Core.Frontend.Eq               as Frontend
@@ -131,11 +131,7 @@ import Feldspar.Core.Frontend.Future           as Frontend
 import Feldspar.Core.Frontend.Integral         as Frontend
 import Feldspar.Core.Frontend.Literal          as Frontend
 import Feldspar.Core.Frontend.Logic            as Frontend
-import Feldspar.Core.Frontend.Loop             as Frontend
-import Feldspar.Core.Frontend.Mutable          as Frontend
-import Feldspar.Core.Frontend.MutableArray     as Frontend
-import Feldspar.Core.Frontend.MutableReference as Frontend
-import Feldspar.Core.Frontend.MutableToPure    as Frontend
+import Feldspar.Core.Frontend.Loop (forLoop, whileLoop)
 import Feldspar.Core.Frontend.NoInline         as Frontend
 import Feldspar.Core.Frontend.Num              as Frontend
 import Feldspar.Core.Frontend.Ord              as Frontend
@@ -339,9 +335,6 @@ tArr1 _ = id
 
 tArr2 :: Patch a a -> Patch (Data [[a]]) (Data [[a]])
 tArr2 _ = id
-
-tM :: Patch a a -> Patch (M a) (M a)
-tM _ = id
 
 
 --------------------------------------------------------------------------------

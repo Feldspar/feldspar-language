@@ -3,13 +3,33 @@
 
 -- | Mutable data structures, etc.
 
-module Feldspar.Mutable where
+module Feldspar.Mutable
+  ( module Feldspar.Core.Frontend.Mutable
+  , module Feldspar.Core.Frontend.MutableArray
+  , module Feldspar.Core.Frontend.MutableReference
+  , module Feldspar.Core.Frontend.MutableToPure
+  , module Feldspar.Core.Frontend.ConditionM
+  , module Feldspar.Core.Frontend.Loop
+
+  , Buffer (..)
+  , initBuffer'
+  , initBuffer
+  , newBuffer
+  , newBuffer_
+  , tM
+  ) where
 
 
 
 import qualified Prelude
 
 import Feldspar
+import Feldspar.Core.Frontend.Mutable
+import Feldspar.Core.Frontend.MutableArray
+import Feldspar.Core.Frontend.MutableReference
+import Feldspar.Core.Frontend.MutableToPure
+import Feldspar.Core.Frontend.ConditionM
+import Feldspar.Core.Frontend.Loop (forM, whileM)
 import Feldspar.Vector
 
 
@@ -58,3 +78,7 @@ newBuffer l init = newArr l (desugar init) >>= initBuffer'
 -- | Create a new cyclic buffer of the given length without initialization
 newBuffer_ :: Syntax a => Data Length -> M (Buffer a)
 newBuffer_ l = newArr_ l >>= initBuffer'
+
+tM :: Patch a a -> Patch (M a) (M a)
+tM _ = id
+

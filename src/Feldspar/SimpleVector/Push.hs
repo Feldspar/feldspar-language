@@ -37,6 +37,7 @@ module Feldspar.SimpleVector.Push where
 import qualified Prelude
 
 import Feldspar hiding (sugar,desugar)
+import Feldspar.Mutable
 import qualified Feldspar.SimpleVector as V
 
 import Language.Syntactic (Syntactic(..))
