@@ -95,6 +95,7 @@ library
     Feldspar.Core.Frontend.Literal
     Feldspar.Core.Frontend.Logic
     Feldspar.Core.Frontend.Loop
+    Feldspar.Core.Frontend.LoopM
     Feldspar.Core.Frontend.Mutable
     Feldspar.Core.Frontend.MutableArray
     Feldspar.Core.Frontend.MutableReference

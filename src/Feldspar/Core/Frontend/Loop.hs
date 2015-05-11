@@ -16,7 +16,7 @@
 --
 -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 -- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
--- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 -- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -29,23 +29,13 @@
 module Feldspar.Core.Frontend.Loop
 where
 
-import Language.Syntactic
-
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Loop
-
-import Feldspar.Core.Frontend.Mutable
 
 forLoop :: Syntax a => Data Length -> a -> (Data Index -> a -> a) -> a
 forLoop = sugarSymF ForLoop
 
 whileLoop :: Syntax a => a -> (a -> Data Bool) -> (a -> a) -> a
 whileLoop = sugarSymF WhileLoop
-
-forM :: (Syntax a) => Data Length -> (Data Index -> M a) -> M ()
-forM = sugarSymC For
-
-whileM :: Syntax a => M (Data Bool) -> M a -> M ()
-whileM = sugarSymC While
 

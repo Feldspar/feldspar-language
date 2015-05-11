@@ -9,7 +9,7 @@ module Feldspar.Mutable
   , module Feldspar.Core.Frontend.MutableReference
   , module Feldspar.Core.Frontend.MutableToPure
   , module Feldspar.Core.Frontend.ConditionM
-  , module Feldspar.Core.Frontend.Loop
+  , module Feldspar.Core.Frontend.LoopM
 
   , Buffer (..)
   , initBuffer'
@@ -29,7 +29,7 @@ import Feldspar.Core.Frontend.MutableArray
 import Feldspar.Core.Frontend.MutableReference
 import Feldspar.Core.Frontend.MutableToPure
 import Feldspar.Core.Frontend.ConditionM
-import Feldspar.Core.Frontend.Loop (forM, whileM)
+import Feldspar.Core.Frontend.LoopM
 import Feldspar.Vector
 
 

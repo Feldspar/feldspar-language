@@ -6,7 +6,7 @@ module Feldspar.Vector.Shape where
 import qualified Prelude as P
 
 import Feldspar
-import Feldspar.Core.Frontend.Loop
+import Feldspar.Core.Frontend.LoopM
 import Feldspar.Core.Frontend.Mutable
 
 infixl 3 :.

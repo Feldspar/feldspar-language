@@ -49,8 +49,6 @@ module Feldspar.Core.Frontend
     , Syntax
 
     , module Frontend
-    , forLoop
-    , whileLoop
 
     , FeldOpts
     , defaultFeldOpts
@@ -131,7 +129,7 @@ import Feldspar.Core.Frontend.Future           as Frontend
 import Feldspar.Core.Frontend.Integral         as Frontend
 import Feldspar.Core.Frontend.Literal          as Frontend
 import Feldspar.Core.Frontend.Logic            as Frontend
-import Feldspar.Core.Frontend.Loop (forLoop, whileLoop)
+import Feldspar.Core.Frontend.Loop             as Frontend
 import Feldspar.Core.Frontend.NoInline         as Frontend
 import Feldspar.Core.Frontend.Num              as Frontend
 import Feldspar.Core.Frontend.Ord              as Frontend
@@ -282,13 +280,13 @@ evalTarget
 evalTarget n = evalBind . reifyFeld defaultFeldOpts n
   -- TODO This doesn't work yet, because 'targetSpecialization' is not implemented
 
-desugar :: Syntax a => a -> Data (Internal a)
+desugar :: SyntacticFeld a => a -> Data (Internal a)
 desugar = Syntactic.resugar
 
-sugar :: Syntax a => Data (Internal a) -> a
+sugar :: SyntacticFeld a => Data (Internal a) -> a
 sugar = Syntactic.resugar
 
-resugar :: (Syntax a, Syntax b, Internal a ~ Internal b) => a -> b
+resugar :: (SyntacticFeld a, SyntacticFeld b, Internal a ~ Internal b) => a -> b
 resugar = Syntactic.resugar
 
 
