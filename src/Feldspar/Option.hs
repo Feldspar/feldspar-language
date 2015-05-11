@@ -43,6 +43,7 @@ import Control.Monad
 import Language.Syntactic
 
 import Feldspar hiding (sugar,desugar,resugar)
+import Feldspar.Mutable
 
 
 

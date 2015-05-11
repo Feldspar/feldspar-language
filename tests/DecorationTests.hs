@@ -11,6 +11,7 @@ import Test.Tasty.Golden
 import Data.ByteString.Lazy.UTF8 (fromString)
 
 import Feldspar
+import Feldspar.Mutable
 import Examples.Simple.Basics
 
 

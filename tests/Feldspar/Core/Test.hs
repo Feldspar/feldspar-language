@@ -11,6 +11,7 @@ import Test.Tasty.QuickCheck
 import qualified Data.List as DL
 
 import Feldspar
+import Feldspar.Mutable
 
 tests = $(testGroupGenerator)
 

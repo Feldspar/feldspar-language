@@ -13,6 +13,7 @@ import qualified Prelude as P
 import qualified Data.Complex
 
 import Feldspar
+import Feldspar.Mutable
 import Feldspar.Vector
 
 import Feldspar.Algorithm.FFT.Utils

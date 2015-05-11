@@ -67,6 +67,10 @@ import qualified Prelude as P
 import Language.Syntactic hiding (fold,size)
 import Feldspar hiding (desugar,sugar,resugar)
 import qualified Feldspar as F
+import Feldspar.Core.Frontend.LoopM
+import Feldspar.Core.Frontend.Mutable
+import Feldspar.Core.Frontend.MutableArray
+import Feldspar.Core.Frontend.MutableToPure
 import Feldspar.Vector.Shape
 
 import Data.Tuple.Select
