@@ -123,7 +123,13 @@ optimizeLambda opts opt info lam@(SubConstr2 (Lambda v)) (body :* Nil)
     | Dict <- exprDict body
     = do
         body' <- localVar v info $ opt body
-        constructFeatUnOpt opts lam (body' :* Nil)
+        patchArgInfo info <$> constructFeatUnOpt opts lam (body' :* Nil)
+
+patchArgInfo :: Info a
+             -> ASTF (Decor Info (dom :|| Typeable)) (a -> b)
+             -> ASTF (Decor Info (dom :|| Typeable)) (a -> b)
+patchArgInfo info ast = flip updateDecor ast $ \oldInfo ->
+  oldInfo{infoSize = (infoSize info,snd $ infoSize oldInfo)}
 
 -- | Assumes that the expression is a 'Lambda'
 optimizeFunction :: ( (Variable :|| Type) :<: dom
