@@ -123,7 +123,7 @@ optimizeLambda opts opt info lam@(SubConstr2 (Lambda v)) (body :* Nil)
     | Dict <- exprDict body
     = do
         body' <- localVar v info $ opt body
-        patchArgInfo info <$> constructFeatUnOpt opts lam (body' :* Nil)
+        patchArgInfo info `fmap` constructFeatUnOpt opts lam (body' :* Nil)
 
 patchArgInfo :: Info a
              -> ASTF (Decor Info (dom :|| Typeable)) (a -> b)
