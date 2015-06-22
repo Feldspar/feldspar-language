@@ -87,9 +87,11 @@ module Feldspar.Core.Interpretation
 
 
 import Control.Applicative ((<$>))
+import Control.Exception
 import Control.Monad.Reader
 import Data.Map as Map
 import Data.Typeable (Typeable)
+import System.IO.Unsafe
 
 import Language.Syntactic
 import Language.Syntactic.Constructs.Decoration
@@ -317,6 +319,16 @@ constFold :: (Typed dom, EvalBind dom, (Literal :|| Type) :<: dom)
     => ASTF (Decor Info (dom :|| Typeable)) a
     -> ASTF (Decor Info (dom :|| Typeable)) a
 
+-- | Evaluate an AST and catch any exceptions
+evalBindEither
+  :: (Constrained dom, Sat dom :< Typeable, EvalBind dom) =>
+     ASTF dom a -> Either String a
+evalBindEither a = unsafePerformIO $ do
+    e <- try $ return $! evalBind a
+    return $ case e of
+        Left msg -> Left (show (msg :: SomeException))
+        Right a  -> Right a
+
 -- Replace with a literal if the range on the expression is a singleton
 constFold expr
     | Just Dict     <- typeDict expr
@@ -330,7 +342,9 @@ constFold expr
     | Just Dict <- typeDict expr
     , info      <- getInfo expr
     , Map.null $ infoVars info   -- closed expression
-    = literalDecorSrc (infoSource info) $ evalBind expr
+    , Right a   <- evalBindEither expr
+    = literalDecorSrc (infoSource info) a
+
 constFold expr = expr
 
 -- | Environment for optimization
