@@ -476,8 +476,8 @@ slidingAvg n str = recurrenceI (replicate1 n 0) str
 
 movingAvg :: (Fraction a, RealFloat a)
           => Data WordN -> Stream (Data a) -> Stream (Data a)
-movingAvg n str = recurrenceIO (replicate1 n 0) str (replicate1 1 0)
-                  (\input _ -> (fromZero $ sum input) / i2f n)
+movingAvg n str = recurrenceI (replicate1 n 0) str
+                    (\input -> (fromZero $ sum input) / i2f n)
 
 movingAvg2 :: (Fraction a, RealFloat a)
            => WordN -> Stream (Data a) -> Stream (Data a)
@@ -487,11 +487,7 @@ movingAvg2 n str = recurrenceIO2 (P.replicate (P.fromIntegral n) 0) str []
 -- | A fir filter on streams
 fir :: Numeric a => Pull1 a ->
        Stream (Data a) -> Stream (Data a)
-fir b inp =
-    recurrenceIO (replicate1 (length b) 0) inp (replicate1 1 0)
-                 (\i _ -> scalarProd b i)
-  -- Temporarily using recurrenceIO instead of recurrenceI, because the latter uses an empty output
-  -- buffer, which triggers https://github.com/Feldspar/feldspar-language/issues/24
+fir b inp = recurrenceI (replicate1 (length b) 0) inp (\i -> scalarProd b i)
 
 fir2 :: Numeric a => [Data a] -> Stream (Data a) -> Stream (Data a)
 fir2 b inp =
