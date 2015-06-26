@@ -65,6 +65,7 @@ module Feldspar.Core.Frontend
     , drawUntypedWith
     , showAST
     , drawAST
+    , drawASTUnOpt
     , writeHtmlAST
     , showDecor
     , drawDecor
@@ -255,6 +256,9 @@ showAST = Syntactic.showAST . reifyFeld defaultFeldOpts N32
 -- | Draw the syntax tree on the terminal using Unicode art
 drawAST :: SyntacticFeld a => a -> IO ()
 drawAST = Syntactic.drawAST . reifyFeld defaultFeldOpts N32
+
+drawASTUnOpt :: SyntacticFeld a => a -> IO ()
+drawASTUnOpt = Syntactic.drawAST . reifyFeldUnOpt defaultFeldOpts N32
 
 -- | Write the syntax tree to an HTML file with foldable nodes
 writeHtmlAST :: SyntacticFeld a => FilePath -> a -> IO ()
