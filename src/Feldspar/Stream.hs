@@ -57,6 +57,7 @@ module Feldspar.Stream
     ,movingAvg
     ,iir,fir
     ,recurrenceIO2, fir2
+    ,fir3
     ,movingAvg2
     )
     where
@@ -492,6 +493,34 @@ fir b inp = recurrenceI (replicate1 (length b) 0) inp (\i -> scalarProd b i)
 fir2 :: Numeric a => [Data a] -> Stream (Data a) -> Stream (Data a)
 fir2 b inp =
   recurrenceIO2 (P.replicate (P.length b) 0) inp [] (\x _ -> P.sum $ P.zipWith (*) x b)
+
+fir3 :: Numeric a => Pull1 a -> Stream (Data a) -> Stream (Data a)
+fir3 b (Stream ini) = Stream $ do
+  reg <- newArr (length b) 0
+  top <- newRef (0 :: Data Int32)
+  k   <- newRef (0 :: Data Int32)
+  next <- ini
+  return $ do
+    t <- getRef top
+    next >>= setArr reg (i2n t)
+    y    <- newRef 0
+    nref <- newRef 0
+    setRef k t
+    whileM ((>=0) <$> getRef k) $ do
+      n <- getRef nref
+      r <- getRef k >>= getArr reg . i2n
+      modifyRef y $ \x -> x + r * b!(Z:.n)
+      setRef nref (n+1)
+      modifyRef k (\x -> x-1)
+    setRef k $ i2n (length b - 1)
+    whileM ((>t) <$> getRef k) $ do
+      n <- getRef nref
+      r <- getRef k >>= getArr reg . i2n
+      modifyRef y $ \x -> x + r * b!(Z:.n)
+      setRef nref (n+1)
+      modifyRef k (\x -> x-1)
+    setRef top $ condition (t+1> i2n (length b)) 0 (t+1)
+    getRef y
 
 -- | An iir filter on streams
 iir :: Fraction a => Data a -> Pull1 a -> Pull1 a ->
