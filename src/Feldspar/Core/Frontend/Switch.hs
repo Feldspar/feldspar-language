@@ -37,6 +37,7 @@ import Language.Syntactic (resugar,Syntactic(..))
 
 import Feldspar.Core.Frontend.Eq (Eq((==)))
 import Feldspar.Core.Frontend.Condition ((?))
+import Feldspar.Core.Frontend.Literal (value)
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Switch
 
@@ -49,8 +50,8 @@ select s cs def = foldr (\(c,a) b -> c == s ? a $ b) def cs
 -- | Select between the cases based on the value of the scrutinee.
 -- If no match is found return the first argument
 switch :: (Eq (Internal a), Syntax a, Syntax b)
-       => b -> [(a, b)] -> a -> b
+       => b -> [(Internal a, b)] -> a -> b
 switch def [] _ = def
 switch def cs s = let s' = resugar s
-                  in sugarSymF Switch (foldr (\(c,a) b -> resugar c == s' ? a $ b) def cs)
+                  in sugarSymF Switch (foldr (\(c,a) b -> value c == s' ? a $ b) def cs)
 
