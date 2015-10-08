@@ -65,20 +65,6 @@ crcReflected table initial xs = fromZero $ fold step initial xs
 crcNaive :: (Bits a) => Data a -> Data a -> Pull1 Word8 -> Data a
 crcNaive = crcNormal . makeCrcTable
 
--- Future work
---
-data CRC a = CRC { name       :: String
-                 , width      :: Index
-                 , poly       :: a
-                 , init       :: a
-                 , reflectIn  :: Bool
-                 , reflectOut :: Bool
-                 , xorOut     :: a
-                 }
-
-crc16 :: CRC (Data Word16)
-crc16 = CRC "CRC-16" 16 0x8005 0x0000 True True 0x0000
-
 -- | Reflect the bottom b bits of value t
 reflect :: (Bits a) => Data a -> Data Length -> Data a
 reflect t b = forLoop b t $ \i v -> let mask = bit ((b-1)-i) in condition (testBit t i) (v .|. mask) (v .&. complement mask)
