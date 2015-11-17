@@ -18,6 +18,7 @@ module Feldspar.Core.UntypedRepresentation (
   , Fork(..)
   , HasType(..)
   , fv
+  , allVars
   , collectLetBinders
   , collectBinders
   , mkLets
@@ -542,6 +543,16 @@ fvU' vs (In (LetFun (_, _, e1) e2))      = fvU' vs e1 ++ fvU' vs e2
 fvU' _  (In (Literal{}))                 = []
 -- Common nodes.
 fvU' vs (In (App _ _ es))                = concatMap (fvU' vs) es
+
+-- | List all variables (free, bound and introduced by lambdas) in an expression
+allVars :: UntypedFeld -> [Var]
+allVars = nub . go
+  where
+    go (In (Variable v))           = [v]
+    go (In (Lambda v e))           = v : go e
+    go (In (LetFun (_, _, e1) e2)) = go e1 ++ go e2
+    go (In (Literal{}))            = []
+    go (In (App _ _ es))           = concatMap go es
 
 -- | Collect nested let binders into the binders and the body.
 collectLetBinders :: UntypedFeld -> ([(Var, UntypedFeld)], UntypedFeld)
