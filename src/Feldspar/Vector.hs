@@ -490,7 +490,7 @@ indexed2 l1 l2 ixf = Pull (\(Z :. i1 :. i2) -> ixf i1 i2) (Z :. l1 :. l2)
 
 -- Matrix Multiplication
 
--- | Transpose the two innermmost dimensions of a vector
+-- | Transpose the two innermost dimensions of a vector
 transposeL :: forall sh e vec.
               (Pully vec (sh :. Data Length :. Data Length), Shapely sh) =>
               vec  (sh :. Data Length :. Data Length) e ->
