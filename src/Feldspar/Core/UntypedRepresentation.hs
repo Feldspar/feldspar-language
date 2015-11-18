@@ -6,7 +6,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Feldspar.Core.UntypedRepresentation (
-    Term(..)
+    VarId (..)
+  , Term(..)
   , UntypedFeld
   , UntypedFeldF(..)
   , Op(..)
@@ -31,6 +32,8 @@ module Feldspar.Core.UntypedRepresentation (
 
 import Data.List (nub, intercalate)
 import Data.Tree
+
+import Language.Syntactic.Constructs.Binding (VarId (..))
 
 import Feldspar.Range (Range(..), singletonRange)
 import Feldspar.Core.Types (Length)
@@ -92,7 +95,7 @@ data Type =
    | FValType Type
    deriving (Eq,Show)
 
-data Var = Var { varNum :: Integer
+data Var = Var { varNum :: VarId
                , varType :: Type
                }
 
