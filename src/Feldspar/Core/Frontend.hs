@@ -46,6 +46,7 @@ module Feldspar.Core.Frontend
 
     , FeldDomain
     , Data
+    , SyntacticFeld
     , Syntax
 
     , module Frontend

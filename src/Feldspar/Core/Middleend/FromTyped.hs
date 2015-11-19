@@ -156,13 +156,13 @@ instance ( Untype dom dom
 instance Untype (Core.Variable :|| Type) dom
   where
     untypeProgSym (C' (Core.Variable v)) info Nil
-        = In (Ut.Variable (Ut.Var (varInteger v) t'))
+        = In (Ut.Variable (Ut.Var v t'))
            where t' = untypeType (infoType info) (infoSize info)
 
 instance (Untype dom dom,Project (CLambda Type) dom) => Untype (CLambda Type) dom
   where
     untypeProgSym (SubConstr2 (Lambda v)) info (body :* Nil)
-     = In (Ut.Lambda (Ut.Var (varInteger v) t') (untypeProg body))
+     = In (Ut.Lambda (Ut.Var v t') (untypeProg body))
         where t' = untypeType (argType $ infoType info) (fst $ infoSize info)
 
 instance ( Untype dom dom
