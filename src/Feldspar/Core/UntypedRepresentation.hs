@@ -63,27 +63,13 @@ data Fork = None | Future | Par | Loop
     deriving (Eq,Show)
 
 data Type =
-     UnitType
-   | BoolType
+     BoolType
    | BitType
    | IntType Signedness Size
    | FloatType
    | DoubleType
    | ComplexType Type
-   | Tup2Type Type Type
-   | Tup3Type Type Type Type
-   | Tup4Type Type Type Type Type
-   | Tup5Type Type Type Type Type Type
-   | Tup6Type Type Type Type Type Type Type
-   | Tup7Type Type Type Type Type Type Type Type
-   | Tup8Type Type Type Type Type Type Type Type Type
-   | Tup9Type Type Type Type Type Type Type Type Type Type
-   | Tup10Type Type Type Type Type Type Type Type Type Type Type
-   | Tup11Type Type Type Type Type Type Type Type Type Type Type Type
-   | Tup12Type Type Type Type Type Type Type Type Type Type Type Type Type
-   | Tup13Type Type Type Type Type Type Type Type Type Type Type Type Type Type
-   | Tup14Type Type Type Type Type Type Type Type Type Type Type Type Type Type Type
-   | Tup15Type Type Type Type Type Type Type Type Type Type Type Type Type Type Type Type
+   | TupType [Type]
    | MutType Type
    | RefType Type
    | ArrayType (Range Length) Type
@@ -107,32 +93,17 @@ instance Show Var where
   show (Var n _t) = "v" ++ show n
 
 data Lit =
-     LUnit
-   | LBool Bool
+     LBool Bool
    | LInt Signedness Size Integer
    | LFloat Float
    | LDouble Double
    | LComplex Lit Lit
    | LArray Type [Lit] -- Type necessary for empty array literals.
-   | LTup2 Lit Lit
-   | LTup3 Lit Lit Lit
-   | LTup4 Lit Lit Lit Lit
-   | LTup5 Lit Lit Lit Lit Lit
-   | LTup6 Lit Lit Lit Lit Lit Lit
-   | LTup7 Lit Lit Lit Lit Lit Lit Lit
-   | LTup8 Lit Lit Lit Lit Lit Lit Lit Lit
-   | LTup9 Lit Lit Lit Lit Lit Lit Lit Lit Lit
-   | LTup10 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
-   | LTup11 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
-   | LTup12 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
-   | LTup13 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
-   | LTup14 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
-   | LTup15 Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit Lit
+   | LTup [Lit]
    deriving (Eq)
 
 -- | Human readable show instance.
 instance Show Lit where
-   show LUnit                        = "()"
    show (LBool b)                    = show b
    show (LInt _ _ i)                 = show i
    show (LFloat f)                   = show f
@@ -140,77 +111,7 @@ instance Show Lit where
    show (LComplex r c)               = "(" ++ show r ++ ", " ++ show c ++ "i)"
    show (LArray _ ls)                = "[" ++ sls ++ "]"
      where sls = intercalate "," $ map show ls
-   show (LTup2 l1 l2)                = "(" ++ show l1 ++ ", " ++ show l2 ++ ")"
-   show (LTup3 l1 l2 l3)             = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++
-                                        ")"
-   show (LTup4 l1 l2 l3 l4)          = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ")"
-   show (LTup5 l1 l2 l3 l4 l5)       = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++
-                                        ")"
-   show (LTup6 l1 l2 l3 l4 l5 l6)    = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++ ", " ++ show l6 ++
-                                        ")"
-   show (LTup7 l1 l2 l3 l4 l5 l6 l7) = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++ ", " ++ show l6 ++
-                                        ", " ++ show l7 ++ ")"
-   show (LTup8 l1 l2 l3 l4 l5 l6 l7 l8) = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++ ", " ++ show l6 ++
-                                        ", " ++ show l7 ++ ", " ++ show l8 ++
-                                        ")"
-   show (LTup9 l1 l2 l3 l4 l5 l6 l7 l8 l9) = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++ ", " ++ show l6 ++
-                                        ", " ++ show l7 ++ ", " ++ show l8 ++
-                                        ", " ++ show l9 ++ ")"
-   show (LTup10 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10) = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++ ", " ++ show l6 ++
-                                        ", " ++ show l7 ++ ", " ++ show l8 ++
-                                        ", " ++ show l9 ++ ", " ++ show l10 ++
-                                        ")"
-   show (LTup11 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11) = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++ ", " ++ show l6 ++
-                                        ", " ++ show l7 ++ ", " ++ show l8 ++
-                                        ", " ++ show l9 ++ ", " ++ show l10 ++
-                                        ", " ++ show l11 ++ ")"
-   show (LTup12 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12) = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++ ", " ++ show l6 ++
-                                        ", " ++ show l7 ++ ", " ++ show l8 ++
-                                        ", " ++ show l9 ++ ", " ++ show l10 ++
-                                        ", " ++ show l11 ++ ", " ++ show l12 ++
-                                        ")"
-   show (LTup13 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13) = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++ ", " ++ show l6 ++
-                                        ", " ++ show l7 ++ ", " ++ show l8 ++
-                                        ", " ++ show l9 ++ ", " ++ show l10 ++
-                                        ", " ++ show l11 ++ ", " ++ show l12 ++
-                                        ", " ++ show l13 ++ ")"
-   show (LTup14 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14) = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++ ", " ++ show l6 ++
-                                        ", " ++ show l7 ++ ", " ++ show l8 ++
-                                        ", " ++ show l9 ++ ", " ++ show l10 ++
-                                        ", " ++ show l11 ++ ", " ++ show l12 ++
-                                        ", " ++ show l13 ++ ", " ++ show l14 ++
-                                        ")"
-   show (LTup15 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14 l15) = "("   ++ show l1 ++ ", " ++ show l2 ++
-                                        ", " ++ show l3 ++ ", " ++ show l4 ++
-                                        ", " ++ show l5 ++ ", " ++ show l6 ++
-                                        ", " ++ show l7 ++ ", " ++ show l8 ++
-                                        ", " ++ show l9 ++ ", " ++ show l10 ++
-                                        ", " ++ show l11 ++ ", " ++ show l12 ++
-                                        ", " ++ show l13 ++ ", " ++ show l14 ++
-                                        ", " ++ show l15 ++ ")"
+   show (LTup ls)                    = "(" ++ intercalate ", " (map show ls) ++ ")"
 
 -- | Application heads.
 data Op =
@@ -474,54 +375,13 @@ instance HasType Var where
 
 instance HasType Lit where
     type TypeOf Lit      = Type
-    typeof LUnit         = UnitType
     typeof (LInt s n _)  = IntType s n
     typeof LDouble{}     = DoubleType
     typeof LFloat{}      = FloatType
     typeof LBool{}       = BoolType
     typeof (LArray t es) = ArrayType (singletonRange $ fromIntegral $ length es) t
     typeof (LComplex r _) = ComplexType $ typeof r
-    typeof (LTup2 l1 l2) = Tup2Type (typeof l1) (typeof l2)
-    typeof (LTup3 l1 l2 l3) = Tup3Type (typeof l1) (typeof l2) (typeof l3)
-    typeof (LTup4 l1 l2 l3 l4)
-      = Tup4Type (typeof l1) (typeof l2) (typeof l3) (typeof l4)
-    typeof (LTup5 l1 l2 l3 l4 l5)
-      = Tup5Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-    typeof (LTup6 l1 l2 l3 l4 l5 l6)
-      = Tup6Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-                 (typeof l6)
-    typeof (LTup7 l1 l2 l3 l4 l5 l6 l7)
-      = Tup7Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-                 (typeof l6) (typeof l7)
-    typeof (LTup8 l1 l2 l3 l4 l5 l6 l7 l8)
-      = Tup8Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-                 (typeof l6) (typeof l7) (typeof l8)
-    typeof (LTup9 l1 l2 l3 l4 l5 l6 l7 l8 l9)
-      = Tup9Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-                 (typeof l6) (typeof l7) (typeof l8) (typeof l9)
-    typeof (LTup10 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10)
-      = Tup10Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
-    typeof (LTup11 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11)
-      = Tup11Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
-                  (typeof l11)
-    typeof (LTup12 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12)
-      = Tup12Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
-                  (typeof l11) (typeof l12)
-    typeof (LTup13 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13)
-      = Tup13Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
-                  (typeof l11) (typeof l12) (typeof l13)
-    typeof (LTup14 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14)
-      = Tup14Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
-                  (typeof l11) (typeof l12) (typeof l13) (typeof l14)
-    typeof (LTup15 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14 l15)
-      = Tup15Type (typeof l1) (typeof l2) (typeof l3) (typeof l4) (typeof l5)
-                  (typeof l6) (typeof l7) (typeof l8) (typeof l9) (typeof l10)
-                  (typeof l11) (typeof l12) (typeof l13) (typeof l14) (typeof l15)
+    typeof (LTup ls)     = TupType (map typeof ls)
 
 instance HasType UntypedFeld where
     type TypeOf UntypedFeld                = Type
