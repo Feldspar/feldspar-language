@@ -1430,33 +1430,33 @@ tArr _ = id
 
 instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h) => Typeable (a,b,c,d,e,f,g,h) where
   typeOf (a,b,c,d,e,f,g,h) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h ]
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h ]
 
 instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i) => Typeable (a,b,c,d,e,f,g,h,i) where
   typeOf (a,b,c,d,e,f,g,h,i) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i ]
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i ]
 
 instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j) => Typeable (a,b,c,d,e,f,g,h,i,j) where
   typeOf (a,b,c,d,e,f,g,h,i,j) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j ]
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j ]
 
 instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k) => Typeable (a,b,c,d,e,f,g,h,i,j,k) where
   typeOf (a,b,c,d,e,f,g,h,i,j,k) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k ]
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k ]
 
 instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l) where
   typeOf (a,b,c,d,e,f,g,h,i,j,k,l) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l ]
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l ]
 
 instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l, Typeable m) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l,m) where
   typeOf (a,b,c,d,e,f,g,h,i,j,k,l,m) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m ]
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m ]
 
 instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l, Typeable m, Typeable n) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l,m,n) where
   typeOf (a,b,c,d,e,f,g,h,i,j,k,l,m,n) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m, typeOf n ]
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m, typeOf n ]
 
 instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l, Typeable m, Typeable n, Typeable o) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) where
   typeOf (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m, typeOf n, typeOf o ]
+     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m, typeOf n, typeOf o ]
 #endif
