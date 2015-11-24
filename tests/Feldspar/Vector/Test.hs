@@ -6,7 +6,6 @@ import qualified Prelude as P
 import qualified Data.List as P
 
 import Feldspar
-import Feldspar.Prelude
 import Feldspar.Vector
 
 import Test.Tasty

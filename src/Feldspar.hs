@@ -30,7 +30,7 @@
 -- libraries have to be imported separately.
 
 module Feldspar
-  ( module Feldspar.Prelude
+  ( module Prelude.EDSL
   , module Feldspar.Core
   ) where
 
@@ -40,6 +40,6 @@ import qualified Prelude
   -- In order to be able to use the Feldspar module in GHCi without getting name
   -- clashes.
 
-import Feldspar.Prelude
+import Prelude.EDSL
 import Feldspar.Core
 
