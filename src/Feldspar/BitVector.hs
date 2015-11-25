@@ -45,7 +45,6 @@ import Data.Proxy
 
 import Language.Syntactic hiding (fold)
 
-import Feldspar.Prelude
 import Feldspar hiding (sugar, desugar, resugar)
 import qualified Feldspar.Vector as Vec
 

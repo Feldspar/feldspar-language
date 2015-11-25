@@ -58,66 +58,21 @@ go (In (App GetIx _ [arr, In (Literal (LInt _ _ n))]))
 
 -- Tuple selections, 1..15. Deliberately avoiding take 1 . drop k which will
 -- result in funny things with broken input.
-go (In (App Sel1 _ [In (App p _ (e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel2 _ [In (App p _ (_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel3 _ [In (App p _ (_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel4 _ [In (App p _ (_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel5 _ [In (App p _ (_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel6 _ [In (App p _ (_:_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel7 _ [In (App p _ (_:_:_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel8 _ [In (App p _ (_:_:_:_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel9 _ [In (App p _ (_:_:_:_:_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel10 _ [In (App p _ (_:_:_:_:_:_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel11 _ [In (App p _ (_:_:_:_:_:_:_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel12 _ [In (App p _ (_:_:_:_:_:_:_:_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel13 _ [In (App p _ (_:_:_:_:_:_:_:_:_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel14 _ [In (App p _ (_:_:_:_:_:_:_:_:_:_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
-go (In (App Sel15 _ [In (App p _ (_:_:_:_:_:_:_:_:_:_:_:_:_:_:e:_))]))
-  | p `elem` [Tup2, Tup3, Tup4, Tup5, Tup6, Tup7, Tup8, Tup9, Tup10
-             , Tup11, Tup12, Tup13, Tup14, Tup15]
-  = go e
+go (In (App Sel1 _  [In (App Tup _ (e:_))]))                             = go e
+go (In (App Sel2 _  [In (App Tup _ (_:e:_))]))                           = go e
+go (In (App Sel3 _  [In (App Tup _ (_:_:e:_))]))                         = go e
+go (In (App Sel4 _  [In (App Tup _ (_:_:_:e:_))]))                       = go e
+go (In (App Sel5 _  [In (App Tup _ (_:_:_:_:e:_))]))                     = go e
+go (In (App Sel6 _  [In (App Tup _ (_:_:_:_:_:e:_))]))                   = go e
+go (In (App Sel7 _  [In (App Tup _ (_:_:_:_:_:_:e:_))]))                 = go e
+go (In (App Sel8 _  [In (App Tup _ (_:_:_:_:_:_:_:e:_))]))               = go e
+go (In (App Sel9 _  [In (App Tup _ (_:_:_:_:_:_:_:_:e:_))]))             = go e
+go (In (App Sel10 _ [In (App Tup _ (_:_:_:_:_:_:_:_:_:e:_))]))           = go e
+go (In (App Sel11 _ [In (App Tup _ (_:_:_:_:_:_:_:_:_:_:e:_))]))         = go e
+go (In (App Sel12 _ [In (App Tup _ (_:_:_:_:_:_:_:_:_:_:_:e:_))]))       = go e
+go (In (App Sel13 _ [In (App Tup _ (_:_:_:_:_:_:_:_:_:_:_:_:e:_))]))     = go e
+go (In (App Sel14 _ [In (App Tup _ (_:_:_:_:_:_:_:_:_:_:_:_:_:e:_))]))   = go e
+go (In (App Sel15 _ [In (App Tup _ (_:_:_:_:_:_:_:_:_:_:_:_:_:_:e:_))])) = go e
 
 -- Fallthrough.
 go (In (App p t es)) = In (App p t $ map go es)

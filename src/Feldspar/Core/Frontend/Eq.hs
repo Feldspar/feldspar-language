@@ -35,7 +35,7 @@ import Data.Int
 import Data.Word
 import Data.Complex
 
-import Feldspar.Prelude
+import Prelude.EDSL
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Eq

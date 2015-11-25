@@ -694,48 +694,8 @@ instance ( Untype dom dom
 
 instance Untype dom dom => Untype (Tuple :|| Type) dom
   where
-    untypeProgSym (C' Tup2) info (m1 :* m2 :* Nil)
-      = In (Ut.App Ut.Tup2 t' [untypeProg m1, untypeProg m2])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup3) info (m1 :* m2 :* m3 :* Nil)
-      = In (Ut.App Ut.Tup3 t' [untypeProg m1, untypeProg m2, untypeProg m3])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup4) info (m1 :* m2 :* m3 :* m4 :* Nil)
-      = In (Ut.App Ut.Tup4 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup5) info (m1 :* m2 :* m3 :* m4 :* m5 :* Nil)
-      = In (Ut.App Ut.Tup5 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup6) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* Nil)
-      = In (Ut.App Ut.Tup6 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup7) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* m7 :* Nil)
-      = In (Ut.App Ut.Tup7 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6, untypeProg m7])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup8) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* m7 :* m8 :* Nil)
-      = In (Ut.App Ut.Tup8 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6, untypeProg m7, untypeProg m8])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup9) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* m7 :* m8 :* m9 :* Nil)
-      = In (Ut.App Ut.Tup9 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6, untypeProg m7, untypeProg m8, untypeProg m9])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup10) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* m7 :* m8 :* m9 :* m10 :* Nil)
-      = In (Ut.App Ut.Tup10 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6, untypeProg m7, untypeProg m8, untypeProg m9, untypeProg m10])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup11) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* m7 :* m8 :* m9 :* m10 :* m11 :* Nil)
-      = In (Ut.App Ut.Tup11 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6, untypeProg m7, untypeProg m8, untypeProg m9, untypeProg m10, untypeProg m11])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup12) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* m7 :* m8 :* m9 :* m10 :* m11 :* m12 :* Nil)
-      = In (Ut.App Ut.Tup12 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6, untypeProg m7, untypeProg m8, untypeProg m9, untypeProg m10, untypeProg m11, untypeProg m12])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup13) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* m7 :* m8 :* m9 :* m10 :* m11 :* m12 :* m13 :* Nil)
-      = In (Ut.App Ut.Tup13 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6, untypeProg m7, untypeProg m8, untypeProg m9, untypeProg m10, untypeProg m11, untypeProg m12, untypeProg m13])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup14) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* m7 :* m8 :* m9 :* m10 :* m11 :* m12 :* m13 :* m14 :* Nil)
-      = In (Ut.App Ut.Tup14 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6, untypeProg m7, untypeProg m8, untypeProg m9, untypeProg m10, untypeProg m11, untypeProg m12, untypeProg m13, untypeProg m14])
-          where t' = untypeType (infoType info) (infoSize info)
-    untypeProgSym (C' Tup15) info (m1 :* m2 :* m3 :* m4 :* m5 :* m6 :* m7 :* m8 :* m9 :* m10 :* m11 :* m12 :* m13 :* m14 :* m15 :* Nil)
-      = In (Ut.App Ut.Tup15 t' [untypeProg m1, untypeProg m2, untypeProg m3, untypeProg m4, untypeProg m5, untypeProg m6, untypeProg m7, untypeProg m8, untypeProg m9, untypeProg m10, untypeProg m11, untypeProg m12, untypeProg m13, untypeProg m14, untypeProg m15])
-          where t' = untypeType (infoType info) (infoSize info)
+    untypeProgSym _ info args = In $ Ut.App Ut.Tup t' $ listArgs untypeProg args
+      where t' = untypeType (infoType info) (infoSize info)
 
 instance Untype dom dom => Untype (Select :|| Type) dom
   where
@@ -786,70 +746,82 @@ instance Untype dom dom => Untype (Select :|| Type) dom
           where t' = untypeType (infoType info) (infoSize info)
 
 untypeType :: TypeRep a -> Size a -> Ut.Type
-untypeType UnitType _               = Ut.UnitType
+untypeType UnitType _               = Ut.TupType []
 untypeType BoolType _               = Ut.BoolType
 untypeType (IntType s n) _          = Ut.IntType (convSign s) (convSize n)
 untypeType FloatType _              = Ut.FloatType
 untypeType DoubleType _             = Ut.DoubleType
 untypeType (ComplexType t) _        = Ut.ComplexType (untypeType t (defaultSize t))
 untypeType (Tup2Type a b) (sa,sb)
-  = Ut.Tup2Type (untypeType a sa) (untypeType b sb)
+  = Ut.TupType [untypeType a sa, untypeType b sb]
 untypeType (Tup3Type a b c) (sa,sb,sc)
-  = Ut.Tup3Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
+  = Ut.TupType [untypeType a sa, untypeType b sb, untypeType c sc]
 untypeType (Tup4Type a b c d) (sa,sb,sc,sd)
-  = Ut.Tup4Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd
+               ]
 untypeType (Tup5Type a b c d e) (sa,sb,sc,sd,se)
-  = Ut.Tup5Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se
+               ]
 untypeType (Tup6Type a b c d e f) (sa,sb,sc,sd,se,sf)
-  = Ut.Tup6Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se) (untypeType f sf)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se, untypeType f sf
+               ]
 untypeType (Tup7Type a b c d e f g) (sa,sb,sc,sd,se,sf,sg)
-  = Ut.Tup7Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se) (untypeType f sf)
-                (untypeType g sg)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se, untypeType f sf
+               , untypeType g sg
+               ]
 untypeType (Tup8Type a b c d e f g h) (sa,sb,sc,sd,se,sf,sg,sh)
-  = Ut.Tup8Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se) (untypeType f sf)
-                (untypeType g sg) (untypeType h sh)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se, untypeType f sf
+               , untypeType g sg, untypeType h sh
+               ]
 untypeType (Tup9Type a b c d e f g h i) (sa,sb,sc,sd,se,sf,sg,sh,si)
-  = Ut.Tup9Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se) (untypeType f sf)
-                (untypeType g sg) (untypeType h sh) (untypeType i si)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se, untypeType f sf
+               , untypeType g sg, untypeType h sh, untypeType i si
+               ]
 untypeType (Tup10Type a b c d e f g h i j) (sa,sb,sc,sd,se,sf,sg,sh,si,sj)
-  = Ut.Tup10Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se) (untypeType f sf)
-                (untypeType g sg) (untypeType h sh) (untypeType i si)
-                (untypeType j sj)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se, untypeType f sf
+               , untypeType g sg, untypeType h sh, untypeType i si
+               , untypeType j sj
+               ]
 untypeType (Tup11Type a b c d e f g h i j k) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk)
-  = Ut.Tup11Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se) (untypeType f sf)
-                (untypeType g sg) (untypeType h sh) (untypeType i si)
-                (untypeType j sj) (untypeType k sk)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se, untypeType f sf
+               , untypeType g sg, untypeType h sh, untypeType i si
+               , untypeType j sj, untypeType k sk
+               ]
 untypeType (Tup12Type a b c d e f g h i j k l) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl)
-  = Ut.Tup12Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se) (untypeType f sf)
-                (untypeType g sg) (untypeType h sh) (untypeType i si)
-                (untypeType j sj) (untypeType k sk) (untypeType l sl)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se, untypeType f sf
+               , untypeType g sg, untypeType h sh, untypeType i si
+               , untypeType j sj, untypeType k sk, untypeType l sl
+               ]
 untypeType (Tup13Type a b c d e f g h i j k l m) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl,sm)
-  = Ut.Tup13Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se) (untypeType f sf)
-                (untypeType g sg) (untypeType h sh) (untypeType i si)
-                (untypeType j sj) (untypeType k sk) (untypeType l sl)
-                (untypeType m sm)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se, untypeType f sf
+               , untypeType g sg, untypeType h sh, untypeType i si
+               , untypeType j sj, untypeType k sk, untypeType l sl
+               , untypeType m sm
+               ]
 untypeType (Tup14Type a b c d e f g h i j k l m n) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl,sm,sn)
-  = Ut.Tup14Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se) (untypeType f sf)
-                (untypeType g sg) (untypeType h sh) (untypeType i si)
-                (untypeType j sj) (untypeType k sk) (untypeType l sl)
-                (untypeType m sm) (untypeType n sn)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se, untypeType f sf
+               , untypeType g sg, untypeType h sh, untypeType i si
+               , untypeType j sj, untypeType k sk, untypeType l sl
+               , untypeType m sm, untypeType n sn
+               ]
 untypeType (Tup15Type a b c d e f g h i j k l m n o) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl,sm,sn,so)
-  = Ut.Tup15Type (untypeType a sa) (untypeType b sb) (untypeType c sc)
-                (untypeType d sd) (untypeType e se) (untypeType f sf)
-                (untypeType g sg) (untypeType h sh) (untypeType i si)
-                (untypeType j sj) (untypeType k sk) (untypeType l sl)
-                (untypeType m sm) (untypeType n sn) (untypeType o so)
+  = Ut.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+               , untypeType d sd, untypeType e se, untypeType f sf
+               , untypeType g sg, untypeType h sh, untypeType i si
+               , untypeType j sj, untypeType k sk, untypeType l sl
+               , untypeType m sm, untypeType n sn, untypeType o so
+               ]
 untypeType (MutType a) sz           = Ut.MutType (untypeType a sz)
 untypeType (RefType a) sz           = Ut.RefType (untypeType a sz)
 untypeType (ArrayType a) (rs :> es) = Ut.ArrayType rs (untypeType a es)
@@ -873,31 +845,35 @@ literal t@DoubleType      sz a = literalConst t sz a
 literal t@ComplexType{}   sz a = literalConst t sz a
 literal t@ArrayType{}     sz a = literalConst t sz a
 literal (Tup2Type ta tb) (sa,sb) (a,b)
-    = LTup2 (literal ta sa a) (literal tb sb b)
+    = LTup [literal ta sa a, literal tb sb b]
 
 literal (Tup3Type ta tb tc) (sa,sb,sc) (a,b,c)
-    = LTup3 (literal ta sa a) (literal tb sb b) (literal tc sc c)
+    = LTup [literal ta sa a, literal tb sb b, literal tc sc c]
 
 literal (Tup4Type ta tb tc td) (sa,sb,sc,sd) (a,b,c,d)
-    = LTup4 (literal ta sa a) (literal tb sb b) (literal tc sc c)
-            (literal td sd d)
+    = LTup [ literal ta sa a, literal tb sb b, literal tc sc c
+           , literal td sd d
+           ]
 
 literal (Tup5Type ta tb tc td te) (sa,sb,sc,sd,se) (a,b,c,d,e)
-    = LTup5 (literal ta sa a) (literal tb sb b) (literal tc sc c)
-            (literal td sd d) (literal te se e)
+    = LTup [ literal ta sa a, literal tb sb b, literal tc sc c
+           , literal td sd d, literal te se e
+           ]
 
 literal (Tup6Type ta tb tc td te tf) (sa,sb,sc,sd,se,sf) (a,b,c,d,e,f)
-    = LTup6 (literal ta sa a) (literal tb sb b) (literal tc sc c)
-            (literal td sd d) (literal te se e) (literal tf sf f)
+    = LTup [ literal ta sa a, literal tb sb b, literal tc sc c
+           , literal td sd d, literal te se e, literal tf sf f
+           ]
 
 literal (Tup7Type ta tb tc td te tf tg) (sa,sb,sc,sd,se,sf,sg) (a,b,c,d,e,f,g)
-    = LTup7 (literal ta sa a) (literal tb sb b) (literal tc sc c)
-            (literal td sd d) (literal te se e) (literal tf sf f)
-            (literal tg sg g)
+    = LTup [ literal ta sa a, literal tb sb b, literal tc sc c
+           , literal td sd d, literal te se e, literal tf sf f
+           , literal tg sg g
+           ]
 literal t s a = error "Missing pattern: FromTyped.hs: literal"
 
 literalConst :: TypeRep a -> Size a -> a -> Lit
-literalConst UnitType        _  ()     = LUnit
+literalConst UnitType        _  ()     = LTup []
 literalConst BoolType        _  a      = LBool a
 literalConst (IntType s n)   sz a      = LInt (convSign s) (convSize n) (toInteger a)
 literalConst FloatType       _  a      = LFloat a
