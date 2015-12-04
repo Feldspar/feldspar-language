@@ -5,6 +5,7 @@ module Feldspar.Algorithm.FFT.Push
   ( fft
   , butterfly
   , twid
+  , itwids
   , twids
   ) where
 
