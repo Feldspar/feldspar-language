@@ -61,6 +61,10 @@ forShape :: Shape sh -> (Shape sh -> M ()) -> M ()
 forShape Z k = k Z
 forShape (sh :. l) k = forM l (\i -> forShape sh (\sh -> k (sh :. i)))
 
+forShapeR :: Shape sh -> (Shape sh -> M ()) -> M ()
+forShapeR Z k = k Z
+forShapeR (sh :. l) k = forShapeR sh (\sh -> forM l (\i -> k (sh :. i)))
+
 -- | Unpack the shape to a list with the innermost dimension first
 toList :: Shape sh -> [Data Length]
 toList Z         = []
