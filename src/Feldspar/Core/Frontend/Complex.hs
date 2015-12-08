@@ -47,7 +47,10 @@ imagPart = sugarSymF ImagPart
 conjugate :: (Numeric a, RealFloat a) => Data (Complex a) -> Data (Complex a)
 conjugate = sugarSymF Conjugate
 
-mkPolar :: (Numeric a, RealFloat a) => Data a -> Data a -> Data (Complex a)
+mkPolar :: (Numeric a, RealFloat a)
+    => Data a  -- ^ Amplitude
+    -> Data a  -- ^ Angle
+    -> Data (Complex a)
 mkPolar = sugarSymF MkPolar
 
 cis :: (Numeric a, RealFloat a) => Data a -> Data (Complex a)
