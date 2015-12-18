@@ -494,6 +494,7 @@ type family AppendShape sh1 sh2 where
   AppendShape sh1 (sh2 :. i) = AppendShape sh1 sh2 :. i
   AppendShape sh1 Z = sh1
 #else
+type family AppendShape sh1 sh2 :: *
 type instance AppendShape sh1 (sh2 :. i) = AppendShape sh1 sh2 :. i
 type instance AppendShape sh1 Z = sh1
 #endif
