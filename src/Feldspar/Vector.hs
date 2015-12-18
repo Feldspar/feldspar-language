@@ -972,7 +972,7 @@ instance Pushy Push sh where
 
 instance Pushy Pull sh where
   toPush (Pull ixf l) = Push f l
-    where f k = forShape l $ \i ->
+    where f k = forShapeR l $ \i ->
                  k i (ixf i)
 
 -- | Store a vector in memory as a flat array
