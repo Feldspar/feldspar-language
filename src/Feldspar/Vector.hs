@@ -820,6 +820,26 @@ enumFromTo m n = indexed1 (i2n l) ((+m) . i2n)
   where
     l = (n<m) ? 0 $ (n-m+1)
 
+enumFromThenTo :: forall a. (Type a, Integral a)
+               => Data a -> Data a -> Data a -> Pull DIM1 (Data a)
+enumFromThenTo m k n = indexed1 (i2n l) (\i -> i2n i * s + m)
+  where
+    l = (n-m) `div` s
+    s = k-m
+
+enumFromThenToF :: forall a. (Type a, P.RealFloat a, Fraction a)
+                => Data a -> Data a -> Data a -> Pull DIM1 (Data a)
+enumFromThenToF m k n = indexed1 (truncate l) (\i -> i2f i * s + m)
+  where
+    l = (n-m) / s
+    s = k-m
+
+enumFromStepToF :: forall a. (Type a, P.RealFloat a, Fraction a)
+                => Data a -> Data a -> Data a -> Pull DIM1 (Data a)
+enumFromStepToF m s n = indexed1 (truncate l) (\i -> i2f i * s + m)
+  where
+    l = (n-m) / s
+
 -- | @enumFrom m@: Enumerate the indexes from @m@ to 'maxBound'
 enumFrom m = enumFromTo m (value maxBound)
 
