@@ -13,7 +13,7 @@ module Feldspar.Vector (
 
   module Feldspar.Vector.Shape,
   -- * Pull Vectors
-  Pull,
+  Pull(..),
   DPull,Pully(..),
   indexed,newExtent,traverse,reshape,unit,fromZero,
   replicate,slice,(!:),diagonal,backpermute,
@@ -25,9 +25,14 @@ module Feldspar.Vector (
   halve,
   expandL,expandLT,contractL,contractLT,curryL,uncurryL,dmapL,dzipWithL,
   dmapS,dzipWithS,
+  curry',uncurry',dmap',uncurryS',dmapS',
   -- * Shape concatenation
   ShapeConc(..),
   flatten,flattenPush,
+  AppendShape,appendShape,splitShape,
+  leftFlatten,leftFlatten',rightFlatten,rightFlatten',
+  leftNest,leftNest',leftMap,
+  rightNest,rightNest',
   -- * Slices of Pull vectors
   All(..),Any(..),Slice(..),FullShape,SliceShape,sliceOfFull,fullOfSlice,
   -- * Functions on one-dimensional vectors
@@ -443,19 +448,19 @@ class ShapeConc sh1 sh2 where
   type ShapeConcT sh1 sh2
   shapeConc :: Shape sh1 -> Shape sh2 -> Shape (ShapeConcT sh1 sh2)
 
-  splitIndex :: Shape (ShapeConcT sh1 sh2) -> Shape sh1 -> (Shape sh1,Shape sh2)
+  splitIndex :: Shape (ShapeConcT sh1 sh2) -> Shape sh2 -> (Shape sh1,Shape sh2)
 
-instance ShapeConc Z sh2 where
-  type ShapeConcT Z sh2 = sh2
-  shapeConc Z sh2 = sh2
+instance ShapeConc sh1 Z where
+  type ShapeConcT sh1 Z = sh1
+  shapeConc sh1 Z = sh1
 
-  splitIndex sh Z = (Z,sh)
+  splitIndex sh Z = (sh,Z)
 
-instance ShapeConc sh1 sh2 => ShapeConc (sh1 :. Data Length) sh2 where
-  type ShapeConcT (sh1 :. Data Length) sh2 = ShapeConcT sh1 sh2 :. Data Length
-  shapeConc (sh1 :. l) sh2 = shapeConc sh1 sh2 :. l
+instance ShapeConc sh1 sh2 => ShapeConc sh1 (sh2 :. Data Length) where
+  type ShapeConcT sh1 (sh2 :. Data Length) = ShapeConcT sh1 sh2 :. Data Length
+  shapeConc sh1 (sh2 :. l) = shapeConc sh1 sh2 :. l
 
-  splitIndex (sh :. i) (sh1 :. _) = (i1 :. i,i2)
+  splitIndex (sh :. i) (sh1 :. _) = (i1,i2 :. i)
     where (i1,i2) = splitIndex sh sh1
 
 -- | Flatten nested pull vectors.
@@ -464,10 +469,10 @@ flatten :: forall a sh1 sh2.
            Pull sh1 (Pull sh2 a) ->
            Pull (ShapeConcT sh1 sh2) a
 flatten (Pull ixf1 sh1) = Pull ixf sh
-  where ixf i = let (i1,i2) = splitIndex i sh1
-                    (Pull ixf2 _) = ixf1 i1
+  where ixf i = let (i1,i2) = splitIndex i sh2
+                    (Pull ixf2 sh2) = ixf1 i1
                 in ixf2 i2
-        sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh1
+        sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh2
                  (Pull _ sh2) = ixf1 i1
              in shapeConc sh1 sh2
 
@@ -480,9 +485,103 @@ flattenPush (Pull ixf sh1) = Push f sh
   where f k = forShape sh1 $ \i ->
                 let Push g sh' = ixf i
                 in  g (\j a -> k (shapeConc i j) a)
-        sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh1
+        sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh2
                  (Push _ sh2) = ixf i1
              in shapeConc sh1 sh2
+
+#if (__GLASGOW_HASKELL__ >= 708)
+type family AppendShape sh1 sh2 where
+  AppendShape sh1 (sh2 :. i) = AppendShape sh1 sh2 :. i
+  AppendShape sh1 Z = sh1
+#else
+type instance AppendShape sh1 (sh2 :. i) = AppendShape sh1 sh2 :. i
+type instance AppendShape sh1 Z = sh1
+#endif
+
+appendShape :: Shape sh1 -> Shape sh2 -> Shape (AppendShape sh1 sh2)
+appendShape sh1 (sh2 :. i) = appendShape sh1 sh2 :. i
+appendShape sh1 Z = sh1
+
+splitShape :: Shape (AppendShape sh1 sh2) -> Shape sh2 -> (Shape sh1, Shape sh2)
+splitShape (sh1 :. i) (sh2 :. _) = (sh1L, sh1R :. i)
+  where (sh1L,sh1R) = splitShape sh1 sh2
+splitShape sh Z = (sh, Z)
+
+leftFlatten :: forall sh1 sh2 a . Shapely sh1 => Pull sh1 (Pull sh2 a) -> Pull (AppendShape sh2 sh1) a
+leftFlatten (Pull ixf1 bnds1) = Pull ixf bnds
+  where ixf ix = let (ix2,ix1) = splitShape ix bnds1  -- The outer shape in the original vector is the rightmost part in the new
+                     Pull ixf2 _ = ixf1 ix1
+                 in ixf2 ix2
+        bnds = appendShape bnds2 bnds1
+        Pull _ bnds2 = ixf1 (fakeShape :: Shape sh1)
+
+leftFlatten' :: forall sh1 sh2 a . Pull sh1 (Pull sh2 a) -> Pull (AppendShape sh2 sh1) a
+leftFlatten' (Pull ixf1 bnds1) = Pull ixf bnds
+  where ixf ix = let (ix2,ix1) = splitShape ix bnds1  -- The outer shape in the original vector is the rightmost part in the new
+                     Pull ixf2 _ = ixf1 ix1
+                 in ixf2 ix2
+        bnds = appendShape bnds2 bnds1
+        Pull _ bnds2 = ixf1 bnds1
+
+rightFlatten :: forall sh1 sh2 a . (Shapely sh1, Shapely sh2) => Pull sh1 (Pull sh2 a) -> Pull (AppendShape sh1 sh2) a
+rightFlatten (Pull ixf1 bnds1) = Pull ixf bnds
+  where ixf ix = let (ix1,ix2) = splitShape ix (fakeShape :: Shape sh2)
+                     Pull ixf2 _ = ixf1 ix1
+                 in ixf2 ix2
+        bnds = appendShape bnds1 bnds2
+        Pull _ bnds2 = ixf1 (fakeShape :: Shape sh1)
+
+rightFlatten' :: forall sh1 sh2 a . Pull sh1 (Pull sh2 a) -> Pull (AppendShape sh1 sh2) a
+rightFlatten' (Pull ixf1 bnds1) = Pull ixf bnds
+  where ixf ix = let (ix1,ix2) = splitShape ix bnds2
+                     Pull ixf2 _ = ixf1 ix1
+                 in ixf2 ix2
+        bnds = appendShape bnds1 bnds2
+        Pull _ bnds2 = ixf1 bnds1
+
+leftNest :: forall sh1 sh2 a . Shapely sh2 => Pull (AppendShape sh1 sh2) a -> Pull sh2 (Pull sh1 a)
+leftNest (Pull ixf bnds) = Pull ixf2 bnds2
+  where ixf2 ix2 = Pull (\ ix1 -> ixf $ appendShape ix1 ix2) bnds1
+        (bnds1,bnds2) = splitShape bnds (fakeShape :: Shape sh2)
+
+leftNest' :: Shape sh2 -> Pull (AppendShape sh1 sh2) a -> Pull sh2 (Pull sh1 a)
+leftNest' fake (Pull ixf bnds) = Pull ixf2 bnds2
+  where ixf2 ix2 = Pull (\ ix1 -> ixf $ appendShape ix1 ix2) bnds1
+        (bnds1,bnds2) = splitShape bnds fake
+
+leftMap :: forall sh1a sh1b sh2 a b . Shape sh2 ->
+                   (Pull sh1a a -> Pull sh1b b) ->
+                   Pull (AppendShape sh1a sh2) a ->
+                   Pull (AppendShape sh1b sh2) b
+leftMap sh f v = leftFlatten' $ fmap f $ leftNest' sh v
+
+rightNest :: forall sh1 sh2 a . Shapely sh2 => Pull (AppendShape sh1 sh2) a -> Pull sh1 (Pull sh2 a)
+rightNest (Pull ixf bnds) = Pull ixf2 bnds1
+  where ixf2 ix1 = Pull (\ ix2 -> ixf $ appendShape ix1 ix2) bnds2
+        (bnds1,bnds2) = splitShape bnds (fakeShape :: Shape sh2)
+
+rightNest' :: forall sh1 sh2 a . Shape sh2 -> Pull (AppendShape sh1 sh2) a -> Pull sh1 (Pull sh2 a)
+rightNest' sh2 (Pull ixf bnds) = Pull ixf2 bnds1
+  where ixf2 ix1 = Pull (\ ix2 -> ixf $ appendShape ix1 ix2) bnds2
+        (bnds1,bnds2) = splitShape bnds sh2
+
+rightMap :: forall sh1a sh1b sh2 a b . Shape sh1a -> Shape sh2 ->
+                   (Pull sh1a a -> Pull sh1b b) ->
+                   Pull (AppendShape sh2 sh1a) a ->
+                   Pull (AppendShape sh2 sh1b) b
+rightMap fake s f v = rightFlatten' $ fmap f $
+                     (rightNest' fake v :: Pull sh2 (Pull sh1a a))
+
+outerProd :: (Pully vec1 sh1, Pully vec2 sh2) =>
+             (a -> b -> c) -> vec1 sh1 a -> vec2 sh2 b ->
+             Pull (AppendShape sh1 sh2) c
+outerProd f v1 v2 = Pull ixf (appendShape sh1 sh2)
+  where Pull ixf1 sh1 = toPull v1
+        Pull ixf2 sh2 = toPull v2
+        ixf shi = let (shi1,shi2) = splitShape shi sh2
+                  in f (ixf1 shi1) (ixf2 shi2)
+
+-- stencil v s = reduce $ transposeL $ outerprod (*) v s
 
 -- | Create a two-dimensional Pull vector
 indexed2 :: Data Length -> Data Length -> (Data Index -> Data Index -> a) -> Pull DIM2 a
@@ -577,6 +676,19 @@ dzipWithL f a1 a2 = uncurryL (min m n) $ \ i -> f (g i) (h i)
   where (m,g) = curryL a1
         (n,h) = curryL a2
 
+curry' :: Pull (sh :. Data Length) a ->
+          (Data Length, Data Length -> Pull sh a)
+curry' (Pull ixf (sh:.l)) = (l, \i -> Pull (\ix -> ixf (ix :. i)) sh)
+
+uncurry' :: Data Length -> (Data Length -> Pull sh a) -> Pull (sh :. Data Length) a
+uncurry' n f = Pull ixf (sh :. n)
+  where Pull _ sh   = f (undefined :: Data Length)
+        ixf (sh :.i) = let Pull ixf' _ = f i in ixf' sh
+
+dmap' :: (Pull sh1 a1 -> Pull sh2 a2) -> Pull (sh1 :. Data Length) a1 -> Pull (sh2 :. Data Length) a2
+dmap' f a = uncurry' n $ f . g
+  where (n,g) = curry' a
+
 -- Convenience functions that maybe should not be in the lib
 
 expandLT :: Pully vec (sh :. Data Length) =>
@@ -594,6 +706,9 @@ contractLT a = contractL $ transL $ a
 dmapS :: (Pull sh1 a1 -> Push sh2 a2) -> Pull (sh1 :. Data Length) a1 -> Push (sh2 :. Data Length) a2
 dmapS f a = uncurryS n $ f . g
   where (n,g) = curryL a
+
+dmapS' f a = uncurryS' n $ f . g
+  where (n,g) = curry' a
 
 -- | Zip together two pull vectors into a push vector, but preserve the
 --   innermost dimension
@@ -1058,6 +1173,11 @@ uncurryS :: Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length
 uncurryS m f = Push g (insLeft m ext)
   where Push _ ext = f (undefined :: Data Length)
         g k = forM m $ \ i -> let Push h _ = f i in h (\ ix v -> k (insLeft i ix) v)
+
+uncurryS' :: Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
+uncurryS' m f = Push g (ext :. m)
+  where Push _ ext = f (undefined :: Data Length)
+        g k = forM m $ \ i -> let Push h _ = f i in h (\ ix v -> k (ix :. i) v)
 
 expandST :: Pushy vec (sh :. Data Length) =>
             Data Length -> vec (sh :. Data Length) a ->
