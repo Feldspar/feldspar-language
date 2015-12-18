@@ -909,9 +909,9 @@ interleave :: (Pully vec1 (sh :. Data Length)
 interleave v1 v2 = unpair (zip v1 v2)
 
 -- | Forward permute a push vector.
-forwardPermute :: Pushy vec1 sh =>
+forwardPermute :: Pushy vec sh =>
                   (Shape sh -> Shape sh -> Shape sh) ->
-                  vec1 sh a ->  Push sh a
+                  vec sh a ->  Push sh a
 forwardPermute p vec = Push g sh
   where Push f sh = toPush vec
         g k = f (\ix a -> k (p sh ix) a)
