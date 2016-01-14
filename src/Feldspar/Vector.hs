@@ -52,7 +52,7 @@ module Feldspar.Vector (
   forwardPermute,
   expandS,expandST,contractS,contractST,uncurryS,
   -- * Manifest vectors
-  Manifest,
+  Manifest(..),
   Storable(..),
   -- * Flattening vectors
   Flat,FlatManifest,
