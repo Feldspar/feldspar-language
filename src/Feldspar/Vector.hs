@@ -12,6 +12,7 @@ module Feldspar.Vector (
   -- $intro
 
   module Feldspar.Vector.Shape,
+  VecShape,
   -- * Pull Vectors
   Pull(..),
   DPull,Pully(..),
@@ -253,24 +254,24 @@ indexed l ixf = Pull ixf l
 
 -- | Change shape and transform elements of a vector. This function is the
 --   most general way of manipulating a vector.
-traverse :: Pully vec sh =>
-            vec sh  a -> (Shape sh -> Shape sh') ->
-            ((Shape sh -> a) -> Shape sh' -> a') ->
+traverse :: Pully vec =>
+            vec  a -> (Shape (VecShape vec) -> Shape sh') ->
+            ((Shape (VecShape vec) -> a) -> Shape sh' -> a') ->
             Pull sh' a'
 traverse vec shf elemf
   = Pull (elemf ixf) (shf sh)
   where Pull ixf sh = toPull vec
 
 -- | Duplicates part of a vector along a new dimension.
-replicate :: (Pully vec (SliceShape ss), Shapely (SliceShape ss)) =>
-             Slice ss -> vec (SliceShape ss) a -> Pull (FullShape ss) a
+replicate :: (Pully vec, VecShape vec ~ (SliceShape ss), Shapely (SliceShape ss)) =>
+             Slice ss -> vec a -> Pull (FullShape ss) a
 replicate sl vec
  = backpermute (fullOfSlice sl (extent vec))
                (sliceOfFull sl) (toPull vec)
 
 -- | Extracts a slice from a vector.
-slice :: (Pully vec (FullShape ss), Shapely (FullShape ss)) =>
-         vec (FullShape ss) a -> Slice ss -> Pull (SliceShape ss) a
+slice :: (Pully vec, VecShape vec ~ (FullShape ss), Shapely (FullShape ss)) =>
+         vec a -> Slice ss -> Pull (SliceShape ss) a
 slice vec sl
  = backpermute (sliceOfFull sl (extent vec))
                (fullOfSlice sl) vec
@@ -284,7 +285,7 @@ newLen1 l vec = reshape (Z :. l) vec
 -- | Change the shape of a vector. This function is potentially unsafe, the
 --   new shape need to have fewer or equal number of elements compared to
 --   the old shape.
-reshape :: Pully vec sh' => Shape sh -> vec sh' a -> Pull sh a
+reshape :: Pully vec => Shape sh -> vec a -> Pull sh a
 reshape sh' vec
  = Pull (ixf . fromIndex sh . toIndex sh') sh'
   where Pull ixf sh = toPull vec
@@ -294,25 +295,25 @@ unit :: Shapely sh => a -> Pull sh a
 unit a = Pull (const a) unitDim
 
 -- | Get the one element from a zero-dimensional vector
-fromZero :: Pully vec Z => vec Z a -> a
+fromZero :: (Pully vec, VecShape vec ~ Z) => vec a -> a
 fromZero vec = ixf Z
   where Pull ixf Z = toPull vec
 -- TODO: A better name.
 
 -- | Index into a vector
-(!:) :: Pully vec sh => vec sh a -> Shape sh -> a
+(!:) :: Pully vec => vec a -> Shape (VecShape vec) -> a
 vec !: ix = ixf ix
   where Pull ixf _ = toPull vec
 
 -- | Extract the diagonal of a two dimensional vector
-diagonal :: Pully vec DIM2 => vec DIM2 a -> Pull DIM1 a
+diagonal :: (Pully vec, VecShape vec ~ DIM2) => vec a -> Pull DIM1 a
 diagonal vec = backpermute (Z :. width) (\ (_ :. x) -> Z :. x :. x) vec
   where (width : height : _) = toList (extent vec) -- brain explosion hack
 
 -- | Change the shape of a vector.
-backpermute :: Pully vec sh =>
-  Shape sh' -> (Shape sh' -> Shape sh) ->
-  vec sh a -> Pull sh' a
+backpermute :: Pully vec =>
+  Shape sh' -> (Shape sh' -> Shape (VecShape vec)) ->
+  vec a -> Pull sh' a
 backpermute sh perm vec = traverse (toPull vec) (const sh) (. perm)
 
 reversePull :: Pull (sh :. Data Length) a -> Pull (sh :. Data Length) a
@@ -322,35 +323,35 @@ reversePull (Pull ixf (sh :. l)) =
 -- | Combines the elements of two vectors pointwise using a function.
 --   The size of the resulting vector will be the intersection of the
 --   two argument vectors.
-zipWith :: (Pully vec1 sh, Pully vec2 sh, Shapely sh) =>
-           (a -> b -> c) -> vec1 sh a -> vec2 sh b -> Pull sh c
+zipWith :: (Pully vec1, VecShape vec1 ~ sh, Pully vec2, VecShape vec2 ~ sh, Shapely sh) =>
+           (a -> b -> c) -> vec1 a -> vec2 b -> Pull sh c
 zipWith f arr1 arr2 = Pull (\ix -> f (arr1 !: ix) (arr2 !: ix))
                            (intersectDim (extent arr1) (extent arr2))
 
 -- | Like 'zipWith' but combines the elements of three vectors.
-zipWith3 :: (Pully vec1 sh, Pully vec2 sh, Pully vec3 sh, Shapely sh) =>
-           (a -> b -> c -> d) -> vec1 sh a -> vec2 sh b -> vec3 sh c -> Pull sh d
+zipWith3 :: (Pully vec1, VecShape vec1 ~ sh, Pully vec2, VecShape vec2 ~ sh, Pully vec3, VecShape vec3 ~ sh, Shapely sh) =>
+           (a -> b -> c -> d) -> vec1 a -> vec2 b -> vec3 c -> Pull sh d
 zipWith3 f arr1 arr2 arr3 = Pull (\ix -> f (arr1 !: ix) (arr2 !: ix) (arr3 !: ix))
                            (intersectDim (extent arr1)
                               (intersectDim (extent arr2) (extent arr3)))
 
 -- | Like 'zipWith' but combines the elements of four vectors.
-zipWith4 :: ( Pully vec1 sh, Pully vec2 sh, Pully vec3 sh, Pully vec4 sh
+zipWith4 :: ( Pully vec1, VecShape vec1 ~ sh, Pully vec2, VecShape vec2 ~ sh, Pully vec3, VecShape vec3 ~ sh, Pully vec4, VecShape vec4 ~ sh
             , Shapely sh
             ) =>
-           (a -> b -> c -> d -> e) -> vec1 sh a -> vec2 sh b ->
-           vec3 sh c -> vec4 sh d -> Pull sh e
+           (a -> b -> c -> d -> e) -> vec1 a -> vec2 b ->
+           vec3 c -> vec4 d -> Pull sh e
 zipWith4 f arr1 arr2 arr3 arr4
   = Pull (\ix -> f (arr1 !: ix) (arr2 !: ix) (arr3 !: ix) (arr4 !: ix))
                            (intersectDim (intersectDim (extent arr1) (extent arr2))
                                          (intersectDim (extent arr3) (extent arr4)))
 
 -- | Like 'zipWith' but combines the elements of five vectors.
-zipWith5 :: ( Pully vec1 sh, Pully vec2 sh, Pully vec3 sh, Pully vec4 sh
-            , Pully vec5 sh, Shapely sh
+zipWith5 :: ( Pully vec1, VecShape vec1 ~ sh, Pully vec2, VecShape vec2 ~ sh, Pully vec3, VecShape vec3 ~ sh, Pully vec4, VecShape vec4 ~ sh
+            , Pully vec5, VecShape vec5 ~ sh, Shapely sh
             ) =>
-           (a -> b -> c -> d -> e -> f) -> vec1 sh a -> vec2 sh b ->
-           vec3 sh c -> vec4 sh d -> vec5 sh e -> Pull sh f
+           (a -> b -> c -> d -> e -> f) -> vec1 a -> vec2 b ->
+           vec3 c -> vec4 d -> vec5 e -> Pull sh f
 zipWith5 f arr1 arr2 arr3 arr4 arr5
   = Pull (\ix -> f (arr1 !: ix) (arr2 !: ix) (arr3 !: ix) (arr4 !: ix) (arr5 !: ix))
             (intersectDim (extent arr1)
@@ -359,13 +360,13 @@ zipWith5 f arr1 arr2 arr3 arr4 arr5
 
 -- | Combines the elements of two vectors. The size of the resulting vector
 --   will be the intersection of the two argument vectors.
-zip :: (Pully vec1 sh, Pully vec2 sh, Shapely sh) =>
-       vec1 sh a -> vec2 sh b -> Pull sh (a,b)
+zip :: (Pully vec1, VecShape vec1 ~ sh, Pully vec2, VecShape vec2 ~ sh, Shapely sh) =>
+       vec1 a -> vec2 b -> Pull sh (a,b)
 zip = zipWith (\a b -> (a,b))
 
 -- | Like 'zip' but combining three vectors.
-zip3 :: (Pully vec1 sh, Pully vec2 sh, Pully vec3 sh) =>
-        vec1 sh a -> vec2 sh b -> vec3 sh c ->
+zip3 :: (Pully vec1, VecShape vec1 ~ sh, Pully vec2, VecShape vec2 ~ sh, Pully vec3, VecShape vec3 ~ sh) =>
+        vec1 a -> vec2 b -> vec3 c ->
         Pull sh (a,b,c)
 zip3 vec1 vec2 vec3
   = Pull (\i -> (ixf1 i, ixf2 i, ixf3 i))
@@ -375,8 +376,8 @@ zip3 vec1 vec2 vec3
         Pull ixf3 sh3 = toPull vec3
 
 -- | Zipping four vectors
-zip4 :: (Pully vec1 sh, Pully vec2 sh, Pully vec3 sh, Pully vec4 sh) =>
-        vec1 sh a -> vec2 sh b -> vec3 sh c -> vec4 sh d ->
+zip4 :: (Pully vec1, VecShape vec1 ~ sh, Pully vec2, VecShape vec2 ~ sh, Pully vec3, VecShape vec3 ~ sh, Pully vec4, VecShape vec4 ~ sh) =>
+        vec1 a -> vec2 b -> vec3 c -> vec4 d ->
         Pull sh (a,b,c,d)
 zip4 vec1 vec2 vec3 vec4
   = Pull (\i -> (ixf1 i, ixf2 i, ixf3 i, ixf4 i)) (intersectDim (intersectDim sh1 sh2) (intersectDim sh3 sh4))
@@ -386,8 +387,8 @@ zip4 vec1 vec2 vec3 vec4
         Pull ixf4 sh4 = toPull vec4
 
 -- | Zipping five vectors
-zip5 :: (Pully vec1 sh, Pully vec2 sh, Pully vec3 sh, Pully vec4 sh, Pully vec5 sh) =>
-        vec1 sh a -> vec2 sh b -> vec3 sh c -> vec4 sh d -> vec5 sh e ->
+zip5 :: (Pully vec1, VecShape vec1 ~ sh, Pully vec2, VecShape vec2 ~ sh, Pully vec3, VecShape vec3 ~ sh, Pully vec4, VecShape vec4 ~ sh, Pully vec5, VecShape vec5 ~ sh) =>
+        vec1 a -> vec2 b -> vec3 c -> vec4 d -> vec5 e ->
         Pull sh (a,b,c,d,e)
 zip5 vec1 vec2 vec3 vec4 vec5
   = Pull (\i -> (ixf1 i, ixf2 i, ixf3 i, ixf4 i, ixf5 i))
@@ -415,10 +416,10 @@ unzip5 :: Functor vec => vec (a,b,c,d,e) -> (vec a, vec b, vec c, vec d, vec e)
 unzip5 v = (fmap sel1 v, fmap sel2 v, fmap sel3 v, fmap sel4 v, fmap sel5 v)
 
 -- | Reduce a vector along its outermost dimension
-fold :: (Syntax b, Pully vec (sh :. Data Length), Shapely sh) =>
+fold :: (Syntax b, Pully vec, VecShape vec ~ (sh :. Data Length), Shapely sh) =>
         (b -> a -> b)
      -> b
-     -> vec (sh :. Data Length) a
+     -> vec a
      -> Pull sh b
 fold f x vec = Pull ixf sh
     where (sh, n) = uncons (extent vec) -- brain explosion hack
@@ -429,18 +430,18 @@ fold f x vec = Pull ixf sh
 
 -- | A generalization of 'fold' which allows for different initial
 --   values when starting to fold.
-fold' :: (Syntax a, Pully vec1 sh, Pully vec2 (sh :. Data Length), Shapely sh)
+fold' :: (Syntax a, Pully vec1, VecShape vec1 ~ sh, Pully vec2, VecShape vec2 ~ (sh :. Data Length), Shapely sh)
       => (a -> a -> a)
-      -> vec1 sh a
-      -> vec2 (sh :. Data Length) a
+      -> vec1 a
+      -> vec2 a
       -> Pull sh a
 fold' f x vec = Pull ixf sh
     where (sh, n) = uncons (extent vec) -- brain explosion hack
           ixf i = forLoop n (x!:i) (\ix s -> f s (vec !: (i :. ix)))
 
 -- | Summing a vector along its outermost dimension
-sum :: (Syntax a, Num a, Pully vec (sh :. Data Length), Shapely sh) =>
-       vec (sh :. Data Length) a -> Pull sh a
+sum :: (Syntax a, Num a, Pully vec, VecShape vec ~ (sh :. Data Length), Shapely sh) =>
+       vec a -> Pull sh a
 sum = fold (+) 0
 
 -- | Concatenating shapes.
@@ -573,9 +574,9 @@ rightMap :: forall sh1a sh1b sh2 a b . Shape sh1a -> Shape sh2 ->
 rightMap fake s f v = rightFlatten' $ fmap f $
                      (rightNest' fake v :: Pull sh2 (Pull sh1a a))
 
-outerProd :: (Pully vec1 sh1, Pully vec2 sh2) =>
-             (a -> b -> c) -> vec1 sh1 a -> vec2 sh2 b ->
-             Pull (AppendShape sh1 sh2) c
+outerProd :: (Pully vec1, Pully vec2) =>
+             (a -> b -> c) -> vec1 a -> vec2 b ->
+             Pull (AppendShape (VecShape vec1) (VecShape vec2)) c
 outerProd f v1 v2 = Pull ixf (appendShape sh1 sh2)
   where Pull ixf1 sh1 = toPull v1
         Pull ixf2 sh2 = toPull v2
@@ -592,8 +593,9 @@ indexed2 l1 l2 ixf = Pull (\(Z :. i1 :. i2) -> ixf i1 i2) (Z :. l1 :. l2)
 
 -- | Transpose the two innermost dimensions of a vector
 transposeL :: forall sh e vec.
-              (Pully vec (sh :. Data Length :. Data Length), Shapely sh) =>
-              vec  (sh :. Data Length :. Data Length) e ->
+              (Pully vec, VecShape vec ~ (sh :. Data Length :. Data Length)
+              ,Shapely sh) =>
+              vec e ->
               Pull (sh :. Data Length :. Data Length) e
 transposeL vec
   = backpermute new_extent swap vec
@@ -601,12 +603,14 @@ transposeL vec
         new_extent         = swap (extent vec)
 
 -- | Transpose a two-dimensional vector
-transpose2D :: Pully vec DIM2 => vec DIM2 e -> Pull DIM2 e
+transpose2D :: (Pully vec, VecShape vec ~ DIM2) => vec e -> Pull DIM2 e
 transpose2D = transposeL
 
 -- | Matrix multiplication
-mmMult :: (Syntax e, Num e, Pully vec1 DIM2, Pully vec2 DIM2) =>
-          Bool -> vec1 DIM2 e -> vec2 DIM2 e -> Pull DIM2 e
+mmMult :: (Syntax e, Num e
+          ,Pully vec1, VecShape vec1 ~ DIM2
+          ,Pully vec2, VecShape vec2 ~ DIM2) =>
+          Bool -> vec1 e -> vec2 e -> Pull DIM2 e
 mmMult doForce vA vB
   = sum (zipWith (*) vaRepl vbRepl)
   where
@@ -625,8 +629,8 @@ mmMult doForce vA vB
 -- dimension of 'vec' has length 'i' then the innermost dimension of
 -- @expandL n vec@ has length 'n' and the second innermost dimension will have
 -- length @i / p@.
-expandL :: Pully vec (sh :. Data Length) =>
-           Data Length -> vec (sh :. Data Length) a ->
+expandL :: (Pully vec, VecShape vec ~ (sh :. Data Length)) =>
+           Data Length -> vec a ->
            Pull (sh :. Data Length :. Data Length) a
 expandL n v = Pull ixf' (insLeft n $ insLeft p $ ext')
   where (Pull ixf ext) = toPull v
@@ -635,8 +639,8 @@ expandL n v = Pull ixf' (insLeft n $ insLeft p $ ext')
         ixf' ix = let (i,ix') = peelLeft ix; (j,ix'') = peelLeft ix' in ixf $ insLeft (i*p + j) ix''
 
 -- | Flatten the two innermost dimensions into a single dimension
-contractL :: Pully vec (sh :. Data Length :. Data Length) =>
-             vec (sh :. Data Length :. Data Length) a ->
+contractL :: (Pully vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
+             vec a ->
              Pull (sh :. Data Length) a
 contractL v = Pull ixf' (insLeft (m*n) ext')
   where (Pull ixf ext) = toPull v
@@ -644,8 +648,8 @@ contractL v = Pull ixf' (insLeft (m*n) ext')
         ixf' ix = let (i,ix') = peelLeft ix in ixf $ insLeft (i `div` n) $ insLeft (i `mod` n) $ ix'
 
 -- | Swap the two innermmost dimensions
-transL :: Pully vec (sh :. Data Length :. Data Length) =>
-          vec (sh :. Data Length :. Data Length) a ->
+transL :: (Pully vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
+          vec a ->
           Pull (sh :. Data Length :. Data Length) a
 transL v = Pull ixf' (insLeft n $ insLeft m $ ext')
   where (Pull ixf ext) = toPull v
@@ -692,13 +696,13 @@ dmap' f a = uncurry' n $ f . g
 
 -- Convenience functions that maybe should not be in the lib
 
-expandLT :: Pully vec (sh :. Data Length) =>
-            Data Length -> vec (sh :. Data Length) a ->
+expandLT :: (Pully vec, VecShape vec ~ (sh :. Data Length)) =>
+            Data Length -> vec a ->
             Pull (sh :. Data Length :. Data Length) a
 expandLT n a = transL $ expandL n $ a
 
-contractLT :: Pully vec (sh :. Data Length :. Data Length) =>
-              vec (sh :. Data Length :. Data Length) a ->
+contractLT :: (Pully vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
+              vec a ->
               Pull (sh :. Data Length) a
 contractLT a = contractL $ transL $ a
 
@@ -736,61 +740,61 @@ value1 ls = value ls
 indexed1 :: Data Length -> (Data Index -> a) -> Pull DIM1 a
 indexed1 l ixf = Pull (\(Z :. i) -> ixf i) (Z :. l)
 
-(!!) :: Pully vec DIM1 => vec DIM1 a -> Data Index -> a
+(!!) :: (Pully vec, VecShape vec ~ DIM1) => vec a -> Data Index -> a
 vec !! i = vec !: (Z :. i)
 
 -- | Take the length of a one-dimensional vector
-length :: Shaped vec => vec DIM1 a -> Data Length
+length :: (Shaped vec, VecShape vec ~ DIM1) => vec a -> Data Length
 length vec = l
   where (Z,l) = uncons (extent vec)
 
 -- | The call @take n vec@ returns a Pull vector containing the first @n@
 --   elements of @vec@.
-take :: Pully vec DIM1 => Data Length -> vec DIM1 a -> Pull DIM1 a
+take :: (Pully vec, VecShape vec ~ DIM1) => Data Length -> vec a -> Pull DIM1 a
 take n vec = Pull ixf (Z :. (min n l))
   where Pull ixf sh = toPull vec
         (Z,l)       = uncons sh
 
 -- | The call @drop n vec@ removes the first @n@ elements of @vec@
-drop :: Pully vec DIM1 => Data Length -> vec DIM1 a -> Pull DIM1 a
+drop :: (Pully vec, VecShape vec ~ DIM1) => Data Length -> vec a -> Pull DIM1 a
 drop n vec = Pull (\(Z :. i) -> ixf (Z :. i+n)) (Z :. (l-n))
   where Pull ixf sh = toPull vec
         (Z,l)       = uncons sh
 
 -- | Splits a pull vector in two at a particular index
-splitAt :: Pully vec DIM1 =>
-           Data Index -> vec DIM1 a -> (Pull DIM1 a, Pull DIM1 a)
+splitAt :: (Pully vec, VecShape vec ~ DIM1) =>
+           Data Index -> vec a -> (Pull DIM1 a, Pull DIM1 a)
 splitAt n vec = (take n vec, drop n vec)
 
 -- | Take the first element of a pull vector
-head :: Pully vec DIM1 => vec DIM1 a -> a
+head :: (Pully vec, VecShape vec ~ DIM1) => vec a -> a
 head vec = ixf (Z :. 0)
   where Pull ixf _ = toPull vec
 
 -- | Take the last element of a pull vector
-last :: Pully vec DIM1 => vec DIM1 a -> a
+last :: (Pully vec, VecShape vec ~ DIM1) => vec a -> a
 last vec = ixf (Z :. (l-1))
   where Pull ixf sh = toPull vec
         (Z,l)       = uncons sh
 
 -- | Remove the first element of a pull vector
-tail :: Pully vec DIM1 => vec DIM1 a -> Pull DIM1 a
+tail :: (Pully vec, VecShape vec ~ DIM1) => vec a -> Pull DIM1 a
 tail = drop 1
 
 -- | Remove the last element of a pull vector
-init :: Pully vec DIM1 => vec DIM1 a -> Pull DIM1 a
+init :: (Pully vec, VecShape vec ~ DIM1) => vec a -> Pull DIM1 a
 init vec = take (length vec - 1) vec
 
 -- | Create a vector containing all the suffixes of the input vector
-tails :: Pully vec DIM1 => vec DIM1 a -> Pull DIM1 (Pull DIM1 a)
+tails :: (Pully vec, VecShape vec ~ DIM1) => vec a -> Pull DIM1 (Pull DIM1 a)
 tails vec = indexed1 (length vec + 1) (`drop` vec)
 
 -- | Create a vector containing all the prefixes of the input vector
-inits :: Pully vec DIM1 => vec DIM1 a -> Pull DIM1 (Pull DIM1 a)
+inits :: (Pully vec, VecShape vec ~ DIM1) => vec a -> Pull DIM1 (Pull DIM1 a)
 inits vec = indexed1 (length vec + 1) (`take` vec)
 
 -- | Similar to 'inits' but without the empty vector
-inits1 :: Pully vec DIM1 => vec DIM1 a -> Pull DIM1 (Pull DIM1 a)
+inits1 :: (Pully vec, VecShape vec ~ DIM1) => vec a -> Pull DIM1 (Pull DIM1 a)
 inits1 = tail . inits
 
 -- | The call @rotateVecL n vec@ rotates the elements of @vec@ @n@ steps
@@ -860,67 +864,71 @@ map :: Functor vec => (a -> b) -> vec a -> vec b
 map = fmap
 
 -- | Folding a one-dimensional vector
-fold1 :: (Syntax a, Pully vec DIM1) => (a -> a -> a) -> vec DIM1 a -> a
+fold1 :: (Syntax a, Pully vec, VecShape vec ~ DIM1) => (a -> a -> a) -> vec a -> a
 fold1 f a = fromZero $ fold f (head a) (tail a)
 
 -- TODO: Generalize minimum and maximum to arbitrary dimensions and Pushy vecs
 
 
 -- | Get the maximum element from a vector
-maximum :: (Ord a, Pully vec DIM1) => vec DIM1 (Data a) -> (Data a)
+maximum :: (Ord a, Pully vec, VecShape vec ~ DIM1) => vec (Data a) -> (Data a)
 maximum = fold1 max
 
 -- | Get the minimum element from a vector
-minimum :: (Ord a, Pully vec DIM1) => vec DIM1 (Data a) -> (Data a)
+minimum :: (Ord a, Pully vec, VecShape vec ~ DIM1) => vec (Data a) -> (Data a)
 minimum = fold1 min
 
 -- TODO: Generalize or and and to arbitrary dimensions and Pushy vectors
 
 -- | Compute logical or over a vector
-or :: Pully vec DIM1 => vec DIM1 (Data Bool) -> Data Bool
+or :: (Pully vec, VecShape vec ~ DIM1) => vec (Data Bool) -> Data Bool
 or vec = snd (whileLoop (0,false) (\(i,b) -> not b && i < l) body)
   where body (i,b)  = (i+1,ixf (Z :. i))
         Pull ixf sh = toPull vec
         (Z,l)       = uncons sh
 
 -- | Compute logical and over a vector
-and :: Pully vec DIM1 => vec DIM1 (Data Bool) -> Data Bool
+and :: (Pully vec, VecShape vec ~ DIM1) => vec (Data Bool) -> Data Bool
 and vec = snd (whileLoop (0,true) (\(i,b) -> b && i < l) body)
   where body (i,b)  = (i+1,ixf (Z :. i))
         Pull ixf sh = toPull vec
         (Z,l)       = uncons sh
 
 -- | Determine whether any of the elements of a vector satisfies a predicate
-any :: (Pully vec DIM1, Functor (vec DIM1)) =>
-       (a -> Data Bool) -> vec DIM1 a -> Data Bool
+any :: (Pully vec, VecShape vec ~ DIM1, Functor vec) =>
+       (a -> Data Bool) -> vec a -> Data Bool
 any p = or . fmap p
 
 -- | Determine whether all elements of a vector satisfies a predicate
-all :: (Pully vec DIM1, Functor (vec DIM1)) =>
-       (a -> Data Bool) -> vec DIM1 a -> Data Bool
+all :: (Pully vec, VecShape vec ~ DIM1, Functor vec) =>
+       (a -> Data Bool) -> vec a -> Data Bool
 all p = and . fmap p
 
 -- TODO: Generalize eqVectors, once 'and' is generalized
 
 -- | Testing equality between two one-dimensional vectors
-eqVector :: (Eq a, Pully vec1 DIM1, Pully vec2 DIM1) =>
-            vec1 DIM1 (Data a) -> vec2 DIM1 (Data a) -> Data Bool
+eqVector :: (Eq a, Pully vec1, VecShape vec1 ~ DIM1
+            ,Pully vec2, VecShape vec2 ~ DIM1) =>
+            vec1 (Data a) -> vec2 (Data a) -> Data Bool
 eqVector a b = length a == length b && and (zipWith (==) a b)
 
 -- | Compute the scalar product of two pull vectors
-scalarProd :: (Syntax a, Num a, Pully vec1 DIM1, Pully vec2 DIM1) =>
-              vec1 DIM1 a -> vec2 DIM1 a -> a
+scalarProd :: (Syntax a, Num a, Pully vec1, VecShape vec1 ~ DIM1
+              ,Pully vec2, VecShape vec2 ~ DIM1) =>
+              vec1 a -> vec2 a -> a
 scalarProd a b = fromZero $ sum (zipWith (*) a b)
 
 -- | This function can distribute vector computations on chunks of a large
 --   pull vector. A call @chunk l f g v@ will split the vector 'v' into chunks
 --   of size 'l' and apply 'f' to these chunks. In case the length of 'v' is
 --   not a multiple of 'l' then the rest of 'v' will be processed by 'g'.
-chunk :: (Pully vec DIM1, Pushy vec1 DIM1, Pushy vec2 DIM1, Syntax b)
+chunk :: (Pully vec, VecShape vec ~ DIM1
+         ,Pushy vec1, VecShape vec1 ~ DIM1
+         ,Pushy vec2, VecShape vec2 ~ DIM1, Syntax b)
       => Data Length            -- ^ Size of the chunks
-      -> (Pull DIM1 a -> vec1 DIM1 b) -- ^ Applied to every chunk
-      -> (Pull DIM1 a -> vec2 DIM1 b) -- ^ Applied to the rest of the vector
-      -> vec DIM1 a
+      -> (Pull DIM1 a -> vec1 b) -- ^ Applied to every chunk
+      -> (Pull DIM1 a -> vec2 b) -- ^ Applied to the rest of the vector
+      -> vec a
       -> Push DIM1 b
 chunk c f g vec = Push loop (Z :. (noc * c))
              ++ toPush (g (drop (noc * c) v))
@@ -957,9 +965,10 @@ empty :: Shapely sh => Push sh a
 empty = Push (const (return ())) zeroDim
 
 -- | Concatenation along the the outmost dimension
-(++) :: (Pushy vec1 (sh :. Data Length), Pushy vec2 (sh :. Data Length)) =>
-        vec1 (sh :. Data Length) a
-     -> vec2 (sh :. Data Length) a
+(++) :: (Pushy vec1, VecShape vec1 ~ (sh :. Data Length)
+        ,Pushy vec2, VecShape vec2 ~ (sh :. Data Length)) =>
+        vec1 a
+     -> vec2 a
      -> Push (sh :. Data Length) a
 vec1 ++ vec2 = Push k (sh1 :. (l1 + l2))
   where Push k1 ext1 = toPush vec1
@@ -973,9 +982,10 @@ vec1 ++ vec2 = Push k (sh1 :. (l1 + l2))
 
 -- | Concatenation along the outermost dimension where the two vectors have
 --   the same length. There is no check that the lengths are equal.
-(+=+) :: (Pully vec1 (sh :. Data Length), Pully vec2 (sh :. Data Length)) =>
-         vec1 (sh :. Data Length) a
-      -> vec2 (sh :. Data Length) a
+(+=+) :: (Pully vec1, VecShape vec1 ~ (sh :. Data Length)
+         ,Pully vec2, VecShape vec2 ~ (sh :. Data Length)) =>
+         vec1 a
+      -> vec2 a
       -> Push (sh :. Data Length) a
 vec1 +=+ vec2 = Push f (sh1 :. (l1 + l2))
   where Pull ixf1 ext1 = toPull vec1
@@ -988,8 +998,8 @@ vec1 +=+ vec2 = Push f (sh1 :. (l1 + l2))
 
 -- | Flattens a vector of pairs such that the elements of a pair end up next
 --   to each other in the resulting vector.
-unpair :: Pushy vec (sh :. Data Length)
-       => vec (sh :. Data Length) (a,a)
+unpair :: (Pushy vec, VecShape vec ~ (sh :. Data Length))
+       => vec (a,a)
        -> Push (sh :. Data Length) a
 unpair v = Push f' (sh :. (l * 2))
   where (Push f ex) = toPush v
@@ -1003,10 +1013,10 @@ unpair v = Push f' (sh :. (l * 2))
 -- @
 --   unpair = unpairWith (\(sh :. i) -> (sh :. 2*i)) (\(sh :. i) -> (sh :. 2*i+1))
 -- @
-unpairWith :: Pushy vec (sh :. Data Length)
+unpairWith :: (Pushy vec, VecShape vec ~ (sh :. Data Length))
            => (Shape (sh :. Data Length) -> Shape (sh :. Data Length))
            -> (Shape (sh :. Data Length) -> Shape (sh :. Data Length))
-           -> vec (sh :. Data Length) (a,a)
+           -> vec (a,a)
            -> Push (sh :. Data Length) a
 unpairWith ix1 ix2 vec = Push f' (sh :. (l*2))
   where (Push f ex) = toPush vec
@@ -1018,7 +1028,8 @@ unpairWith ix1 ix2 vec = Push f' (sh :. (l*2))
 -- | Split a vector in half along the outermost dimension. If there is an odd
 --   number of elements in that dimension, the second vector of the two result
 --   vectors will be one longer than the first.
-halve :: Pully vec (sh :. Data Length) => vec (sh :. Data Length) a
+halve :: (Pully vec, VecShape vec ~ (sh :. Data Length))
+      => vec a
       -> (Pull (sh :. Data Length) a, Pull (sh :. Data Length) a)
 halve vec = (Pull ixf  (sh :. (l `div` 2))
             ,Pull ixf' (sh :. ((l+1) `div` 2)))
@@ -1032,22 +1043,22 @@ halve vec = (Pull ixf  (sh :. (l `div` 2))
 -- @
 -- riffle (enumFromTo 1 10) == [1,6,2,7,3,8,4,9,5,10]
 -- @
-riffle :: (Pully vec (sh :. Data Length), Shapely sh) =>
-          vec (sh :. Data Length) a -> Push (sh :. Data Length) a
+riffle :: (Pully vec, VecShape vec ~ (sh :. Data Length), Shapely sh) =>
+          vec a -> Push (sh :. Data Length) a
 riffle =  unpair . uncurry zip . halve
 
 -- | Interleaves the elements of two vectors.
-interleave :: (Pully vec1 (sh :. Data Length)
-              ,Pully vec2 (sh :. Data Length)
+interleave :: (Pully vec1, VecShape vec1 ~ (sh :. Data Length)
+              ,Pully vec2, VecShape vec2 ~ (sh :. Data Length)
               ,Shapely sh) =>
-              vec1 (sh :. Data Length) a -> vec2 (sh :. Data Length) a ->
+              vec1 a -> vec2 a ->
               Push (sh :. Data Length) a
 interleave v1 v2 = unpair (zip v1 v2)
 
 -- | Forward permute a push vector.
-forwardPermute :: Pushy vec sh =>
+forwardPermute :: (Pushy vec, VecShape vec ~ sh) =>
                   (Shape sh -> Shape sh -> Shape sh) ->
-                  vec sh a ->  Push sh a
+                  vec a ->  Push sh a
 forwardPermute p vec = Push g sh
   where Push f sh = toPush vec
         g k = f (\ix a -> k (p sh ix) a)
@@ -1100,13 +1111,13 @@ rev s (Push k sh) = Push k' sh
 
 -- | This class captures all types of vectors which can turned into a 'Push'
 --   vector cheaply
-class (Shaped vec) => Pushy vec sh where
-  toPush :: vec sh a -> Push sh a
+class (Shaped vec) => Pushy vec where
+  toPush :: vec a -> Push (VecShape vec) a
 
-instance Pushy Push sh where
+instance Pushy (Push sh) where
   toPush = id
 
-instance Pushy Pull sh where
+instance Pushy (Pull sh) where
   toPush (Pull ixf l) = Push f l
     where f k = forShapeR l $ \i ->
                  k i (ixf i)
@@ -1164,8 +1175,8 @@ flattenList (Pull ixf sh) = Push f sz
 -- KFFs extensions
 
 -- | Split the innermost dimension of a push vector in two
-expandS :: Pushy vec (sh :. Data Length) =>
-           Data Length -> vec (sh :. Data Length) a ->
+expandS :: (Pushy vec, VecShape vec ~ (sh :. Data Length)) =>
+           Data Length -> vec a ->
            Push (sh :. Data Length :. Data Length) a
 expandS n v = Push g $ insLeft n $ insLeft p $ ext'
   where (Push f ext) = toPush v
@@ -1173,16 +1184,16 @@ expandS n v = Push g $ insLeft n $ insLeft p $ ext'
         p = m `div` n
         g k = f $ \ ix v -> let (i,ix') = peelLeft ix in k (insLeft (i `div` p) $ insLeft (i `Feldspar.mod` p) $ ix') v
 
-contractS :: Pushy vec (sh :. Data Length :. Data Length) =>
-             vec (sh :. Data Length :. Data Length) a ->
+contractS :: (Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
+             vec a ->
              Push (sh :. Data Length) a
 contractS v = Push g $ insLeft (m*n) $ ext'
   where (Push f ext) = toPush v
         (m, n, ext') = peelLeft2 ext
         g k = f $ \ ix v -> let (i, j, ix') = peelLeft2 ix in k (insLeft (i*n + j) ix') v
 
-transS :: Pushy vec (sh :. Data Length :. Data Length) =>
-          vec (sh :. Data Length :. Data Length) a ->
+transS :: (Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
+          vec a ->
           Push (sh :. Data Length :. Data Length) a
 transS v = Push g $ insLeft n $ insLeft m $ ext'
   where (Push f ext) = toPush v
@@ -1200,13 +1211,13 @@ uncurryS' m f = Push g (ext :. m)
   where Push _ ext = f (undefined :: Data Length)
         g k = forM m $ \ i -> let Push h _ = f i in h (\ ix v -> k (ix :. i) v)
 
-expandST :: Pushy vec (sh :. Data Length) =>
-            Data Length -> vec (sh :. Data Length) a ->
+expandST :: (Pushy vec, VecShape vec ~ (sh :. Data Length)) =>
+            Data Length -> vec a ->
             Push (sh :. Data Length :. Data Length) a
 expandST n a = transS $ expandS n $ a
 
-contractST :: Pushy vec (sh :. Data Length :. Data Length) =>
-              vec (sh :. Data Length :. Data Length) a ->
+contractST :: (Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
+              vec a ->
               Push (sh :. Data Length) a
 contractST a = contractS $ transS $ a
 
@@ -1217,15 +1228,15 @@ data Manifest sh a = Syntax a => Manifest (Data [Internal a]) (Shape sh)
 -- | A class for memory allocation. All vectors are instances of this class.
 class Shaped vec => Storable vec where
   -- | Allocates a vector to memory.
-  store :: (Syntax a, Shapely sh) => vec sh a -> Manifest sh a
+  store :: (Syntax a) => vec a -> Manifest (VecShape vec) a
 
-instance Storable Manifest where
+instance Storable (Manifest sh) where
   store m = m
 
-instance Storable Pull where
+instance Shapely sh => Storable (Pull sh) where
   store vec@(Pull ixf sh) = Manifest (save $ fromPull (fmap F.desugar vec)) sh
 
-instance Storable Push where
+instance Storable (Push sh) where
   store vec@(Push f sh) = Manifest (save $ fromPush (fmap F.desugar vec)) sh
 
 instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where
@@ -1310,8 +1321,10 @@ instance (Flat sh a, Flat sh b, Flat sh c) => Flat sh (a,b,c) where
 --   elements of the vector have to be instances of the 'Flat' type class.
 --   For example, a vector of type @Pull sh (Data Int,Data Float)@ will be
 --   stored as @(Manifest sh (Data Int), Manifest sh (Data Float))@.
-storeFlat :: forall a vec sh. (Flat sh a, Pushy vec sh, Syntax (FlatManifest sh a)) =>
-             vec sh a -> FlatManifest sh a
+storeFlat :: forall a vec sh.
+            (Flat sh a, Pushy vec, VecShape vec ~ sh
+            ,Syntax (FlatManifest sh a)) =>
+             vec a -> FlatManifest sh a
 storeFlat vec = runMutable $ do
                   arr <- allocArray (Proxy :: Proxy a) (Proxy :: Proxy sh) (size l)
                   writeArray (Proxy :: Proxy sh) arr (\k -> f (\sh a -> k (toIndex l sh) a))
@@ -1320,29 +1333,34 @@ storeFlat vec = runMutable $ do
 
 -- | This class captures all vectors which can be turned into a 'Pull' vector
 --   without allocating memory.
-class (Shaped vec) => Pully vec sh where
-  toPull :: vec sh a -> Pull sh a
+class (Shaped vec) => Pully vec where
+  toPull :: vec a -> Pull (VecShape vec) a
 
-instance Shapely sh => Pully Manifest sh where
+instance Shapely sh => Pully (Manifest sh) where
   toPull (Manifest arr sh) = Pull (\i -> F.sugar $ arr ! toIndex sh i) sh
 
-instance Pully Pull sh where
+instance Pully (Pull sh) where
   toPull vec = vec
 
-instance Shapely sh => Pushy Manifest sh where
+instance Shapely sh => Pushy (Manifest sh) where
   toPush m = toPush (toPull m)
+
+type family VecShape (vec :: * -> *) :: *
+type instance VecShape (Pull sh) = sh
+type instance VecShape (Push sh) = sh
+type instance VecShape (Manifest sh) = sh
 
 -- | A single method class for getting the shape of a vector
 class Shaped vec where
-  extent :: Shapely sh => vec sh a -> Shape sh
+  extent :: vec a -> Shape (VecShape vec)
 
-instance Shaped Pull where
+instance Shaped (Pull sh) where
   extent (Pull _ sh) = sh
 
-instance Shaped Push where
+instance Shaped (Push sh) where
   extent (Push _ sh) = sh
 
-instance Shaped Manifest where
+instance Shaped (Manifest sh) where
   extent (Manifest _ sh) = sh
 
 -- Overloaded operations

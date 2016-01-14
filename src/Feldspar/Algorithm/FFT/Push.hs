@@ -25,10 +25,10 @@ import Test.QuickCheck
 
 
 -- | Utilities that should go into Feldspar.Vector
-chnk :: (Pushy arr1 DIM1, Syntax b)
+chnk :: (Pushy arr1, VecShape arr1 ~ DIM1, Syntax b)
       => Data Length          -- ^ Number of chunks
       -> Data Length          -- ^ Size of the chunks
-      -> (Pull DIM1 a -> arr1 DIM1 b) -- ^ Applied to every chunk
+      -> (Pull DIM1 a -> arr1 b) -- ^ Applied to every chunk
       -> Pull DIM1 a
       -> Push DIM1 b
 chnk r c f v = Push loop $ extent v
