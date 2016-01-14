@@ -17,6 +17,7 @@ module Feldspar.Mutable
   , newBuffer
   , newBuffer_
   , tM
+  , initBuffer2
   ) where
 
 
@@ -82,3 +83,31 @@ newBuffer_ l = newArr_ l >>= initBuffer'
 tM :: Patch a a -> Patch (M a) (M a)
 tM _ = id
 
+initBuffer2' :: forall a . Syntax a => Data Length -> Data (MArr (Internal a))
+                                    -> M (Buffer a)
+initBuffer2' l buf = do
+    ir <- newRef 0
+    let get j = do
+          i <- getRef ir
+          fmap sugar $ getArr buf (j + i)
+        put a = do
+          i <- getRef ir
+          setRef ir ((i+1) `mod` l)
+          let a' = desugar a
+          setArr buf i a'
+          setArr buf (i+l) a'
+        with :: Syntax b => (Pull DIM1 a -> M b) -> M b
+        with f = do
+          i <- getRef ir
+          withArray buf (f . freeze i)
+    return (Buffer get put with)
+  where
+    freeze :: Syntax b => Data Index -> Data [Internal b] -> Pull DIM1 b
+    freeze i = take l . drop i . map sugar . thawPull1
+
+-- | Create a new cyclic buffer. This implementation uses a buffer twice
+--   as long as necessary to avoid all modulus operations when accessing
+--   the elements.
+initBuffer2 :: Syntax a => Pull DIM1 a -> M (Buffer a)
+initBuffer2 buf = thawArray (freezePush1 $ dup $ map desugar buf) >>=
+                  initBuffer2' (length buf)
