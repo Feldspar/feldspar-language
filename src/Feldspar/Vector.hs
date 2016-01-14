@@ -42,7 +42,7 @@ module Feldspar.Vector (
   length,take,drop,splitAt,head,last,tail,init,tails,inits,inits1,
   rotateVecL,rotateVecR,replicate1,enumFromTo,enumFrom,(...),fold1,
   maximum,minimum,or,and,any,all,eqVector,scalarProd,chunk,
-  permute,ixmap,newLen1,
+  permute,ixmap,dup,newLen1,
   -- * Functions on two-dimensional vectors
   indexed2,mmMult,
   -- * Push vectors
@@ -65,7 +65,7 @@ module Feldspar.Vector (
   scan,
   -- * Ugly hacks
   freezePull1,arrToManifest,arrToPull,thawPull,thawPull1,thawPush,
-  fromList,fromPush,fromPull,freezePull,freezePush
+  fromList,fromPush,fromPull,freezePull,freezePush,freezePush1
   ) where
 
 import qualified Prelude as P
@@ -951,6 +951,13 @@ permute perm (Pull ixf sh@(Z :. l))
 ixmap :: (Data Index -> Data Index) -> Pull DIM1 a -> Pull DIM1 a
 ixmap perm  = permute (const perm)
 
+-- | Duplicates a vector
+dup :: (Pushy vec, VecShape vec ~ DIM1) => vec a -> Push DIM1 a
+dup vec = Push ixf (Z :. 2*l)
+  where Push f sh = toPush vec
+        (Z,l) = uncons sh
+        ixf wf = do f (\(Z :. i) a -> wf (Z :. i) a >> wf (Z :. i+l) a)
+
 -- Multidimensional push vectors
 data Push sh a = Push ((Shape sh -> a -> M ()) -> M ()) (Shape sh)
 
@@ -1134,6 +1141,11 @@ freezePush :: (Type a, Shapely sh) =>
               Push sh (Data a) -> (Data [Length], Data [a])
 freezePush v   = (shapeArr, fromPush v)
   where shapeArr = fromList (toList $ extent v)
+
+freezePush1 :: (Type a) =>
+               Push DIM1 (Data a) -> Data [a]
+freezePush1 v = fromPush v
+
 
 thawPush :: (Type a, Shapely sh) =>
               (Data [Length], Data [a]) -> Push sh (Data a)
