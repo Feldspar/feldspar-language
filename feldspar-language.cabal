@@ -120,6 +120,7 @@ library
     Feldspar.Mutable
     Feldspar.Option
     Feldspar.Repa
+    Feldspar.Seq
     Feldspar.Stream
     Feldspar.Vector
     Feldspar.Vector.Shape
