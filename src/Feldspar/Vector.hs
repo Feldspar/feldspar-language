@@ -953,10 +953,7 @@ ixmap perm  = permute (const perm)
 
 -- | Duplicates a vector
 dup :: (Pushy vec, VecShape vec ~ DIM1) => vec a -> Push DIM1 a
-dup vec = Push ixf (Z :. 2*l)
-  where Push f sh = toPush vec
-        (Z,l) = uncons sh
-        ixf wf = do f (\(Z :. i) a -> wf (Z :. i) a >> wf (Z :. i+l) a)
+dup vec = vec ++ vec
 
 -- Multidimensional push vectors
 data Push sh a = Push ((Shape sh -> a -> M ()) -> M ()) (Shape sh)
