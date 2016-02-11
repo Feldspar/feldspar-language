@@ -106,6 +106,24 @@ import Data.Proxy
 -- determined. A shape with at least two dimensions is written
 -- @sh :. Data Length :. Data Length@ where @sh@ is a type variable.
 
+
+-- NOTES on overloading
+--
+-- Since this library uses several types of arrays, there are many operations
+-- which are overloaded so that they can work with multiple, or all, types
+-- of arrays. However, too much overloading can easily lead to ambiguities
+-- in the user code, so that the type checker cannot figure what type to
+-- use and the programmer has to insert type annotations. Annoying, and
+-- something we want to avoid.
+--
+-- This library uses the following form of overloading: arguments are typically
+-- overloaded, with one of the classes Pully or Pushy. Return types are either
+-- always a concrete type, i.e. Pull, Push or Manifest, or polymorphic but the
+-- same type as one of the input arguments. Return types are never fully
+-- overloaded.
+-- This style of overloading enables a lot of reuse while still enables the
+-- type checker to figure out all the types in most cases.
+
 -- Slices
 
 data All    = All
