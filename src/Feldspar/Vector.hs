@@ -1402,6 +1402,12 @@ instance ShapeMap Push where
   expand  l vec = expandS l vec
   contract  vec = contractS vec
 
+zeros sh = constant sh 0
+ones  sh = constant sh 1
+
+constant :: Shape sh -> t -> Pull sh t
+constant sh c = Pull (\_ -> c) sh
+
 -------------------------------------------------------------------------------
  --- Misc.
 -------------------------------------------------------------------------------
