@@ -23,6 +23,7 @@ module Feldspar.Vector (
   zip,zip3,zip4,zip5,
   unzip,unzip3,unzip4,unzip5,
   fold,fold',sum,
+  zeros,ones,constant,
   halve,
   expandL,expandLT,contractL,contractLT,curryL,uncurryL,dmapL,dzipWithL,
   dmapS,dzipWithS,
