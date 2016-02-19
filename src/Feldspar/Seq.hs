@@ -79,8 +79,8 @@ instance Functor Seq where
 take :: Data WordN -> Seq a -> Seq a
 take n (Seq init _) = Seq init n
 
-repeat :: a -> Data WordN -> Seq a
-repeat a l = Seq (loop $ \_ -> return a) l
+replicate :: Data WordN -> a -> Seq a
+replicate l a = Seq (loop $ \_ -> return a) l
 
 unit :: a -> Seq a
 unit a = Seq (loop $ \_ -> return a) 1
