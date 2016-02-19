@@ -79,6 +79,11 @@ shapeEq Z Z = true
 shapeEq (sh1 :. i) (sh2 :. j) = i == j && shapeEq sh1 sh2
 shapeEq _ _ = false
 
+zipShape :: (Data Length -> Data Length -> Data Length) ->
+            Shape sh -> Shape sh -> Shape sh
+zipShape f Z Z = Z
+zipShape f (sh1 :. i) (sh2 :. j) = zipShape f sh1 sh2 :. f i j
+
 class Shapely sh where
   zeroDim   :: Shape sh
   unitDim   :: Shape sh

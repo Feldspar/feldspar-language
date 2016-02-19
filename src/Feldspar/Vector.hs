@@ -45,7 +45,7 @@ module Feldspar.Vector (
   maximum,minimum,or,and,any,all,eqVector,scalarProd,chunk,
   permute,ixmap,dup,newLen1,
   -- * Functions on two-dimensional vectors
-  indexed2,mmMult,
+  indexed2,mmMult,eye,eyePush,eye2,eye2Push,Matrixy(..),above,beside,
   -- * Push vectors
   Push(..),
   DPush,Pushy(..),
@@ -75,6 +75,7 @@ import Language.Syntactic hiding (fold,size)
 import Feldspar hiding (desugar,sugar,resugar)
 import qualified Feldspar as F
 import Feldspar.Core.Frontend.LoopM
+import Feldspar.Core.Frontend.ConditionM
 import Feldspar.Core.Frontend.Mutable
 import Feldspar.Core.Frontend.MutableArray
 import Feldspar.Core.Frontend.MutableToPure
@@ -641,6 +642,70 @@ mmMult doForce vA vB
     [rowsA, colsA] = toList (extent vA) -- brain explosion hack
     [rowsB, colsB] = toList (extent vB)
 
+above, beside :: (Pushy vec1, VecShape vec1 ~ DIM2,
+                  Pushy vec2, VecShape vec2 ~ DIM2) =>
+                 vec1 a -> vec2 a -> Push DIM2 a
+above vec1 vec2 = Push ixf (Z :. y1 + y2 :. x1)
+  where Push ixf1 ext1 = toPush vec1
+        Push ixf2 ext2 = toPush vec2
+        [x1,y1] = toList ext1
+        [x2,y2] = toList ext2
+        -- Assumption x1 == x2
+        ixf wf = do ixf1 wf
+                    ixf2 (\ (Z :. y :. x) a -> wf (Z :. y + y1 :. x) a)
+-- above vec1 vec = transpose (transpose (toPush vec1) `beside`
+--                             transpose (toPush vec2))
+-- The definition of 'above' in terms of 'beside' and 'transpose' is
+-- almost as efficient as the actual implementation above. However,
+-- the iteration order makes it such that multiplications get pushed
+-- inside of loops making it do many more multiplications.
+-- I haven't benchmarked the two versions yet though.
+
+beside vec1 vec2 = vec1 ++ vec2
+
+class Matrixy vec where
+  columnVector :: vec DIM1 a -> vec DIM2 a
+  rowVector :: vec DIM1 a -> vec DIM2 a
+
+instance Matrixy Pull where
+  columnVector (Pull ixf (Z :. l)) = Pull ixf' (Z :. l :. 1)
+    where ixf' (Z :. i :. _) = ixf (Z :. i)
+  rowVector (Pull ixf (Z :. l)) = Pull ixf' (Z :. 1 :. l)
+    where ixf' (Z :. _ :. i) = ixf (Z :. i)
+
+instance Matrixy Push where
+  columnVector (Push ixf (Z :. l)) = Push ixf' (Z :. l :. 1)
+    where ixf' wf = ixf (\ (Z :. i) a -> wf (Z :. i :. 1) a)
+  rowVector (Push ixf (Z :. l)) = Push ixf' (Z :. 1 :. l)
+    where ixf' wf = ixf (\ (Z :. i) a -> wf (Z :. 1 :. i) a)
+
+-- | A square identity matrix.
+eye :: (Num e, Syntax e) => Data WordN -> Pull DIM2 e
+eye n = Pull (\(Z :. i :. j) -> i == j ? 1 $ 0) (Z :. n :. n)
+
+-- | A square identity matrix. This version can sometimes be faster
+--   than 'eye' as it avoids a test in the inner loop. However,
+--   half of the elements are written in an order which is not
+--   cache friendly.
+eyePush :: Num e => Data WordN -> Push DIM2 e
+eyePush n = Push ixf (Z :. n :. n)
+  where ixf wf = do forM n $ \i ->
+                      forM i $ \j -> do
+                        wf (Z :. i :. j) 0
+                        wf (Z :. j :. i) 0
+                    forM n $ \i -> do
+                       wf (Z :. i :. i) 1
+
+-- | An identity matrix which is not necessarily square.
+eye2 :: (Num e, Syntax e) => Data WordN -> Data WordN -> Pull DIM2 e
+eye2 n m = Pull (\(Z :. i :. j) -> i == j ? 1 $ 0) (Z :. n :. m)
+
+-- | Similar to 'eye2' but potentially more efficient in the same
+--   way that 'eyePush' relates to 'eye'.
+eye2Push :: Num e => Data WordN -> Data WordN -> Push DIM2 e
+eye2Push n m = ifPush (n > m)
+                 (eyePush m `above`  zeros (Z :. n - m :. m))
+                 (eyePush n `beside` zeros (Z :. n :. m - n))
 
 -- KFFs combinators
 
@@ -1089,6 +1154,11 @@ forwardPermute p vec = Push g sh
 reversePush :: Push (sh :. Data Length) a -> Push (sh :. Data Length) a
 reversePush (Push f (sh :. l)) =
   Push (\k -> f (\(sh' :. ix) a -> k (sh' :. (l - ix - 1)) a)) (sh :. l)
+
+ifPush :: Data Bool -> Push sh a -> Push sh a -> Push sh a
+ifPush cond (Push ixf1 sh1) (Push ixf2 sh2) = Push ixf sh
+  where ixf wf = ifM cond (ixf1 wf) (ixf2 wf)
+        sh     = zipShape (cond ?) sh1 sh2
 
 -- Pinpointing one particular dimension
 
