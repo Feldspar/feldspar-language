@@ -199,7 +199,7 @@ instance (Syntax a, Shapely sh) => Syntactic (Pull sh a)
         _ :. _ :. _ -> desugar $ freezePull $ fmap resugar v
 
     sugar v = case fakeShape :: Shape sh of
-        Z           -> unit $ sugar v
+        Z           -> singleton $ sugar v
         Z :. _      -> fmap resugar $ thawPull1 $ sugar v
         _ :. _ :. _ -> fmap resugar $ thawPull $ sugar v
 
@@ -311,8 +311,8 @@ reshape sh' vec
   where Pull ixf sh = toPull vec
 
 -- | A scalar (zero dimensional) vector
-unit :: Shapely sh => a -> Pull sh a
-unit a = Pull (const a) unitDim
+singleton :: Shapely sh => a -> Pull sh a
+singleton a = Pull (const a) unitDim
 
 -- | Get the one element from a zero-dimensional vector
 fromZero :: (Pully vec, VecShape vec ~ Z) => vec a -> a
@@ -1254,7 +1254,7 @@ instance (Syntax a, Shapely sh) => Syntactic (Push sh a)
         (Z :. _ :. _) -> desugar $ freezePush $ fmap resugar v
 
     sugar v = case fakeShape :: Shape sh of
-        Z           -> toPush $ unit $ sugar v
+        Z           -> toPush $ singleton $ sugar v
         Z :. _      -> fmap resugar $ thawPush1 $ sugar v
         _ :. _ :. _ -> fmap resugar $ thawPush $ sugar v
 
@@ -1346,7 +1346,7 @@ instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where
       _ :. _ :. _ -> desugar $ manifestToArr v
 
   sugar v = case fakeShape :: Shape sh of
-      Z           -> store $ unit $ sugar v
+      Z           -> store $ singleton $ sugar v
       Z :. _      -> arrToManifest1 $ sugar v
       _ :. _ :. _ -> arrToManifest $ sugar v
 

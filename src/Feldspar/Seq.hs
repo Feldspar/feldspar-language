@@ -5,7 +5,7 @@ module Feldspar.Seq where
 import qualified Prelude as P
 
 import Feldspar
-import Feldspar.Vector hiding (unit,zipWith)
+import Feldspar.Vector hiding (singleton,zipWith)
 import Feldspar.Mutable
 import Feldspar.Core.Frontend.LoopM
 import Feldspar.Core.Frontend.Mutable
@@ -82,8 +82,8 @@ take n (Seq init _) = Seq init n
 replicate :: Data WordN -> a -> Seq a
 replicate l a = Seq (loop $ \_ -> return a) l
 
-unit :: a -> Seq a
-unit a = Seq (loop $ \_ -> return a) 1
+singleton :: a -> Seq a
+singleton a = Seq (loop $ \_ -> return a) 1
 
 instance Num a => Num (Seq a) where
   (+) = zipWith (+)
@@ -92,7 +92,7 @@ instance Num a => Num (Seq a) where
   negate = fmap negate
   abs    = fmap abs
   signum = fmap signum
-  fromInteger = unit . fromInteger
+  fromInteger = singleton . fromInteger
 
 -- | 'scan f a str' produces a sequential vector by successively applying 'f' to
 --   each element of the input 'str' and the previous element of
