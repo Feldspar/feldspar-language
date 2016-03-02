@@ -16,7 +16,7 @@ module Feldspar.Vector (
   -- * Pull Vectors
   Pull(..),
   DPull,Pully(..),
-  indexed,newExtent,traverse,reshape,unit,fromZero,
+  indexed,newExtent,traverse,reshape,singleton,fromZero,
   replicate,slice,(!:),diagonal,backpermute,
   map,
   zipWith,zipWith3,zipWith4,zipWith5,
