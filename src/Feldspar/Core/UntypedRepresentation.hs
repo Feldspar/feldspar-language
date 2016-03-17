@@ -54,6 +54,7 @@ instance (Show (f (Term f))) => Show (Term f) where
   show (In f) = show f
 
 data Size = S8 | S16 | S32 | S40 | S64
+          | S128 -- Used by SICS.
     deriving (Eq,Show)
 
 data Signedness = Signed | Unsigned
