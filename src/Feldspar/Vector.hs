@@ -24,7 +24,7 @@ module Feldspar.Vector (
   unzip,unzip3,unzip4,unzip5,
   fold,fold',sum,
   zeros,ones,constant,
-  halve,
+  halve, outerProd, interior, takeSh, dropSh,
   expandL,expandLT,contractL,contractLT,curryL,uncurryL,dmapL,dzipWithL,
   dmapS,dzipWithS,
   curry',uncurry',dmap',uncurryS',dmapS',
@@ -79,6 +79,7 @@ import Feldspar.Core.Frontend.LoopM
 import Feldspar.Core.Frontend.ConditionM
 import Feldspar.Core.Frontend.Mutable
 import Feldspar.Core.Frontend.MutableArray
+import Feldspar.Core.Frontend.MutableReference
 import Feldspar.Core.Frontend.MutableToPure
 import Feldspar.Vector.Shape
 
@@ -604,7 +605,39 @@ outerProd f v1 v2 = Pull ixf (appendShape sh1 sh2)
         ixf shi = let (shi1,shi2) = splitShape shi sh2
                   in f (ixf1 shi1) (ixf2 shi2)
 
+slide :: (Pully vec1, VecShape vec1 ~ DIM2) => vec1 a -> Pull DIM2 a
+slide v = Pull (\ (Z :. dy :. dx) -> ixf (Z :. (dy + dx) `mod` y :. dx)) sh
+  where Pull ixf sh = toPull v
+        [y,x] = toList sh
+
+slideS :: (Pully vec1, VecShape vec1 ~ DIM2) => vec1 a -> Push DIM2 a
+slideS v = Push f sh
+  where Pull ixf sh = toPull v
+        [y,x] = toList sh
+        f wf = forM x $ \dx -> do
+                 forM dx $ \dy -> do
+                   wf (Z :. dy :. dx) (ixf (Z :. (y - dx + dy) :. dx))
+                 forM (y - dx) $ \dy -> do
+                   wf (Z :. dy + dx :. dx) (ixf (Z :. dy :. dx))
+
 -- stencil v s = reduce $ transposeL $ outerprod (*) v s
+
+interior :: Data Length -> Pull sh a -> Pull sh a
+interior n (Pull ixf sh) = Pull ixf' (interiorSh sh)
+  where ixf' sh = ixf (interiorIx sh)
+        interiorIx :: Shape sh -> Shape sh
+        interiorIx Z = Z
+        interiorIx (sh :. i) = interiorIx sh :. (i + n)
+        interiorSh :: Shape sh -> Shape sh
+        interiorSh Z = Z
+        interiorSh (sh :. i) = interiorSh sh :. (i - 2 * n)
+
+takeSh :: Pull sh a -> Shape sh -> Pull sh a
+takeSh (Pull ixf sh) shn = Pull ixf (intersectDim sh shn)
+
+dropSh :: Pull sh a -> Shape sh -> Pull sh a
+dropSh (Pull ixf sh) shn = Pull ixf' (zipShape (-) sh shn)
+  where ixf' shi = ixf (zipShape (+) shi shn)
 
 -- | Create a two-dimensional Pull vector
 indexed2 :: Data Length -> Data Length -> (Data Index -> Data Index -> a) -> Pull DIM2 a
