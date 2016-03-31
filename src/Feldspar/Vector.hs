@@ -835,10 +835,11 @@ length vec = l
 
 -- | The call @take n vec@ returns a Pull vector containing the first @n@
 --   elements of @vec@.
-take :: (Pully vec, VecShape vec ~ DIM1) => Data Length -> vec a -> Pull DIM1 a
-take n vec = Pull ixf (Z :. (min n l))
+take :: (Pully vec, VecShape vec ~ (sh :. Data Length)) =>
+        Data Length -> vec a -> Pull (sh :. Data Length) a
+take n vec = Pull ixf (shr :. (min n l))
   where Pull ixf sh = toPull vec
-        (Z,l)       = uncons sh
+        (shr,l)     = uncons sh
 
 -- | The call @drop n vec@ removes the first @n@ elements of @vec@
 drop :: (Pully vec, VecShape vec ~ DIM1) => Data Length -> vec a -> Pull DIM1 a
