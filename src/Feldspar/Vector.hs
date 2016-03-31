@@ -44,6 +44,7 @@ module Feldspar.Vector (
   rotateVecL,rotateVecR,replicate1,enumFromTo,enumFrom,(...),fold1,
   maximum,minimum,or,and,any,all,eqVector,scalarProd,chunk,
   permute,ixmap,dup,newLen1,
+  find,
   -- * Functions on two-dimensional vectors
   indexed2,mmMult,eye,eyePush,eye2,eye2Push,Matrixy(..),above,beside,
   -- * Push vectors
@@ -1496,6 +1497,23 @@ ones  sh = constant sh 1
 
 constant :: Shape sh -> t -> Pull sh t
 constant sh c = Pull (\_ -> c) sh
+
+-- | Find all the indexes which are True in the input vector. The
+--   result is a vector containing all the indexes which are true
+--   and the number of true elements that were found.
+find :: (Pully vec, VecShape vec ~ DIM1) =>
+        vec (Data Bool) -> M (Manifest DIM1 (Data Index),Data Length)
+find vec = do arr <- newArr l 0
+              ref <- newRef 0
+              forM l $ \i ->
+                whenM (vec !! i) $ do
+                  j <- getRef ref
+                  setArr arr j i
+                  setRef ref (j+1)
+              len <- getRef ref
+              parr <- freezeArray arr -- ideally we should trim the array here
+              return (arrToManifest1 parr,len)
+  where l = length vec
 
 -------------------------------------------------------------------------------
  --- Misc.
