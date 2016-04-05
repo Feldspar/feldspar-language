@@ -1,5 +1,6 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GADTs #-}
 
 -- | Mutable data structures, etc.
 
@@ -18,6 +19,14 @@ module Feldspar.Mutable
   , newBuffer_
   , tM
   , initBuffer2
+
+  -- * Mutable multidimensional arrays
+  , MDArr (..)
+  , newMDArr
+  , getMDArr
+  , setMDArr
+  , storableToMDArr
+  , freezeMDArr
   ) where
 
 
@@ -111,3 +120,32 @@ initBuffer2' l buf = do
 initBuffer2 :: Syntax a => Pull DIM1 a -> M (Buffer a)
 initBuffer2 buf = thawArray (freezePush1 $ dup $ map desugar buf) >>=
                   initBuffer2' (length buf)
+
+-- Mutable multidimensional arrays
+
+data MDArr sh a = MDArr (Data (MArr (Internal a))) (Shape sh)
+
+newMDArr :: Syntax a => Shape sh -> a -> M (MDArr sh a)
+newMDArr sh a = do arr <- newArr (size sh) (desugar a)
+                   return (MDArr arr sh)
+
+getMDArr :: Syntax a => MDArr sh a -> Shape sh -> M a
+getMDArr (MDArr marr sh) shi = do
+  let i = toIndex shi sh
+  fmap sugar (getArr marr i)
+
+setMDArr :: Syntax a => MDArr sh a -> Shape sh -> a -> M ()
+setMDArr (MDArr marr sh) shi a = do
+  let i = toIndex shi sh
+  setArr marr i (desugar a)
+
+storableToMDArr :: (Storable vec, VecShape vec ~ sh, Syntax a)
+                => vec a -> M (MDArr sh a)
+storableToMDArr vec = do marr <- thawArray arr
+                         return (MDArr marr sh)
+  where Manifest arr sh = store vec
+
+freezeMDArr :: (Syntax a) => MDArr sh a -> M (Manifest sh a)
+freezeMDArr (MDArr marr sh) = do
+  arr <- freezeArray marr
+  return (Manifest arr sh)
