@@ -56,6 +56,25 @@ go (In (App GetIx _ [arr, In (Literal (LInt _ _ n))]))
  | In (App EMaterialize _ [In Literal{}, e@(In (App EPar _ _))]) <- arr
  , Just e3 <- grabWrite n e = go e3
 
+-- getRef ref >>= \i -> bd1 >> bd2, ref is not used in bd1 ==>
+--   (subst ref i bd1) >> getRef ref >>= \i -> bd2
+go (In (App Bind y [getref, In (Lambda v (In (App Then x [bd1,bd2])))]))
+  | In (App GetRef _ [ref]) <- getref
+  , In (Variable r) <- ref
+  , r `notElem` (fv bd1)
+  = go (In (App Then x [subst ref v bd1, In (App Bind y [getref, In (Lambda v bd2)])]))
+
+-- getRef ref >>= \i -> body, ref is not used in body ==> subst ref i body
+go (In (App Bind _ [In (App GetRef _ [ref]), In (Lambda v body)]))
+  | In (Variable r) <- ref
+  , r `notElem` (fv body)
+  = go (subst ref v body)
+
+-- getRef ref >>= \i -> body, i is not used in body ==> body
+go (In (App Bind _ [In (App GetRef _ _), In (Lambda v body)]))
+  | v `notElem` (fv body)
+  = go body
+
 -- Tuple selections, 1..15. Deliberately avoiding take 1 . drop k which will
 -- result in funny things with broken input.
 go (In (App Sel1 _  [In (App Tup _ (e:_))]))                             = go e
