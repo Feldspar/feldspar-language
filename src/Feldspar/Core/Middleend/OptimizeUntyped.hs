@@ -20,20 +20,20 @@ go env (In (App Let _ [e1, In (Lambda x body)]))
  = go env $ subst e1 x body
 
 go env (In (App Add _ [e1, e2]))
- | (In (Literal (LInt _ _ 0))) <- e1 = go env e2
- | (In (Literal (LInt _ _ 0))) <- e2 = go env e1
+ | zero e1 = go env e2
+ | zero e2 = go env e1
 
 go env (In (App Sub _ [e1, e2]))
- | (In (Literal (LInt _ _ 0))) <- e2 = go env e1
+ | zero e2 = go env e1
 
 go env (In (App Mul _ [e1, e2]))
- | (In (Literal (LInt _ _ 0))) <- e1 = e1
- | (In (Literal (LInt _ _ 0))) <- e2 = e2
- | (In (Literal (LInt _ _ 1))) <- e1 = go env e2
- | (In (Literal (LInt _ _ 1))) <- e2 = go env e1
+ | zero e1 = e1
+ | zero e2 = e2
+ | one e1  = go env e2
+ | one e2  = go env e1
 
 go env (In (App Div _ [e1, e2]))
- | (In (Literal (LInt _ _ 1))) <- e2 = go env e1
+ | one e2  = go env e1
 
 -- Basic constant folder.
 go _ e@(In (App p _ [In (Literal l1), In (Literal l2)]))
@@ -51,7 +51,7 @@ go env (In (App p _ [In (Literal (LInt s sz 1)), In (Lambda v body)]))
 --                        (\v3 -> Then (SetArr v3 0 e3) (Return v3)))) ! 0
 go env (In (App GetIx _ [arr, In (Literal (LInt _ _ 0))]))
  | (In (App RunMutableArray _ [In (App Bind _ [In (App NewArr_ _ [l]), e'])])) <- arr
- , (In (Literal (LInt _ _ 1))) <- l
+ , one l
  , (In (Lambda v1 (In (App Then _  [sarr, ret])))) <- e'
  , (In (App SetArr _ [In (Variable v3), In (Literal (LInt _ _ 0)), e3])) <- sarr
  , (In (App Return _ [In (Variable v2)])) <- ret
@@ -118,6 +118,20 @@ count _ (In (App NoInline _ _)) = 100 -- Do not inline.
 count v (In (App _ _ es)) = sum $ map (count v) es
 
 -- TODO: Improve precision of switch.
+
+-- | Is this a literal zero.
+zero :: UntypedFeld -> Bool
+zero (In (Literal (LInt    _ _ 0))) = True
+zero (In (Literal (LFloat      0))) = True
+zero (In (Literal (LDouble     0))) = True
+zero _                              = False
+
+-- | Is this a literal one.
+one :: UntypedFeld -> Bool
+one (In (Literal (LInt    _ _ 1))) = True
+one (In (Literal (LFloat      1))) = True
+one (In (Literal (LDouble     1))) = True
+one _                              = False
 
 constFold :: UntypedFeld -> Op -> Lit -> Lit -> UntypedFeld
 constFold _ Add (LInt sz n n1) (LInt _ _ n2) = In (Literal (LInt sz n (n1 + n2)))
