@@ -19,15 +19,21 @@ go env (In (App Let _ [e1, In (Lambda x body)]))
  | linear x body
  = go env $ subst e1 x body
 
+go env (In (App Add _ [e1, e2]))
+ | (In (Literal (LInt _ _ 0))) <- e1 = go env e2
+ | (In (Literal (LInt _ _ 0))) <- e2 = go env e1
+
+go env (In (App Sub _ [e1, e2]))
+ | (In (Literal (LInt _ _ 0))) <- e2 = go env e1
+
 go env (In (App Mul _ [e1, e2]))
  | (In (Literal (LInt _ _ 0))) <- e1 = e1
  | (In (Literal (LInt _ _ 0))) <- e2 = e2
  | (In (Literal (LInt _ _ 1))) <- e1 = go env e2
  | (In (Literal (LInt _ _ 1))) <- e2 = go env e1
 
-go env (In (App Add _ [e1, e2]))
- | (In (Literal (LInt _ _ 0))) <- e1 = go env e2
- | (In (Literal (LInt _ _ 0))) <- e2 = go env e1
+go env (In (App Div _ [e1, e2]))
+ | (In (Literal (LInt _ _ 1))) <- e2 = go env e1
 
 -- Basic constant folder.
 go _ e@(In (App p _ [In (Literal l1), In (Literal l2)]))
