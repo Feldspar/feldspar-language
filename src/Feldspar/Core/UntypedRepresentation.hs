@@ -9,6 +9,8 @@ module Feldspar.Core.UntypedRepresentation (
     VarId (..)
   , Term(..)
   , UntypedFeld
+  , ATerm(..)
+  , AUntypedFeld
   , UntypedFeldF(..)
   , Op(..)
   , Type(..)
@@ -18,6 +20,7 @@ module Feldspar.Core.UntypedRepresentation (
   , Signedness(..)
   , Fork(..)
   , HasType(..)
+  , unAnnotate
   , fv
   , allVars
   , collectLetBinders
@@ -52,6 +55,24 @@ data Term f = In (f (Term f))
 deriving instance (Eq (f (Term f))) => Eq (Term f)
 instance (Show (f (Term f))) => Show (Term f) where
   show (In f) = show f
+
+-- | Types representing an annotated term
+type AUntypedFeld a = ATerm a UntypedFeldF
+
+data ATerm a f = AIn a (f (ATerm a f))
+
+deriving instance (Eq a, Eq (f (ATerm a f))) => Eq (ATerm a f)
+instance (Show (f (ATerm a f))) => Show (ATerm a f) where
+  show (AIn _ f) = show f
+
+-- | Remove annotations and translate to UntypedFeld
+unAnnotate :: AUntypedFeld a -> UntypedFeld
+unAnnotate (AIn _ e) = In $ go e
+  where go (Lambda v e)         = Lambda v (unAnnotate e)
+        go (LetFun (s,k,e1) e2) = LetFun (s, k, unAnnotate e1) (unAnnotate e2)
+        go (App f t es)         = App f t (map unAnnotate es)
+        go (Variable v)         = Variable v
+        go (Literal l)          = Literal l
 
 data Size = S8 | S16 | S32 | S40 | S64
           | S128 -- Used by SICS.
