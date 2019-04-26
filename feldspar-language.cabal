@@ -36,6 +36,7 @@ library
     Feldspar
     Feldspar.Lattice
     Feldspar.Range
+    Feldspar.ValueInfo
     Feldspar.Core.Types
     Feldspar.Core.UntypedRepresentation
     Feldspar.Core.Middleend.CreateTasks
