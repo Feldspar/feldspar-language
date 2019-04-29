@@ -21,6 +21,7 @@ module Feldspar.Core.UntypedRepresentation (
   , Fork(..)
   , HasType(..)
   , unAnnotate
+  , getAnnotation
   , fv
   , allVars
   , collectLetBinders
@@ -73,6 +74,10 @@ unAnnotate (AIn _ e) = In $ go e
         go (App f t es)         = App f t (map unAnnotate es)
         go (Variable v)         = Variable v
         go (Literal l)          = Literal l
+
+-- | Extract the annotation part of an AUntypedFeld
+getAnnotation :: AUntypedFeld a -> a
+getAnnotation (AIn r _) = r
 
 data Size = S8 | S16 | S32 | S40 | S64
           | S128 -- Used by SICS.
@@ -399,6 +404,16 @@ instance HasType UntypedFeld where
     typeof (In (Literal l))                = typeof l
     typeof (In (App _ t _))                = t
 
+instance HasType (AUntypedFeld a) where
+    type TypeOf (AUntypedFeld a)           = Type
+   -- Binding
+    typeof (AIn _ (Variable v))            = typeof v
+    typeof (AIn _ (Lambda v e))            = FunType (typeof v) (typeof e)
+    typeof (AIn _ (LetFun _ e))            = typeof e
+   -- Literal
+    typeof (AIn _ (Literal l))             = typeof l
+    typeof (AIn _ (App _ t _))             = t
+
 fv :: UntypedFeld -> [Var]
 fv = nub . fvU' []
 
@@ -424,10 +439,10 @@ allVars = nub . go
     go (In (App _ _ es))           = concatMap go es
 
 -- | Collect nested let binders into the binders and the body.
-collectLetBinders :: UntypedFeld -> ([(Var, UntypedFeld)], UntypedFeld)
+collectLetBinders :: AUntypedFeld a -> ([(Var, AUntypedFeld a)], AUntypedFeld a)
 collectLetBinders = go []
-  where go acc (In (App Let _ [e, In (Lambda v b)])) = go ((v, e):acc) b
-        go acc e                                     = (reverse acc, e)
+  where go acc (AIn _ (App Let _ [e, AIn _ (Lambda v b)])) = go ((v, e):acc) b
+        go acc e                                           = (reverse acc, e)
 
 -- | Collect binders from nested lambda expressions.
 collectBinders :: UntypedFeld -> ([Var], UntypedFeld)
@@ -436,11 +451,12 @@ collectBinders = go []
         go acc e                 = (reverse acc, e)
 
 -- | Inverse of collectLetBinders, put the term back together.
-mkLets :: ([(Var, UntypedFeld)], UntypedFeld) -> UntypedFeld
+mkLets :: ([(Var, AUntypedFeld a)], AUntypedFeld a) -> AUntypedFeld a
 mkLets ([], body)       = body
-mkLets ((v, e):t, body) = In (App Let t' [e, body'])
-  where body' = In (Lambda v (mkLets (t, body)))
+mkLets ((v, e):t, body) = AIn r (App Let t' [e, body'])
+  where body' = AIn r (Lambda v (mkLets (t, body))) -- Value info of result
         t'    = typeof body'
+        r     = getAnnotation body
 
 -- | Inverse of collectBinders, make a lambda abstraction.
 mkLam :: [Var] -> UntypedFeld -> UntypedFeld
