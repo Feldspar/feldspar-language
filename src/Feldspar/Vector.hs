@@ -177,18 +177,10 @@ instance Functor (Pull sh)
   where
     fmap f (Pull ixf sh) = Pull (f . ixf) sh
 
--- Closed type families are only available in GHC 7.8 and above
-#if (__GLASGOW_HASKELL__ >= 708)
 type family InternalShape sh a where
     InternalShape Z         a = Internal a
     InternalShape (Z  :. l) a = [Internal a]
     InternalShape (sh :. l) a = ([Length], [Internal a])
-#else
-type family InternalShape sh a
-type instance InternalShape Z                a = Internal a
-type instance InternalShape (Z :. l)         a = [Internal a]
-type instance InternalShape (sh :. l1 :. l2) a = ([Length],[Internal a])
-#endif
 
 instance (Syntax a, Shapely sh) => Syntactic (Pull sh a)
   where
@@ -512,15 +504,9 @@ flattenPush (Pull ixf sh1) = Push f sh
                  (Push _ sh2) = ixf i1
              in shapeConc sh1 sh2
 
-#if (__GLASGOW_HASKELL__ >= 708)
 type family AppendShape sh1 sh2 where
   AppendShape sh1 (sh2 :. i) = AppendShape sh1 sh2 :. i
   AppendShape sh1 Z = sh1
-#else
-type family AppendShape sh1 sh2 :: *
-type instance AppendShape sh1 (sh2 :. i) = AppendShape sh1 sh2 :. i
-type instance AppendShape sh1 Z = sh1
-#endif
 
 appendShape :: Shape sh1 -> Shape sh2 -> Shape (AppendShape sh1 sh2)
 appendShape sh1 (sh2 :. i) = appendShape sh1 sh2 :. i
