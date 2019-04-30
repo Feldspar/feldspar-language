@@ -55,12 +55,7 @@ import Feldspar.Core.Constructs.Logic
 import Feldspar.Core.Constructs.Eq
 import Feldspar.Core.Constructs.Ord
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
 import Data.Bits
-#else
-import Data.Bits
-type FiniteBits b = Bits b
-#endif
 
 -- | Bits constructs
 data BITS a

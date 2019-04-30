@@ -52,11 +52,7 @@ import Data.Complex
 import Data.Int
 import Data.IORef
 import Data.List
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
 import Data.Typeable (Typeable)
-#else
-import Data.Typeable (Typeable,Typeable1,mkTyCon3,mkTyConApp,typeOf)
-#endif
 import Data.Orphans
 import Data.Word
 import Data.Default
@@ -102,9 +98,7 @@ newtype WordN = WordN Word32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
     , Arbitrary, Random, Storable, NFData, Default
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
     , FiniteBits
-#endif
     )
 
 type instance UnsignedRep WordN = Word32
@@ -114,9 +108,7 @@ newtype IntN = IntN Int32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
     , Arbitrary, Random, Storable, NFData, Default
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
     , FiniteBits
-#endif
     )
 
 type instance UnsignedRep IntN = Word32
@@ -297,19 +289,10 @@ instance MonadType Mut
 -- | Monad for parallel constructs
 type Par = MonadPar.Par
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
 deriving instance Typeable Par
-#else
-deriving instance Typeable1 Par
-#endif
 
 -- | Immutable references
 type IV = MonadPar.IVar
-
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
-#else
-deriving instance Typeable1 IV
-#endif
 
 instance Show (IV a)
   where
@@ -325,11 +308,7 @@ instance MonadType Par
 
 newtype Elements a = Elements { unE :: [(Index, a)] }
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
 deriving instance Typeable Elements
-#else
-deriving instance Typeable1 Elements
-#endif
 
 instance Show a => Show (Elements a)
   where
@@ -345,12 +324,8 @@ instance Eq a => Eq (Elements a)
 
 newtype FVal a = FVal {unFVal :: a}
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
 deriving instance Typeable IV
 deriving instance Typeable FVal
-#else
-deriving instance Typeable1 FVal
-#endif
 
 instance Show (FVal a)
   where
@@ -1423,40 +1398,3 @@ tLength = id
 tArr :: Patch a a -> Patch [a] [a]
 tArr _ = id
 
-
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 708
-
--- Typeable instances for 8+-tuples for GHC 7.6.x.
-
-instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h) => Typeable (a,b,c,d,e,f,g,h) where
-  typeOf ~(a,b,c,d,e,f,g,h) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h ]
-
-instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i) => Typeable (a,b,c,d,e,f,g,h,i) where
-  typeOf ~(a,b,c,d,e,f,g,h,i) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i ]
-
-instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j) => Typeable (a,b,c,d,e,f,g,h,i,j) where
-  typeOf ~(a,b,c,d,e,f,g,h,i,j) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j ]
-
-instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k) => Typeable (a,b,c,d,e,f,g,h,i,j,k) where
-  typeOf ~(a,b,c,d,e,f,g,h,i,j,k) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k ]
-
-instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l) where
-  typeOf ~(a,b,c,d,e,f,g,h,i,j,k,l) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l ]
-
-instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l, Typeable m) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l,m) where
-  typeOf ~(a,b,c,d,e,f,g,h,i,j,k,l,m) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m ]
-
-instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l, Typeable m, Typeable n) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l,m,n) where
-  typeOf ~(a,b,c,d,e,f,g,h,i,j,k,l,m,n) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m, typeOf n ]
-
-instance (Typeable a, Typeable b, Typeable c, Typeable d, Typeable e, Typeable f, Typeable g, Typeable h, Typeable i, Typeable j, Typeable k, Typeable l, Typeable m, Typeable n, Typeable o) => Typeable (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) where
-  typeOf ~(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) =
-     mkTyConApp (mkTyCon3 "GHC" "Tuple" "(,,,,,,,,,,,,,,)") [ typeOf a, typeOf b, typeOf c, typeOf d, typeOf e, typeOf f, typeOf g, typeOf h, typeOf i, typeOf j, typeOf k, typeOf l, typeOf m, typeOf n, typeOf o ]
-#endif

@@ -114,13 +114,8 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     isSigned'     :: Data a -> Bool
     isSigned'     = const $ B.isSigned (undefined :: a)
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
 finiteBitSize :: (B.FiniteBits b) => b -> Int
 finiteBitSize = B.finiteBitSize
-#else
-finiteBitSize :: (B.Bits b) => b -> Int
-finiteBitSize = B.bitSize
-#endif
 
 instance Bits Word8
 instance Bits Word16
