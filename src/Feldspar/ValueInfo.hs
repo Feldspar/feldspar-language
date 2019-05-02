@@ -1,5 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 {- | The ValueInfo module defines the types and basic operations for value set
      analysis. In this implementation, a value set is either
@@ -13,6 +14,7 @@ module Feldspar.ValueInfo where
 
 import Feldspar.Range
 import Feldspar.Core.Types (IntN, WordN)
+import Feldspar.Lattice ((/\), (\/))
 
 import Data.Int
 import Data.Word
@@ -52,3 +54,97 @@ instance Show ValueInfo where
   show (VIDouble)   = "VIDouble"
   show (VIProd vs)  = "VIProd " ++ show vs
 
+-- | Overloaded construction of value info ranges
+class RangeVI a where
+  rangeVI :: a -> a -> ValueInfo
+
+instance RangeVI Bool where
+  rangeVI l h = VIBool $ Range (fromEnum l) (fromEnum h)
+
+instance RangeVI Int8 where
+  rangeVI l h = VIInt8 $ Range l h
+
+instance RangeVI Int16 where
+  rangeVI l h = VIInt16 $ Range l h
+
+instance RangeVI Int32 where
+  rangeVI l h = VIInt32 $ Range l h
+
+instance RangeVI Int64 where
+  rangeVI l h = VIInt64 $ Range l h
+
+instance RangeVI IntN where
+  rangeVI l h = VIIntN $ Range l h
+
+instance RangeVI Word8 where
+  rangeVI l h = VIWord8 $ Range l h
+
+instance RangeVI Word16 where
+  rangeVI l h = VIWord16 $ Range l h
+
+instance RangeVI Word32 where
+  rangeVI l h = VIWord32 $ Range l h
+
+instance RangeVI Word64 where
+  rangeVI l h = VIWord64 $ Range l h
+
+instance RangeVI WordN where
+  rangeVI l h = VIWordN $ Range l h
+
+instance RangeVI Float where
+  rangeVI l h = VIFloat
+
+instance RangeVI Double where
+  rangeVI l h = VIDouble
+
+instance RangeVI a => RangeVI [a] where
+  rangeVI ls hs = VIProd $ zipWith rangeVI ls hs
+
+-- | Overloaded creation of singleton ranges
+singletonVI :: RangeVI a => a -> ValueInfo
+singletonVI x = rangeVI x x
+
+-- | The bottom and top elements of the value info domain for booleans
+boolTop :: ValueInfo
+boolTop = VIBool $ Range 0 1
+boolBot :: ValueInfo
+boolBot = VIBool $ Range 1 0
+
+-- | Least upper bound and greatest lower bound for value info
+lubVI :: ValueInfo -> ValueInfo -> ValueInfo
+lubVI l r = bop rangeUnion l r
+glbVI :: ValueInfo -> ValueInfo -> ValueInfo
+glbVI l r = bop rangeIntersection l r
+
+-- | Apply a binary operation to two ValueInfos
+--   BoundedInt is needed to derive 'Num (Range a)'.
+bop :: (forall a . BoundedInt a => Range a -> Range a -> Range a) -> ValueInfo -> ValueInfo -> ValueInfo
+bop op (VIBool r1)   (VIBool r2)   = VIBool    (op r1 r2)
+bop op (VIWord8 r1)  (VIWord8 r2)  = VIWord8   (op r1 r2)
+bop op (VIInt8 r1)   (VIInt8 r2)   = VIInt8    (op r1 r2)
+bop op (VIWord16 r1) (VIWord16 r2) = VIWord16  (op r1 r2)
+bop op (VIInt16 r1)  (VIInt16 r2)  = VIInt16   (op r1 r2)
+bop op (VIWord32 r1) (VIWord32 r2) = VIWord32  (op r1 r2)
+bop op (VIInt32 r1)  (VIInt32 r2)  = VIInt32   (op r1 r2)
+bop op (VIWord64 r1) (VIWord64 r2) = VIWord64  (op r1 r2)
+bop op (VIInt64 r1)  (VIInt64 r2)  = VIInt64   (op r1 r2)
+bop _  (VIFloat)     (VIFloat)     = VIFloat
+bop _  (VIDouble)    (VIDouble)    = VIDouble
+bop op (VIProd l1)   (VIProd l2)   = VIProd    (zipWith (bop op) l1 l2)
+bop _ _ _ = error "ValueInfo.hs:bop: mismatched patttern."
+
+-- | Apply a unary operation to a ValueInfo
+--   BoundedInt is needed to derive 'Num (Range a)'.
+uop :: (forall a . BoundedInt a => Range a -> Range a) -> ValueInfo -> ValueInfo
+uop op (VIBool r)                 = VIBool    (op r)
+uop op (VIWord8 r)                = VIWord8   (op r)
+uop op (VIInt8 r)                 = VIInt8    (op r)
+uop op (VIWord16 r)               = VIWord16  (op r)
+uop op (VIInt16 r)                = VIInt16   (op r)
+uop op (VIWord32 r)               = VIWord32  (op r)
+uop op (VIInt32 r)                = VIInt32   (op r)
+uop op (VIWord64 r)               = VIWord64  (op r)
+uop op (VIInt64 r)                = VIInt64   (op r)
+uop _  (VIFloat)                  = VIFloat
+uop _  (VIDouble)                 = VIDouble
+uop op (VIProd l)                 = VIProd    (map (uop op) l)

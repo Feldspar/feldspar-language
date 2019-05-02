@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -22,6 +23,7 @@ module Feldspar.Core.UntypedRepresentation (
   , HasType(..)
   , unAnnotate
   , getAnnotation
+  , fvA
   , fv
   , allVars
   , collectLetBinders
@@ -31,16 +33,20 @@ module Feldspar.Core.UntypedRepresentation (
   , mkApp
   , subst
   , stringTree
+  , aLit
   )
   where
 
 import Data.List (nub, intercalate)
 import Data.Tree
+import Data.Int
+import Data.Word
 
 import Language.Syntactic.Constructs.Binding (VarId (..))
 
-import Feldspar.Range (Range(..), singletonRange)
+import Feldspar.Range (Range(..), singletonRange, fullRange, emptyRange)
 import Feldspar.Core.Types (Length)
+import Feldspar.ValueInfo (ValueInfo(..), singletonVI, lubVI, boolBot, boolTop)
 
 -- This file contains the UntypedFeld format and associated
 -- helper-formats and -functions that work on those formats, for
@@ -128,6 +134,82 @@ data Lit =
    | LArray Type [Lit] -- Type necessary for empty array literals.
    | LTup [Lit]
    deriving (Eq)
+
+-- | Make value info from a literal
+literalVI :: Lit -> ValueInfo
+literalVI (LBool b) = singletonVI b
+literalVI (LInt sgn sz n) = go sgn sz
+  where go Signed     S8 = singletonVI (fromInteger n :: Int8)
+        go Signed    S16 = singletonVI (fromInteger n :: Int16)
+        go Signed    S32 = singletonVI (fromInteger n :: Int32)
+        go Signed    S40 = singletonVI (fromInteger n :: Int64)
+        go Signed    S64 = singletonVI (fromInteger n :: Int64)
+        go Signed   S128 = error $ "UntypedRepresentation.literalVI: not supported"
+        go Unsigned   S8 = singletonVI (fromInteger n :: Word8)
+        go Unsigned  S16 = singletonVI (fromInteger n :: Word16)
+        go Unsigned  S32 = singletonVI (fromInteger n :: Word32)
+        go Unsigned  S40 = singletonVI (fromInteger n :: Word64)
+        go Unsigned  S64 = singletonVI (fromInteger n :: Word64)
+        go Unsigned S128 = error $ "UntypedRepresentation.literalVI: not supported"
+literalVI (LFloat  x) = singletonVI x
+literalVI (LDouble x) = singletonVI x
+literalVI (LComplex re im) = VIProd [literalVI re, literalVI im]
+literalVI (LArray t xs) = foldr lubVI (botInfo t) $ map literalVI xs
+literalVI (LTup xs) = VIProd $ map literalVI xs
+
+-- | The bottom (most informative) elements of the info domains for each type.
+botInfo :: Type -> ValueInfo
+botInfo BoolType         = boolBot
+botInfo BitType          = VIWord8 $ Range 1 0 -- Provisionally
+botInfo (IntType sgn sz) = constantIntRange sgn sz emptyRange
+botInfo FloatType        = VIFloat
+botInfo DoubleType       = VIDouble
+botInfo (ComplexType t)  = VIProd [botInfo t, botInfo t]
+botInfo (TupType ts)     = VIProd $ map botInfo ts
+botInfo (MutType t)      = botInfo t
+botInfo (RefType t)      = botInfo t
+botInfo (ArrayType r t)  = VIProd [VIWordN r, botInfo t]
+botInfo (MArrType r t)   = VIProd [VIWordN r, botInfo t]
+botInfo (ParType t)      = botInfo t -- Provisionally
+botInfo (ElementsType t) = VIProd [botInfo indexType, botInfo t]
+botInfo (IVarType t)     = botInfo t
+botInfo (FunType _ t)    = botInfo t
+botInfo (FValType t)     = botInfo t
+
+-- | The top (least informative) elements of the info domains for each type.
+topInfo :: Type -> ValueInfo
+topInfo BoolType         = boolTop
+topInfo BitType          = VIWord8 $ Range 0 1 -- Provisionally
+topInfo (IntType sgn sz) = constantIntRange sgn sz fullRange
+topInfo FloatType        = VIFloat -- $ Range minValue maxValue
+topInfo DoubleType       = VIDouble -- $ Range minValue maxValue
+topInfo (ComplexType t)  = VIProd [topInfo t, topInfo t]
+topInfo (TupType ts)     = VIProd $ map topInfo ts
+topInfo (MutType t)      = topInfo t
+topInfo (RefType t)      = topInfo t
+topInfo (ArrayType r t)  = VIProd [VIWordN r, topInfo t]
+topInfo (MArrType r t)   = VIProd [VIWordN r, topInfo t]
+topInfo (ParType t)      = topInfo t -- Provisionally
+topInfo (ElementsType t) = VIProd [topInfo indexType, topInfo t]
+topInfo (IVarType t)     = topInfo t
+topInfo (FunType _ t)    = topInfo t
+topInfo (FValType t)     = topInfo t
+
+-- | The Type used to represent indexes, to which Index is mapped.
+indexType :: Type
+indexType = IntType Unsigned S32
+
+-- | Forcing a range to an integer type given by a signedness and a size.
+constantIntRange :: Signedness -> Size -> (forall a . Bounded a => Range a)
+                    -> ValueInfo
+constantIntRange Signed   S8  r = VIInt8 r
+constantIntRange Signed   S16 r = VIInt16 r
+constantIntRange Signed   S32 r = VIInt32 r
+constantIntRange Signed   S64 r = VIInt64 r
+constantIntRange Unsigned S8  r = VIWord8 r
+constantIntRange Unsigned S16 r = VIWord16 r
+constantIntRange Unsigned S32 r = VIWord32 r
+constantIntRange Unsigned S64 r = VIWord64 r
 
 -- | Human readable show instance.
 instance Show Lit where
@@ -414,6 +496,9 @@ instance HasType (AUntypedFeld a) where
     typeof (AIn _ (Literal l))             = typeof l
     typeof (AIn _ (App _ t _))             = t
 
+fvA :: AUntypedFeld a -> [Var]
+fvA e = fv $ unAnnotate e
+
 fv :: UntypedFeld -> [Var]
 fv = nub . fvU' []
 
@@ -468,12 +553,17 @@ mkApp :: Type -> Op -> [UntypedFeld] -> UntypedFeld
 mkApp t p es = In (App p t es)
 
 -- | Substitute new for dst in e. Assumes no shadowing.
-subst :: UntypedFeld -> Var -> UntypedFeld -> UntypedFeld
+subst :: AUntypedFeld a -> Var -> AUntypedFeld a -> AUntypedFeld a
 subst new dst = go
-  where go v@(In (Variable v')) | dst == v' = new -- Replace.
-                                | otherwise = v -- Stop.
-        go l@(In (Lambda v e')) | v == dst  = l -- Stop.
-                                | otherwise = In (Lambda v (go e'))
-        go (In (LetFun (s, k, e1) e2)) = In (LetFun (s, k, go e1) (go e2)) -- Recurse.
-        go l@(In Literal{})  = l -- Stop.
-        go (In (App p t es)) = In (App p t (map go es)) -- Recurse.
+  where go v@(AIn _ (Variable v')) | dst == v' = new -- Replace.
+                                   | otherwise = v -- Stop.
+        go l@(AIn r (Lambda v e')) | v == dst  = l -- Stop.
+                                   | otherwise = AIn r (Lambda v (go e'))
+        go (AIn r (LetFun (s, k, e1) e2))
+           = AIn r (LetFun (s, k, go e1) (go e2)) -- Recurse.
+        go l@(AIn _ Literal{})  = l -- Stop.
+        go (AIn r (App p t es)) = AIn r (App p t (map go es)) -- Recurse.
+
+-- | Annotate a literal with value info.
+aLit :: Lit -> AUntypedFeld ValueInfo
+aLit l = AIn (literalVI l) (Literal l)
