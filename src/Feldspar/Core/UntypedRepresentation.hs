@@ -10,6 +10,7 @@ module Feldspar.Core.UntypedRepresentation (
     VarId (..)
   , Term(..)
   , UntypedFeld
+  , mkLam'
   , ATerm(..)
   , AUntypedFeld
   , UntypedFeldF(..)
@@ -56,6 +57,11 @@ import Feldspar.ValueInfo (ValueInfo(..), singletonVI, lubVI, boolBot, boolTop)
 -- but it does not reflect into the host language type system.
 
 type UntypedFeld = Term UntypedFeldF
+
+-- | Inverse of collectBinders, make a lambda abstraction.
+mkLam' :: [(a,Var)] -> AUntypedFeld a -> AUntypedFeld a
+mkLam' []        e = e
+mkLam' ((a,h):t) e = AIn a (Lambda h (mkLam' t e))
 
 data Term f = In (f (Term f))
 
@@ -530,10 +536,10 @@ collectLetBinders = go []
         go acc e                                           = (reverse acc, e)
 
 -- | Collect binders from nested lambda expressions.
-collectBinders :: UntypedFeld -> ([Var], UntypedFeld)
+collectBinders :: AUntypedFeld a -> ([(a, Var)], AUntypedFeld a)
 collectBinders = go []
-  where go acc (In (Lambda v e)) = go (v:acc) e
-        go acc e                 = (reverse acc, e)
+  where go acc (AIn a (Lambda v e)) = go ((a,v):acc) e
+        go acc e                    = (reverse acc, e)
 
 -- | Inverse of collectLetBinders, put the term back together.
 mkLets :: ([(Var, AUntypedFeld a)], AUntypedFeld a) -> AUntypedFeld a
