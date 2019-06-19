@@ -48,7 +48,7 @@ import qualified Prelude
 import Feldspar hiding (sugar,desugar)
 import Feldspar.Vector hiding (store)
 
-import Language.Syntactic hiding (fold)
+import Feldspar.Core.Syntactic hiding (fold)
 
 
 -- | Abstract real number type with exponent and mantissa

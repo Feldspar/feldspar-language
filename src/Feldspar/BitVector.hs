@@ -43,7 +43,7 @@ import Data.Word
 import Data.List (inits)
 import Data.Proxy
 
-import Language.Syntactic hiding (fold)
+import Feldspar.Core.Syntactic hiding (fold)
 
 import Feldspar hiding (sugar, desugar, resugar)
 import qualified Feldspar.Vector as Vec

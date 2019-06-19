@@ -42,7 +42,7 @@ import qualified Prelude
 import Control.Applicative
 import Test.QuickCheck
 
-import Language.Syntactic hiding (fold)
+import Feldspar.Core.Syntactic hiding (fold)
 
 import Feldspar.Range (rangeSubSat)
 import qualified Feldspar
