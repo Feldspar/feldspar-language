@@ -41,6 +41,7 @@ library
     Feldspar.Core.UntypedRepresentation
     Feldspar.Core.Middleend.CreateTasks
     Feldspar.Core.Middleend.FromTyped
+    Feldspar.Core.Middleend.FromTypeUtil
     Feldspar.Core.Middleend.LetSinking
     Feldspar.Core.Middleend.OptimizeUntyped
     Feldspar.Core.Interpretation.Typed
