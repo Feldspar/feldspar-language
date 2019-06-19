@@ -72,7 +72,7 @@ module Feldspar.Vector (
 
 import qualified Prelude as P
 
-import Language.Syntactic hiding (fold,size)
+import Feldspar.Core.Syntactic hiding (fold,size)
 import Feldspar hiding (desugar,sugar,resugar)
 import qualified Feldspar as F
 import Feldspar.Core.Frontend.LoopM

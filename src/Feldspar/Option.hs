@@ -40,7 +40,7 @@ import qualified Prelude
 import Control.Applicative (Applicative(..))
 import Control.Monad
 
-import Language.Syntactic
+import Feldspar.Core.Syntactic
 
 import Feldspar hiding (sugar,desugar,resugar)
 import Feldspar.Mutable
