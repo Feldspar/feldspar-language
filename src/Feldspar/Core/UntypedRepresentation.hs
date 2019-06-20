@@ -545,9 +545,9 @@ collectBinders = go []
 mkLets :: ([(Var, AUntypedFeld a)], AUntypedFeld a) -> AUntypedFeld a
 mkLets ([], body)       = body
 mkLets ((v, e):t, body) = AIn r (App Let t' [e, body'])
-  where body' = AIn r (Lambda v (mkLets (t, body))) -- Value info of result
-        t'    = typeof body'
-        r     = getAnnotation body
+  where body'        = AIn r (Lambda v (mkLets (t, body))) -- Value info of result
+        FunType _ t' = typeof body'
+        r            = getAnnotation body
 
 -- | Inverse of collectBinders, make a lambda abstraction.
 mkLam :: [Var] -> UntypedFeld -> UntypedFeld
