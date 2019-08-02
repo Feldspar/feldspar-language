@@ -32,9 +32,16 @@ module Feldspar.Core.UntypedRepresentation (
   , mkLets
   , mkLam
   , mkApp
+  , mkTup
   , subst
   , stringTree
+  , stringTreeExp
   , aLit
+  , topInfo
+  , botInfo
+  , sharable
+  , legalToShare
+  , goodToShare
   )
   where
 
@@ -93,10 +100,10 @@ getAnnotation (AIn r _) = r
 
 data Size = S8 | S16 | S32 | S40 | S64
           | S128 -- Used by SICS.
-    deriving (Eq,Show)
+    deriving (Eq,Show,Enum,Ord)
 
 data Signedness = Signed | Unsigned
-    deriving (Eq,Show)
+    deriving (Eq,Show,Enum)
 
 data Fork = None | Future | Par | Loop
     deriving (Eq,Show)
@@ -120,6 +127,7 @@ data Type =
    | FValType Type
    deriving (Eq,Show)
 
+
 data Var = Var { varNum :: VarId
                , varType :: Type
                }
@@ -127,6 +135,9 @@ data Var = Var { varNum :: VarId
 -- Variables are equal if they have the same varNum.
 instance Eq Var where
   v1 == v2 = varNum v1 == varNum v2
+
+instance Ord Var where
+  compare v1 v2 = compare (varNum v1) (varNum v2)
 
 instance Show Var where
   show (Var n _t) = "v" ++ show n
@@ -380,7 +391,8 @@ data Op =
    | Max
    -- RealFloat
    | Atan2
-   -- Save is an artificial node for the frontend, but we're beyond that now.
+   -- Save
+   | Save
    -- SizeProp
    | PropSize
    -- SourceInfo
@@ -452,17 +464,48 @@ instance (Show e) => Show (UntypedFeldF e) where
    show (App Tup _ es)              = "("   ++ intercalate ", " (map show es) ++ ")"
    show (App p@Parallel _ [e1,e2]) = show p ++ " (" ++ show e1 ++ ") " ++ show e2
    show (App p@Sequential _ [e1,e2,e3]) = show p ++ " (" ++ show e1 ++ ") (" ++ show e2 ++ ") " ++ show e3
+   show (App p t es)
+    | p `elem` [F2I, I2N, B2I, Round, Ceiling, Floor]
+    = show p ++ "{" ++ show t ++ "} " ++ unwords (map show es)
    show (App p _ es)                = show p ++ " " ++ unwords (map show es)
 
--- | Convert an untyped syntax tree into a @Tree@ of @String@s
+-- | Compute a compact text representation of a type
+prType :: Type -> String
+prType BoolType         = "bool"
+prType BitType          = "bit"
+prType (IntType s sz)   = prS s ++ prSz sz
+  where prS Signed   = "i"
+        prS Unsigned = "u"
+        prSz s       = drop 1 $ show s
+prType FloatType        = "f32"
+prType DoubleType       = "f64"
+prType (ComplexType t)  = "c" ++ prType t
+prType (TupType ts)     = "(" ++ intercalate "," (map prType ts) ++ ")"
+prType (MutType t)      = "M" ++ prType t
+prType (RefType t)      = "R" ++ prType t
+prType (ArrayType _ t)  = "a" ++ prType t
+prType (MArrType _ t)   = "A" ++ prType t
+prType (ParType t)      = "P" ++ prType t
+prType (ElementsType t) = "e" ++ prType t
+prType (IVarType t)     = "V" ++ prType t
+prType (FunType t1 t2)  = "(" ++ prType t1 ++ "->" ++ prType t2 ++ ")"
+prType (FValType t)     = "F" ++ prType t
+
+-- | Convert an untyped unannotated syntax tree into a @Tree@ of @String@s
 stringTree :: UntypedFeld -> Tree String
 stringTree = unfoldTree go
   where
-    go (In (Variable v))         = (show v, [])
-    go (In (Lambda v e))         = ("Lambda "++show v, [e])
+    go (In (Variable v))         = (show v ++ prC (typeof v), [])
+    go (In (Lambda v e))         = ("Lambda "++show v ++ prC (typeof v), [e])
     go (In (LetFun (s,k,e1) e2)) = (unwords ["LetFun", show k, s], [e1,e2])
-    go (In (Literal l))          = (show l, [])
-    go (In (App p _ es))         = (show p,es)
+    go (In (Literal l))          = (show l ++ prC (typeof l), [])
+    go (In (App p t es))         = (show p ++ prP t, es)
+    prP t = " {" ++ prType t ++ "}"
+    prC t = " : " ++ prType t
+
+-- | Convert an untyped annotated syntax tree into a @Tree@ of @String@s
+stringTreeExp :: AUntypedFeld a -> Tree String
+stringTreeExp = stringTree . unAnnotate
 
 class HasType a where
     type TypeOf a
@@ -558,6 +601,10 @@ mkLam (h:t) e = In (Lambda h (mkLam t e))
 mkApp :: Type -> Op -> [UntypedFeld] -> UntypedFeld
 mkApp t p es = In (App p t es)
 
+-- | Make a tuple; constructs the type from the types of the components
+mkTup :: a -> [AUntypedFeld a] -> AUntypedFeld a
+mkTup a es = AIn a $ App Tup (TupType $ map typeof es) es
+
 -- | Substitute new for dst in e. Assumes no shadowing.
 subst :: AUntypedFeld a -> Var -> AUntypedFeld a -> AUntypedFeld a
 subst new dst = go
@@ -573,3 +620,26 @@ subst new dst = go
 -- | Annotate a literal with value info.
 aLit :: Lit -> AUntypedFeld ValueInfo
 aLit l = AIn (literalVI l) (Literal l)
+
+-- | Expressions that can and should be shared
+sharable :: AUntypedFeld a -> Bool
+sharable e = legalToShare e && goodToShare e
+
+-- | Expressions that can be shared without breaking fromCore
+legalToShare :: AUntypedFeld a -> Bool
+legalToShare (AIn _ (App op _ _)) = op `notElem` [ESkip, EWrite, EPar, EparFor,
+                                                  Return, Bind, Then, When,
+                                                  NewArr, NewArr_, GetArr, SetArr, ArrLength,
+                                                  For, While,
+                                                  NewRef, GetRef, SetRef, ModRef]
+legalToShare (AIn _ (Lambda _ _)) = False
+legalToShare _                    = True
+
+-- | Expressions that are expensive enough to be worth sharing
+goodToShare :: AUntypedFeld a -> Bool
+goodToShare (AIn _ (Literal l)) 
+  | LArray _ (_:_) <- l = True
+  | LTup (_:_)     <- l = True
+goodToShare (AIn _ (App _ _ _)) = True
+goodToShare _                   = False
+
