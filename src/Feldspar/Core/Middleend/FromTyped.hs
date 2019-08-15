@@ -11,6 +11,7 @@ module Feldspar.Core.Middleend.FromTyped
   )
   where
 
+import qualified Data.ByteString.Char8 as B
 import Data.Complex
 import Data.Typeable (Typeable)
 
@@ -165,14 +166,14 @@ instance ( Untype dom dom
 instance Untype (Core.Variable :|| Type) dom
   where
     untypeProgSym (C' (Core.Variable v)) info Nil
-        = AIn r' (Ut.Variable (Ut.Var v t'))
+        = AIn r' (Ut.Variable (Ut.Var v t' B.empty))
            where t' = untypeType (infoType info) (infoSize info)
                  r' = toValueInfo (infoType info) (infoSize info)
 
 instance (Untype dom dom,Project (CLambda Type) dom) => Untype (CLambda Type) dom
   where
     untypeProgSym (SubConstr2 (Lambda v)) info (body :* Nil)
-     = AIn r' (Ut.Lambda (Ut.Var v t') body')
+     = AIn r' (Ut.Lambda (Ut.Var v t' B.empty) body')
         where t' = untypeType (argType $ infoType info) (fst $ infoSize info)
               -- The value info of a function is that of its return value.
               body'@(AIn r' _) = untypeProg body

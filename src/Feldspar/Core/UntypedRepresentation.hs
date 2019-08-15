@@ -45,6 +45,7 @@ module Feldspar.Core.UntypedRepresentation (
   )
   where
 
+import qualified Data.ByteString.Char8 as B
 import Data.List (nub, intercalate)
 import Data.Tree
 import Data.Int
@@ -130,6 +131,7 @@ data Type =
 
 data Var = Var { varNum :: VarId
                , varType :: Type
+               , varName :: B.ByteString
                }
 
 -- Variables are equal if they have the same varNum.
@@ -140,7 +142,9 @@ instance Ord Var where
   compare v1 v2 = compare (varNum v1) (varNum v2)
 
 instance Show Var where
-  show (Var n _t) = "v" ++ show n
+  show (Var n _t name) = (if name == B.empty
+                            then "v"
+                            else B.unpack name) ++ show n
 
 data Lit =
      LBool Bool
