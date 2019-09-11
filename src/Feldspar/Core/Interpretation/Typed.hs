@@ -1,10 +1,13 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 710
 {-# LANGUAGE OverlappingInstances #-}
+#endif
 
 -- | Witness 'Type' constraints
 
@@ -29,7 +32,7 @@ class Typed dom
 instance Typed (sub :|| Type)
   where typeDictSym (C' _) = Just Dict
 
-instance Typed sub => Typed (sub :|| pred)
+instance {-# OVERLAPPABLE #-} Typed sub => Typed (sub :|| pred)
   where typeDictSym (C' s) = typeDictSym s
 
 instance Typed sub => Typed (sub :| pred)
@@ -46,7 +49,7 @@ instance (Typed sub) => Typed (Decor info sub)
   where typeDictSym (Decor _ s) = typeDictSym s
 
 instance Typed Empty
-instance Typed dom
+instance  {-# OVERLAPPABLE #-} Typed dom
 
 -- | Extract a possible 'Type' constraint witness from an 'AST'
 typeDict :: Typed dom => ASTF dom a -> Maybe (Dict (Type a))
