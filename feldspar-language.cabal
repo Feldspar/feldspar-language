@@ -27,6 +27,10 @@ extra-source-files:
   examples/Examples/Simple/Basics.hs
   examples/Tutorial/*.lhs
 
+Flag IncrementalCSE
+  Description: Build with the new incremental CSE
+  Default: False
+
 source-repository head
   type:     git
   location: git://github.com/Feldspar/feldspar-language.git
@@ -183,6 +187,9 @@ library
   hs-source-dirs: src examples
 
   ghc-options: -fcontext-stack=100
+
+  if flag(IncrementalCSE)
+    cpp-options: -DINCREMENTAL_CSE
 
 test-suite range
   type: exitcode-stdio-1.0
