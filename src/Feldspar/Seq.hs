@@ -10,6 +10,7 @@ import Feldspar.Mutable
 import Feldspar.Core.Frontend.LoopM
 import Feldspar.Core.Frontend.Mutable
 import Feldspar.Core.Frontend.MutableReference
+import Data.Hash
 
 data Seq a = Seq (M (Data Index -> M a)) (Data Length)
 
@@ -120,14 +121,14 @@ scan1 f (Seq init l) = Seq init' l
                      setRef r c
                      return c
 
-recurrenceI :: (Type a, Type b) =>
+recurrenceI :: (Type a, Type b, Hashable b) =>
                Pull1 a -> Seq (Data a) ->
                (Pull1 a -> Data b) ->
                Seq (Data b)
 recurrenceI ii seq mkExpr
     = recurrenceIO ii seq (toPull $ value1 []) (\i _ -> mkExpr i)
 
-recurrenceIO :: (Type a, Type b) =>
+recurrenceIO :: (Type a, Type b, Hashable b) =>
                 Pull1 a -> Seq (Data a) -> Pull1 b ->
                 (Pull1 a -> Pull1 b -> Data b) ->
                 Seq (Data b)
@@ -147,11 +148,11 @@ recurrenceIO ii (Seq init l) io mkExpr = Seq init' (l + length ii)
                          lenI = length ii
                          lenO = length io
 
-fir :: Numeric a => Pull1 a ->
+fir :: (Numeric a, Hashable a) => Pull1 a ->
        Seq (Data a) -> Seq (Data a)
 fir b inp = recurrenceI (replicate1 (length b) 0) inp (\i -> scalarProd b i)
 
-iir :: Fraction a => Data a -> Pull1 a -> Pull1 a ->
+iir :: (Fraction a, Hashable a) => Data a -> Pull1 a -> Pull1 a ->
        Seq (Data a) -> Seq (Data a)
 iir a0 a b inp =
     recurrenceIO (replicate1 (length b) 0) inp

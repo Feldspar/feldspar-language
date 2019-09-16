@@ -66,6 +66,7 @@ import qualified Prelude as P
 import qualified Control.Monad as P
 
 import Control.Applicative
+import Data.Hash
 
 import Feldspar
 import Feldspar.Vector
@@ -391,7 +392,7 @@ recurrenceO initV mkExpr = Stream $ do
 -- > slidingAvg :: Data WordN -> Stream (Data WordN) -> Stream (Data WordN)
 -- > slidingAvg n str = recurrenceI (replicate n 0) str
 -- >                    (\input -> sum input `quot` n)
-recurrenceI :: (Type a, Type b) =>
+recurrenceI :: (Type a, Type b, Hashable b) =>
                Pull1 a -> Stream (Data a) ->
                (Pull1 a -> Data b) ->
                Stream (Data b)
@@ -475,7 +476,7 @@ slidingAvg :: Data WordN -> Stream (Data WordN) -> Stream (Data WordN)
 slidingAvg n str = recurrenceI (replicate1 n 0) str
                    (\input -> (fromZero $ sum input) `quot` n)
 
-movingAvg :: (Fraction a, RealFloat a)
+movingAvg :: (Fraction a, RealFloat a, Hashable a)
           => Data WordN -> Stream (Data a) -> Stream (Data a)
 movingAvg n str = recurrenceI (replicate1 n 0) str
                     (\input -> (fromZero $ sum input) / i2f n)
@@ -486,7 +487,7 @@ movingAvg2 n str = recurrenceIO2 (P.replicate (P.fromIntegral n) 0) str []
                    (\input _ -> (P.sum input) / i2f (value n))
 
 -- | A fir filter on streams
-fir :: Numeric a => Pull1 a ->
+fir :: (Numeric a, Hashable a) => Pull1 a ->
        Stream (Data a) -> Stream (Data a)
 fir b inp = recurrenceI (replicate1 (length b) 0) inp (\i -> scalarProd b i)
 

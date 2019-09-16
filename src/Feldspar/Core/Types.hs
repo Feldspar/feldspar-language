@@ -56,6 +56,7 @@ import Data.Typeable (Typeable)
 import Data.Orphans
 import Data.Word
 import Data.Default
+import Data.Hash
 import Test.QuickCheck
 import System.Random (Random(..))
 import qualified Control.Monad.Par as MonadPar
@@ -98,7 +99,7 @@ newtype WordN = WordN Word32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
     , Arbitrary, Random, Storable, NFData, Default
-    , FiniteBits
+    , FiniteBits, Hashable
     )
 
 type instance UnsignedRep WordN = Word32
@@ -108,7 +109,7 @@ newtype IntN = IntN Int32
   deriving
     ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
     , Arbitrary, Random, Storable, NFData, Default
-    , FiniteBits
+    , FiniteBits, Hashable
     )
 
 type instance UnsignedRep IntN = Word32
@@ -335,6 +336,13 @@ instance Eq a => Eq (FVal a)
   where
     (FVal a) == (FVal b) = a == b
 
+
+--------------------------------------------------------------------------------
+-- * Hashing
+--------------------------------------------------------------------------------
+
+instance Hashable a => Hashable (Complex a) where
+  hash (re :+ im) = hash re `combine` hash im
 
 --------------------------------------------------------------------------------
 -- * Type representation
