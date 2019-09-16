@@ -100,6 +100,7 @@ import Test.QuickCheck
 
 import Data.Patch
 import Data.Tree.View
+import Data.Hash
 
 import Language.Syntactic hiding
     (desugar, sugar, resugar, showAST, drawAST, writeHtmlAST, stringTree)
@@ -303,7 +304,7 @@ resugar = Syntactic.resugar
 -- * QuickCheck
 --------------------------------------------------------------------------------
 
-instance (Type a, Arbitrary a) => Arbitrary (Data a)
+instance (Type a, Arbitrary a, Hashable a) => Arbitrary (Data a)
   where
     arbitrary = fmap value arbitrary
 

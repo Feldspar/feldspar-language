@@ -50,6 +50,7 @@ import Feldspar hiding (sugar,desugar,resugar)
 
 import Data.Tuple.Curry
 import Data.Tuple.Select
+import Data.Hash
 
 
 --------------------------------------------------------------------------------
@@ -75,14 +76,14 @@ type Vector1 a = Vector (Data a)
 -- | Two-level nested vector
 type Vector2 a = Vector (Vector (Data a))
 
-instance Syntax a => Syntactic (Vector a)
+instance (Syntax a, Hashable (Internal a)) => Syntactic (Vector a)
   where
     type Domain (Vector a)   = FeldDomain
     type Internal (Vector a) = [Internal a]
     desugar = desugar . freezeVector . map resugar
     sugar   = map resugar . thawVector . sugar
 
-instance (Syntax a, Show (Internal a)) => Show (Vector a)
+instance (Syntax a, Show (Internal a), Hashable (Internal a)) => Show (Vector a)
   where
     show = show . eval
 
@@ -121,7 +122,7 @@ mergeSegments vec = Indexed (length vec) (ixFun (segments vec)) Empty
       _  -> \i -> (i<l) ? ixf i $ ixFun vs (i-l)
 
 -- | Converts a non-nested vector to a core vector.
-freezeVector :: Type a => Vector (Data a) -> Data [a]
+freezeVector :: (Type a, Hashable a) => Vector (Data a) -> Data [a]
 freezeVector Empty                = value []
 freezeVector (Indexed l ixf cont) = parallel l ixf `append` freezeVector cont
 
@@ -129,7 +130,7 @@ freezeVector (Indexed l ixf cont) = parallel l ixf `append` freezeVector cont
 thawVector :: Type a => Data [a] -> Vector (Data a)
 thawVector arr = indexed (getLength arr) (getIx arr)
 
-thawVector' :: Type a => Length -> Data [a] -> Vector (Data a)
+thawVector' :: (Type a, Hashable a) => Length -> Data [a] -> Vector (Data a)
 thawVector' len arr = thawVector $ setLength (value len) arr
 
 
@@ -251,7 +252,7 @@ enumFromTo m n = indexed (i2n l) ((+m) . i2n)
   --      probably be expressed in terms of this more general construct.
 
 -- | @enumFrom m@: Enumerate the indexes from @m@ to 'maxBound'
-enumFrom :: (Integral a) => Data a -> Vector (Data a)
+enumFrom :: (Integral a, Hashable a) => Data a -> Vector (Data a)
 enumFrom = flip enumFromTo (value maxBound)
 
 -- | See 'enumFromTo'
@@ -389,7 +390,7 @@ eqVector a b = (length a == length b) && and (zipWith (==) a b)
 scalarProd :: (Syntax a, Num a) => Vector a -> Vector a -> a
 scalarProd a b = sum (zipWith (*) a b)
 
-scan :: (Syntax a, Syntax b) => (a -> b -> a) -> a -> Vector b -> Vector a
+scan :: (Syntax a, Syntax b, Hashable (Internal a)) => (a -> b -> a) -> a -> Vector b -> Vector a
 scan f init bs = Feldspar.sugar $ sequential (length bs) (Feldspar.desugar init) $ \i s ->
     let s' = Feldspar.desugar $ f (Feldspar.sugar s) (bs!i)
     in  (s',s')
@@ -412,6 +413,6 @@ tVec1 _ = id
 tVec2 :: Patch a a -> Patch (Vector (Vector (Data a))) (Vector (Vector (Data a)))
 tVec2 _ = id
 
-instance (Arbitrary (Internal a), Syntax a) => Arbitrary (Vector a)
+instance (Arbitrary (Internal a), Syntax a, Hashable (Internal a)) => Arbitrary (Vector a)
   where
     arbitrary = fmap value arbitrary

@@ -163,6 +163,7 @@ library
     deepseq,
     random                      >= 1.0    && < 1.2,
     data-default                >= 0.5.3  && < 0.6,
+    data-hash                   >= 0.2.0.1 && < 100,
     tree-view
 
   other-extensions:

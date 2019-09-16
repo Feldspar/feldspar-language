@@ -86,6 +86,7 @@ import Feldspar.Vector.Shape
 import Data.Tuple.Select
 import Control.Monad (zipWithM_)
 import Data.Proxy
+import Data.Hash
 
 -- $intro
 -- The Feldspar Vector library.
@@ -837,7 +838,7 @@ type Vector a = Pull DIM1 a
 type Vector1 a = Pull1 a
 {-# DEPRECATED Vector1 "Use Pull1 instead" #-}
 
-value1 :: Syntax a => [Internal a] -> Manifest DIM1 a
+value1 :: (Syntax a, Hashable (Internal a)) => [Internal a] -> Manifest DIM1 a
 value1 ls = value ls
 
 -- | Create a one-dimensional Pull vector
