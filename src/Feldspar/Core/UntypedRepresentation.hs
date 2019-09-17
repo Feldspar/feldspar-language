@@ -213,8 +213,8 @@ topInfo :: Type -> ValueInfo
 topInfo BoolType         = boolTop
 topInfo BitType          = VIWord8 $ Range 0 1 -- Provisionally
 topInfo (IntType sgn sz) = constantIntRange sgn sz fullRange
-topInfo FloatType        = VIFloat -- $ Range minValue maxValue
-topInfo DoubleType       = VIDouble -- $ Range minValue maxValue
+topInfo FloatType        = VIFloat
+topInfo DoubleType       = VIDouble
 topInfo (ComplexType t)  = VIProd [topInfo t, topInfo t]
 topInfo (TupType ts)     = VIProd $ map topInfo ts
 topInfo (MutType t)      = topInfo t
