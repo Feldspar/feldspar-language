@@ -256,6 +256,9 @@ test-suite decoration
     tasty-golden          >= 2.3,
     utf8-string           >= 0.3.7
 
+  if flag(IncrementalCSE)
+    cpp-options: -DINCREMENTAL_CSE
+
 test-suite tutorial
   type: exitcode-stdio-1.0
 
