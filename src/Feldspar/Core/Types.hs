@@ -842,7 +842,7 @@ type instance TargetType n (IV a)          = IV (TargetType n a)
 type instance TargetType n (FVal a)        = FVal (TargetType n a)
 
 -- | The set of supported types
-class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a)) => Type a
+class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a), TypeF a) => Type a
   where
     -- | Gives the type representation a value.
     typeRep  :: TypeRep a
@@ -1299,6 +1299,16 @@ instance Type a => Type (FVal a)
 
 typeRepByProxy :: Type a => Proxy a -> TypeRep a
 typeRepByProxy _ = typeRep
+
+-- | Extend the class Type to higher order types
+class Typeable a => TypeF a where
+  typeRepF :: TypeRep a
+
+instance {-# OVERLAPPING #-} (TypeF a, TypeF b) => TypeF (a -> b) where
+  typeRepF = FunType typeRepF typeRepF
+
+instance {-# OVERLAPPABLE #-} (Typeable a, Type a) => TypeF a where
+  typeRepF = typeRep
 
 
 
