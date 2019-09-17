@@ -1,0 +1,27 @@
+Lambda v0 : u32
+ └╴Run {u32 in VIWord32 [*,*]}
+    └╴Bind {Mu32 in VIWord32 [*,*]}
+       ├╴NewRef {MRu32 in VIWord32 [*,*]}
+       │  └╴v0 : u32 in VIWord32 [*,*]
+       └╴Lambda v1 : Ru32
+          └╴Bind {Mu32 in VIWord32 [*,*]}
+             ├╴GetRef {Mu32 in VIWord32 [*,*]}
+             │  └╴v1 : Ru32 in VIWord32 [*,*]
+             └╴Lambda v2 : u32
+                └╴Let {Mu32 in VIWord32 [*,*]}
+                   ├╴Add {u32 in VIWord32 [*,*]}
+                   │  ├╴v2 : u32 in VIWord32 [*,*]
+                   │  └╴3 : u32
+                   └╴Lambda v3 : u32
+                      └╴Bind {Mu32 in VIWord32 [*,*]}
+                         ├╴NewRef {MRu32 in VIWord32 [*,*]}
+                         │  └╴v3 : u32 in VIWord32 [*,*]
+                         └╴Lambda v4 : Ru32
+                            └╴Bind {Mu32 in VIWord32 [*,*]}
+                               ├╴GetRef {Mu32 in VIWord32 [*,*]}
+                               │  └╴v4 : Ru32 in VIWord32 [*,*]
+                               └╴Lambda v5 : u32
+                                  └╴Return {Mu32 in VIWord32 [*,*]}
+                                     └╴Add {u32 in VIWord32 [*,*]}
+                                        ├╴v5 : u32 in VIWord32 [*,*]
+                                        └╴v3 : u32 in VIWord32 [*,*]

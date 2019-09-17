@@ -1,0 +1,15 @@
+Lambda v0 : i32
+ └╴Condition {i32 in VIInt32 [*,*]}
+    ├╴LTH {bool in VIBool [0,1]}
+    │  ├╴v0 : i32 in VIInt32 [*,*]
+    │  └╴5 : i32
+    ├╴Mul {i32 in VIInt32 [*,*]}
+    │  ├╴3 : i32
+    │  └╴Add {i32 in VIInt32 [*,*]}
+    │     ├╴v0 : i32 in VIInt32 [*,*]
+    │     └╴20 : i32
+    └╴Mul {i32 in VIInt32 [*,*]}
+       ├╴30 : i32
+       └╴Add {i32 in VIInt32 [*,*]}
+          ├╴v0 : i32 in VIInt32 [*,*]
+          └╴20 : i32

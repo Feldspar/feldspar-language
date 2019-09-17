@@ -1,0 +1,16 @@
+Lambda v2 : u32
+ └╴Lambda v6 : u32
+    └╴Condition {u32 in VIWord32 [*,*]}
+       ├╴LTH {bool in VIBool [0,1]}
+       │  ├╴v6 : u32 in VIWord32 [*,*]
+       │  └╴5 : u32
+       ├╴GetIx {u32 in VIWord32 [*,*]}
+       │  ├╴[2,3,4,5,6] : au32
+       │  └╴Add {u32 in VIWord32 [*,*]}
+       │     ├╴v2 : u32 in VIWord32 [*,*]
+       │     └╴5 : u32
+       └╴GetIx {u32 in VIWord32 [*,*]}
+          ├╴[1,2,3,4,5] : au32
+          └╴Add {u32 in VIWord32 [*,*]}
+             ├╴v2 : u32 in VIWord32 [*,*]
+             └╴5 : u32
