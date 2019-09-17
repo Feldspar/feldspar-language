@@ -508,19 +508,20 @@ prType (FValType t)     = "F" ++ prType t
 
 -- | Convert an untyped unannotated syntax tree into a @Tree@ of @String@s
 stringTree :: UntypedFeld -> Tree String
-stringTree = unfoldTree go
-  where
-    go (In (Variable v))         = (show v ++ prC (typeof v), [])
-    go (In (Lambda v e))         = ("Lambda "++show v ++ prC (typeof v), [e])
-    go (In (LetFun (s,k,e1) e2)) = (unwords ["LetFun", show k, s], [e1,e2])
-    go (In (Literal l))          = (show l ++ prC (typeof l), [])
-    go (In (App p t es))         = (show p ++ prP t, es)
-    prP t = " {" ++ prType t ++ "}"
-    prC t = " : " ++ prType t
+stringTree = stringTreeExp (const "") . annotate (const ())
 
 -- | Convert an untyped annotated syntax tree into a @Tree@ of @String@s
-stringTreeExp :: AUntypedFeld a -> Tree String
-stringTreeExp = stringTree . unAnnotate
+stringTreeExp :: (a -> String) -> AUntypedFeld a -> Tree String
+stringTreeExp prA = unfoldTree go
+  where
+    go (AIn r (Variable v))         = (show v ++ prC (typeof v) ++ prA r, [])
+    go (AIn _ (Lambda v e))         = ("Lambda "++show v ++ prC (typeof v), [e])
+    go (AIn _ (LetFun (s,k,e1) e2)) = (unwords ["LetFun", show k, s], [e1,e2])
+    go (AIn _ (Literal l))          = (show l ++ prC (typeof l), [])
+    go (AIn r (App p t es))         = (show p ++ prP t r, es)
+    prP t r = " {" ++ prType t ++ prA r ++ "}"
+    prC t   = " : " ++ prType t
+
 
 class HasType a where
     type TypeOf a
