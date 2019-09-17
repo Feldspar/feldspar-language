@@ -1,126 +1,195 @@
 module Feldspar.Core.Middleend.OptimizeUntyped ( optimize ) where
 
-import Data.Map.Strict (Map, empty)
+import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import Feldspar.Core.UntypedRepresentation
 import Feldspar.ValueInfo (ValueInfo(..))
+import qualified Data.Bits as B
 
 -- | General simplification. Could in theory be done at earlier stages.
 optimize :: AUntypedFeld ValueInfo -> AUntypedFeld ValueInfo
-optimize = go empty . go empty
+optimize e = deadCodeElim $ simplify M.empty e -- go empty . go empty
 
-go :: Map k v -> AUntypedFeld ValueInfo -> AUntypedFeld ValueInfo
-go _ e@(AIn _ Variable{}) = e
-go env (AIn r (Lambda v e)) = AIn r (Lambda v (go env e))
-go env (AIn r (LetFun (s, f, e1) e2)) = AIn r (LetFun (s, f, go env e1) (go env e2))
-go _ l@(AIn _ Literal{}) = l
+type AExp = AUntypedFeld ValueInfo -- ^ Annotated expressions
+type UExp = UntypedFeldF AExp -- ^ Unannotated expressions
+type SM = M.Map VarId AExp -- ^ Associate a let bound variable with its value
 
-go env (AIn _ (App Let _ [e1, AIn _ (Lambda x body)]))
- | (AIn _ Variable{}) <- e1 -- let x = y in e ==> [y/x]e
- = go env $ subst e1 x body
- | linear x body
- = go env $ subst e1 x body
+simplify :: SM -> AExp -> AExp
+simplify env (AIn r e) = simp env e
+  where simp env (Variable v) = AIn r $ derefToA env v
+        simp env (Lambda v e) = AIn r $ Lambda v $ simplify env e -- Or use mkLam
+        simp env (Literal l) = AIn r $ Literal l
+        simp env (App Let _ [eRhs, eLam]) = simpLet env (simplify env eRhs) (unwrap eLam)
+        -- Transform Bind to Then for values of type Unit
+        simp env (App Bind t [e1, AIn r2 (Lambda v e2)])
+           | typeof v == TupType []
+           = simpApp env r Then t [simplify env e1, simplify (extend env v eUnit) e2]
+        simp env (App p t es) | p `elem` [For, EparFor]
+                              = simpLoop env r p t es
+        simp env (App op t es) = simpApp env r op t $ map (simplify env) es
+        simp env (LetFun (s,_,_) _) = error $ "OptimizeUntyped.simplify: LetFun "
+                                              ++ s ++ " not allowed"
 
-go env (AIn _ (App Add _ [e1, e2]))
- | zero e1 = go env e2
- | zero e2 = go env e1
+simpLet :: SM -> AExp -> UExp -> AExp
+simpLet env rhs (Lambda v eBody)
+  | App Let _ [rRhs, rBind] <- unwrap rhs
+  , Lambda rv rBody <- unwrap rBind
+  = mkLet rv rRhs $ simpLet (extend env rv rRhs) rBody $ Lambda v eBody
+  | sharable rhs = mkLet v rhs $ simplify (extend env v rhs) eBody
+  | otherwise = simplify (extend env v rhs) eBody
+simpLet env rhs eLam
+  = error $ "OptimizeUntyped.simpLet: malformed lambda in let: " ++ show eLam
 
-go env (AIn _ (App Sub _ [e1, e2]))
- | zero e2 = go env e1
+simpLoop :: SM -> ValueInfo -> Op -> Type -> [AExp] -> AExp
+simpLoop env r op t (eTC:es) = go op (simplify env eTC) es
+  where go For tc [eSt, eLam]
+         | zero tc
+         = simplify env eSt
+         | Literal (LInt s sz 1) <- unwrap tc
+         , Lambda vIx eLam1 <- unwrap eLam
+         , Lambda vSt body <- unwrap eLam1
+         = simplify env $ mkLet vIx (aLit $ LInt s sz 0)
+                        $ mkLet vSt eSt
+                        $ body
+        go EparFor tc [AIn _ (Lambda vIx body)]
+         | zero tc
+         = AIn r $ App ESkip t []
+         | Literal (LInt s sz 1) <- unwrap tc
+         = simplify env $ mkLet vIx (aLit $ LInt s sz 0)
+                        $ body
+        -- Fall through
+        go op tc es = AIn r $ App op t (tc : map (simplify env) es)
 
-go env (AIn _ (App Mul _ [e1, e2]))
- | zero e1 = e1
- | zero e2 = e2
- | one e1  = go env e2
- | one e2  = go env e1
+simpApp :: SM -> ValueInfo -> Op -> Type -> [AExp] -> AExp
+simpApp env r op t es = go op t es
+  where eOrig = AIn r $ App op t es
+        go Add _ [e1, e2]
+         | zero e1 = e2
+         | zero e2 = e1
 
-go env (AIn _ (App Div _ [e1, e2]))
- | one e2  = go env e1
+        go Sub _ [e1, e2]
+         | zero e2 = e1
 
--- Basic constant folder.
-go _ e@(AIn _ (App p _ [AIn _ (Literal l1), AIn _ (Literal l2)]))
-  | p `elem` [Add, Sub, Mul]
-  = constFold e p l1 l2
+        go Mul _ [e1, e2]
+         | one e1 = e2
+         | one e2 = e1
+         | zero e1 = e1
+         | zero e2 = e2
 
--- For 1 (\v -> body) ==> [0/v]body
-go env (AIn _ (App p _ [AIn _ (Literal (LInt s sz 1)), AIn _ (Lambda v body)]))
-  | p `elem` [For, EparFor]
-  = go env $ subst (aLit (LInt s sz 0)) v body
+        go Div _ [e1, e2]
+         | one e2 = e1
 
--- Create a 1 element long array (frequent with MultiDim) and immediately select that
--- element. Can e seen in the metrics test in feldspar-compiler.
--- (RunMutableArray (Bind (NewArr_ 1)
---                        (\v3 -> Then (SetArr v3 0 e3) (Return v3)))) ! 0
-go env (AIn _ (App GetIx _ [arr, AIn _ (Literal (LInt _ _ 0))]))
- | (AIn _ (App RunMutableArray _ [AIn _ (App Bind _ [AIn _ (App NewArr_ _ [l]), e'])]))
-   <- arr
- , one l
- , (AIn _ (Lambda v1 (AIn _ (App Then _  [sarr, ret])))) <- e'
- , (AIn _ (App SetArr _ [AIn _ (Variable v3), AIn _ (Literal (LInt _ _ 0)), e3]))
-   <- sarr
- , (AIn _ (App Return _ [AIn _ (Variable v2)])) <- ret
- , v1 == v2
- , v1 == v3 = go env e3
+        go Condition _ [ec, et, ee]
+         | Literal (LBool b) <- unwrap ec
+         = if b then et else ee
 
--- Same rule as previous rule but with Elements as backing write.
-go env (AIn _ (App GetIx _ [arr, AIn _ (Literal (LInt _ _ n))]))
- | AIn _ (App EMaterialize _ [AIn _ Literal{}, e@(AIn _ (App EPar _ _))]) <- arr
- , Just e3 <- grabWrite n e = go env e3
+        -- A value is converted from 'typeof e1' through 't1' to 't' where
+        -- the types are such that we can do the conversion directly
+        go I2N t [e]
+         | App I2N t1 [e1] <- examine env e
+         , compatible (typeof e1) t1 t
+         = simpApp env r I2N t [e1]
 
--- Tuple selections, 1..15. Deliberately avoiding take 1 . drop k which will
--- result in funny things with broken input.
-go env (AIn _ (App Sel1 _  [AIn _ (App Tup _ (e:_))]))
-  = go env e
-go env (AIn _ (App Sel2 _  [AIn _ (App Tup _ (_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel3 _  [AIn _ (App Tup _ (_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel4 _  [AIn _ (App Tup _ (_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel5 _  [AIn _ (App Tup _ (_:_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel6 _  [AIn _ (App Tup _ (_:_:_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel7 _  [AIn _ (App Tup _ (_:_:_:_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel8 _  [AIn _ (App Tup _ (_:_:_:_:_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel9 _  [AIn _ (App Tup _ (_:_:_:_:_:_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel10 _ [AIn _ (App Tup _ (_:_:_:_:_:_:_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel11 _ [AIn _ (App Tup _ (_:_:_:_:_:_:_:_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel12 _ [AIn _ (App Tup _ (_:_:_:_:_:_:_:_:_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel13 _ [AIn _ (App Tup _ (_:_:_:_:_:_:_:_:_:_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel14 _ [AIn _ (App Tup _ (_:_:_:_:_:_:_:_:_:_:_:_:_:e:_))]))
-  = go env e
-go env (AIn _ (App Sel15 _ [AIn _ (App Tup _ (_:_:_:_:_:_:_:_:_:_:_:_:_:_:e:_))]))
-  = go env e
+        go I2N t [e]
+         | typeof e == t
+         = e
 
--- Fallthrough.
-go env (AIn r (App p t es)) = AIn r (App p t $ map (go env) es)
+        go op t [e]
+         | op `elem` [I2N]
+         , Literal l <- unwrap e
+         , Just e1 <- convert l t
+         = e1
 
-linear :: Var -> AUntypedFeld a -> Bool
-linear v e = count v e <= 1
+        -- Basic constant folder
+        go op t [e1, e2]
+         | Literal l1 <- examine env e1 -- Some literals are large and not always inlined
+         , Literal l2 <- examine env e2
+         = constFold eOrig op l1 l2
 
--- | Occurence counter. Cares about dynamic behavior, so loops count as a lot.
-count :: Var -> AUntypedFeld a -> Integer
-count v (AIn _ (Variable v')) = if v == v' then 1 else 0
-count v e@(AIn _ (Lambda v' _))
-  | v == v' || v `notElem` fvA e = 0
-  | otherwise                  = 100 -- Possibly inside loop
-count v (AIn _ (LetFun (_, _, e1) e2)) = count v e1 + count v e2
-count _ (AIn _ Literal{}) = 0
-count v (AIn _ (App Let _ [e1, AIn _ (Lambda x body)]))
-  | v == x    = count v e1
-  | otherwise = count v e1 + count v body
-count _ (AIn _ (App Await _ _)) = 100 -- Do not inline.
-count _ (AIn _ (App NoInline _ _)) = 100 -- Do not inline.
-count v (AIn _ (App _ _ es)) = sum $ map (count v) es
+        go op t [e1]
+         | Literal l1 <- examine env e1 -- Some literals are large and not always inlined
+         = constFold1 eOrig op l1
 
--- TODO: Improve precision of switch.
+        -- Create a 1 element long array (frequent with MultiDim) and immediately select that
+        -- element. Can e seen in the metrics test in feldspar-compiler.
+        -- (RunMutableArray (Bind (NewArr_ 1)
+        --                        (\v3 -> Then (SetArr v3 0 e3) (Return v3)))) ! 0
+        go GetIx _ [arr, AIn _ (Literal (LInt _ _ 0))]
+         | (AIn _ (App RunMutableArray _ [AIn _ (App Bind _ [AIn _ (App NewArr_ _ [l]), e'])]))
+           <- arr
+         , one l
+         , (AIn _ (Lambda v1 (AIn _ (App Then _  [sarr, ret])))) <- e'
+         , (AIn _ (App SetArr _ [AIn _ (Variable v3), AIn _ (Literal (LInt _ _ 0)), e3]))
+           <- sarr
+         , (AIn _ (App Return _ [AIn _ (Variable v2)])) <- ret
+         , v1 == v2
+         , v1 == v3
+         = e3
+
+        -- Same rule as previous rule but with Elements as backing write.
+        go GetIx _ [arr, AIn _ (Literal (LInt _ _ n))]
+         | AIn _ (App EMaterialize _ [AIn _ Literal{}, e@(AIn _ (App EPar _ _))]) <- arr
+         , Just e3 <- grabWrite n e
+         = e3
+
+        -- GetLength applied to an array construction
+        go GetLength _ [arr]
+         | App EMaterialize _ [eLen, _] <- examine env arr
+         = eLen
+
+        -- Select from a tuple expression
+        go op _ [eTup]
+         | Just n <- lookup op selectTable
+         , App Tup _ es <- examine env eTup
+         , n < length es
+         = es !! n
+
+        -- Select from a tuple literal
+        go op _ [eTup]
+         | Just n <- lookup op selectTable
+         , Literal (LTup es) <- examine env eTup
+         , n < length es
+         = aLit $ es !! n
+
+        -- Fall through
+        go _ _ _ = eOrig
+
+convert :: Lit -> Type -> Maybe AExp
+convert (LInt s1 sz1 n) (IntType s2 sz2) = Just $ aLit $ LInt s2 sz2 n
+convert (LInt s1 sz1 n) FloatType        = Just $ aLit $ LFloat $ fromIntegral n
+convert (LInt s1 sz1 n) DoubleType       = Just $ aLit $ LDouble $ fromIntegral n
+convert _ _ = Nothing
+
+compatible (IntType s1 sz1) (IntType s2 sz2) (IntType s3 sz3)
+  | sz2 >= sz3 || s1 == s2 && sz1 <= sz2 = True
+compatible _ _ _ = False
+
+extend :: SM -> Var -> AExp -> SM
+extend env v e = M.insert (varNum v) e env
+
+deref :: SM -> Var -> UExp
+deref env v = maybe (Variable v) (examine env) $ M.lookup (varNum v) env
+
+derefToA :: SM -> Var -> UExp
+derefToA env v = case M.lookup (varNum v) env of
+                   Just (AIn _ (Variable v)) -> derefToA env v
+                   Just e@(AIn _ ue) | not $ sharable e -> ue
+                   _ -> Variable v
+
+examine :: SM -> AExp -> UExp
+examine env (AIn _ (Variable v)) = deref env v
+examine env (AIn _ e)            = e
+
+unwrap :: AExp -> UExp
+unwrap (AIn r e) = e
+
+-- | Mapping of select operators of the form Sel<n> to their
+--   corresponding 0 based indices.
+selectTable :: [(Op,Int)]
+selectTable = zip selOps [0..]
+  where selOps = [ Sel1,  Sel2,  Sel3,  Sel4,  Sel5,
+                   Sel6,  Sel7,  Sel8,  Sel9, Sel10,
+                  Sel11, Sel12, Sel13, Sel14, Sel15]
 
 -- | Is this a literal zero.
 zero :: AUntypedFeld a -> Bool
@@ -136,11 +205,61 @@ one (AIn _ (Literal (LFloat      1))) = True
 one (AIn _ (Literal (LDouble     1))) = True
 one _                                 = False
 
+-- | Simple constant folder that returns result or the original expression
+-- | Num, Ord and Eq operations
 constFold :: AUntypedFeld ValueInfo -> Op -> Lit -> Lit -> AUntypedFeld ValueInfo
 constFold _ Add (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (n1 + n2))
 constFold _ Sub (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (n1 - n2))
 constFold _ Mul (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (n1 * n2))
+constFold _ Min (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (min n1 n2))
+constFold _ Max (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (max n1 n2))
+constFold _ LTH (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 < n2)
+constFold _ LTE (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 <= n2)
+constFold _ GTH (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 > n2)
+constFold _ GTE (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 >= n2)
+constFold _ Equal (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 == n2)
+constFold _ NotEqual (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 /= n2)
+
+constFold _ Add (LFloat x) (LFloat y) = aLit (LFloat $ x + y)
+constFold _ Sub (LFloat x) (LFloat y) = aLit (LFloat $ x - y)
+constFold _ Mul (LFloat x) (LFloat y) = aLit (LFloat $ x * y)
+constFold _ Min (LFloat x) (LFloat y) = aLit (LFloat $ min x y)
+constFold _ Max (LFloat x) (LFloat y) = aLit (LFloat $ max x y)
+constFold _ LTH (LFloat x) (LFloat y) = aLit (LBool $ x < y)
+constFold _ LTE (LFloat x) (LFloat y) = aLit (LBool $ x <= y)
+constFold _ GTH (LFloat x) (LFloat y) = aLit (LBool $ x > y)
+constFold _ GTE (LFloat x) (LFloat y) = aLit (LBool $ x >= y)
+constFold _ Equal (LFloat x) (LFloat y) = aLit (LBool $ x == y)
+constFold _ NotEqual (LFloat x) (LFloat y) = aLit (LBool $ x /= y)
+
+constFold _ Add (LDouble x) (LDouble y) = aLit (LDouble $ x + y)
+constFold _ Sub (LDouble x) (LDouble y) = aLit (LDouble $ x - y)
+constFold _ Mul (LDouble x) (LDouble y) = aLit (LDouble $ x * y)
+constFold _ Min (LDouble x) (LDouble y) = aLit (LDouble $ min x y)
+constFold _ Max (LDouble x) (LDouble y) = aLit (LDouble $ max x y)
+constFold _ LTH (LDouble x) (LDouble y) = aLit (LBool $ x < y)
+constFold _ LTE (LDouble x) (LDouble y) = aLit (LBool $ x <= y)
+constFold _ GTH (LDouble x) (LDouble y) = aLit (LBool $ x > y)
+constFold _ GTE (LDouble x) (LDouble y) = aLit (LBool $ x >= y)
+constFold _ Equal (LDouble x) (LDouble y) = aLit (LBool $ x == y)
+constFold _ NotEqual (LDouble x) (LDouble y) = aLit (LBool $ x /= y)
+
+-- | Bit operations
+constFold _ BAnd (LInt sgn1 sz1 n1) (LInt _ _ n2) = aLit (LInt sgn1 sz1 $ n1 B..&. n2)
+constFold _ BOr  (LInt sgn1 sz1 n1) (LInt _ _ n2) = aLit (LInt sgn1 sz1 $ n1 B..|. n2)
+constFold _ BXor (LInt sgn1 sz1 n1) (LInt _ _ n2) = aLit (LInt sgn1 sz1 $ B.xor n1 n2)
+
+constFold _ GetIx (LArray t ls) (LInt _ _ n)
+  | n >= 0
+  , fromInteger n < length ls
+  = aLit $ ls !! fromInteger n
+
 constFold e _ _ _ = e
+
+constFold1 :: AUntypedFeld ValueInfo -> Op -> Lit -> AUntypedFeld ValueInfo
+constFold1 e GetLength (LArray _ xs)
+  | IntType s n <- typeof e = aLit (LInt s n $ fromIntegral $ length xs)
+constFold1 e _ _ = e
 
 -- | Scan an Epar/Ewrite-nest and return the element written to a position.
 grabWrite :: Integer -> AUntypedFeld a -> Maybe (AUntypedFeld a)
@@ -151,3 +270,28 @@ grabWrite n (AIn _ (App EPar _ [e1,e2]))
 grabWrite n (AIn _ (App EWrite _ [AIn _ (Literal (LInt _ _ k)), e]))
  | k == n = Just e
 grabWrite _ _ = Nothing
+
+mkLet :: Var -> AExp -> AExp -> AExp
+mkLet v rhs body = mkLets ([(v,rhs)], body)
+
+eUnit = aLit $ LTup []
+
+-- We need to eliminate dead bindings
+
+deadCodeElim :: AExp -> AExp
+deadCodeElim = snd . dceA
+  where dceA (AIn r e) = let (vs,e1) = dceU e in (vs, AIn r e1)
+        dceA :: AExp -> (S.Set Var, AExp)
+        dceU :: UExp -> (S.Set Var, UExp)
+        dceU (Variable v) = (S.singleton v, Variable v)
+        dceU (Literal l) = (S.empty, Literal l)
+        dceU (App Let t [eRhs, AIn r (Lambda v eBody)]) = dcLet t (dceA eRhs) r v $ dceA eBody
+        dceU (App op t es) = let (vss,es1) = unzip $ map dceA es
+                              in (S.unions vss, App op t es1)
+        dceU (Lambda v e) = let (vs,e1) = dceA e
+                             in (vs S.\\ S.singleton v, Lambda v e1)
+        dceU e = error $ "OptimizeUntyped.deadCodeElim: illegal expression " ++ show e
+        dcLet t (vsR,eR) r v (vsB,eB)
+            | S.member v vsB = (S.union vsR (vsB S.\\ S.singleton v),
+                                App Let t [eR, AIn r $ Lambda v eB])
+            | otherwise = (vsB, unwrap eB)
