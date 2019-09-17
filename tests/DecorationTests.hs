@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Main where
 
 -- To generate the golden files use a script similiar to this one
@@ -38,11 +40,18 @@ trickySharing x = (a+b+c) + (a+b) + (a+b+c)
     b = x*5
     c = x*7
 
+ref :: Prelude.String -> Prelude.String
+#ifndef INCREMENTAL_CSE
+ref f = "tests/silver/" Prelude.++ f
+#else
+ref f = "tests/gold/" Prelude.++ f
+#endif
+
 tests = testGroup "DecorationTests"
-    [ goldenVsFile "example9" "tests/gold/example9.txt" "tests/example9.txt" $ writeFile "tests/example9.txt" $ showDecor example9
-    , goldenVsFile "topLevelConsts" "tests/gold/topLevelConsts.txt" "tests/topLevelConsts.txt" $ writeFile "tests/topLevelConsts.txt" $ showDecor topLevelConsts
-    , goldenVsFile "monadicSharing" "tests/gold/monadicSharing.txt" "tests/monadicSharing.txt" $ writeFile "tests/monadicSharing.txt" $ showDecor monadicSharing
-    , goldenVsFile "trickySharing" "tests/gold/trickySharing.txt" "tests/trickySharing.txt" $ writeFile "tests/trickySharing.txt" $ showDecor trickySharing
+    [ goldenVsFile "example9" (ref "example9.txt") "tests/example9.txt" $ writeFile "tests/example9.txt" $ showDecor example9
+    , goldenVsFile "topLevelConsts" (ref "topLevelConsts.txt") "tests/topLevelConsts.txt" $ writeFile "tests/topLevelConsts.txt" $ showDecor topLevelConsts
+    , goldenVsFile "monadicSharing" (ref "monadicSharing.txt") "tests/monadicSharing.txt" $ writeFile "tests/monadicSharing.txt" $ showDecor monadicSharing
+    , goldenVsFile "trickySharing" (ref "trickySharing.txt") "tests/trickySharing.txt" $ writeFile "tests/trickySharing.txt" $ showDecor trickySharing
     ]
 
 main = defaultMain $ testGroup "Tests" [tests]
