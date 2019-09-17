@@ -23,6 +23,7 @@ module Feldspar.Core.UntypedRepresentation (
   , Fork(..)
   , HasType(..)
   , unAnnotate
+  , annotate
   , getAnnotation
   , fvA
   , fv
@@ -94,6 +95,16 @@ unAnnotate (AIn _ e) = In $ go e
         go (App f t es)         = App f t (map unAnnotate es)
         go (Variable v)         = Variable v
         go (Literal l)          = Literal l
+
+-- | Add annotations using an annotation function
+annotate :: (UntypedFeldF (AUntypedFeld a) -> a) -> UntypedFeld -> AUntypedFeld a
+annotate anno e = goA e
+  where go (Lambda v e)         = Lambda v $ goA e
+        go (LetFun (s,k,e1) e2) = LetFun (s, k, goA e1) $ goA e2
+        go (App f t es)         = App f t $ map goA es
+        go (Variable v)         = Variable v
+        go (Literal l)          = Literal l
+        goA (In e)              = let e1 = go e in AIn (anno e1) e1
 
 -- | Extract the annotation part of an AUntypedFeld
 getAnnotation :: AUntypedFeld a -> a
