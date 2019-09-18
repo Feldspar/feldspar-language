@@ -26,6 +26,9 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 module Feldspar.Par
   ( P
   , IVar
@@ -42,30 +45,58 @@ module Feldspar.Par
   , divConq
   )
 where
-
-import Language.Syntactic (sugarSymC)
-
 import Feldspar.Core.Constructs (Syntax())
+#ifndef INCREMENTAL_CSE
+import Language.Syntactic (sugarSymC, DenResult, InjectC, AST, ApplySym, SyntacticN)
+
 import Feldspar.Core.Constructs.Par
 import Feldspar.Core.Frontend.Par
+#else
+import Feldspar.Core.Language hiding (pval)
+import Feldspar.Core.Representation
+#endif
+
+#ifndef INCREMENTAL_CSE
+sugarSym0
+    :: ( InjectC sym (AST dom) (DenResult sig)
+       , ApplySym sig b dom
+       , SyntacticN c b
+       )
+    => sym sig -> c
+sugarSym0 = sugarSymC
+sugarSym1
+    :: ( InjectC sym (AST dom) (DenResult sig)
+       , ApplySym sig b dom
+       , SyntacticN c b
+       )
+    => sym sig -> c
+sugarSym1 = sugarSymC
+sugarSym2
+    :: ( InjectC sym (AST dom) (DenResult sig)
+       , ApplySym sig b dom
+       , SyntacticN c b
+       )
+    => sym sig -> c
+sugarSym2 = sugarSymC
+#endif
 
 runPar :: Syntax a => P a -> a
-runPar = sugarSymC ParRun
+runPar = sugarSym1 ParRun
 
 new :: Syntax a => P (IVar a)
-new = sugarSymC ParNew
+new = sugarSym0 ParNew
 
 get :: Syntax a => IVar a -> P a
-get = sugarSymC ParGet
+get = sugarSym1 ParGet
 
 put :: Syntax a => IVar a -> a -> P ()
-put = sugarSymC ParPut
+put = sugarSym2 ParPut
 
 fork :: P () -> P ()
-fork = sugarSymC ParFork
+fork = sugarSym1 ParFork
 
 yield :: P ()
-yield = sugarSymC ParYield
+yield = sugarSym0 ParYield
 
 spawn :: Syntax a => P a -> P (IVar a)
 spawn p = do
