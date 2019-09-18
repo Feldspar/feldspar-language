@@ -1,17 +1,12 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE CPP #-}
 
 -- | Mutable data structures, etc.
 
 module Feldspar.Mutable
-  ( module Feldspar.Core.Frontend.Mutable
-  , module Feldspar.Core.Frontend.MutableArray
-  , module Feldspar.Core.Frontend.MutableReference
-  , module Feldspar.Core.Frontend.MutableToPure
-  , module Feldspar.Core.Frontend.ConditionM
-  , module Feldspar.Core.Frontend.LoopM
-
+  ( module Mutable
   , Buffer (..)
   , initBuffer'
   , initBuffer
@@ -34,12 +29,16 @@ module Feldspar.Mutable
 import qualified Prelude
 
 import Feldspar
-import Feldspar.Core.Frontend.Mutable
-import Feldspar.Core.Frontend.MutableArray
-import Feldspar.Core.Frontend.MutableReference
-import Feldspar.Core.Frontend.MutableToPure
-import Feldspar.Core.Frontend.ConditionM
-import Feldspar.Core.Frontend.LoopM
+#ifndef INCREMENTAL_CSE
+import Feldspar.Core.Frontend.Mutable          as Mutable
+import Feldspar.Core.Frontend.MutableArray     as Mutable
+import Feldspar.Core.Frontend.MutableReference as Mutable
+import Feldspar.Core.Frontend.MutableToPure    as Mutable
+import Feldspar.Core.Frontend.ConditionM       as Mutable
+import Feldspar.Core.Frontend.LoopM            as Mutable
+#else
+import Feldspar.Core.Language                  as Mutable
+#endif
 import Feldspar.Vector
 
 
