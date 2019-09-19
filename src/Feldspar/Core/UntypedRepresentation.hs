@@ -1,6 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -43,9 +44,14 @@ module Feldspar.Core.UntypedRepresentation (
   , sharable
   , legalToShare
   , goodToShare
+  , Rename(..)
+  , rename
+  , simpleInline
   )
   where
 
+import Control.Monad.State
+import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as B
 import Data.List (nub, intercalate)
 import Data.Tree
@@ -658,4 +664,42 @@ goodToShare (AIn _ (Literal l))
   | LTup (_:_)     <- l = True
 goodToShare (AIn _ (App _ _ _)) = True
 goodToShare _                   = False
+
+type Rename a = State VarId a
+
+rename :: AUntypedFeld a -> Rename (AUntypedFeld a)
+rename = renameA M.empty
+
+type RRExp a = UntypedFeldF (ATerm a UntypedFeldF)
+
+renameA :: M.Map VarId (RRExp a) -> AUntypedFeld a -> Rename (AUntypedFeld a)
+renameA env (AIn a r) = do r1 <- renameR env r
+                           return $ AIn a r1
+
+renameR :: M.Map VarId (RRExp a) -> RRExp a -> Rename (RRExp a)
+renameR env (Variable v) = return $ env M.! varNum v
+renameR env (App f t es) = do es1 <- mapM (renameA env) es
+                              return $ App f t es1
+renameR env (Lambda v e) = do v1 <- newVar v
+                              e1 <- renameA (M.insert (varNum v) (Variable v1) env) e
+                              return $ Lambda v1 e1
+renameR env (Literal l) = return $ Literal l
+renameR env e = error $ "FromTyped.renameR: unexpected expression " ++ show e
+
+newVar v = do j <- get
+              put (j+1)
+              return $ v{varNum = j}
+
+-- | Inline everything that is not sharable
+simpleInline :: AUntypedFeld a -> AUntypedFeld a
+simpleInline = goA M.empty
+  where goA m (AIn a r) = AIn a $ go m r
+        go m (Variable v) = M.findWithDefault (Variable v) (varNum v) m
+        go m (Literal l) = Literal l
+        go m (App Let _ [rhs, AIn a (Lambda v e)]) | not $ sharable rhs
+             = unA $ goA (M.insert (varNum v) (unA $ goA m rhs) m) e
+        go m (App op t es) = App op t $ map (goA m) es
+        go m (Lambda v e) = Lambda v (goA m e) -- Here we assume no name capture or shadowing
+        unA (AIn _ r) = r
+
 
