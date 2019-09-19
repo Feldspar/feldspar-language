@@ -43,11 +43,16 @@ module Feldspar.Core.Constructs where
 
 import Data.Typeable
 
+#ifndef INCREMENTAL_CSE
 import Language.Syntactic
 import Language.Syntactic.Constructs.Binding.HigherOrder
+#else
+import Feldspar.Core.Syntactic
+#endif
 
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
+#ifndef INCREMENTAL_CSE
 import Feldspar.Core.Constructs.Array
 import Feldspar.Core.Constructs.Binding
 import Feldspar.Core.Constructs.Bits
@@ -80,11 +85,13 @@ import Feldspar.Core.Constructs.SizeProp
 import Feldspar.Core.Constructs.SourceInfo
 import Feldspar.Core.Constructs.RealFloat
 import Feldspar.Core.Constructs.Tuple
+#endif
 
 --------------------------------------------------------------------------------
 -- * Domain
 --------------------------------------------------------------------------------
 
+#ifndef INCREMENTAL_CSE
 type FeldSymbols
     =   (Decor SourceInfo1 Identity :|| Type)
     :+: (Condition  :|| Type)
@@ -133,6 +140,13 @@ type FeldDom = FODomain FeldSymbols Typeable Type
 
 newtype FeldDomain a = FeldDomain { getFeldDomain :: HODomain FeldSymbols Typeable Type a }
 
+#else
+
+data FeldDomain a = FeldDomain
+data FeldDom a = FeldDom
+
+#endif
+
 -- Note: `FeldDomain` is a newtype in order to hide the large `FeldSymbols` type to the user.
 -- Previously, we also had separate instances of the `Syntax` class for each type, but that doesn't
 -- seem to be needed anymore. Type errors seem to have improved since `Domain` was made an
@@ -144,6 +158,8 @@ newtype FeldDomain a = FeldDomain { getFeldDomain :: HODomain FeldSymbols Typeab
 --     drawAST (map (+))
 --     drawAST (map (+1))
 --     drawAST (forLoop 10 0 (const (+id)))
+
+#ifndef INCREMENTAL_CSE
 
 instance Constrained FeldDomain
   where
@@ -170,6 +186,7 @@ instance IsHODomain FeldDomain Typeable Type
         Sym s -> Sym (FeldDomain s)
 
 
+#endif
 
 --------------------------------------------------------------------------------
 -- * Front end
@@ -206,8 +223,13 @@ instance (SyntacticFeld a, Type (Internal a)) => Syntax a
   -- The type error is not very readable now either, but at least it fits on the
   -- screen.
 
+#ifndef INCREMENTAL_CSE
 reifyF :: SyntacticFeld a => a -> ASTF FeldDom (Internal a)
 reifyF = reifyTop . fromFeld . desugar
+#else
+reifyF :: SyntacticFeld a => a -> ASTF FeldDomain (Internal a)
+reifyF = desugar
+#endif
 
 instance Type a => Eq (Data a)
   where
@@ -217,6 +239,7 @@ instance Type a => Show (Data a)
   where
     show = render . reifyF . unData
 
+#ifndef INCREMENTAL_CSE
 sugarSymF :: ( ApplySym sig b FeldDomain
              , SyntacticN c b
              , InjectC (feature :|| Type) (HODomain FeldSymbols Typeable Type) (DenResult sig)
@@ -229,3 +252,4 @@ sugarSymF sym = sugarN $ appSym' $ Sym $ FeldDomain $ injC $ c' sym
 mkVariable :: Type a => Integer -> Data a
 mkVariable v = sugarSymF (Variable (fromInteger v))
 
+#endif
