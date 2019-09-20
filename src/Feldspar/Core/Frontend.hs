@@ -102,6 +102,7 @@ import Data.Patch
 import Data.Tree.View
 import Data.Hash
 
+#ifndef INCREMENTAL_CSE
 import Language.Syntactic hiding
     (desugar, sugar, resugar, showAST, drawAST, writeHtmlAST, stringTree)
 import qualified Language.Syntactic as Syntactic
@@ -111,14 +112,21 @@ import Language.Syntactic.Constructs.Binding.HigherOrder
 import Language.Syntactic.Sharing.SimpleCodeMotion
 import Language.Syntactic.Sharing.CodeMotion2
 import Language.Syntactic.Sharing.SimpleCodeMotion3
+#else
+import qualified Feldspar.Core.Syntactic as Syntactic
+import Feldspar.Core.Syntactic hiding (showAST, drawAST, writeHtmlAST, desugar, sugar, resugar)
+import Feldspar.Core.Reify (unASTF)
+import Feldspar.Core.Render (StringTree)
+#endif
 
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Middleend.FromTyped
-import Feldspar.Core.UntypedRepresentation (stringTree)
+import Feldspar.Core.UntypedRepresentation (VarId, stringTree)
 import Feldspar.Core.Constructs
 import Feldspar.Core.Constructs.Binding (cLambda)
+#ifndef INCREMENTAL_CSE
 import Feldspar.Core.Frontend.Array            as Frontend
 import Feldspar.Core.Frontend.Binding          as Frontend
 import Feldspar.Core.Frontend.Bits             as Frontend
@@ -146,9 +154,11 @@ import Feldspar.Core.Frontend.SourceInfo       as Frontend
 import Feldspar.Core.Frontend.Switch           as Frontend
 import Feldspar.Core.Frontend.RealFloat        as Frontend
 import Feldspar.Core.Frontend.Tuple            as Frontend
+#else
+import Feldspar.Core.Language                  as Frontend
+#endif
 
-
-
+#ifndef INCREMENTAL_CSE
 prjDict :: PrjDict (Decor Info FeldDom)
 prjDict = PrjDict
     (prjVariable prjDictFO . decorExpr)
@@ -178,8 +188,9 @@ hoister opts
   where cm1 = codeMotion (simpleMatch (const . hoistOver)) prjDict (mkId opts)
         cm2 = codeMotion2 (simpleMatch (const . hoistOver)) prjDict (mkId opts)
         cm3 = codeMotion3 10 (simpleMatch (const . hoistOver)) prjDict (mkId opts) mkSubEnvDefault
+#endif
 
-
+#ifndef INCREMENTAL_CSE
 reifyFeldM :: (SyntacticFeld a, MonadState VarId m)
     => FeldOpts
     -> BitWidth n
@@ -222,6 +233,31 @@ reifyFeldUnOpt _ n = flip evalState 0 .
     .   fromFeld
     .   Syntactic.desugar
     )
+#else
+reifyFeldM :: (SyntacticFeld a, MonadState VarId m)
+    => FeldOpts
+    -> BitWidth n
+    -> a
+    -> m (ASTF (Decor Info FeldDom) (Internal a))
+reifyFeldM opts n prog = return $ ut $ reifyFeld opts n prog
+
+
+reifyFeld :: Syntactic a
+          => FeldOpts
+          -> BitWidth n
+          -> a
+          -> ASTF (Domain a) (Internal a)
+reifyFeld _ _ x = Syntactic.desugar x
+
+reifyFeldUnOpt :: Syntactic a
+                => FeldOpts
+                -> BitWidth n
+                -> a
+                -> ASTF (Domain a) (Internal a)
+reifyFeldUnOpt = reifyFeld
+
+instance StringTree FeldDomain where
+#endif
 
 showExpr :: SyntacticFeld a => a -> String
 showExpr = render . reifyFeld defaultFeldOpts N32
