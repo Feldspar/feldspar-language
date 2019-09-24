@@ -41,7 +41,17 @@ library
     Feldspar.Lattice
     Feldspar.Range
     Feldspar.ValueInfo
+  if flag(IncrementalCSE)
+   exposed-modules:
+    Feldspar.Core.Eval
+    Feldspar.Core.Language
+    Feldspar.Core.Reify
+    Feldspar.Core.Render
+    Feldspar.Core.Representation
+    Feldspar.Core.Semantics
+  exposed-modules:
     Feldspar.Core.Syntactic
+    Feldspar.Core.Tuple
     Feldspar.Core.Types
     Feldspar.Core.UntypedRepresentation
     Feldspar.Core.Middleend.CreateTasks
@@ -49,8 +59,12 @@ library
     Feldspar.Core.Middleend.FromTypeUtil
     Feldspar.Core.Middleend.LetSinking
     Feldspar.Core.Middleend.OptimizeUntyped
+    Feldspar.Core.Middleend.PushLets
+    Feldspar.Core.Middleend.UniqueVars
     Feldspar.Core.Interpretation.Typed
     Feldspar.Core.Interpretation
+  if !flag(IncrementalCSE)
+   exposed-modules:
     Feldspar.Core.Constructs.Array
     Feldspar.Core.Constructs.Binding
     Feldspar.Core.Constructs.Bits
@@ -83,7 +97,10 @@ library
     Feldspar.Core.Constructs.Tuple
     Feldspar.Core.Constructs.FFI
     Feldspar.Core.Constructs.Save
+  exposed-modules:
     Feldspar.Core.Constructs
+  if !flag(IncrementalCSE)
+   exposed-modules:
     Feldspar.Core.Frontend.Array
     Feldspar.Core.Frontend.Binding
     Feldspar.Core.Frontend.Bits
@@ -117,6 +134,7 @@ library
     Feldspar.Core.Frontend.Tuple
     Feldspar.Core.Frontend.FFI
     Feldspar.Core.Frontend.Save
+  exposed-modules:
     Feldspar.Core.Frontend
     Feldspar.Core.Collection
     Feldspar.Core
@@ -140,6 +158,8 @@ library
     Feldspar.Algorithm.FFT.Push
     Feldspar.Algorithm.FFT.Twids
     Feldspar.Algorithm.FFT.Utils
+  if !flag(IncrementalCSE)
+   exposed-modules:
     Language.Syntactic.Sharing.SimpleCodeMotion3
 
   default-language: Haskell2010
