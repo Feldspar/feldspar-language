@@ -952,7 +952,7 @@ justUntype opts = renameExp . toU . unASTF opts
 
 -- | Prepare the code for fromCore
 cleanUp :: FeldOpts -> AUntypedFeld ValueInfo -> UntypedFeld
-cleanUp opts = createTasks opts . unAnnotate
+cleanUp opts = createTasks opts . unAnnotate . uniqueVars
 
 renameExp :: AUntypedFeld a -> AUntypedFeld a
 renameExp e = evalState (rename e) 0
