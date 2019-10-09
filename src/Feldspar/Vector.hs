@@ -91,6 +91,7 @@ import Data.Tuple.Select
 import Control.Monad (zipWithM_)
 import Data.Proxy
 import Data.Hash
+import Data.List (genericLength)
 
 -- $intro
 -- The Feldspar Vector library.
@@ -221,8 +222,7 @@ instance CollMap (Pull sh a) (Pull sh b) where
 
 -- | Store a vector to memory.
 fromPull :: (Type a, Shapely sh) => DPull sh a -> Data [a]
-fromPull vec = parallel (size ext) (\ix -> vec !: fromIndex ext ix)
-  where ext = extent vec
+fromPull = fromVector'
 
 -- | Restore a vector from memory
 arrToPull :: (Type a) => Shape sh -> Data [a] -> DPull sh a
@@ -238,7 +238,9 @@ freezePull1 = fromPull
 
 -- | Create an array from a Haskell list.
 fromList :: Type a => [Data a] -> Data [a]
-fromList ls = runMutableArray $ newListArr ls
+fromList ls = materialize (value $ genericLength ls)
+                        $ P.foldr (\ (ix,v) e -> write (value ix) v `par` e) skip
+                        $ P.zip [0..] ls
 
 -- | Restore a vector and its shape from memory
 thawPull :: (Type a, Shapely sh) => (Data [Length], Data [a]) -> DPull sh a
@@ -248,14 +250,12 @@ thawPull (l,arr) = arrToPull (toShape 0 l) arr
 thawPull1 :: Type a => Data [a] -> DPull DIM1 a
 thawPull1 arr = arrToPull (Z :. getLength arr) arr
 
--- | A shape-aware version of parallel (though this implementation is
---   sequental).
+-- | A shape-aware version of parallel.
 parShape :: (Type a) => Shape sh -> (Shape sh -> Data a) -> Data [a]
-parShape sh ixf = runMutableArray $ do
-                   arr <- newArr_ (size sh)
-                   forShape sh $ \i ->
-                     setArr arr (toIndex sh i) (ixf i)
-                   return arr
+parShape sh ixf = materialize (size sh) $ toLoops (\ ix -> write (toIndex sh ix) (ixf ix)) sh
+  where toLoops :: Type a => (Shape sh -> Data (Elements a)) -> Shape sh -> Data (Elements a)
+        toLoops f Z = f Z
+        toLoops f (bnds :. n) = toLoops (\ ix -> parFor n $ \ i -> f (ix :. i)) bnds
 
 -- | An alternative version of 'fromVector' which uses 'parShape'
 fromVector' :: (Type a) => DPull sh a -> Data [a]
