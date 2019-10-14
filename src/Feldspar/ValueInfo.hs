@@ -116,6 +116,12 @@ lubVI l r = bop rangeUnion l r
 glbVI :: ValueInfo -> ValueInfo -> ValueInfo
 glbVI l r = bop rangeIntersection l r
 
+-- | Setting lower and upper bounds
+setLB :: Integral a => a -> ValueInfo -> ValueInfo
+setLB l vi = uop (\ r -> r{lowerBound = fromIntegral l}) vi
+setUB :: Integral a => a -> ValueInfo -> ValueInfo
+setUB l vi = uop (\ r -> r{upperBound = fromIntegral l}) vi
+
 -- | Apply a binary operation to two ValueInfos
 --   BoundedInt is needed to derive 'Num (Range a)'.
 bop :: (forall a . BoundedInt a => Range a -> Range a -> Range a) -> ValueInfo -> ValueInfo -> ValueInfo
@@ -148,3 +154,9 @@ uop op (VIInt64 r)                = VIInt64   (op r)
 uop _  (VIFloat)                  = VIFloat
 uop _  (VIDouble)                 = VIDouble
 uop op (VIProd l)                 = VIProd    (map (uop op) l)
+
+-- | Arithmetic on ValueInfo
+addVI :: ValueInfo -> ValueInfo -> ValueInfo
+addVI = bop (+)
+mulVI :: ValueInfo -> ValueInfo -> ValueInfo
+mulVI = bop (*)
