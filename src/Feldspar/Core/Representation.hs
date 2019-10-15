@@ -121,10 +121,10 @@ data AExpr a = (:&) {aeInfo :: Info a, aeExpr :: Expr (Full a)}
   deriving (Eq)
 
 instance Show (AExpr a) where
-  show = showAExpr 0
+  show e = showAExpr 0 e ""
 
-showAExpr :: Int -> AExpr a -> String
-showAExpr n (_ :& e) = showExpr n e
+showAExpr :: Int -> AExpr a -> String -> String
+showAExpr n (_ :& e) r = showExpr n e r
 
 type LiteralType a = (Show a, Eq a, Typeable a, Hashable a)
 type ExprCtx a = (TypeF a)
@@ -149,16 +149,16 @@ literal :: LiteralType a => a -> AExpr a
 literal x = Info :& Literal x
 
 instance Show (Expr a) where
-  show = showExpr 0
+  show e = showExpr 0 e ""
 
-showExpr :: Int -> Expr a -> String
-showExpr _ (Literal l)   = show l
-showExpr _ (Operator op) = show op
-showExpr _ (Variable v)  = "v" ++ show (varNum v)
-showExpr n (f :@ e)      = showExpr n f ++
-                          "\n" ++ replicate (n+2) ' ' ++
-                          showAExpr (n+2) e
-showExpr n (Lambda v e) = "\\ " ++ show v ++ " ->\n  " ++ showAExpr (n+2) e
+showExpr :: Int -> Expr a -> String -> String
+showExpr _ (Literal l)    r = show l ++ r
+showExpr _ (Operator op)  r = show op ++ r
+showExpr _ (Variable v)   r = "v" ++ show (varNum v) ++ r
+showExpr n (f :@ e)       r = showExpr n f
+                            $ "\n" ++ replicate (n+2) ' ' ++
+                              showAExpr (n+2) e r
+showExpr n (Lambda v e) r = "\\ " ++ show v ++ " ->\n" ++ replicate (n+2) ' ' ++ showAExpr (n+2) e r
 
 instance Typeable a => Eq (Expr a) where
   Literal l == Literal r = l == r
