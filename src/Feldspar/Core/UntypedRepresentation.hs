@@ -26,6 +26,7 @@ module Feldspar.Core.UntypedRepresentation (
   , unAnnotate
   , annotate
   , getAnnotation
+  , dropAnnotation
   , fvA
   , fv
   , allVars
@@ -115,6 +116,10 @@ annotate anno e = goA e
 -- | Extract the annotation part of an AUntypedFeld
 getAnnotation :: AUntypedFeld a -> a
 getAnnotation (AIn r _) = r
+
+-- | Drop the annotation part of an AUntypedFeld
+dropAnnotation :: AUntypedFeld a -> UntypedFeldF (AUntypedFeld a)
+dropAnnotation (AIn _ e) = e
 
 data Size = S8 | S16 | S32 | S40 | S64
           | S128 -- Used by SICS.
