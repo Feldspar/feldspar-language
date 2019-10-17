@@ -47,6 +47,7 @@ module Feldspar.Core.UntypedRepresentation (
   , goodToShare
   , Rename(..)
   , rename
+  , newVar
   , simpleInline
   )
   where
