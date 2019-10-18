@@ -39,6 +39,7 @@ module Feldspar.Core.UntypedRepresentation (
   , subst
   , stringTree
   , stringTreeExp
+  , prettyVI
   , aLit
   , topInfo
   , botInfo
@@ -240,6 +241,27 @@ topInfo (ElementsType t) = VIProd [topInfo indexType, topInfo t]
 topInfo (IVarType t)     = topInfo t
 topInfo (FunType _ t)    = topInfo t
 topInfo (FValType t)     = topInfo t
+
+-- | Pretty printing a value info given a type
+prettyVI :: Type -> ValueInfo -> String
+prettyVI t (VIBool r)   = show r
+prettyVI t (VIInt8 r)   = show r
+prettyVI t (VIInt16 r)  = show r
+prettyVI t (VIInt32 r)  = show r
+prettyVI t (VIInt64 r)  = show r
+prettyVI t (VIIntN r)   = show r
+prettyVI t (VIWord8 r)  = show r
+prettyVI t (VIWord16 r) = show r
+prettyVI t (VIWord32 r) = show r
+prettyVI t (VIWord64 r) = show r
+prettyVI t (VIWordN r)  = show r
+prettyVI t (VIFloat)    = "[*,*]"
+prettyVI t (VIDouble)   = "[*,*]"
+prettyVI t (VIProd vs)  = pr t vs
+  where pr (ArrayType _ t)  [v1,v2] = prettyVI indexType v1 ++ " :> " ++ prettyVI t v2
+        pr (ElementsType t) [v1,v2] = prettyVI indexType v1 ++ " :>> " ++ prettyVI t v2
+        pr (TupType ts)     vs      = "(" ++ intercalate ", " (zipWith prettyVI ts vs) ++ ")"
+        pr t                vs      = "VIProd " ++ show vs
 
 -- | The Type used to represent indexes, to which Index is mapped.
 indexType :: Type
