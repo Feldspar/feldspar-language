@@ -42,6 +42,8 @@ module Feldspar.Core.UntypedRepresentation (
   , aLit
   , topInfo
   , botInfo
+  , indexType
+  , elementsVI
   , sharable
   , legalToShare
   , goodToShare
@@ -242,6 +244,10 @@ topInfo (FValType t)     = topInfo t
 -- | The Type used to represent indexes, to which Index is mapped.
 indexType :: Type
 indexType = IntType Unsigned S32
+
+-- | Construct an Elements value info from those of the index and value parts
+elementsVI :: ValueInfo -> ValueInfo -> ValueInfo
+elementsVI idx val = VIProd [idx, val]
 
 -- | Forcing a range to an integer type given by a signedness and a size.
 constantIntRange :: Signedness -> Size -> (forall a . Bounded a => Range a)
