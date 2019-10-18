@@ -530,13 +530,18 @@ stringTree = stringTreeExp (const "") . annotate (const ())
 
 -- | Convert an untyped annotated syntax tree into a @Tree@ of @String@s
 stringTreeExp :: (a -> String) -> AUntypedFeld a -> Tree String
-stringTreeExp prA = unfoldTree go
+stringTreeExp prA = go
   where
-    go (AIn r (Variable v))         = (show v ++ prC (typeof v) ++ prA r, [])
-    go (AIn _ (Lambda v e))         = ("Lambda "++show v ++ prC (typeof v), [e])
-    go (AIn _ (LetFun (s,k,e1) e2)) = (unwords ["LetFun", show k, s], [e1,e2])
-    go (AIn _ (Literal l))          = (show l ++ prC (typeof l), [])
-    go (AIn r (App p t es))         = (show p ++ prP t r, es)
+    go (AIn r (Variable v))         = Node (show v ++ prC (typeof v) ++ prA r) []
+    go (AIn _ (Lambda v e))         = Node ("Lambda "++show v ++ prC (typeof v)) [go e]
+    go (AIn _ (LetFun (s,k,e1) e2)) = Node (unwords ["LetFun", show k, s]) [go e1, go e2]
+    go (AIn _ (Literal l))          = Node (show l ++ prC (typeof l)) []
+    go (AIn r (App Let t es))       = Node "Let" $ goLet $ AIn r (App Let t es)
+    go (AIn r (App p t es))         = Node (show p ++ prP t r) (map go es)
+    goLet (AIn _ (App Let _ [eRhs, AIn _ (Lambda v e)]))
+                                    = Node ("Var " ++ show v ++ prC (typeof v) ++ " = ") [go eRhs]
+                                    : goLet e
+    goLet e = [Node "In" [go e]]
     prP t r = " {" ++ prType t ++ prA r ++ "}"
     prC t   = " : " ++ prType t
 

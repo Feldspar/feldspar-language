@@ -1,22 +1,22 @@
 Lambda v0 : u32
- └╴Let {u32 in VIWord32 [*,*]}
-    ├╴Add {u32 in VIWord32 [*,*]}
-    │  ├╴Mul {u32 in VIWord32 [*,*]}
-    │  │  ├╴v0 : u32 in VIWord32 [*,*]
-    │  │  └╴3 : u32
-    │  └╴Mul {u32 in VIWord32 [*,*]}
-    │     ├╴v0 : u32 in VIWord32 [*,*]
-    │     └╴5 : u32
-    └╴Lambda v4 : u32
-       └╴Let {u32 in VIWord32 [*,*]}
+ └╴Let
+    ├╴Var v4 : u32 = 
+    │  └╴Add {u32 in VIWord32 [*,*]}
+    │     ├╴Mul {u32 in VIWord32 [*,*]}
+    │     │  ├╴v0 : u32 in VIWord32 [*,*]
+    │     │  └╴3 : u32
+    │     └╴Mul {u32 in VIWord32 [*,*]}
+    │        ├╴v0 : u32 in VIWord32 [*,*]
+    │        └╴5 : u32
+    ├╴Var v5 : u32 = 
+    │  └╴Add {u32 in VIWord32 [*,*]}
+    │     ├╴v4 : u32 in VIWord32 [*,*]
+    │     └╴Mul {u32 in VIWord32 [*,*]}
+    │        ├╴v0 : u32 in VIWord32 [*,*]
+    │        └╴7 : u32
+    └╴In
+       └╴Add {u32 in VIWord32 [*,*]}
           ├╴Add {u32 in VIWord32 [*,*]}
-          │  ├╴v4 : u32 in VIWord32 [*,*]
-          │  └╴Mul {u32 in VIWord32 [*,*]}
-          │     ├╴v0 : u32 in VIWord32 [*,*]
-          │     └╴7 : u32
-          └╴Lambda v5 : u32
-             └╴Add {u32 in VIWord32 [*,*]}
-                ├╴Add {u32 in VIWord32 [*,*]}
-                │  ├╴v5 : u32 in VIWord32 [*,*]
-                │  └╴v4 : u32 in VIWord32 [*,*]
-                └╴v5 : u32 in VIWord32 [*,*]
+          │  ├╴v5 : u32 in VIWord32 [*,*]
+          │  └╴v4 : u32 in VIWord32 [*,*]
+          └╴v5 : u32 in VIWord32 [*,*]
