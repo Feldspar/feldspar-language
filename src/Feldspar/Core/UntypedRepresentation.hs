@@ -39,6 +39,7 @@ module Feldspar.Core.UntypedRepresentation (
   , subst
   , stringTree
   , stringTreeExp
+  , prettyExp
   , prettyVI
   , aLit
   , topInfo
@@ -567,6 +568,49 @@ stringTreeExp prA = go
     prP t r = " {" ++ prType t ++ prA r ++ "}"
     prC t   = " : " ++ prType t
 
+prettyExp :: (Type -> a -> String) -> AUntypedFeld a -> String
+prettyExp prA e = render (pr 0 0 e)
+  where pr p i (AIn r e) = pe p i r e
+        pe p i r (Variable v) = line i $ show v
+        pe p i _ (Literal l) = line i $ show l
+        pe p i _ (Lambda v e) = par p 0 $ join $ (line i $ "\\ " ++ pv Nothing v ++ " ->") ++ pr 0 (i+2) e
+        pe p i r (App Let t es) = par p 0 $ line i "let" ++ pLet i (AIn r $ App Let t es)
+        pe p i r (App f t es) = par p 10 $ join $ (line i $ show f ++ prP t r) ++ pArgs p (i+2) es
+
+        pArgs p i [e@(AIn _ (Lambda _ _))] = pr p i e
+        pArgs p i (e:es) = pr 11 i e ++ pArgs p i es
+        pArgs p i [] = []
+
+        pLet i (AIn _ (App Let _ [eRhs, AIn _ (Lambda v e)]))
+               = join (line (i+2) (pv Nothing v ++ " =") ++ pr 0 (i+4) eRhs) ++ pLet i e
+        pLet i e = line i "in" ++ pr 0 (i+2) e
+
+        pv mr v = show v ++ prC (typeof v) ++ maybe "" (prA $ typeof v) mr
+
+        prP t r = " {" ++ prType t ++ prA t r ++ "}"
+        prC t   = " : " ++ prType t
+
+        par p i [] = error $ "UntypedRepresentation.prettyExp: parethesisizing empty text"
+        par p i ls = if p <= i then ls else prepend "(" $ append ")" ls
+        prepend s ((i,n,v) : ls) = ((i, n + length s, s ++ v) : ls)
+        append s [(i,n,v)] = [(i, n + length s, v ++ s)]
+        append s (l:ls) = l : append s ls
+
+        join (x:y:xs)
+          | indent x <= indent y &&
+            all ((==) (indent y) . indent) xs &&
+            l <= 60
+          = [(indent x, l, intercalate " " $ map val $ x:y:xs)]
+            where l = sum (map len $ x:y:xs) + length xs + 1
+        join xs = xs
+        render ls = foldr (\ (i,_,cs) str -> replicate i ' ' ++ cs ++ "\n" ++ str) "" ls
+        line i cs = [(i, length cs, cs)]
+        indent (i,_,_) = i
+        len (_,l,_) = l
+        val (_,_,v) = v
+
+        -- In the precedence argument, 0 means that no expressions need parentesis,
+        -- wheras 10 accepts applications and 11 only accepts atoms (variables and literals)
 
 class HasType a where
     type TypeOf a
