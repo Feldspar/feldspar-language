@@ -114,6 +114,7 @@ import Language.Syntactic.Sharing.CodeMotion2
 import Language.Syntactic.Sharing.SimpleCodeMotion3
 #else
 import qualified Feldspar.Core.Syntactic as Syntactic
+import qualified Feldspar.Core.Render as Syntactic
 import Feldspar.Core.Syntactic hiding (showAST, drawAST, writeHtmlAST, desugar, sugar, resugar)
 import Feldspar.Core.Reify (unASTF)
 import Feldspar.Core.Render (StringTree)

@@ -39,6 +39,7 @@ module Feldspar.Core.Reify
        , ASTF(..)
        , unASTF
        , evalBind
+       , render
        , resugar
        , alphaEq
        , Mon(..)
@@ -94,6 +95,13 @@ unASTF _ (ASTF ce _) = fromCExp ce
 -- | Evaluate an ASTF
 evalBind :: TypeF a => ASTF d a -> a
 evalBind = evalTop . unASTF ()
+
+render :: TypeF a => ASTF d a -> String
+render (ASTF (m,e) _) = unwords $ show e : "where" : map rendb (map snd $ M.toList m)
+  where rendb (CBind v e) = show v ++ " = " ++ show e
+
+instance TypeF a => Show (ASTF d a) where
+  show = render
 
 class Syntactic a where
     type Domain a :: * -> *
