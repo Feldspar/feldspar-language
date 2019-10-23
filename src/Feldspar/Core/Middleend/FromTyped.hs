@@ -25,6 +25,7 @@ import Feldspar.Core.Middleend.LetSinking
 import Feldspar.Core.Middleend.OptimizeUntyped
 import Feldspar.Core.Middleend.PushLets
 import Feldspar.Core.Middleend.Expand
+import Feldspar.Core.Middleend.LocalLetFloating
 import Feldspar.Core.Middleend.UniqueVars
 import Feldspar.Core.Middleend.PassManager
 import qualified Feldspar.Core.UntypedRepresentation as U
@@ -935,6 +936,7 @@ import Data.Typeable (Typeable)
 -- | External module interface. Untype, optimize and unannotate.
 untype :: TypeF a => FeldOpts -> ASTF dom a -> UntypedFeld
 untype opts = cleanUp opts
+            . localLetFloating opts
             . expand
             . pushLets
             . optimize
@@ -944,6 +946,7 @@ untype opts = cleanUp opts
 -- | External module interface.
 untypeDecor :: TypeF a => FeldOpts -> ASTF dom a -> AUntypedFeld ValueInfo
 untypeDecor opts = id
+                 . localLetFloating opts
                  . expand
                  . pushLets
                  . optimize
@@ -1183,6 +1186,7 @@ data FrontendPass
      | FPOptimize
      | FPPushLets
      | FPExpand
+     | FPLocalLetFloating
      | FPUnique
      | FPUnAnnotate
      | FPCreateTasks
@@ -1245,6 +1249,7 @@ frontend ctrl opts = evalPasses 0
                    $ pc FPCreateTasks      (createTasks opts)
                    . pt FPUnAnnotate       unAnnotate
                    . pc FPUnique           uniqueVars
+                   . pc FPLocalLetFloating (localLetFloating opts)
                    . pc FPExpand           expand
                    . pc FPPushLets         pushLets
                    . pc FPOptimize         optimize
