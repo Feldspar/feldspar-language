@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE KindSignatures #-}
 
 --
@@ -42,6 +43,13 @@ module Feldspar.Core.Render
   , drawDecorWith
   ) where
 
+#ifndef INCREMENTAL_CSE
+
+import Language.Syntactic
+import Language.Syntactic.Constructs.Decoration (showDecorWith, drawDecorWith)
+
+#else
+
 import qualified Data.Map.Strict as M
 import Data.Tree
 import Data.Tree.View
@@ -84,16 +92,11 @@ writeHtmlAST file = writeHtmlTree Nothing file
                   . stringTreeASTF
 {-# INLINABLE writeHtmlAST #-}
 
-render :: TypeF a => ASTF d a -> String
-render (ASTF (m,e) _) = unwords $ show e : "where" : map rendb (map snd $ M.toList m)
-  where rendb (CBind v e) = show v ++ " = " ++ show e
-
-instance TypeF a => Show (ASTF d a) where
-  show = render
-
 showDecorWith :: (StringTree d, TypeF a) => (ValueInfo -> String) -> ASTF d a -> String
 showDecorWith f = showTree . stringTreeExp g . untypeDecor defaultFeldOpts
   where g x = " in " ++ f x
 
 drawDecorWith :: (StringTree d, TypeF a) => (ValueInfo -> String) -> ASTF d a -> IO ()
 drawDecorWith f = putStrLn . showDecorWith f
+
+#endif
