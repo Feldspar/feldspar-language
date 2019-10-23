@@ -55,6 +55,7 @@ library
     Feldspar.Core.Types
     Feldspar.Core.UntypedRepresentation
     Feldspar.Core.Middleend.CreateTasks
+    Feldspar.Core.Middleend.Expand
     Feldspar.Core.Middleend.FromTyped
     Feldspar.Core.Middleend.FromTypeUtil
     Feldspar.Core.Middleend.LetSinking
