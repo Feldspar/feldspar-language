@@ -59,6 +59,7 @@ library
     Feldspar.Core.Middleend.FromTypeUtil
     Feldspar.Core.Middleend.LetSinking
     Feldspar.Core.Middleend.OptimizeUntyped
+    Feldspar.Core.Middleend.PassManager
     Feldspar.Core.Middleend.PushLets
     Feldspar.Core.Middleend.UniqueVars
     Feldspar.Core.Interpretation.Typed

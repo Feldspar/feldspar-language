@@ -12,6 +12,8 @@ module Feldspar.Core.Middleend.FromTyped
   , untypeType
   , untypeDecor
   , untypeUnOpt
+  , FrontendPass(..)
+  , frontend
   )
   where
 
@@ -21,6 +23,10 @@ import Feldspar.Core.Interpretation (FeldOpts, Info(..))
 import Feldspar.Core.Middleend.CreateTasks
 import Feldspar.Core.Middleend.LetSinking
 import Feldspar.Core.Middleend.OptimizeUntyped
+import Feldspar.Core.Middleend.PushLets
+import Feldspar.Core.Middleend.UniqueVars
+import Feldspar.Core.Middleend.PassManager
+import qualified Feldspar.Core.UntypedRepresentation as U
 
 #ifndef INCREMENTAL_CSE
 
@@ -917,10 +923,9 @@ instance Untype dom dom => Untype (Select :|| Type) dom
 import Feldspar.Core.Reify (ASTF(..), unASTF)
 import Feldspar.Core.Types (TypeRep(..), typeRep, defaultSize, TypeF(..))
 import qualified Feldspar.Core.Types as T
+import Feldspar.Core.Constructs (FeldDomain)
 import Feldspar.Core.UntypedRepresentation as U
 import Feldspar.ValueInfo
-import Feldspar.Core.Middleend.PushLets
-import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr((:&)), Expr((:@)))
 import Control.Monad.State
@@ -1163,3 +1168,84 @@ trOp R.Tup14           = Tup
 trOp R.Tup15           = Tup
 
 #endif
+
+-- The front-end driver.
+
+-- | Enumeration of front end passes
+data FrontendPass
+     = FPUntype
+     | FPRename
+     | FPSinkLets
+     | FPOptimize
+     | FPPushLets
+     | FPUnique
+     | FPUnAnnotate
+     | FPCreateTasks
+     deriving (Eq, Show, Enum, Bounded, Read)
+
+-- | Overloaded pretty printing of annotations (for instance range information)
+
+class PrettyInfo a where
+  prettyInfo :: U.Type -> a -> String
+
+instance PrettyInfo ValueInfo where
+  prettyInfo = prettyVI
+
+instance PrettyInfo () where
+  prettyInfo _ _ = ""
+
+instance Pretty UntypedFeld where
+  pretty = pretty . annotate (const ())
+
+instance PrettyInfo a => Pretty (AUntypedFeld a) where
+  pretty = prettyExp f
+     where f t x = " | " ++ prettyInfo t x
+
+#ifndef INCREMENTAL_CSE
+
+instance (StringTree dom, TypeF a) => Pretty (ASTF dom a) where
+  pretty = showAST
+
+-- | Dummy renamer for old version where the CSE produces readable variable names
+renameExp :: AUntypedFeld ValueInfo -> AUntypedFeld ValueInfo
+renameExp = id
+
+-- | Untype version to use with the old CSE
+untypeProgOpt :: TypeF a => FeldOpts -> ASTF FEDom a -> AUntypedFeld ValueInfo
+untypeProgOpt opts = untypeProg
+
+-- | Domain synonym to use with old CSE
+type FEDom = Decor Info FeldDom
+
+#else
+
+instance Pretty (AExpr a) where
+  pretty = show
+
+instance TypeF a => Pretty (ASTF dom a) where
+  pretty = pretty . unASTF ()
+
+-- | Untype version to use with the new CSE
+untypeProgOpt :: TypeF a => FeldOpts -> ASTF dom a -> AUntypedFeld ValueInfo
+untypeProgOpt opts = toU . unASTF opts
+
+-- | Domain synonym to use with new CSE
+type FEDom = FeldDomain
+
+#endif
+
+-- | Front-end driver
+frontend :: TypeF a => PassCtrl FrontendPass -> FeldOpts -> ASTF FEDom a -> ([String], Maybe UntypedFeld)
+frontend ctrl opts = evalPasses 0
+                   $ pc FPCreateTasks      (createTasks opts)
+                   . pt FPUnAnnotate       unAnnotate
+                   . pc FPUnique           uniqueVars
+                   . pc FPPushLets         pushLets
+                   . pc FPOptimize         optimize
+                   . pc FPSinkLets         (sinkLets opts)
+                   . pc FPRename           renameExp
+                   . pt FPUntype           (untypeProgOpt opts)
+  where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
+        pc = passC ctrl
+        pt :: (Pretty a, Pretty b) => FrontendPass -> (a -> b) -> Prog a Int -> Prog b Int
+        pt = passT ctrl
