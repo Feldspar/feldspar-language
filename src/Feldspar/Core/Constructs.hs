@@ -203,12 +203,7 @@ instance Syntactic (Data a)
     desugar = unData
     sugar   = Data
 
-#ifndef INCREMENTAL_CSE
-type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomain)
-#else
 type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomain, TypeF (Internal a))
-#endif
-
 
 -- | Specialization of the 'Syntactic' class for the Feldspar domain
 class    (SyntacticFeld a, Type (Internal a)) => Syntax a
