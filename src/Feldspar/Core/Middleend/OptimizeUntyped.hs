@@ -142,7 +142,9 @@ simpApp env r op t es = go op t es
          | Just n <- lookup op selectTable
          , App Tup _ es <- examine env eTup
          , n < length es
-         = es !! n
+         , eComp <- es !! n
+         , not $ sharable eComp
+         = eComp
 
         -- Select from a tuple literal
         go op _ [eTup]

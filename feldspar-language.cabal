@@ -54,6 +54,7 @@ library
     Feldspar.Core.Tuple
     Feldspar.Core.Types
     Feldspar.Core.UntypedRepresentation
+    Feldspar.Core.Middleend.Constructors
     Feldspar.Core.Middleend.CreateTasks
     Feldspar.Core.Middleend.Expand
     Feldspar.Core.Middleend.FromTyped
