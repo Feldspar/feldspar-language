@@ -173,6 +173,8 @@ toValueInfo (IntType U N32)   r             = VIWord32  r
 toValueInfo (IntType S N32)   r             = VIInt32   r
 toValueInfo (IntType U N64)   r             = VIWord64  r
 toValueInfo (IntType S N64)   r             = VIInt64   r
+toValueInfo (IntType U NNative) r           = VIWordN   r
+toValueInfo (IntType S NNative) r           = VIIntN    r
 -- FIXME: No range for FP types and ComplexType yet.
 toValueInfo FloatType         _             = VIFloat
 toValueInfo DoubleType        _             = VIDouble
