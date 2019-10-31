@@ -49,6 +49,7 @@ module Feldspar.Core.UntypedRepresentation (
   , sharable
   , legalToShare
   , goodToShare
+  , legalToInline
   , Rename(..)
   , rename
   , newVar
@@ -747,6 +748,10 @@ goodToShare (AIn _ (Literal l))
   | LTup (_:_)     <- l = True
 goodToShare (AIn _ (App _ _ _)) = True
 goodToShare _                   = False
+
+legalToInline :: AUntypedFeld a -> Bool
+legalToInline (AIn _ (App op _ _)) = op `notElem` [MkFuture, ParFork, NoInline]
+legalToInline _                    = True
 
 type Rename a = State VarId a
 
