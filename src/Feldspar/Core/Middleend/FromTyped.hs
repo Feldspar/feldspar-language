@@ -121,7 +121,7 @@ untypeProgDecor (Decor info a) = untypeProgSym a info
 
 -- | External module interface. Optimized code ready for fromCore.
 untype :: Untype dom dom => FeldOpts -> ASTF (Decor Info dom) a ->  UntypedFeld
-untype opts = createTasks opts . unAnnotate . optimize . sinkLets opts . untypeProg
+untype opts = createTasks opts . unAnnotate . pushLets . optimize . sinkLets opts . untypeProg
 
 -- | External module interface. Unoptimized code with value info.
 untypeDecor :: Untype dom dom => FeldOpts -> ASTF (Decor Info dom) a -> AUntypedFeld ValueInfo
