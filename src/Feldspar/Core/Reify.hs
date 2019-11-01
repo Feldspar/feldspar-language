@@ -85,7 +85,7 @@ resugar = sugar . desugar
 --   in the expression part of the CExpr.
 data ASTF (d :: * -> *) a = ASTF (CExpr a) Int
 
-alphaEq :: Typeable a => ASTF d a -> ASTF d a -> Bool
+alphaEq :: T.Type a => ASTF d a -> ASTF d a -> Bool
 alphaEq (ASTF (ml,el) _) (ASTF (mr,er) _) = M.toList ml == M.toList mr && el == er
 
 -- | Convert an ASTF to an expression

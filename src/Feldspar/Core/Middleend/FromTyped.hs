@@ -967,7 +967,7 @@ renameExp :: AUntypedFeld a -> AUntypedFeld a
 renameExp e = evalState (rename e) 0
 
 toAnno :: TypeF a => R.Info a -> ValueInfo
-toAnno = topInfo . toType . asInfo
+toAnno info = toValueInfo (asInfo info) (R.infoSize info)
 
 asInfo :: TypeF a => R.Info a -> TypeRep a
 asInfo _ = typeRepF
