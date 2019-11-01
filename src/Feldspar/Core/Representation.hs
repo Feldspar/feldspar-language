@@ -65,8 +65,10 @@ module Feldspar.Core.Representation
   ) where
 
 import Language.Syntactic.Constructs.Binding (VarId (..))
-import Feldspar.Core.Types(Type(typeRep), TypeF(..), TypeRep(..), Length, Index, IntN, Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV)
+import Feldspar.Core.Types (Type(typeRep,sizeOf), TypeF(..), TypeRep(..), Length, Index, IntN,
+                            Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV)
 import Feldspar.Range
+import Feldspar.Lattice (Lattice(..))
 
 import qualified Data.ByteString.Char8 as B
 import Data.Typeable (Typeable, (:~:)(Refl), eqT)
@@ -103,22 +105,34 @@ type a :-> b = a -> b
 
 type FExpr a = Expr (Full a)
 
--- | The type of information, for instance range information. Currently empty.
-data Info a = Info
-  deriving (Eq, Show)
+-- | The type of information, for instance range information. Currently only size info.
+data Info a = Info {infoSize :: Size a}
+
+instance Eq (Size a) => Eq (Info a) where
+  Info x == Info y = x == y
+
+instance Show (Size a) => Show (Info a) where
+  show (Info x) = show x
 
 -- | Adding default info to an Expr
-toAExpr :: FExpr a -> AExpr a
-toAExpr e = Info :& e
+toAExpr :: Lattice (Size a) => FExpr a -> AExpr a
+toAExpr e = Info top :& e
 
 -- | Constructing an annotation for a Lambda
-funInfo :: Var a -> AExpr e -> Info (a -> e)
-funInfo v e = Info
+funInfo :: AExpr a -> AExpr e -> Info (a -> e)
+funInfo a e = Info (exprSize a, exprSize e)
+
+-- | Getting the size (value info) of an expression from its annotation
+exprSize :: AExpr a -> Size a
+exprSize = infoSize . aeInfo
 
 -- | Annotated expression, that is, an expression together with extra information,
 --   for instance from a program analysis.
 data AExpr a = (:&) {aeInfo :: Info a, aeExpr :: Expr (Full a)}
-  deriving (Eq)
+
+-- | Equality for AExps
+instance (Eq (Size a), Typeable a) => Eq (AExpr a) where
+  (:&) il el == (:&) ir er = il == ir && el == er
 
 instance Show (AExpr a) where
   show e = showAExpr 0 e ""
@@ -126,7 +140,7 @@ instance Show (AExpr a) where
 showAExpr :: Int -> AExpr a -> String -> String
 showAExpr n (_ :& e) r = showExpr n e r
 
-type LiteralType a = (Show a, Eq a, Typeable a, Hashable a)
+type LiteralType a = (Hashable a, Type a)
 type ExprCtx a = (TypeF a)
 
 {- | The main expression type.
@@ -146,7 +160,7 @@ exprType :: TypeF a => Expr a -> TypeRep a
 exprType _ = typeRepF
 
 literal :: LiteralType a => a -> AExpr a
-literal x = Info :& Literal x
+literal x = Info (sizeOf x) :& Literal x
 
 instance Show (Expr a) where
   show e = showExpr 0 e ""
@@ -482,7 +496,7 @@ fviB (CBind _ e) = fvi e
 showRhs (CBind _ e) = show e
 
 mkLets :: ExprCtx a => ([CBind], AExpr a) -> AExpr a
-mkLets (CBind v rhs : bs, e) = aeInfo e :& Operator Let :@ rhs :@ (funInfo v e :& Lambda v (mkLets (bs,e)))
+mkLets (CBind v rhs : bs, e) = aeInfo e :& Operator Let :@ rhs :@ (funInfo rhs e :& Lambda v (mkLets (bs,e)))
 mkLets ([], e) = e
 
 -- | Functions for bind environments
