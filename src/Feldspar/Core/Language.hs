@@ -1379,6 +1379,7 @@ desugarMonad
        , Typeable a
        , Type (m a)
        , Type a
+       , Size a ~ Size (m a)
        )
     => Mon dom m (ASTF dom a) -> ASTF dom (m a)
 desugarMonad = flip runCont (sugarSym1 Return) . unMon
@@ -1391,6 +1392,7 @@ sugarMonad
        -- , pVar a
        , Type (m a)
        , Type a
+       , Size a ~ Size (m a)
        )
     => ASTF dom (m a) -> Mon dom m (ASTF dom a)
 sugarMonad ma = Mon $ cont $ sugarSym2 Bind ma
@@ -1404,6 +1406,7 @@ instance ( Syntactic a
          , dom ~ Domain a
          , Type (Internal a)
          , Type (m (Internal a))
+         , Size (Internal a) ~ Size (m (Internal a))
          ) =>
            Syntactic (Mon dom m a)
   where

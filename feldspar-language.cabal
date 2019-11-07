@@ -49,6 +49,7 @@ library
     Feldspar.Core.Render
     Feldspar.Core.Representation
     Feldspar.Core.Semantics
+    Feldspar.Core.SizeProp
   exposed-modules:
     Feldspar.Core.Syntactic
     Feldspar.Core.Tuple
