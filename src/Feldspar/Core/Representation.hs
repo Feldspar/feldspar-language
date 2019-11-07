@@ -44,8 +44,11 @@ module Feldspar.Core.Representation
   , Info(..)
   , Expr(..)
   , exprType
+  , literal
   , ExprCtx(..)
   , toAExpr
+  , funInfo
+  , exprSize
   , (:->)
   , EqBox(..)
   , Op(..)
@@ -80,7 +83,7 @@ import Data.Bits (Bits)
 import Data.Complex (Complex)
 import Data.IORef (IORef)
 
-import Feldspar.Core.Tuple (Tuply(..))
+import Feldspar.Core.Tuple
 
 infixr :->
 infixl 5 :@
@@ -193,6 +196,8 @@ instance Eq (EqBox a) where
 
 instance Show (EqBox a) where
   show x = "Box"
+
+type SelCtx w uw sw usw = (Tuply w, Unpack w ~ uw, Size w ~ sw, Tuply sw, Unpack sw ~ usw)
 
 -- | The main data type for built-in operators as well as let and conditional
 --   constructs.
@@ -409,39 +414,21 @@ data Op a where
                  k :-> l :-> m :-> n :-> o :->
                  Full (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o))
 
-    Sel1  :: (Tuply w, Unpack w ~ (a,z))                     => Op (w :-> Full a)
-    Sel2  :: (Tuply w, Unpack w ~ (a,(b,z)))                 => Op (w :-> Full b)
-    Sel3  :: (Tuply w, Unpack w ~ (a,(b,(c,z))))             => Op (w :-> Full c)
-    Sel4  :: (Tuply w, Unpack w ~ (a,(b,(c,(d,z)))))         => Op (w :-> Full d)
-    Sel5  :: (Tuply w, Unpack w ~ (a,(b,(c,(d,(e,z))))))     => Op (w :-> Full e)
-    Sel6  :: (Tuply w, Unpack w ~ (a,(b,(c,(d,(e,(f,z))))))) => Op (w :-> Full f)
-    Sel7  :: (Tuply w,
-              Unpack w ~ (a,(b,(c,(d,(e,(f,(g,z)))))))
-              ) => Op (w :-> Full g)
-    Sel8  :: (Tuply w,
-              Unpack w ~ (a,(b,(c,(d,(e,(f,(g,(h,z))))))))
-              ) => Op (w :-> Full h)
-    Sel9  :: (Tuply w,
-              Unpack w ~ (a,(b,(c,(d,(e,(f,(g,(h,(i,z)))))))))
-              ) => Op (w :-> Full i)
-    Sel10 :: (Tuply w,
-              Unpack w ~ (a,(b,(c,(d,(e,(f,(g,(h,(i,(j,z))))))))))
-              ) => Op (w :-> Full j)
-    Sel11 :: (Tuply w,
-              Unpack w ~ (a,(b,(c,(d,(e,(f,(g,(h,(i,(j,(k,z)))))))))))
-              ) => Op (w :-> Full k)
-    Sel12 :: (Tuply w,
-              Unpack w ~ (a,(b,(c,(d,(e,(f,(g,(h,(i,(j,(k,(l,z))))))))))))
-              ) => Op (w :-> Full l)
-    Sel13 :: (Tuply w,
-              Unpack w ~ (a,(b,(c,(d,(e,(f,(g,(h,(i,(j,(k,(l,(m,z)))))))))))))
-              ) => Op (w :-> Full m)
-    Sel14 :: (Tuply w,
-              Unpack w ~ (a,(b,(c,(d,(e,(f,(g,(h,(i,(j,(k,(l,(m,(n,z))))))))))))))
-              ) => Op (w :-> Full n)
-    Sel15 :: (Tuply w,
-              Unpack w ~ (a,(b,(c,(d,(e,(f,(g,(h,(i,(j,(k,(l,(m,(n,(o,z)))))))))))))))
-              ) => Op (w :-> Full o)
+    Sel1  :: (SelCtx w uw sw usw, Sel1C  uw, Sel1C  usw, Sel1T  usw ~ Size (Sel1T uw))  => Op (w :-> Full (Sel1T  uw))
+    Sel2  :: (SelCtx w uw sw usw, Sel2C  uw, Sel2C  usw, Sel2T  usw ~ Size (Sel2T uw))  => Op (w :-> Full (Sel2T  uw))
+    Sel3  :: (SelCtx w uw sw usw, Sel3C  uw, Sel3C  usw, Sel3T  usw ~ Size (Sel3T uw))  => Op (w :-> Full (Sel3T  uw))
+    Sel4  :: (SelCtx w uw sw usw, Sel4C  uw, Sel4C  usw, Sel4T  usw ~ Size (Sel4T uw))  => Op (w :-> Full (Sel4T  uw))
+    Sel5  :: (SelCtx w uw sw usw, Sel5C  uw, Sel5C  usw, Sel5T  usw ~ Size (Sel5T uw))  => Op (w :-> Full (Sel5T  uw))
+    Sel6  :: (SelCtx w uw sw usw, Sel6C  uw, Sel6C  usw, Sel6T  usw ~ Size (Sel6T uw))  => Op (w :-> Full (Sel6T  uw))
+    Sel7  :: (SelCtx w uw sw usw, Sel7C  uw, Sel7C  usw, Sel7T  usw ~ Size (Sel7T uw))  => Op (w :-> Full (Sel7T  uw))
+    Sel8  :: (SelCtx w uw sw usw, Sel8C  uw, Sel8C  usw, Sel8T  usw ~ Size (Sel8T uw))  => Op (w :-> Full (Sel8T  uw))
+    Sel9  :: (SelCtx w uw sw usw, Sel9C  uw, Sel9C  usw, Sel9T  usw ~ Size (Sel9T uw))  => Op (w :-> Full (Sel9T  uw))
+    Sel10 :: (SelCtx w uw sw usw, Sel10C uw, Sel10C usw, Sel10T usw ~ Size (Sel10T uw)) => Op (w :-> Full (Sel10T uw))
+    Sel11 :: (SelCtx w uw sw usw, Sel11C uw, Sel11C usw, Sel11T usw ~ Size (Sel11T uw)) => Op (w :-> Full (Sel11T uw))
+    Sel12 :: (SelCtx w uw sw usw, Sel12C uw, Sel12C usw, Sel12T usw ~ Size (Sel12T uw)) => Op (w :-> Full (Sel12T uw))
+    Sel13 :: (SelCtx w uw sw usw, Sel13C uw, Sel13C usw, Sel13T usw ~ Size (Sel13T uw)) => Op (w :-> Full (Sel13T uw))
+    Sel14 :: (SelCtx w uw sw usw, Sel14C uw, Sel14C usw, Sel14T usw ~ Size (Sel14T uw)) => Op (w :-> Full (Sel14T uw))
+    Sel15 :: (SelCtx w uw sw usw, Sel15C uw, Sel15C usw, Sel15T usw ~ Size (Sel15T uw)) => Op (w :-> Full (Sel15T uw))
 
     -- | ConditionM
     ConditionM :: (Monad m, Type a) => Op (Bool :-> m a :-> m a :-> Full (m a))
@@ -451,11 +438,10 @@ data Op a where
     For   :: (Monad m, Size (m ()) ~ AnySize) => Op (Length :-> (Index -> m a) :-> Full (m ()))
 
     -- | Mutable
-    Return :: Monad m => Op (a    :-> Full (m a))
-    Bind   :: Monad m => Op (m a  :-> (a -> m b) :-> Full (m b))
-    Then   :: Monad m => Op (m a  :-> m b        :-> Full (m b))
-    When   :: Monad m => Op (Bool :-> m ()       :-> Full (m ()))
-
+    Return :: (Monad m, Size (m a) ~ Size a) => Op (a    :-> Full (m a))
+    Bind   :: (Monad m, Size (m a) ~ Size a) => Op (m a  :-> (a -> m b) :-> Full (m b))
+    Then   :: Monad m                        => Op (m a  :-> m b        :-> Full (m b))
+    When   :: Monad m                        => Op (Bool :-> m ()       :-> Full (m ()))
 
 deriving instance Eq (Op a)
 deriving instance Show (Op a)
