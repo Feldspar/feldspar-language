@@ -86,7 +86,7 @@ resugar = sugar . desugar
 data ASTF (d :: * -> *) a = ASTF (CExpr a) Int
 
 alphaEq :: T.Type a => ASTF d a -> ASTF d a -> Bool
-alphaEq (ASTF (ml,el) _) (ASTF (mr,er) _) = M.toList ml == M.toList mr && el == er
+alphaEq (ASTF (ml,el) _) (ASTF (mr,er) _) = error $ "alphaEq not supported (binding time violation)"
 
 -- | Convert an ASTF to an expression
 unASTF :: TypeF a => b -> ASTF d a -> (AExpr a)
