@@ -94,7 +94,6 @@ instance (Syntax a, Show (Internal a), Hashable (Internal a)) => Show (Vector a)
 --------------------------------------------------------------------------------
 
 indexed :: Data Length -> (Data Index -> a) -> Vector a
-indexed 0 _      = Empty
 indexed l idxFun = Indexed l idxFun Empty
 
 -- | Breaks up a segmented vector into a list of single-segment vectors.
