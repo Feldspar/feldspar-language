@@ -932,6 +932,7 @@ import Feldspar.Core.Representation (AExpr((:&)), Expr((:@)))
 import Control.Monad.State
 import Data.Typeable (Typeable)
 import Feldspar.Core.SizeProp
+import Feldspar.Core.AdjustBindings
 
 -- | External module interface. Untype, optimize and unannotate.
 untype :: TypeF a => FeldOpts -> ASTF dom a -> UntypedFeld
@@ -958,7 +959,7 @@ untypeUnOpt opts = cleanUp opts
 
 -- | Only do the conversion to AUntypedFeld ValueInfo
 justUntype :: TypeF a => FeldOpts -> ASTF dom a -> AUntypedFeld ValueInfo
-justUntype opts = renameExp . toU . sizeProp . unASTF opts
+justUntype opts = renameExp . toU . sizeProp . adjustBindings . unASTF opts
 
 -- | Prepare the code for fromCore
 cleanUp :: FeldOpts -> AUntypedFeld ValueInfo -> UntypedFeld
@@ -1233,7 +1234,7 @@ instance TypeF a => Pretty (ASTF dom a) where
 
 -- | Untype version to use with the new CSE
 untypeProgOpt :: TypeF a => FeldOpts -> ASTF dom a -> AUntypedFeld ValueInfo
-untypeProgOpt opts = toU . sizeProp . unASTF opts
+untypeProgOpt opts = toU . sizeProp . adjustBindings . unASTF opts
 
 -- | Domain synonym to use with new CSE
 type FEDom = FeldDomain

@@ -43,6 +43,7 @@ library
     Feldspar.ValueInfo
   if flag(IncrementalCSE)
    exposed-modules:
+    Feldspar.Core.AdjustBindings
     Feldspar.Core.Eval
     Feldspar.Core.Language
     Feldspar.Core.Reify
