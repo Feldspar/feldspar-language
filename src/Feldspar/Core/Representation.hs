@@ -446,6 +446,24 @@ data Op a where
 deriving instance Eq (Op a)
 deriving instance Show (Op a)
 
+isSelOp :: Op a -> Bool
+isSelOp Sel1  = True
+isSelOp Sel2  = True
+isSelOp Sel3  = True
+isSelOp Sel4  = True
+isSelOp Sel5  = True
+isSelOp Sel6  = True
+isSelOp Sel7  = True
+isSelOp Sel8  = True
+isSelOp Sel9  = True
+isSelOp Sel10 = True
+isSelOp Sel11 = True
+isSelOp Sel12 = True
+isSelOp Sel13 = True
+isSelOp Sel14 = True
+isSelOp Sel15 = True
+isSelOp _     = False
+
 -- | Utility functions
 
 fvi :: AExpr a -> S.Set VarId
@@ -546,8 +564,20 @@ shOp _ = True
 -- | Expressions that are expensive enough to be worth sharing
 goodToShare :: TypeF a => AExpr a -> Bool
 goodToShare (_ :& Literal (l :: a)) = largeLit (typeRepF :: TypeRep a) l
+-- The case below avoids constructing a let-binding for an array stored
+-- in a tuple. This is beneficial because the select operator is order
+-- of magnitudes cheaper than the array copy generated for the let-binding.
+-- With a better compilation of array assignments, the need for this
+-- special case goes away.
+goodToShare (_ :& Operator op :@ e :: AExpr a)
+  | isArrayT (typeRepF :: TypeRep a) && isSelOp op && not (goodToShare e)
+  = False
 goodToShare (_ :& _ :@ _) = True
 goodToShare _                   = False
+
+isArrayT :: TypeRep a -> Bool
+isArrayT (ArrayType _) = True
+isArrayT _             = False
 
 largeLit :: TypeRep a -> a -> Bool
 largeLit UnitType l = False

@@ -577,6 +577,10 @@ prettyExp prA e = render (pr 0 0 e)
         pe p i _ (Lambda v e) = par p 0 $ join $ (line i $ "\\ " ++ pv Nothing v ++ " ->") ++ pr 0 (i+2) e
         pe p i r (App Let t es) = par p 0 $ line i "let" ++ pLet i (AIn r $ App Let t es)
         pe p i r (App f t es) = par p 10 $ join $ (line i $ show f ++ prP t r) ++ pArgs p (i+2) es
+        pe p i r (LetFun (s,k,body) e) = line i ("letfun " ++ show k ++ " " ++ s)
+                                         ++ pr 0 (i+2) body
+                                         ++ line i "in"
+                                         ++ pr 0 (i+2) e
 
         pArgs p i [e@(AIn _ (Lambda _ _))] = pr p i e
         pArgs p i (e:es) = pr 11 i e ++ pArgs p i es
@@ -750,7 +754,6 @@ goodToShare (AIn _ (App _ _ _)) = True
 goodToShare _                   = False
 
 legalToInline :: AUntypedFeld a -> Bool
-legalToInline (AIn _ (App op _ _)) = op `notElem` [MkFuture, ParFork, NoInline]
 legalToInline _                    = True
 
 type Rename a = State VarId a

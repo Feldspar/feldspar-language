@@ -85,4 +85,4 @@ both (OC ll hl) (OC lr hr) = OC (ll+lr) (hl+hr)
 oneOf (OC ll hl) (OC lr hr) = OC (min ll lr) (max hl hr)
 
 norm :: DSCount -> DSCount
-norm ds@(DS (OC l h) s) = DS (OC (min 1 l) (min 1 h)) s
+norm ds@(DS (OC l h) s) = DS (OC (min 1 l) (min 1 h)) (min s 1)

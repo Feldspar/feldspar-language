@@ -34,6 +34,7 @@ appendBag :: Bag a -> Bag a -> Bag a
 appendBag (Bags []) b         = b
 appendBag b         (Bags []) = b
 appendBag l         (Bags rs) = Bags $ l : rs
+appendBag l         (Item r)  = Bags [l, Item r]
 
 concatBags :: [Bag a] -> Bag a
 concatBags = foldr appendBag (Bags [])
@@ -66,6 +67,7 @@ lambda v eb = (Bags [], Lambda v $ toExpr eb)
 
 app :: Op -> Type -> [AExpB a] -> RExpB a
 app Condition t [(b,ec), et, ee] = (b, App Condition t [ec, toExpr et, toExpr ee])
+app p t [be] | p `elem` [MkFuture, ParFork] = (Bags [], App p t [toExpr be])
 app op t es = (concatBags bs, App op t es1)
   where (bs,es1) = unzip es
 
