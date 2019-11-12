@@ -40,6 +40,33 @@
 
 -- | Defines different interpretations of Feldspar programs
 
+{-# LANGUAGE CPP #-}
+
+#if 0
+#define INCREMENTAL_CSE
+#endif
+
+#ifdef INCREMENTAL_CSE
+module Feldspar.Core.Interpretation where
+
+-- | Possible compilation targets in a broad sense.
+data Target = RegionInf | Wool | CSE | SICS | BA
+  deriving Eq
+
+-- | A record with options for explicit passing in rewrite rules.
+data FeldOpts = FeldOpts
+    { targets    :: [Target]
+    }
+
+-- | Default options.
+defaultFeldOpts :: FeldOpts
+defaultFeldOpts = FeldOpts { targets = [] }
+
+-- | Decide whether a Target is enabled in FeldOpts.
+inTarget :: Target -> FeldOpts -> Bool
+inTarget t opts = t `elem` (targets opts)
+
+#else
 module Feldspar.Core.Interpretation
     ( module Language.Syntactic.Constructs.Decoration
     , module Feldspar.Core.Interpretation.Typed
@@ -590,3 +617,5 @@ viewCumulativeDec :: (Cumulative dom)
                   => ASTF (Decor Info (dom :|| Typeable)) a
                   -> [ASTF (Decor Info (dom :|| Typeable)) a]
 viewCumulativeDec = simpleMatch cumulativeDec
+
+#endif

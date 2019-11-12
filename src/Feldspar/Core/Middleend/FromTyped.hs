@@ -19,7 +19,7 @@ module Feldspar.Core.Middleend.FromTyped
 
 import qualified Data.ByteString.Char8 as B
 import Feldspar.Core.Middleend.FromTypeUtil
-import Feldspar.Core.Interpretation (FeldOpts, Info(..))
+import Feldspar.Core.Interpretation (FeldOpts)
 import Feldspar.Core.Middleend.CreateTasks
 import Feldspar.Core.Middleend.LetSinking
 import Feldspar.Core.Middleend.OptimizeUntyped
@@ -40,6 +40,7 @@ import qualified Language.Syntactic.Constructs.Binding as SynBind
 import Language.Syntactic.Constructs.Binding.HigherOrder hiding (Let)
 
 import Feldspar.Range (Range(..), upperBound)
+import Feldspar.Core.Interpretation (Info(..))
 
 import Feldspar.Core.Types
 import Feldspar.Core.Constructs (FeldDom(..))
@@ -937,7 +938,6 @@ import Feldspar.Core.AdjustBindings
 -- | External module interface. Untype, optimize and unannotate.
 untype :: TypeF a => FeldOpts -> ASTF dom a -> UntypedFeld
 untype opts = cleanUp opts
-            . expand
             . pushLets
             . optimize
             . sinkLets opts
@@ -946,7 +946,6 @@ untype opts = cleanUp opts
 -- | External module interface.
 untypeDecor :: TypeF a => FeldOpts -> ASTF dom a -> AUntypedFeld ValueInfo
 untypeDecor opts = id
-                 . expand
                  . pushLets
                  . optimize
                  . sinkLets opts

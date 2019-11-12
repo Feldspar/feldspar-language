@@ -5,6 +5,8 @@ import qualified Data.Set as S
 import Feldspar.Core.UntypedRepresentation
 import Feldspar.ValueInfo (ValueInfo(..))
 import qualified Data.Bits as B
+import Feldspar.Core.Middleend.FromTypeUtil (convSize)
+import Feldspar.Core.Types (BitWidth(..))
 
 -- | General simplification. Could in theory be done at earlier stages.
 optimize :: AUntypedFeld ValueInfo -> AUntypedFeld ValueInfo
@@ -24,6 +26,7 @@ simplify env (AIn r e) = simp env e
         simp env (App Bind t [e1, AIn r2 (Lambda v e2)])
            | typeof v == TupType []
            = simpApp env r Then t [simplify env e1, simplify (extend env v eUnit) e2]
+        simp env (App Condition t [ec, et, ee]) = simpCond env r t (simplify env ec) et ee
         simp env (App p t es) | p `elem` [For, EparFor]
                               = simpLoop env r p t es
         simp env (App op t es) = simpApp env r op t $ map (simplify env) es
@@ -39,6 +42,12 @@ simpLet env rhs (Lambda v eBody)
   | otherwise = simplify (extend env v rhs) eBody
 simpLet env rhs eLam
   = error $ "OptimizeUntyped.simpLet: malformed lambda in let: " ++ show eLam
+
+simpCond :: SM -> ValueInfo -> Type -> AExp -> AExp -> AExp -> AExp
+simpCond env r t ec@(AIn _ (Variable v)) et ee = AIn r $ App Condition t [ec, et1, ee1]
+  where et1 = simplify (extend env v $ aLit $ LBool True)  et
+        ee1 = simplify (extend env v $ aLit $ LBool False) ee
+simpCond env r t ec et ee = simpApp env r Condition t [ec, simplify env et, simplify env ee]
 
 simpLoop :: SM -> ValueInfo -> Op -> Type -> [AExp] -> AExp
 simpLoop env r op t (eTC:es) = go op (simplify env eTC) es
@@ -75,9 +84,12 @@ simpApp env r op t es = go op t es
          | one e2 = e1
          | zero e1 = e1
          | zero e2 = e2
+         | Just (s,n) <- uLogOf t (examine env e1) = AIn r $ App (lshift s) t [e2, n]
+         | Just (s,n) <- uLogOf t (examine env e2) = AIn r $ App (lshift s) t [e1, n]
 
         go Div _ [e1, e2]
          | one e2 = e1
+         | Just (s,n) <- uLogOf t (examine env e2) = AIn r $ App (rshift s) t [e1, n]
 
         go Condition _ [ec, et, ee]
          | Literal (LBool b) <- unwrap ec
@@ -153,8 +165,37 @@ simpApp env r op t es = go op t es
          , n < length es
          = aLit $ es !! n
 
+        -- Tuple copy
+        go Tup t es
+         | (e:es1) <- map (examine env) es
+         , App Sel1 _ [eTup] <- e
+         , typeof eTup == t
+         , and $ zipWith (check eTup) es1 [1 ..]
+         = eTup
+           where check eTup (App op _ [e]) i = e == eTup && lookup op selectTable == Just i
+                 check _    _              _ = False
+
         -- Fall through
         go _ _ _ = eOrig
+
+uLogOf (IntType sgn sz) (Literal (LInt sgn' sz' n))
+  | sz == convSize NNative
+  , n > 0
+  , Just m <- intLog2 n
+  , sgn == sgn' && sz == sz'
+  = Just (sgn, aLit $ LInt sgn sz m)
+uLogOf _ _ = Nothing
+
+intLog2 = il 0
+  where il m 1 = Just m
+        il m n | n `mod` 2 == 0 = il (m+1) (n `div` 2)
+               | otherwise = Nothing
+
+lshift Unsigned = ShiftLU
+lshift Signed   = ShiftL
+
+rshift Unsigned = ShiftRU
+rshift Signed   = ShiftR
 
 convert :: Lit -> Type -> Maybe AExp
 convert (LInt s1 sz1 n) (IntType s2 sz2) = Just $ aLit $ LInt s2 sz2 n
@@ -288,6 +329,7 @@ deadCodeElim = snd . dceA
         dceU (Variable v) = (S.singleton v, Variable v)
         dceU (Literal l) = (S.empty, Literal l)
         dceU (App Let t [eRhs, AIn r (Lambda v eBody)]) = dcLet t (dceA eRhs) r v $ dceA eBody
+        dceU (App Save _ [AIn _ e]) = dceU e
         dceU (App op t es) = let (vss,es1) = unzip $ map dceA es
                               in (S.unions vss, App op t es1)
         dceU (Lambda v e) = let (vs,e1) = dceA e

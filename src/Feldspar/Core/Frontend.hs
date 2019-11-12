@@ -126,8 +126,8 @@ import Feldspar.Core.Interpretation
 import Feldspar.Core.Middleend.FromTyped
 import Feldspar.Core.UntypedRepresentation (VarId, stringTree)
 import Feldspar.Core.Constructs
-import Feldspar.Core.Constructs.Binding (cLambda)
 #ifndef INCREMENTAL_CSE
+import Feldspar.Core.Constructs.Binding (cLambda)
 import Feldspar.Core.Frontend.Array            as Frontend
 import Feldspar.Core.Frontend.Binding          as Frontend
 import Feldspar.Core.Frontend.Bits             as Frontend
@@ -235,6 +235,8 @@ reifyFeldUnOpt _ n = flip evalState 0 .
     .   Syntactic.desugar
     )
 #else
+data Info = Info
+data Decor a (c :: * -> *) d = Decor
 reifyFeldM :: (SyntacticFeld a, MonadState VarId m)
     => FeldOpts
     -> BitWidth n
