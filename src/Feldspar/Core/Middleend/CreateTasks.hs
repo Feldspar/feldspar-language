@@ -28,7 +28,7 @@ go env (In (App p _ [e])) | p `elem` [MkFuture, ParFork] = do
    where vs = fv e
          vs' = map (In . Variable) vs
          p' = mkLam vs e
-         t' = typeof p'
+         t' = FValType $ typeof e
 go env (In (App NoInline _ [p])) = do
   p'' <- go env p'
   i <- freshId
@@ -37,7 +37,7 @@ go env (In (App NoInline _ [p])) = do
    where vs = fv p
          vs' = map (In . Variable) vs
          p' = mkLam vs p
-         t' = typeof p'
+         t' = typeof p
 go env (In (App Parallel t [l, e@(In (Lambda v body))])) | Wool `inTarget` env = do
   p'' <- go env p'
   i <- freshId
