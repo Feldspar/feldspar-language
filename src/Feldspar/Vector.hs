@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -75,16 +74,7 @@ import qualified Prelude as P
 import Feldspar.Core.Syntactic hiding (fold,size)
 import Feldspar hiding (desugar,sugar,resugar)
 import qualified Feldspar as F
-#ifndef INCREMENTAL_CSE
-import Feldspar.Core.Frontend.LoopM
-import Feldspar.Core.Frontend.ConditionM
-import Feldspar.Core.Frontend.Mutable
-import Feldspar.Core.Frontend.MutableArray
-import Feldspar.Core.Frontend.MutableReference
-import Feldspar.Core.Frontend.MutableToPure
-#else
 import Feldspar.Core.Language
-#endif
 import Feldspar.Vector.Shape
 
 import Data.Tuple.Select

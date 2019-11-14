@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 module Main where
 
 -- To generate the golden files use a script similiar to this one
@@ -41,11 +39,7 @@ trickySharing x = (a+b+c) + (a+b) + (a+b+c)
     c = x*7
 
 ref :: Prelude.String -> Prelude.String
-#ifndef INCREMENTAL_CSE
-ref f = "tests/silver/" Prelude.++ f
-#else
 ref f = "tests/gold/" Prelude.++ f
-#endif
 
 tests = testGroup "DecorationTests"
     [ goldenVsFile "example9" (ref "example9.txt") "tests/example9.txt" $ writeFile "tests/example9.txt" $ showDecor example9

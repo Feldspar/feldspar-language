@@ -36,9 +36,6 @@ script:
  - cabal test -j
  - cabal check
  - cabal sdist   # tests that a source-distribution can be generated
- - cabal configure --enable-tests --enable-benchmarks -v2  -f IncrementalCSE # -v2 provides useful information for debugging
- - cabal build -j  # this builds all libraries and executables (including tests/benchmarks)
- - cabal test -j
 
 # Check that the resulting source distribution can be built & installed.
 # If there are no other `.tar.gz` files in `dist`, this can be even simpler:

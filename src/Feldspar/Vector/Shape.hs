@@ -1,18 +1,13 @@
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE TypeOperators     #-}
 {-# LANGUAGE FlexibleInstances #-}
+
 module Feldspar.Vector.Shape where
 
 import qualified Prelude as P
 
 import Feldspar
-#ifndef INCREMENTAL_CSE
-import Feldspar.Core.Frontend.LoopM
-import Feldspar.Core.Frontend.Mutable
-#else
 import Feldspar.Core.Language
-#endif
 
 infixl 3 :.
 data Z

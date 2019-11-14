@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE KindSignatures #-}
 
 --
@@ -42,13 +41,6 @@ module Feldspar.Core.Render
   , showDecorWith
   , drawDecorWith
   ) where
-
-#ifndef INCREMENTAL_CSE
-
-import Language.Syntactic
-import Language.Syntactic.Constructs.Decoration (showDecorWith, drawDecorWith)
-
-#else
 
 import qualified Data.Map.Strict as M
 import Data.Tree
@@ -98,5 +90,3 @@ showDecorWith f = showTree . stringTreeExp g . untypeDecor defaultFeldOpts
 
 drawDecorWith :: (StringTree d, TypeF a) => (ValueInfo -> String) -> ASTF d a -> IO ()
 drawDecorWith f = putStrLn . showDecorWith f
-
-#endif

@@ -3,7 +3,6 @@ module Feldspar.Core.Middleend.FromTypeUtil where
 
 import Data.Complex
 
-import Language.Syntactic
 import Feldspar.Core.Types
 import Feldspar.Core.UntypedRepresentation hiding ( Lambda, UntypedFeldF(..)
                                                   , Size, Type(..), Signedness

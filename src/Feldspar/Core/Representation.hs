@@ -67,7 +67,7 @@ module Feldspar.Core.Representation
   , goodToShare
   ) where
 
-import Language.Syntactic.Constructs.Binding (VarId (..))
+import Feldspar.Core.Interpretation (VarId (..))
 import Feldspar.Core.Types (Type(typeRep,sizeOf), TypeF(..), TypeRep(..), Length, Index, IntN,
                             Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV)
 import Feldspar.Range

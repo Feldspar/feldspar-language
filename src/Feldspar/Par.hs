@@ -26,7 +26,6 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Feldspar.Par
@@ -46,39 +45,8 @@ module Feldspar.Par
   )
 where
 import Feldspar.Core.Constructs (Syntax())
-#ifndef INCREMENTAL_CSE
-import Language.Syntactic (sugarSymC, DenResult, InjectC, AST, ApplySym, SyntacticN)
-
-import Feldspar.Core.Constructs.Par
-import Feldspar.Core.Frontend.Par
-#else
 import Feldspar.Core.Language hiding (pval)
 import Feldspar.Core.Representation
-#endif
-
-#ifndef INCREMENTAL_CSE
-sugarSym0
-    :: ( InjectC sym (AST dom) (DenResult sig)
-       , ApplySym sig b dom
-       , SyntacticN c b
-       )
-    => sym sig -> c
-sugarSym0 = sugarSymC
-sugarSym1
-    :: ( InjectC sym (AST dom) (DenResult sig)
-       , ApplySym sig b dom
-       , SyntacticN c b
-       )
-    => sym sig -> c
-sugarSym1 = sugarSymC
-sugarSym2
-    :: ( InjectC sym (AST dom) (DenResult sig)
-       , ApplySym sig b dom
-       , SyntacticN c b
-       )
-    => sym sig -> c
-sugarSym2 = sugarSymC
-#endif
 
 runPar :: Syntax a => P a -> a
 runPar = sugarSym1 ParRun

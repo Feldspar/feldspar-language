@@ -27,10 +27,6 @@ extra-source-files:
   examples/Examples/Simple/Basics.hs
   examples/Tutorial/*.lhs
 
-Flag IncrementalCSE
-  Description: Build with the new incremental CSE
-  Default: False
-
 source-repository head
   type:     git
   location: git://github.com/Feldspar/feldspar-language.git
@@ -41,8 +37,6 @@ library
     Feldspar.Lattice
     Feldspar.Range
     Feldspar.ValueInfo
-  if flag(IncrementalCSE)
-   exposed-modules:
     Feldspar.Core.AdjustBindings
     Feldspar.Core.Eval
     Feldspar.Core.Language
@@ -51,7 +45,6 @@ library
     Feldspar.Core.Representation
     Feldspar.Core.Semantics
     Feldspar.Core.SizeProp
-  exposed-modules:
     Feldspar.Core.Syntactic
     Feldspar.Core.Tuple
     Feldspar.Core.Types
@@ -66,80 +59,8 @@ library
     Feldspar.Core.Middleend.PassManager
     Feldspar.Core.Middleend.PushLets
     Feldspar.Core.Middleend.UniqueVars
-    Feldspar.Core.Interpretation.Typed
     Feldspar.Core.Interpretation
-  if !flag(IncrementalCSE)
-   exposed-modules:
-    Feldspar.Core.Constructs.Array
-    Feldspar.Core.Constructs.Binding
-    Feldspar.Core.Constructs.Bits
-    Feldspar.Core.Constructs.Complex
-    Feldspar.Core.Constructs.Condition
-    Feldspar.Core.Constructs.ConditionM
-    Feldspar.Core.Constructs.Conversion
-    Feldspar.Core.Constructs.Eq
-    Feldspar.Core.Constructs.Error
-    Feldspar.Core.Constructs.Elements
-    Feldspar.Core.Constructs.Floating
-    Feldspar.Core.Constructs.Fractional
-    Feldspar.Core.Constructs.Future
-    Feldspar.Core.Constructs.Integral
-    Feldspar.Core.Constructs.Literal
-    Feldspar.Core.Constructs.Logic
-    Feldspar.Core.Constructs.Loop
-    Feldspar.Core.Constructs.Mutable
-    Feldspar.Core.Constructs.MutableArray
-    Feldspar.Core.Constructs.MutableReference
-    Feldspar.Core.Constructs.MutableToPure
-    Feldspar.Core.Constructs.NoInline
-    Feldspar.Core.Constructs.Par
-    Feldspar.Core.Constructs.Num
-    Feldspar.Core.Constructs.Ord
-    Feldspar.Core.Constructs.SizeProp
-    Feldspar.Core.Constructs.SourceInfo
-    Feldspar.Core.Constructs.Switch
-    Feldspar.Core.Constructs.RealFloat
-    Feldspar.Core.Constructs.Tuple
-    Feldspar.Core.Constructs.FFI
-    Feldspar.Core.Constructs.Save
-  exposed-modules:
     Feldspar.Core.Constructs
-  if !flag(IncrementalCSE)
-   exposed-modules:
-    Feldspar.Core.Frontend.Array
-    Feldspar.Core.Frontend.Binding
-    Feldspar.Core.Frontend.Bits
-    Feldspar.Core.Frontend.Complex
-    Feldspar.Core.Frontend.Condition
-    Feldspar.Core.Frontend.ConditionM
-    Feldspar.Core.Frontend.Conversion
-    Feldspar.Core.Frontend.Elements
-    Feldspar.Core.Frontend.Eq
-    Feldspar.Core.Frontend.Error
-    Feldspar.Core.Frontend.Floating
-    Feldspar.Core.Frontend.Fractional
-    Feldspar.Core.Frontend.Future
-    Feldspar.Core.Frontend.Integral
-    Feldspar.Core.Frontend.Literal
-    Feldspar.Core.Frontend.Logic
-    Feldspar.Core.Frontend.Loop
-    Feldspar.Core.Frontend.LoopM
-    Feldspar.Core.Frontend.Mutable
-    Feldspar.Core.Frontend.MutableArray
-    Feldspar.Core.Frontend.MutableReference
-    Feldspar.Core.Frontend.MutableToPure
-    Feldspar.Core.Frontend.NoInline
-    Feldspar.Core.Frontend.Par
-    Feldspar.Core.Frontend.Num
-    Feldspar.Core.Frontend.Ord
-    Feldspar.Core.Frontend.SizeProp
-    Feldspar.Core.Frontend.SourceInfo
-    Feldspar.Core.Frontend.Switch
-    Feldspar.Core.Frontend.RealFloat
-    Feldspar.Core.Frontend.Tuple
-    Feldspar.Core.Frontend.FFI
-    Feldspar.Core.Frontend.Save
-  exposed-modules:
     Feldspar.Core.Frontend
     Feldspar.Core.Collection
     Feldspar.Core
@@ -163,9 +84,6 @@ library
     Feldspar.Algorithm.FFT.Push
     Feldspar.Algorithm.FFT.Twids
     Feldspar.Algorithm.FFT.Utils
-  if !flag(IncrementalCSE)
-   exposed-modules:
-    Language.Syntactic.Sharing.SimpleCodeMotion3
 
   default-language: Haskell2010
 
@@ -180,7 +98,6 @@ library
     QuickCheck                  >= 2.7    && < 3,
     patch-combinators           >= 0.2    && < 0.3,
     prelude-edsl                             < 0.4,
-    syntactic                   >= 1.17   && < 2.0,
     tagged                      >= 0.4    && < 0.9,
     tuple                       >= 0.2    && < 0.5,
     tuple-th,
@@ -213,9 +130,6 @@ library
   hs-source-dirs: src examples
 
   ghc-options: -fcontext-stack=100
-
-  if flag(IncrementalCSE)
-    cpp-options: -DINCREMENTAL_CSE
 
 test-suite range
   type: exitcode-stdio-1.0
@@ -280,9 +194,6 @@ test-suite decoration
     tasty                 >= 0.3,
     tasty-golden          >= 2.3,
     utf8-string           >= 0.3.7
-
-  if flag(IncrementalCSE)
-    cpp-options: -DINCREMENTAL_CSE
 
 test-suite tutorial
   type: exitcode-stdio-1.0
