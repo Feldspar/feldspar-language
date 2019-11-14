@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -42,151 +41,17 @@
 module Feldspar.Core.Constructs where
 
 import Data.Typeable
-
-#ifndef INCREMENTAL_CSE
-import Language.Syntactic
-import Language.Syntactic.Constructs.Binding.HigherOrder
-#else
 import Feldspar.Core.Syntactic
-#endif
 
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
-#ifndef INCREMENTAL_CSE
-import Feldspar.Core.Constructs.Array
-import Feldspar.Core.Constructs.Binding
-import Feldspar.Core.Constructs.Bits
-import Feldspar.Core.Constructs.Complex
-import Feldspar.Core.Constructs.Condition
-import Feldspar.Core.Constructs.ConditionM
-import Feldspar.Core.Constructs.Conversion
-import Feldspar.Core.Constructs.Elements
-import Feldspar.Core.Constructs.Eq
-import Feldspar.Core.Constructs.Error
-import Feldspar.Core.Constructs.FFI
-import Feldspar.Core.Constructs.Floating
-import Feldspar.Core.Constructs.Fractional
-import Feldspar.Core.Constructs.Future
-import Feldspar.Core.Constructs.Integral
-import Feldspar.Core.Constructs.Literal
-import Feldspar.Core.Constructs.Logic
-import Feldspar.Core.Constructs.Loop
-import Feldspar.Core.Constructs.Mutable
-import Feldspar.Core.Constructs.MutableArray
-import Feldspar.Core.Constructs.MutableReference
-import Feldspar.Core.Constructs.MutableToPure
-import Feldspar.Core.Constructs.NoInline
-import Feldspar.Core.Constructs.Par
-import Feldspar.Core.Constructs.Num
-import Feldspar.Core.Constructs.Ord
-import Feldspar.Core.Constructs.Save
-import Feldspar.Core.Constructs.Switch
-import Feldspar.Core.Constructs.SizeProp
-import Feldspar.Core.Constructs.SourceInfo
-import Feldspar.Core.Constructs.RealFloat
-import Feldspar.Core.Constructs.Tuple
-#endif
 
 --------------------------------------------------------------------------------
 -- * Domain
 --------------------------------------------------------------------------------
 
-#ifndef INCREMENTAL_CSE
-type FeldSymbols
-    =   (Decor SourceInfo1 Identity :|| Type)
-    :+: (Condition  :|| Type)
-    :+: (FFI        :|| Type)
-    :+: (Literal    :|| Type)
-    :+: (Select     :|| Type)
-    :+: (Tuple      :|| Type)
-    :+: (Array      :|| Type)
-    :+: (BITS       :|| Type)
-    :+: (COMPLEX    :|| Type)
-    :+: (Conversion :|| Type)
-    :+: (EQ         :|| Type)
-    :+: (Error      :|| Type)
-    :+: (FLOATING   :|| Type)
-    :+: (REALFLOAT  :|| Type)
-    :+: (FRACTIONAL :|| Type)
-    :+: (FUTURE     :|| Type)
-    :+: (INTEGRAL   :|| Type)
-    :+: (Logic      :|| Type)
-    :+: (Loop       :|| Type)
-    :+: (NUM        :|| Type)
-    :+: (NoInline   :|| Type)
-    :+: (ORD        :|| Type)
-    :+: (PropSize   :|| Type)
-    :+: (Save       :|| Type)
-    :+: (Switch     :|| Type)
-    :+: Let
-    :+: ConditionM Mut
-    :+: LoopM Mut
-    :+: MONAD Mut
-    :+: Mutable
-    :+: MutableArray
-    :+: MutableReference
-    :+: MutableToPure
-    :+: MONAD Par
-    :+: ParFeature
-    :+: ElementsFeat
-    :+: Empty
-
--- TODO We are currently a bit inconsistent in that `Type` constraints are sometimes attached
---      separately using `(:||)` and sometimes baked into the symbol type. `Mutable` and
---      `MutableToPure` (at least) have `Type` baked in. Note that `(MutableToPure :|| Type)` would
---      currently not work, since `WithArray` has monadic result type.
-
-type FeldDom = FODomain FeldSymbols Typeable Type
-
-newtype FeldDomain a = FeldDomain { getFeldDomain :: HODomain FeldSymbols Typeable Type a }
-
-#else
-
 data FeldDomain a = FeldDomain
 data FeldDom a = FeldDom
-
-#endif
-
--- Note: `FeldDomain` is a newtype in order to hide the large `FeldSymbols` type to the user.
--- Previously, we also had separate instances of the `Syntax` class for each type, but that doesn't
--- seem to be needed anymore. Type errors seem to have improved since `Domain` was made an
--- associated type of the `Syntactic` class rather than a functional dependency.
---
--- Here are some programs that have previously resulted in horribly long error messages:
---
---     drawAST map
---     drawAST (map (+))
---     drawAST (map (+1))
---     drawAST (forLoop 10 0 (const (+id)))
-
-#ifndef INCREMENTAL_CSE
-
-instance Constrained FeldDomain
-  where
-    type Sat FeldDomain = Typeable
-    exprDict (FeldDomain s) = exprDict s
-
-deriving instance (Project sym FeldSymbols) => Project sym FeldDomain
-
-instance (InjectC sym FeldSymbols a, Typeable a) => InjectC sym FeldDomain a
-  where
-    injC = FeldDomain . injC
-
-toFeld :: ASTF (HODomain FeldSymbols Typeable Type) a -> ASTF FeldDomain a
-toFeld = fold $ appArgs . Sym . FeldDomain
-  -- TODO Use unsafeCoerce?
-
-fromFeld :: ASTF FeldDomain a -> ASTF (HODomain FeldSymbols Typeable Type) a
-fromFeld = fold $ appArgs . Sym . getFeldDomain
-  -- TODO Use unsafeCoerce?
-
-instance IsHODomain FeldDomain Typeable Type
-  where
-    lambda f = case lambda (fromFeld . f . toFeld) of
-        Sym s -> Sym (FeldDomain s)
-
-
-#endif
 
 --------------------------------------------------------------------------------
 -- * Front end
@@ -218,13 +83,8 @@ instance (SyntacticFeld a, Type (Internal a)) => Syntax a
   -- The type error is not very readable now either, but at least it fits on the
   -- screen.
 
-#ifndef INCREMENTAL_CSE
-reifyF :: SyntacticFeld a => a -> ASTF FeldDom (Internal a)
-reifyF = reifyTop . fromFeld . desugar
-#else
 reifyF :: SyntacticFeld a => a -> ASTF FeldDomain (Internal a)
 reifyF = desugar
-#endif
 
 instance Type a => Eq (Data a)
   where
@@ -233,18 +93,3 @@ instance Type a => Eq (Data a)
 instance Type a => Show (Data a)
   where
     show = render . reifyF . unData
-
-#ifndef INCREMENTAL_CSE
-sugarSymF :: ( ApplySym sig b FeldDomain
-             , SyntacticN c b
-             , InjectC (feature :|| Type) (HODomain FeldSymbols Typeable Type) (DenResult sig)
-             , Type (DenResult sig)
-             )
-          => feature sig -> c
-sugarSymF sym = sugarN $ appSym' $ Sym $ FeldDomain $ injC $ c' sym
-
--- | Create a variable from an identifier
-mkVariable :: Type a => Integer -> Data a
-mkVariable v = sugarSymF (Variable (fromInteger v))
-
-#endif

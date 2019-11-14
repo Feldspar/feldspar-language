@@ -1,7 +1,6 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE CPP #-}
 
 -- | Mutable data structures, etc.
 
@@ -24,24 +23,11 @@ module Feldspar.Mutable
   , freezeMDArr
   ) where
 
-
-
 import qualified Prelude
 
 import Feldspar
-#ifndef INCREMENTAL_CSE
-import Feldspar.Core.Frontend.Mutable          as Mutable
-import Feldspar.Core.Frontend.MutableArray     as Mutable
-import Feldspar.Core.Frontend.MutableReference as Mutable
-import Feldspar.Core.Frontend.MutableToPure    as Mutable
-import Feldspar.Core.Frontend.ConditionM       as Mutable
-import Feldspar.Core.Frontend.LoopM            as Mutable
-#else
 import Feldspar.Core.Language                  as Mutable
-#endif
 import Feldspar.Vector
-
-
 
 -- | Indexable cyclic buffer
 data Buffer a = Buffer

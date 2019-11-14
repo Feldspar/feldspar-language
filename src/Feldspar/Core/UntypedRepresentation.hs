@@ -65,7 +65,7 @@ import Data.Tree
 import Data.Int
 import Data.Word
 
-import Language.Syntactic.Constructs.Binding (VarId (..))
+import Feldspar.Core.Interpretation (VarId (..))
 
 import Feldspar.Range (Range(..), singletonRange, fullRange, emptyRange)
 import Feldspar.Core.Types (Length)

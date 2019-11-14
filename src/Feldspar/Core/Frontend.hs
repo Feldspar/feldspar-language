@@ -102,23 +102,11 @@ import Data.Patch
 import Data.Tree.View
 import Data.Hash
 
-#ifndef INCREMENTAL_CSE
-import Language.Syntactic hiding
-    (desugar, sugar, resugar, showAST, drawAST, writeHtmlAST, stringTree)
-import qualified Language.Syntactic as Syntactic
-import qualified Language.Syntactic.Constructs.Decoration as Syntactic
-import Language.Syntactic.Constructs.Binding
-import Language.Syntactic.Constructs.Binding.HigherOrder
-import Language.Syntactic.Sharing.SimpleCodeMotion
-import Language.Syntactic.Sharing.CodeMotion2
-import Language.Syntactic.Sharing.SimpleCodeMotion3
-#else
 import qualified Feldspar.Core.Syntactic as Syntactic
 import qualified Feldspar.Core.Render as Syntactic
 import Feldspar.Core.Syntactic hiding (showAST, drawAST, writeHtmlAST, desugar, sugar, resugar)
 import Feldspar.Core.Reify (unASTF)
 import Feldspar.Core.Render (StringTree)
-#endif
 
 import Feldspar.Range
 import Feldspar.Core.Types
@@ -126,115 +114,8 @@ import Feldspar.Core.Interpretation
 import Feldspar.Core.Middleend.FromTyped
 import Feldspar.Core.UntypedRepresentation (VarId, stringTree)
 import Feldspar.Core.Constructs
-#ifndef INCREMENTAL_CSE
-import Feldspar.Core.Constructs.Binding (cLambda)
-import Feldspar.Core.Frontend.Array            as Frontend
-import Feldspar.Core.Frontend.Binding          as Frontend
-import Feldspar.Core.Frontend.Bits             as Frontend
-import Feldspar.Core.Frontend.Complex          as Frontend
-import Feldspar.Core.Frontend.Condition        as Frontend
-import Feldspar.Core.Frontend.Conversion       as Frontend
-import Feldspar.Core.Frontend.Elements         as Frontend
-import Feldspar.Core.Frontend.Eq               as Frontend
-import Feldspar.Core.Frontend.Error            as Frontend
-import Feldspar.Core.Frontend.FFI              as Frontend
-import Feldspar.Core.Frontend.Floating         as Frontend
-import Feldspar.Core.Frontend.Fractional       as Frontend
-import Feldspar.Core.Frontend.Future           as Frontend
-import Feldspar.Core.Frontend.Integral         as Frontend
-import Feldspar.Core.Frontend.Literal          as Frontend
-import Feldspar.Core.Frontend.Logic            as Frontend
-import Feldspar.Core.Frontend.Loop             as Frontend
-import Feldspar.Core.Frontend.NoInline         as Frontend
-import Feldspar.Core.Frontend.Num              as Frontend
-import Feldspar.Core.Frontend.Ord              as Frontend
-import Feldspar.Core.Frontend.Par              as Frontend
-import Feldspar.Core.Frontend.Save             as Frontend
-import Feldspar.Core.Frontend.SizeProp         as Frontend
-import Feldspar.Core.Frontend.SourceInfo       as Frontend
-import Feldspar.Core.Frontend.Switch           as Frontend
-import Feldspar.Core.Frontend.RealFloat        as Frontend
-import Feldspar.Core.Frontend.Tuple            as Frontend
-#else
 import Feldspar.Core.Language                  as Frontend
-#endif
 
-#ifndef INCREMENTAL_CSE
-prjDict :: PrjDict (Decor Info FeldDom)
-prjDict = PrjDict
-    (prjVariable prjDictFO . decorExpr)
-    (prjLambda   prjDictFO . decorExpr)
-
-mkId :: FeldOpts -> MkInjDict (Decor Info FeldDom)
-mkId opts a b
-  | simpleMatch (const . sharable) a
-  , Just Dict <- typeDict a
-  , Dict <- exprDictSub pTypeable b
-  , Info {infoType = bType} <- getInfo b
-  = case bType of
-      FunType{} | P.not (SICS `inTarget` opts) -> Nothing
-      _         -> Just InjDict
-                            { injVariable = Decor (getInfo a) . injC . c' . Variable
-                            , injLambda   = let info = ((mkInfoTy (FunType typeRep bType)) {infoSize = (infoSize (getInfo a), infoSize (getInfo b))})
-                                            in Decor info . injC . cLambda
-                            , injLet      = Decor (getInfo b) $ injC Let
-                            }
-mkId _ _ _ = Nothing
-
-
-hoister opts
- | CSE `inTarget` opts
- = cm1 . optimize opts . stripDecor <=< cm2
- | otherwise = cm3
-  where cm1 = codeMotion (simpleMatch (const . hoistOver)) prjDict (mkId opts)
-        cm2 = codeMotion2 (simpleMatch (const . hoistOver)) prjDict (mkId opts)
-        cm3 = codeMotion3 10 (simpleMatch (const . hoistOver)) prjDict (mkId opts) mkSubEnvDefault
-#endif
-
-#ifndef INCREMENTAL_CSE
-reifyFeldM :: (SyntacticFeld a, MonadState VarId m)
-    => FeldOpts
-    -> BitWidth n
-    -> a
-    -> m (ASTF (Decor Info FeldDom) (Internal a))
-reifyFeldM opts n =
-    (   return
-    .   optimize opts
-    .   stripDecor
-    <=< hoister opts
-    .   optimize opts
-    .   targetSpecialization n
-    <=< reifyM
-    .   fromFeld
-    .   Syntactic.desugar
-    )
-  -- Note that it's important to do 'codeMotion' after 'optimize'. There may be
-  -- sub-expressions that appear more than once in the original program, but
-  -- where 'optimize' removes all but one occurrence. If 'codeMotion' was run
-  -- first, these sub-expressions would be let bound, preventing subsequent
-  -- optimizations.
-
--- | Reification and optimization of a Feldspar program
-reifyFeld :: SyntacticFeld a
-    => FeldOpts
-    -> BitWidth n
-    -> a
-    -> ASTF (Decor Info FeldDom) (Internal a)
-reifyFeld opts n = flip evalState 0 . reifyFeldM opts n
-
--- | Reification of a Feldspar program
-reifyFeldUnOpt :: SyntacticFeld a
-    => FeldOpts -> BitWidth n
-    -> a
-    -> ASTF FeldDom (Internal a)
-reifyFeldUnOpt _ n = flip evalState 0 .
-    (   return
-    .   targetSpecialization n
-    <=< reifyM
-    .   fromFeld
-    .   Syntactic.desugar
-    )
-#else
 data Info = Info
 data Decor a (c :: * -> *) d = Decor
 reifyFeldM :: (SyntacticFeld a, MonadState VarId m)
@@ -260,7 +141,6 @@ reifyFeldUnOpt :: Syntactic a
 reifyFeldUnOpt = reifyFeld
 
 instance StringTree FeldDomain where
-#endif
 
 showExpr :: SyntacticFeld a => a -> String
 showExpr = render . reifyFeld defaultFeldOpts N32
