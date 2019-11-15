@@ -137,11 +137,11 @@ data AExpr a = (:&) {aeInfo :: Info a, aeExpr :: Expr (Full a)}
 instance (Eq (Size a), Typeable a) => Eq (AExpr a) where
   (:&) il el == (:&) ir er = il == ir && el == er
 
-instance Show (AExpr a) where
+instance Show (Size a) => Show (AExpr a) where
   show e = showAExpr 0 e ""
 
-showAExpr :: Int -> AExpr a -> String -> String
-showAExpr n (_ :& e) r = showExpr n e r
+showAExpr :: Show (Size a) => Int -> AExpr a -> String -> String
+showAExpr n (i :& e) r = "{" ++ show (infoSize i) ++ "} " ++ showExpr n e r
 
 type LiteralType a = (Hashable a, Type a)
 type ExprCtx a = (TypeF a)
@@ -165,10 +165,10 @@ exprType _ = typeRepF
 literal :: LiteralType a => a -> AExpr a
 literal x = Info (sizeOf x) :& Literal x
 
-instance Show (Expr a) where
+instance Show (Size a) => Show (Expr a) where
   show e = showExpr 0 e ""
 
-showExpr :: Int -> Expr a -> String -> String
+showExpr :: Show (Size a) => Int -> Expr a -> String -> String
 showExpr _ (Literal l)    r = show l ++ r
 showExpr _ (Operator op)  r = show op ++ r
 showExpr _ (Variable v)   r = "v" ++ show (varNum v) ++ r
@@ -335,7 +335,7 @@ data Op a where
 
     -- | MutableToPure
     RunMutableArray :: Type a => Op (Mut (MArr a) :-> Full [a])
-    WithArray       :: Type b => Op (MArr a :-> ([a] -> Mut b) :-> Full (Mut b))
+    WithArray       :: (Type a, Type b) => Op (MArr a :-> ([a] -> Mut b) :-> Full (Mut b))
 
     -- | MutableReference
     NewRef :: Type a => Op (a :-> Full (Mut (IORef a)))
@@ -438,10 +438,10 @@ data Op a where
     For   :: (Monad m, Size (m ()) ~ AnySize) => Op (Length :-> (Index -> m a) :-> Full (m ()))
 
     -- | Mutable
-    Return :: (Monad m, Size (m a) ~ Size a) => Op (a    :-> Full (m a))
-    Bind   :: (Monad m, Size (m a) ~ Size a) => Op (m a  :-> (a -> m b) :-> Full (m b))
-    Then   :: Monad m                        => Op (m a  :-> m b        :-> Full (m b))
-    When   :: Monad m                        => Op (Bool :-> m ()       :-> Full (m ()))
+    Return :: (Monad m, Size (m a) ~ Size a)         => Op (a    :-> Full (m a))
+    Bind   :: (Monad m, Size (m a) ~ Size a, Type a) => Op (m a  :-> (a -> m b) :-> Full (m b))
+    Then   :: Monad m                                => Op (m a  :-> m b        :-> Full (m b))
+    When   :: Monad m                                => Op (Bool :-> m ()       :-> Full (m ()))
 
 deriving instance Eq (Op a)
 deriving instance Show (Op a)

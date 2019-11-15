@@ -48,19 +48,19 @@ import Feldspar.Lattice
 import Data.Typeable (Typeable)
 import qualified Data.Map as M
 
-look :: Typeable a => BindEnv -> Var a -> AExpr a
+look :: TypeF a => BindEnv -> Var a -> AExpr a
 look vm v = lookupBE "SizeProp.look" vm v
 
 extend :: TypeF a => BindEnv -> Var a -> Info a -> BindEnv
 extend vm v info = extendBE vm $ CBind v $ info :& Variable v
 
-sizeProp :: (Typeable a) => AExpr a -> AExpr a
+sizeProp :: TypeF a => AExpr a -> AExpr a
 sizeProp = spA M.empty
 
-spA :: Typeable a => BindEnv -> AExpr a -> AExpr a
+spA :: TypeF a => BindEnv -> AExpr a -> AExpr a
 spA vm (_ :& e) = spApp vm e
 
-spApp :: Typeable a => BindEnv -> Expr a -> AExpr a
+spApp :: TypeF a => BindEnv -> Expr a -> AExpr a
 -- | Variables and literals
 spApp vm (Variable v) = look vm v
 spApp vm (Literal l)  = literal l
@@ -489,8 +489,6 @@ topF = undefined
 finalInfo :: Lattice (Size a) => AExpr a -> Size a -> Info a
 finalInfo e s = Info $ exprSize e \/ s
 
-type Ctx a = (Typeable a, TypeF a)
-
 -- | Indexed loops without state (Parallel, EparFor, ...)
 spLoI :: BindEnv -> Op (Length -> (Index -> b) -> u)
       -> (Size Index -> Size b -> Size u)
@@ -502,20 +500,21 @@ spLoI vm op f a (_ :& Lambda v e) = Info (f i $ exprSize e1) :& Operator op :@ a
         e1 = spA (extend vm v $ Info i) e
 
 -- | Helper for binds
-spBind :: (Typeable a, Size a ~ Size b)
+spBind :: (TypeF a, TypeF b, TypeF c, Size a ~ Size b)
         => BindEnv -> AExpr a -> AExpr (b -> c) -> (Info c, AExpr a, AExpr (b -> c))
 spBind vm a f = (Info bs, a1, f1)
   where a1  = spA vm a
         (bs,f1) = spLambda vm (exprSize a1) f
 
 -- | Helper for lambdas
-spLambda :: BindEnv -> Size a -> AExpr (a -> b) -> (Size b, AExpr (a -> b))
+spLambda :: (TypeF a, TypeF b) => BindEnv -> Size a -> AExpr (a -> b) -> (Size b, AExpr (a -> b))
 spLambda vm s (_ :& Lambda v e) = (exprSize e1, Info (s, exprSize e1) :& Lambda v e1)
   where e1 = spA (extend vm v $ Info s) e
 spLambda _  _ e = error $ "SizeProp.spLambda: not a lambda abstraction: " ++ show e
 
 -- | Helper for two levels of lambdas
-spLambda2 :: BindEnv -> Size a -> Size b -> AExpr (a -> b -> c) -> (Size c, AExpr (a -> b -> c))
+spLambda2 :: (TypeF a, TypeF b, TypeF c)
+          => BindEnv -> Size a -> Size b -> AExpr (a -> b -> c) -> (Size c, AExpr (a -> b -> c))
 spLambda2 vm s t (_ :& Lambda v (_ :& Lambda w e)) = (exprSize e1, f1)
   where e1 = spA (extend (extend vm v $ Info s) w $ Info t) e
         u1 = (t, exprSize e1)
@@ -527,13 +526,13 @@ spApp0 :: BindEnv -> Op u -> Size u -> AExpr u
 spApp0 vm op s = Info s :& Operator op
 
 -- | Unary applications
-spApp1 :: Ctx a => BindEnv -> Op (a -> u) -> (Size a -> Size u) -> AExpr a -> AExpr u
+spApp1 :: (TypeF a, TypeF u) => BindEnv -> Op (a -> u) -> (Size a -> Size u) -> AExpr a -> AExpr u
 spApp1 vm op f a = Info (f ai) :& Operator op :@ a1
   where a1 = spA vm a
         ai = infoSize $ aeInfo a1
 
 -- | Binary applications
-spApp2 :: (Ctx a, Ctx b)
+spApp2 :: (TypeF a, TypeF b, TypeF u)
        => BindEnv -> Op (a -> b -> u) -> (Size a -> Size b -> Size u) -> AExpr a -> AExpr b -> AExpr u
 spApp2 vm op f a b = Info (f ai bi) :& Operator op :@ a1 :@ b1
   where a1 = spA vm a
@@ -542,7 +541,7 @@ spApp2 vm op f a b = Info (f ai bi) :& Operator op :@ a1 :@ b1
         bi = infoSize $ aeInfo b1
 
 -- | Ternary applications
-spApp3 :: (Ctx a, Ctx b, Ctx c)
+spApp3 :: (TypeF a, TypeF b, TypeF c, TypeF u)
        => BindEnv -> Op (a -> b -> c -> u)
        -> (Size a -> Size b -> Size c -> Size u)
        -> AExpr a -> AExpr b -> AExpr c

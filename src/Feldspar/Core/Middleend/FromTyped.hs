@@ -338,7 +338,7 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
   pretty = prettyExp f
      where f t x = " | " ++ prettyInfo t x
 
-instance Pretty (AExpr a) where
+instance TypeF a => Pretty (AExpr a) where
   pretty = show
 
 instance TypeF a => Pretty (ASTF dom a) where
