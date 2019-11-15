@@ -1301,7 +1301,7 @@ typeRepByProxy :: Type a => Proxy a -> TypeRep a
 typeRepByProxy _ = typeRep
 
 -- | Extend the class Type to higher order types
-class (Typeable a, Lattice (Size a)) => TypeF a where
+class (Typeable a, Show (Size a), Lattice (Size a)) => TypeF a where
   typeRepF :: TypeRep a
 
 instance {-# OVERLAPPING #-} (TypeF a, TypeF b) => TypeF (a -> b) where
