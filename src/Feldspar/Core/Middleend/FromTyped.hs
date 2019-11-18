@@ -309,7 +309,10 @@ trOp R.Tup15           = Tup
 
 -- | Enumeration of front end passes
 data FrontendPass
-     = FPUntype
+     = FPUnASTF
+     | FPAdjustBind
+     | FPSizeProp
+     | FPUntype
      | FPRename
      | FPSinkLets
      | FPOptimize
@@ -345,8 +348,8 @@ instance TypeF a => Pretty (ASTF dom a) where
   pretty = pretty . unASTF ()
 
 -- | Untype version to use with the new CSE
-untypeProgOpt :: TypeF a => FeldOpts -> ASTF dom a -> AUntypedFeld ValueInfo
-untypeProgOpt opts = toU . sizeProp . adjustBindings . unASTF opts
+untypeProgOpt :: TypeF a => FeldOpts -> AExpr a -> AUntypedFeld ValueInfo
+untypeProgOpt opts = toU
 
 -- | Domain synonym to use with new CSE
 type FEDom = FeldDomain
@@ -363,6 +366,9 @@ frontend ctrl opts = evalPasses 0
                    . pc FPSinkLets         (sinkLets opts)
                    . pc FPRename           renameExp
                    . pt FPUntype           (untypeProgOpt opts)
+                   . pc FPSizeProp         sizeProp
+                   . pc FPAdjustBind       adjustBindings
+                   . pt FPUnASTF           (unASTF opts)
   where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
         pc = passC ctrl
         pt :: (Pretty a, Pretty b) => FrontendPass -> (a -> b) -> Prog a Int -> Prog b Int
