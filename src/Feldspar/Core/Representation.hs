@@ -69,7 +69,7 @@ module Feldspar.Core.Representation
 
 import Feldspar.Core.Interpretation (VarId (..))
 import Feldspar.Core.Types (Type(typeRep,sizeOf), TypeF(..), TypeRep(..), Length, Index, IntN,
-                            Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV)
+                            Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV, Tuple(..), RTuple, (:*), TNil)
 import Feldspar.Range
 import Feldspar.Lattice (Lattice(..))
 
@@ -137,11 +137,11 @@ data AExpr a = (:&) {aeInfo :: Info a, aeExpr :: Expr (Full a)}
 instance (Eq (Size a), Typeable a) => Eq (AExpr a) where
   (:&) il el == (:&) ir er = il == ir && el == er
 
-instance Show (Size a) => Show (AExpr a) where
+instance TypeF a => Show (AExpr a) where
   show e = showAExpr 0 e ""
 
-showAExpr :: Show (Size a) => Int -> AExpr a -> String -> String
-showAExpr n (i :& e) r = "{" ++ show (infoSize i) ++ "} " ++ showExpr n e r
+showAExpr :: TypeF a => Int -> AExpr a -> String -> String
+showAExpr n (i :& e) r = "{" ++ show (infoSize i) ++ " : " ++ show (exprType e) ++ "} " ++ showExpr n e r
 
 type LiteralType a = (Hashable a, Type a)
 type ExprCtx a = (TypeF a)
@@ -342,6 +342,14 @@ data Op a where
     GetRef :: Type a => Op (IORef a :-> Full (Mut a))
     SetRef :: Type a => Op (IORef a :-> a :-> Full (Mut ()))
     ModRef :: Type a => Op (IORef a :-> (a -> a) :-> Full (Mut ()))
+
+    -- | Nested tuples
+    Cons  :: Type a => Op (a :-> RTuple b :-> Full (RTuple (a :* b)))
+    Nil   ::           Op (Full (RTuple TNil))
+    Car   :: Type a => Op (RTuple (a :* b) :-> Full a)
+    Cdr   ::           Op (RTuple (a :* b) :-> Full (RTuple b))
+    Tup   ::           Op (RTuple a :-> Full (Tuple a))
+    UnTup ::           Op (Tuple a :-> Full (RTuple a))
 
     -- | NoInline
     NoInline :: (Type a) => Op (a :-> Full a)
@@ -558,6 +566,11 @@ shOp NewRef    = False
 shOp GetRef    = False
 shOp SetRef    = False
 shOp ModRef    = False
+-- Nested tuples
+shOp Cons      = False
+shOp Nil       = False
+shOp Cdr       = False
+shOp UnTup     = False
 -- Everything else
 shOp _ = True
 

@@ -124,10 +124,17 @@ untypeType (ArrayType a) (rs :> es) = Ut.ArrayType rs (untypeType a es)
 untypeType (MArrType a) (rs :> es)  = Ut.MArrType rs (untypeType a es)
 untypeType (ParType a) sz           = Ut.ParType (untypeType a sz)
 untypeType (ElementsType a) (rs :> es) = Ut.ElementsType (untypeType a es)
+untypeType (ConsType a b) (sa,sb)   = Ut.TupType $ untypeTup (ConsType a b) (sa,sb)
+untypeType NilType        _         = Ut.TupType []
+untypeType (TupleType t) sz         = untypeType t sz
 untypeType (IVarType a) sz          = Ut.IVarType $ untypeType a sz
 untypeType (FunType a b) (sa, sz)   = Ut.FunType (untypeType a sa) (untypeType b sz)
 untypeType (FValType a) sz          = Ut.FValType (untypeType a sz)
 untypeType typ _                    = error "untypeType: missing "
+
+untypeTup :: TypeRep (RTuple a) -> Size (RTuple a) -> [Ut.Type]
+untypeTup (ConsType a b) (sa,sb) = untypeType a sa : untypeTup b sb
+untypeTup NilType        _       = []
 
 convSign :: Signedness a -> Ut.Signedness
 convSign U       = Unsigned
@@ -286,6 +293,10 @@ toValueInfo (MArrType a) ((Range (WordN l) (WordN r)) :> es)
 toValueInfo (ParType a) sz                  = toValueInfo a sz
 toValueInfo (ElementsType a) ((Range (WordN l) (WordN r)) :> es)
   = VIProd [VIWord32 (Range l r), toValueInfo a es]
+toValueInfo (ConsType a b) (sa,sb) = VIProd $ toValueInfo a sa : ss
+  where VIProd ss = toValueInfo b sb
+toValueInfo NilType _ = VIProd []
+toValueInfo (TupleType t) sz = toValueInfo t sz
 toValueInfo (IVarType a) sz                 = toValueInfo a sz
 -- TODO: Maybe keep argument information for FunType.
 toValueInfo (FunType a b) (sa, _)           = toValueInfo a sa

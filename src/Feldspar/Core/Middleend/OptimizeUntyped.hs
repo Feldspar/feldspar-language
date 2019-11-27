@@ -179,7 +179,7 @@ simpApp env r op t es = go op t es
 
         -- Select from a tuple expression
         go op _ [eTup]
-         | Just n <- lookup op selectTable
+         | Just n <- decodeSelect op
          , App Tup _ es <- examine env eTup
          , n < length es
          , eComp <- es !! n
@@ -188,7 +188,7 @@ simpApp env r op t es = go op t es
 
         -- Select from a tuple literal
         go op _ [eTup]
-         | Just n <- lookup op selectTable
+         | Just n <- decodeSelect op
          , Literal (LTup es) <- examine env eTup
          , n < length es
          = aLit $ es !! n
@@ -196,11 +196,12 @@ simpApp env r op t es = go op t es
         -- Tuple copy
         go Tup t es
          | (e:es1) <- map (examine env) es
-         , App Sel1 _ [eTup] <- e
+         , App op _ [eTup] <- e
+         , Just 0 <- decodeSelect op
          , typeof eTup == t
          , and $ zipWith (check eTup) es1 [1 ..]
          = eTup
-           where check eTup (App op _ [e]) i = e == eTup && lookup op selectTable == Just i
+           where check eTup (App op _ [e]) i = e == eTup && decodeSelect op == Just i
                  check _    _              _ = False
 
         -- Fall through
@@ -253,6 +254,10 @@ examine env (AIn _ e)            = e
 
 unwrap :: AExp -> UExp
 unwrap (AIn r e) = e
+
+decodeSelect :: Op -> Maybe Int
+decodeSelect (SelN n) = Just $ n-1
+decodeSelect op = lookup op selectTable
 
 -- | Mapping of select operators of the form Sel<n> to their
 --   corresponding 0 based indices.

@@ -213,6 +213,14 @@ spApp vm (Operator          GetRef :@ a)           = spApp1 vm          GetRef t
 spApp vm (Operator          SetRef :@ a :@ b)      = spApp2 vm          SetRef topF2 a b
 spApp vm (Operator          ModRef :@ a :@ b)      = spApp2 vm          ModRef topF2 a b
 
+-- | Nested tuples
+spApp vm (Operator            Cons :@ a :@ b)      = spApp2 vm            Cons (,) a b
+spApp vm (Operator             Nil)                = spApp0 vm             Nil top
+spApp vm (Operator             Car :@ a)           = spApp1 vm             Car fst a
+spApp vm (Operator             Cdr :@ a)           = spApp1 vm             Cdr snd a
+spApp vm (Operator             Tup :@ a)           = spApp1 vm             Tup id  a
+spApp vm (Operator           UnTup :@ a)           = spApp1 vm           UnTup id  a
+
 -- | NoInline
 spApp vm (Operator        NoInline :@ a)           = spApp1 vm        NoInline topF1 a -- Could we not have 'id'?
 

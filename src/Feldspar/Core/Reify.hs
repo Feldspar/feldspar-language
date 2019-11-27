@@ -289,6 +289,9 @@ instance Hashable (T.TypeRep a) where
   hash (T.MArrType t)     = hashInt 26 # t
   hash (T.ParType t)      = hashInt 27 # t
   hash (T.ElementsType t) = hashInt 28 # t
+  hash (T.ConsType a b)   = hashInt 31 # a # b
+  hash  T.NilType         = hashInt 32
+  hash (T.TupleType t)    = hashInt 33 # t
   hash (T.IVarType t)     = hashInt 29 # t
   hash (T.FValType t)     = hashInt 30 # t
 

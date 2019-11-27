@@ -136,6 +136,13 @@ trV :: TypeF a => R.Var a -> Var
 trV v =  Var {varNum = R.varNum v, varType = toType $ asVar v, varName = R.varName v}
 
 toApp :: TypeF a => R.Expr a -> [AUntypedFeld ValueInfo] -> UntypedFeldF (AUntypedFeld ValueInfo)
+toApp (R.Operator R.Cons) [e, AIn _ (App Tup (TupType ts) es)]
+      = App Tup (TupType $ typeof e : ts) $ e : es
+toApp (R.Operator R.Cdr) [AIn _ (App (DropN n) (TupType (_:ts)) es)]
+      = App (DropN $ n+1) (TupType ts) es
+toApp (R.Operator R.Car) [AIn _ (App (DropN n) (TupType (t:_)) es)] = App (SelN $ n+1) t es
+toApp (R.Operator R.Tup) [AIn _ e] = e
+toApp (R.Operator R.UnTup) [e] = App (DropN 0) (typeof e) [e]
 toApp (R.Operator op) es = App (trOp op) (unwind es $ toType $ asOpT op) es
 toApp (f :@ e) es = toApp f $ toU e : es
 
@@ -250,6 +257,7 @@ trOp R.NewRef          = NewRef
 trOp R.GetRef          = GetRef
 trOp R.SetRef          = SetRef
 trOp R.ModRef          = ModRef
+trOp R.Nil             = Tup
 trOp R.NoInline        = NoInline
 trOp R.Abs             = Abs
 trOp R.Sign            = Sign
@@ -304,6 +312,7 @@ trOp R.Tup12           = Tup
 trOp R.Tup13           = Tup
 trOp R.Tup14           = Tup
 trOp R.Tup15           = Tup
+trOp op                = error $ "FromTyped.trOp: unknown op: " ++ show op
 
 -- The front-end driver.
 
