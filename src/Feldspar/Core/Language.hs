@@ -48,7 +48,7 @@ import Feldspar.Core.Representation as R
 import Feldspar.Core.Types as T
 import Feldspar.Core.Constructs (Data(..), Syntax(..), SyntacticFeld(..), FeldDomain)
 import Feldspar.Core.Middleend.FromTypeUtil (untypeType, literal)
-
+import Feldspar.Core.NestedTuples
 
 import Feldspar.Core.Collection
 import Feldspar.Range
@@ -774,6 +774,54 @@ thawArray arr = do
     setArr marr ix (getIx arr ix)
    )
   return marr
+
+--------------------------------------------------
+-- Nested tuples
+--------------------------------------------------
+
+class SyntacticTup a where
+    type DomainTup a :: * -> *
+    type InternalTup a
+    desugarTup :: RTuple a -> ASTF (DomainTup a) (RTuple (InternalTup a))
+    sugarTup   :: ASTF (DomainTup a) (RTuple (InternalTup a)) -> RTuple a
+
+instance (Type (Internal a), TypeF (RTuple (InternalTup b)), Syntactic a, SyntacticTup b, Typeable (InternalTup b))
+         => SyntacticTup (a :* b) where
+    type DomainTup (a :* b) = FeldDomain
+    type InternalTup (a :* b) = Internal a :* InternalTup b
+    desugarTup (x :* xs) = sugarSym2 Cons x xs
+    sugarTup e = sugar (sugarSym1 Car $ Data e) :* sugarTup (sugarSym1 Cdr $ Data e)
+
+instance SyntacticTup TNil where
+    type DomainTup TNil = FeldDomain
+    type InternalTup TNil = TNil
+    desugarTup TNil = sugarSym0 Nil
+    sugarTup _ = TNil
+
+instance SyntacticTup a => Syntactic (RTuple a) where
+    type Domain (RTuple a) = DomainTup a
+    type Internal (RTuple a) = RTuple (InternalTup a)
+    desugar t = desugarTup t
+    sugar e = sugarTup e
+
+car :: (Syntax a, SyntacticTup b, Type (RTuple (InternalTup b)), Typeable (InternalTup b))
+    => RTuple (a :* b) -> a
+car = sugarSym1 Car
+
+cdr :: (Syntax a, SyntacticTup b, Type (RTuple (InternalTup b)), Typeable (InternalTup b))
+    => RTuple (a :* b) -> RTuple b
+cdr = sugarSym1 Cdr
+
+instance (Show (RTuple (InternalTup a)),
+          P.Eq (Tuple (InternalTup a)),
+          TypeF (RTuple (InternalTup a)),
+          Typeable (InternalTup a),
+          SyntacticTup a)
+      => Syntactic (Tuple a) where
+    type Domain (Tuple a) = DomainTup a
+    type Internal (Tuple a) = Tuple (InternalTup a)
+    desugar (Tuple x) = sugarSym1 Tup x
+    sugar e = Tuple $ sugar $ sugarSym1 UnTup e
 
 --------------------------------------------------
 -- NoInline.hs

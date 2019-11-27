@@ -50,6 +50,7 @@ import Data.Typeable
 import Feldspar.Core.Interpretation
 import Feldspar.Core.Representation
 import Feldspar.Core.Tuple
+import Feldspar.Core.NestedTuples
 import Feldspar.Core.Types
 import Feldspar.Lattice
 import Feldspar.Range
@@ -211,6 +212,13 @@ semantics ModRef = Sem "modRef" (\r f -> readIORef r >>= writeIORef r . f)
 -- Feldspar.Core.Constructs.MutableToPure
 semantics RunMutableArray = Sem "runMutableArray" runMutableArrayEval
 semantics WithArray       = Sem "withArray"       withArrayEval
+-- Nested tuples
+semantics Cons  = Sem "cons"  (\ x y -> x :* y)
+semantics Nil   = Sem "nil"   TNil
+semantics Car   = Sem "car"   (\ (x :* _) -> x)
+semantics Cdr   = Sem "cdr"   (\ (_ :* y) -> y)
+semantics Tup   = Sem "tup"   Tuple
+semantics UnTup = Sem "untup" unTup
 -- Feldspar.Core.Constructs.NoInline
 semantics NoInline  = Sem "NoInline" id
 -- Feldspar.Core.Constructs.Num
