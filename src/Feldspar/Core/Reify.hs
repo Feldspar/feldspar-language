@@ -74,7 +74,7 @@ import Data.List (partition)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 
-resugar :: (Syntactic a, Syntactic b, Domain a ~ Domain b, Internal a ~ Internal b) => a -> b
+resugar :: (Syntactic a, Syntactic b, Internal a ~ Internal b) => a -> b
 resugar = sugar . desugar
 
 -- | The CExpr component represents sharing in the expression using a map
@@ -83,60 +83,58 @@ resugar = sugar . desugar
 --   abstractions when reifying functions. It must be strictly greater than
 --   the Int used for generating the bound variable of any lambda abstraction
 --   in the expression part of the CExpr.
-data ASTF (d :: * -> *) a = ASTF (CExpr a) Int
+data ASTF a = ASTF (CExpr a) Int
 
-alphaEq :: T.Type a => ASTF d a -> ASTF d a -> Bool
+alphaEq :: T.Type a => ASTF a -> ASTF a -> Bool
 alphaEq (ASTF (ml,el) _) (ASTF (mr,er) _) = error $ "alphaEq not supported (binding time violation)"
 
 -- | Convert an ASTF to an expression
-unASTF :: TypeF a => b -> ASTF d a -> (AExpr a)
+unASTF :: TypeF a => b -> ASTF a -> (AExpr a)
 unASTF _ (ASTF ce _) = fromCExp ce
 
 -- | Evaluate an ASTF
-evalBind :: TypeF a => ASTF d a -> a
+evalBind :: TypeF a => ASTF a -> a
 evalBind = evalTop . unASTF ()
 
-render :: TypeF a => ASTF d a -> String
+render :: TypeF a => ASTF a -> String
 render (ASTF (m,e) _) = unwords $ show e : "where" : map rendb (map snd $ M.toList m)
   where rendb (CBind v e) = show v ++ " = " ++ show e
 
-instance TypeF a => Show (ASTF d a) where
+instance TypeF a => Show (ASTF a) where
   show = render
 
 class Syntactic a where
-    type Domain a :: * -> *
     type Internal a
-    desugar :: a -> ASTF (Domain a) (Internal a)
-    sugar   :: ASTF (Domain a) (Internal a) -> a
+    desugar :: a -> ASTF (Internal a)
+    sugar   :: ASTF (Internal a) -> a
 
-instance Syntactic (ASTF dom a)
+instance Syntactic (ASTF a)
   where
-    {-# SPECIALIZE instance Syntactic (ASTF dom a) #-}
-    type Domain (ASTF dom a)   = dom
-    type Internal (ASTF dom a) = a
+    {-# SPECIALIZE instance Syntactic (ASTF a) #-}
+    type Internal (ASTF a) = a
     desugar = id
     sugar   = id
     {-# INLINABLE desugar #-}
     {-# INLINABLE sugar #-}
 
 -- | User interface to embedded monadic programs
-newtype Mon dom m a
+newtype Mon m a
   where
     Mon
         :: { unMon
               :: forall r . (Monad m, Typeable r, T.Type r, T.Type (m r))
-              => Cont (ASTF dom (m r)) a
+              => Cont (ASTF (m r)) a
            }
-        -> Mon dom m a
+        -> Mon m a
 
-deriving instance Functor (Mon dom m)
+deriving instance Functor (Mon m)
 
-instance Monad m => Monad (Mon dom m)
+instance Monad m => Monad (Mon m)
   where
     return a = Mon $ return a
     ma >>= f = Mon $ unMon ma >>= unMon . f
 
-instance (Monad m, Applicative m) => Applicative (Mon dom m)
+instance (Monad m, Applicative m) => Applicative (Mon m)
   where
     pure  = return
     (<*>) = ap

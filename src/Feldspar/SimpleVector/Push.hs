@@ -49,7 +49,6 @@ type PushVector1 a = PushVector (Data a)
 
 instance Syntax a => Syntactic (PushVector a)
   where
-    type Domain (PushVector a)   = FeldDomain
     type Internal (PushVector a) = [Internal a]
     desugar = desugar . freezePush
     sugar   = thawPush . sugar

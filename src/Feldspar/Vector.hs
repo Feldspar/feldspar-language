@@ -180,7 +180,6 @@ type family InternalShape sh a where
 
 instance (Syntax a, Shapely sh) => Syntactic (Pull sh a)
   where
-    type Domain (Pull sh a) = FeldDomain
     type Internal (Pull sh a) = InternalShape sh a
 
     desugar v@(Pull _ sh) = case sh of
@@ -1261,7 +1260,6 @@ thawPush1 = toPush . thawPull1
 
 instance (Syntax a, Shapely sh) => Syntactic (Push sh a)
   where
-    type Domain (Push sh a) = FeldDomain
     type Internal (Push sh a) = InternalShape sh a
 
     desugar v@(Push _ sh) = case sh of
@@ -1354,7 +1352,6 @@ instance Storable (Push sh) where
   store vec@(Push f sh) = Manifest (save $ fromPush (fmap F.desugar vec)) sh
 
 instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where
-  type Domain   (Manifest sh a) = FeldDomain
   type Internal (Manifest sh a) = InternalShape sh a
   desugar v@(Manifest _ sh) = case sh of
       Z           -> desugar $ fromZero v
