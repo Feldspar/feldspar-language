@@ -150,7 +150,6 @@ type DVector sh a = Vector sh (Data a)
 
 instance (Shape sh, Syntax a) => Syntactic (Vector sh a)
   where
-    type Domain (Vector sh a)   = FeldDomain
     type Internal (Vector sh a) = ([Length],[Internal a])
     desugar = desugar . freezeVector . map resugar
     sugar   = map resugar . thawVector . sugar

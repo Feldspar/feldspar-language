@@ -86,7 +86,6 @@ type instance CollSize  (BitVector w) = Data Length
 
 instance (Unit a) => Syntactic (BitVector a)
   where
-    type Domain (BitVector a)   = FeldDomain
     type Internal (BitVector a) = [a]
     desugar = desugar . freezeBitVector
     sugar   = unfreezeBitVector . sugar

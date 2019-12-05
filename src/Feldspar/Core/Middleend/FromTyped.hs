@@ -58,7 +58,6 @@ import qualified Feldspar.Core.UntypedRepresentation as U
 import Feldspar.Core.Reify (ASTF(..), unASTF)
 import Feldspar.Core.Types (TypeRep(..), typeRep, defaultSize, TypeF(..))
 import qualified Feldspar.Core.Types as T
-import Feldspar.Core.Constructs (FeldDomain)
 import Feldspar.Core.UntypedRepresentation as U
 import Feldspar.ValueInfo
 import qualified Feldspar.Core.Representation as R
@@ -69,7 +68,7 @@ import Feldspar.Core.SizeProp
 import Feldspar.Core.AdjustBindings
 
 -- | External module interface. Untype, optimize and unannotate.
-untype :: TypeF a => FeldOpts -> ASTF dom a -> UntypedFeld
+untype :: TypeF a => FeldOpts -> ASTF a -> UntypedFeld
 untype opts = cleanUp opts
             . pushLets
             . optimize
@@ -77,7 +76,7 @@ untype opts = cleanUp opts
             . justUntype opts
 
 -- | External module interface.
-untypeDecor :: TypeF a => FeldOpts -> ASTF dom a -> AUntypedFeld ValueInfo
+untypeDecor :: TypeF a => FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
 untypeDecor opts = id
                  . pushLets
                  . optimize
@@ -85,12 +84,12 @@ untypeDecor opts = id
                  . justUntype opts
 
 -- | External module interface.
-untypeUnOpt :: TypeF a => FeldOpts -> ASTF dom a -> UntypedFeld
+untypeUnOpt :: TypeF a => FeldOpts -> ASTF a -> UntypedFeld
 untypeUnOpt opts = cleanUp opts
                  . justUntype opts
 
 -- | Only do the conversion to AUntypedFeld ValueInfo
-justUntype :: TypeF a => FeldOpts -> ASTF dom a -> AUntypedFeld ValueInfo
+justUntype :: TypeF a => FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
 justUntype opts = renameExp . toU . sizeProp . adjustBindings . unASTF opts
 
 -- | Prepare the code for fromCore
@@ -353,18 +352,15 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
 instance TypeF a => Pretty (AExpr a) where
   pretty = show
 
-instance TypeF a => Pretty (ASTF dom a) where
+instance TypeF a => Pretty (ASTF a) where
   pretty = pretty . unASTF ()
 
 -- | Untype version to use with the new CSE
 untypeProgOpt :: TypeF a => FeldOpts -> AExpr a -> AUntypedFeld ValueInfo
 untypeProgOpt opts = toU
 
--- | Domain synonym to use with new CSE
-type FEDom = FeldDomain
-
 -- | Front-end driver
-frontend :: TypeF a => PassCtrl FrontendPass -> FeldOpts -> ASTF FEDom a -> ([String], Maybe UntypedFeld)
+frontend :: TypeF a => PassCtrl FrontendPass -> FeldOpts -> ASTF a -> ([String], Maybe UntypedFeld)
 frontend ctrl opts = evalPasses 0
                    $ pc FPCreateTasks      (createTasks opts)
                    . pt FPUnAnnotate       unAnnotate

@@ -47,7 +47,6 @@ module Feldspar.Core.Frontend
     , Syntactic
     , Internal
 
-    , FeldDomain
     , Data
     , SyntacticFeld
     , Syntax
@@ -116,31 +115,27 @@ import Feldspar.Core.UntypedRepresentation (VarId, stringTree)
 import Feldspar.Core.Constructs
 import Feldspar.Core.Language                  as Frontend
 
-data Info = Info
-data Decor a (c :: * -> *) d = Decor
 reifyFeldM :: (SyntacticFeld a, MonadState VarId m)
     => FeldOpts
     -> BitWidth n
     -> a
-    -> m (ASTF (Decor Info FeldDom) (Internal a))
-reifyFeldM opts n prog = return $ ut $ reifyFeld opts n prog
+    -> m (ASTF (Internal a))
+reifyFeldM opts n prog = return $ reifyFeld opts n prog
 
 
 reifyFeld :: Syntactic a
           => FeldOpts
           -> BitWidth n
           -> a
-          -> ASTF (Domain a) (Internal a)
+          -> ASTF (Internal a)
 reifyFeld _ _ x = Syntactic.desugar x
 
 reifyFeldUnOpt :: Syntactic a
                 => FeldOpts
                 -> BitWidth n
                 -> a
-                -> ASTF (Domain a) (Internal a)
+                -> ASTF (Internal a)
 reifyFeldUnOpt = reifyFeld
-
-instance StringTree FeldDomain where
 
 showExpr :: SyntacticFeld a => a -> String
 showExpr = render . reifyFeld defaultFeldOpts N32

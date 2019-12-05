@@ -47,30 +47,22 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
 
 --------------------------------------------------------------------------------
--- * Domain
---------------------------------------------------------------------------------
-
-data FeldDomain a = FeldDomain
-data FeldDom a = FeldDom
-
---------------------------------------------------------------------------------
 -- * Front end
 --------------------------------------------------------------------------------
 
-newtype Data a = Data { unData :: ASTF FeldDomain a }
+newtype Data a = Data { unData :: ASTF a }
 
 deriving instance Typeable Data
 
 instance Syntactic (Data a)
   where
-    type Domain (Data a)   = FeldDomain
     type Internal (Data a) = a
     desugar = unData
     sugar   = Data
 
-type SyntacticFeld a = (Syntactic a, Domain a ~ FeldDomain, TypeF (Internal a))
+type SyntacticFeld a = (Syntactic a, TypeF (Internal a))
 
--- | Specialization of the 'Syntactic' class for the Feldspar domain
+-- | Specialization of the 'Syntactic' class for first class values (eg not functions)
 class    (SyntacticFeld a, Type (Internal a)) => Syntax a
 instance (SyntacticFeld a, Type (Internal a)) => Syntax a
   -- It would be possible to let 'Syntax' be an alias instead of giving separate
@@ -83,7 +75,7 @@ instance (SyntacticFeld a, Type (Internal a)) => Syntax a
   -- The type error is not very readable now either, but at least it fits on the
   -- screen.
 
-reifyF :: SyntacticFeld a => a -> ASTF FeldDomain (Internal a)
+reifyF :: SyntacticFeld a => a -> ASTF (Internal a)
 reifyF = desugar
 
 instance Type a => Eq (Data a)

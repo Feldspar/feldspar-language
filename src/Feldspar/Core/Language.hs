@@ -46,7 +46,7 @@ module Feldspar.Core.Language where
 import Feldspar.Core.Reify
 import Feldspar.Core.Representation as R
 import Feldspar.Core.Types as T
-import Feldspar.Core.Constructs (Data(..), Syntax(..), SyntacticFeld(..), FeldDomain)
+import Feldspar.Core.Constructs (Data(..), Syntax(..), SyntacticFeld(..))
 import Feldspar.Core.Middleend.FromTypeUtil (untypeType, literal)
 import Feldspar.Core.NestedTuples
 
@@ -529,7 +529,6 @@ pval f x = await $ force $ future (f x)
 
 instance Syntax a => Syntactic (Future a)
   where
-    type Domain (Future a)   = FeldDomain
     type Internal (Future a) = FVal (Internal a)
     desugar = desugar . unFuture
     sugar   = Future . sugar
@@ -588,7 +587,6 @@ true = value True
 
 instance Syntactic ()
   where
-    type Domain ()   = FeldDomain
     type Internal () = ()
     desugar _ = ASTF (toCExpr $ toAExpr $ Literal ()) 0 -- Maybe more helpers?
     sugar _ = ()
@@ -698,12 +696,11 @@ swap a i1 i2 = do
 -- Mutable.hs
 --------------------------------------------------
 
-newtype M a = M { unM :: Mon FeldDomain Mut a }
+newtype M a = M { unM :: Mon Mut a }
   deriving (Functor, Applicative, Monad)
 
 instance Syntax a => Syntactic (M a)
   where
-    type Domain (M a)   = FeldDomain
     type Internal (M a) = Mut (Internal a)
     desugar = desugar . unM
     sugar   = M . sugar
@@ -737,7 +734,6 @@ newtype Ref a = Ref { unRef :: Data (IORef (Internal a)) }
 
 instance Syntax a => Syntactic (Ref a)
   where
-    type Domain (Ref a)   = FeldDomain
     type Internal (Ref a) = IORef (Internal a)
     desugar = desugar . unRef
     sugar   = Ref . sugar
@@ -780,26 +776,22 @@ thawArray arr = do
 --------------------------------------------------
 
 class SyntacticTup a where
-    type DomainTup a :: * -> *
     type InternalTup a
-    desugarTup :: RTuple a -> ASTF (DomainTup a) (RTuple (InternalTup a))
-    sugarTup   :: ASTF (DomainTup a) (RTuple (InternalTup a)) -> RTuple a
+    desugarTup :: RTuple a -> ASTF (RTuple (InternalTup a))
+    sugarTup   :: ASTF (RTuple (InternalTup a)) -> RTuple a
 
 instance (Type (Internal a), TypeF (RTuple (InternalTup b)), Syntactic a, SyntacticTup b, Typeable (InternalTup b))
          => SyntacticTup (a :* b) where
-    type DomainTup (a :* b) = FeldDomain
     type InternalTup (a :* b) = Internal a :* InternalTup b
     desugarTup (x :* xs) = sugarSym2 Cons x xs
     sugarTup e = sugar (sugarSym1 Car $ Data e) :* sugarTup (sugarSym1 Cdr $ Data e)
 
 instance SyntacticTup TNil where
-    type DomainTup TNil = FeldDomain
     type InternalTup TNil = TNil
     desugarTup TNil = sugarSym0 Nil
     sugarTup _ = TNil
 
 instance SyntacticTup a => Syntactic (RTuple a) where
-    type Domain (RTuple a) = DomainTup a
     type Internal (RTuple a) = RTuple (InternalTup a)
     desugar t = desugarTup t
     sugar e = sugarTup e
@@ -818,7 +810,6 @@ instance (Show (RTuple (InternalTup a)),
           Typeable (InternalTup a),
           SyntacticTup a)
       => Syntactic (Tuple a) where
-    type Domain (Tuple a) = DomainTup a
     type Internal (Tuple a) = Tuple (InternalTup a)
     desugar (Tuple x) = sugarSym1 Tup x
     sugar e = Tuple $ sugar $ sugarSym1 UnTup e
@@ -933,12 +924,11 @@ instance Ord Double
 --------------------------------------------------
 
 
-newtype P a = P { unP :: Mon FeldDomain Par a }
+newtype P a = P { unP :: Mon Par a }
   deriving (Functor, Applicative, Monad)
 
 instance Syntax a => Syntactic (P a)
   where
-    type Domain (P a)   = FeldDomain
     type Internal (P a) = Par (Internal a)
     desugar = desugar . unP
     sugar   = P . sugar
@@ -947,7 +937,6 @@ newtype IVar a = IVar { unIVar :: Data (IV (Internal a)) }
 
 instance Syntax a => Syntactic (IVar a)
   where
-    type Domain (IVar a)   = FeldDomain
     type Internal (IVar a) = IV (Internal a)
     desugar = desugar . unIVar
     sugar   = IVar . sugar
@@ -1070,11 +1059,8 @@ switch def cs s = let s' = resugar s
 -- Tuple.hs
 --------------------------------------------------
 
--- instance TupleSat FeldDomain Type
-
 instance (Syntax a, Syntax b) => Syntactic (a, b) where
   type Internal (a, b) = (Internal a, Internal b)
-  type Domain (a, b) = Domain a -- FeldDomain
   sugar e = (sugar $ sugarSym1 Sel1 $ Data e,
              sugar $ sugarSym1 Sel2 $ Data e)
   desugar (x,y) = full $ op2f Tup2 @@ x @@ y
@@ -1084,7 +1070,6 @@ instance ( Syntax a, Syntax b, Syntax c )
   where
     type Internal (a, b, c) =
                   ( Internal a, Internal b, Internal c )
-    type Domain (a, b, c) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1097,7 +1082,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d )
   where
     type Internal (a, b, c, d) =
                   ( Internal a, Internal b, Internal c, Internal d )
-    type Domain (a, b, c, d) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1115,7 +1099,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   ( Internal a, Internal b, Internal c, Internal d
                   , Internal e
                   )
-    type Domain (a, b, c, d, e) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1134,7 +1117,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   ( Internal a, Internal b, Internal c, Internal d
                   , Internal e, Internal f
                   )
-    type Domain (a, b, c, d, e, f) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1154,7 +1136,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   ( Internal a, Internal b, Internal c, Internal d
                   , Internal e, Internal f, Internal g
                   )
-    type Domain (a, b, c, d, e, f, g) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1175,7 +1156,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   ( Internal a, Internal b, Internal c, Internal d
                   , Internal e, Internal f, Internal g, Internal h
                   )
-    type Domain (a, b, c, d, e, f, g, h) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1199,7 +1179,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal e, Internal f, Internal g, Internal h
                   , Internal i
                   )
-    type Domain (a, b, c, d, e, f, g, h, i) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1224,7 +1203,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal e, Internal f, Internal g, Internal h
                   , Internal i, Internal j
                   )
-    type Domain (a, b, c, d, e, f, g, h, i, j) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1250,7 +1228,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal e, Internal f, Internal g, Internal h
                   , Internal i, Internal j, Internal k
                   )
-    type Domain (a, b, c, d, e, f, g, h, i, j, k) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1278,7 +1255,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal e, Internal f, Internal g, Internal h
                   , Internal i, Internal j, Internal k, Internal l
                   )
-    type Domain (a, b, c, d, e, f, g, h, i, j, k, l) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1309,7 +1285,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal i, Internal j, Internal k, Internal l
                   , Internal m
                   )
-    type Domain (a, b, c, d, e, f, g, h, i, j, k, l, m) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1341,7 +1316,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal i, Internal j, Internal k, Internal l
                   , Internal m, Internal n
                   )
-    type Domain (a, b, c, d, e, f, g, h, i, j, k, l, m, n) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1374,7 +1348,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal i, Internal j, Internal k, Internal l
                   , Internal m, Internal n, Internal o
                   )
-    type Domain (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) = Domain a -- FeldDomain
     sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
               , sugar $ sugarSym1 Sel2  $ Data e
               , sugar $ sugarSym1 Sel3  $ Data e
@@ -1400,7 +1373,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
 -------------------------------------------------
 
 instance (Type (Internal a), TypeF (Internal b), Syntactic a, Syntactic b) => Syntactic (a -> b) where
-  type Domain (a -> b) = FeldDomain
   type Internal (a -> b) = Internal a -> Internal b
   sugar e = undefined
   desugar f = ASTF func (i+1)
@@ -1429,7 +1401,7 @@ desugarMonad
        , Type a
        , Size a ~ Size (m a)
        )
-    => Mon dom m (ASTF dom a) -> ASTF dom (m a)
+    => Mon m (ASTF a) -> ASTF (m a)
 desugarMonad = flip runCont (sugarSym1 Return) . unMon
 
 -- | One-layer sugaring of monadic actions
@@ -1442,7 +1414,7 @@ sugarMonad
        , Type a
        , Size a ~ Size (m a)
        )
-    => ASTF dom (m a) -> Mon dom m (ASTF dom a)
+    => ASTF (m a) -> Mon m (ASTF a)
 sugarMonad ma = Mon $ cont $ sugarSym2 Bind ma
 
 instance ( Syntactic a
@@ -1450,16 +1422,13 @@ instance ( Syntactic a
          , Typeable m
          , Typeable (Internal a)
          -- , pVar (Internal a)
-         -- , Domain a ~ FeldDomain
-         , dom ~ Domain a
          , Type (Internal a)
          , Type (m (Internal a))
          , Size (Internal a) ~ Size (m (Internal a))
          ) =>
-           Syntactic (Mon dom m a)
+           Syntactic (Mon m a)
   where
-    type Domain (Mon dom m a)   = dom
-    type Internal (Mon dom m a) = m (Internal a)
+    type Internal (Mon m a) = m (Internal a)
     desugar = desugarMonad . fmap desugar
     sugar   = fmap sugar   . sugarMonad
 
@@ -1467,13 +1436,8 @@ instance ( Syntactic a
 -------------------------------------------------
 -- Support functions
 -------------------------------------------------
-
--- | Cast the domain (phantom) type parameter
-ut :: ASTF d a -> ASTF e a
-ut (ASTF e i) = ASTF e i
-
 -- | Convert a CSE map, an Expr and an Int to an ASTF
-full :: TypeF b => (CSEExpr (Expr b), Int) -> ASTF dom b
+full :: TypeF b => (CSEExpr (Expr b), Int) -> ASTF b
 full (ce, i) = ASTF (flattenCSE $ transCSEExpr toAExpr ce) i
 
 infixl 5 @@

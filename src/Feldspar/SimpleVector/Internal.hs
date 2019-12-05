@@ -78,7 +78,6 @@ type Vector2 a = Vector (Vector (Data a))
 
 instance (Syntax a, Hashable (Internal a)) => Syntactic (Vector a)
   where
-    type Domain (Vector a)   = FeldDomain
     type Internal (Vector a) = [Internal a]
     desugar = desugar . freezeVector . map resugar
     sugar   = map resugar . thawVector . sugar
