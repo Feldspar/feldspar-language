@@ -65,6 +65,15 @@ forShapeR :: Shape sh -> (Shape sh -> M ()) -> M ()
 forShapeR Z k = k Z
 forShapeR (sh :. l) k = forShapeR sh (\sh -> forM l (\i -> k (sh :. i)))
 
+-- | Walk the shape, using $k$ to generate an Elements set at each index
+parForShape :: Type a => Shape sh -> (Shape sh -> Data (Elements a)) -> Data (Elements a)
+parForShape Z k = k Z
+parForShape (sh :. l) k = parFor l (\i -> parForShape sh (\sh -> k (sh :. i)))
+
+parForShapeR :: Type a => Shape sh -> (Shape sh -> Data (Elements a)) -> Data (Elements a)
+parForShapeR Z k = k Z
+parForShapeR (sh :. l) k = parForShapeR sh (\sh -> parFor l (\i -> k (sh :. i)))
+
 -- | Unpack the shape to a list with the innermost dimension first
 toList :: Shape sh -> [Data Length]
 toList Z         = []

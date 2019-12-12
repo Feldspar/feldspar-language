@@ -13,6 +13,7 @@ data Seq a = Seq (M (Data Index -> M a)) (Data Length)
 
 type instance VecShape Seq = Z :. Data Length
 
+{-
 instance Pushy Seq where
   toPush (Seq init n) = Push f (Z :. n)
     where f wf = do step <- init
@@ -22,6 +23,7 @@ instance Pushy Seq where
 
 instance Storable Seq where
   store = store . toPush
+-}
 
 instance Shaped Seq where
   extent (Seq _ n) = Z :. n
@@ -40,12 +42,14 @@ instance Seqy Seq where
 
 loop = return
 
+{-
 toPushS :: Shape sh -> Seq a -> Push sh a
 toPushS sh (Seq init n) = Push f sh
   where f wf = do step <- init
                   forShape sh $ \shi ->
                     do a <- step (toIndex sh shi)
                        wf shi a
+-}
 
 pullToSeq :: Pull sh a -> Seq a
 pullToSeq (Pull ixf sh) = Seq init (size sh)
