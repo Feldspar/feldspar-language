@@ -49,6 +49,7 @@ module Feldspar.Vector (
   -- * Push vectors
   Push(..),
   DPush,Pushy(..),
+  PushK,
   empty,(++),(+=+),unpair,unpairWith,riffle,interleave,flattenList,
   forwardPermute,
   expandS,expandST,contractS,contractST,uncurryS,
@@ -491,7 +492,8 @@ flattenPush :: forall a sh1 sh2.
                Pull sh1 (Push sh2 a) ->
                Push (ShapeConcT sh1 sh2) a
 flattenPush (Pull ixf sh1) = Push f sh
-  where f k = forShape sh1 $ \i ->
+  where f :: PushK (ShapeConcT sh1 sh2) a
+        f k = parForShape sh1 $ \i ->
                 let Push g sh' = ixf i
                 in  g (\j a -> k (shapeConc i j) a)
         sh = let (i1,_ :: Shape sh2) = splitIndex fakeShape sh2
@@ -590,15 +592,17 @@ slide v = Pull (\ (Z :. dy :. dx) -> ixf (Z :. (dy + dx) `mod` y :. dx)) sh
   where Pull ixf sh = toPull v
         [y,x] = toList sh
 
-slideS :: (Pully vec1, VecShape vec1 ~ DIM2) => vec1 a -> Push DIM2 a
+slideS :: forall vec1 a . (Pully vec1, VecShape vec1 ~ DIM2) => vec1 a -> Push DIM2 a
 slideS v = Push f sh
   where Pull ixf sh = toPull v
         [y,x] = toList sh
-        f wf = forM x $ \dx -> do
-                 forM dx $ \dy -> do
-                   wf (Z :. dy :. dx) (ixf (Z :. (y - dx + dy) :. dx))
-                 forM (y - dx) $ \dy -> do
-                   wf (Z :. dy + dx :. dx) (ixf (Z :. dy :. dx))
+        f :: PushK DIM2 a
+        f wf = parFor x $ \dx ->
+                 par
+                   (parFor dx $ \dy ->
+                      wf (Z :. dy :. dx) (ixf (Z :. (y - dx + dy) :. dx)))
+                   (parFor (y - dx) $ \dy ->
+                      wf (Z :. dy + dx :. dx) (ixf (Z :. dy :. dx)))
 
 -- stencil v s = reduce $ transposeL $ outerprod (*) v s
 
@@ -656,7 +660,8 @@ mmMult doForce vA vB
     [rowsA, colsA] = toList (extent vA) -- brain explosion hack
     [rowsB, colsB] = toList (extent vB)
 
-above, beside :: (Pushy vec1, VecShape vec1 ~ DIM2,
+above, beside :: forall vec1 vec2 a .
+                 (Pushy vec1, VecShape vec1 ~ DIM2,
                   Pushy vec2, VecShape vec2 ~ DIM2) =>
                  vec1 a -> vec2 a -> Push DIM2 a
 above vec1 vec2 = Push ixf (Z :. y1 + y2 :. x1)
@@ -665,8 +670,9 @@ above vec1 vec2 = Push ixf (Z :. y1 + y2 :. x1)
         [x1,y1] = toList ext1
         [x2,y2] = toList ext2
         -- Assumption x1 == x2
-        ixf wf = do ixf1 wf
-                    ixf2 (\ (Z :. y :. x) a -> wf (Z :. y + y1 :. x) a)
+        ixf :: PushK DIM2 a
+        ixf wf = ixf1 wf `par`
+                 ixf2 (\ (Z :. y :. x) a -> wf (Z :. y + y1 :. x) a)
 -- above vec1 vec = transpose (transpose (toPush vec1) `beside`
 --                             transpose (toPush vec2))
 -- The definition of 'above' in terms of 'beside' and 'transpose' is
@@ -688,10 +694,12 @@ instance Matrixy Pull where
     where ixf' (Z :. _ :. i) = ixf (Z :. i)
 
 instance Matrixy Push where
-  columnVector (Push ixf (Z :. l)) = Push ixf' (Z :. l :. 1)
-    where ixf' wf = ixf (\ (Z :. i) a -> wf (Z :. i :. 1) a)
-  rowVector (Push ixf (Z :. l)) = Push ixf' (Z :. 1 :. l)
-    where ixf' wf = ixf (\ (Z :. i) a -> wf (Z :. 1 :. i) a)
+  columnVector (Push ixf (Z :. l)) = Push (ixf' ixf) (Z :. l :. 1)
+    where ixf' :: PushK DIM1 a -> PushK DIM2 a
+          ixf' ixf wf = ixf (\ (Z :. i) a -> wf (Z :. i :. 0) a)
+  rowVector (Push ixf (Z :. l)) = Push (ixf' ixf) (Z :. 1 :. l)
+    where ixf' :: PushK DIM1 a -> PushK DIM2 a
+          ixf' ixf wf = ixf (\ (Z :. i) a -> wf (Z :. 0 :. i) a)
 
 -- | A square identity matrix.
 eye :: (Num e, Syntax e) => Data WordN -> Pull DIM2 e
@@ -703,12 +711,13 @@ eye n = Pull (\(Z :. i :. j) -> i == j ? 1 $ 0) (Z :. n :. n)
 --   cache friendly.
 eyePush :: Num e => Data WordN -> Push DIM2 e
 eyePush n = Push ixf (Z :. n :. n)
-  where ixf wf = do forM n $ \i ->
-                      forM i $ \j -> do
-                        wf (Z :. i :. j) 0
-                        wf (Z :. j :. i) 0
-                    forM n $ \i -> do
-                       wf (Z :. i :. i) 1
+  where ixf :: Num a => PushK DIM2 a
+        ixf wf = par (parFor n $ \i ->
+                        parFor i $ \j ->
+                          wf (Z :. i :. j) 0 `par`
+                          wf (Z :. j :. i) 0)
+                     (parFor n $ \i ->
+                        wf (Z :. i :. i) 1)
 
 -- | An identity matrix which is not necessarily square.
 eye2 :: (Num e, Syntax e) => Data WordN -> Data WordN -> Pull DIM2 e
@@ -1021,7 +1030,8 @@ scalarProd a b = fromZero $ sum (zipWith (*) a b)
 --   pull vector. A call @chunk l f g v@ will split the vector 'v' into chunks
 --   of size 'l' and apply 'f' to these chunks. In case the length of 'v' is
 --   not a multiple of 'l' then the rest of 'v' will be processed by 'g'.
-chunk :: (Pully vec, VecShape vec ~ DIM1
+chunk :: forall vec vec1 vec2 a b .
+         (Pully vec, VecShape vec ~ DIM1
          ,Pushy vec1, VecShape vec1 ~ DIM1
          ,Pushy vec2, VecShape vec2 ~ DIM1, Syntax b)
       => Data Length            -- ^ Size of the chunks
@@ -1033,9 +1043,10 @@ chunk c f g vec = Push loop (Z :. (noc * c))
              ++ toPush (g (drop (noc * c) v))
   where l = length v
         noc = l `div` c
-        loop func = forM noc $ \i ->
-                      do let (Push k _) = toPush $ f (take c (drop (c*i) v))
-                         k (\(Z :. j) a -> func (Z :. (j + c*i)) a)
+        loop :: PushK DIM1 b
+        loop func = parFor noc $ \i ->
+                         let (Push k _) = toPush $ f (take c (drop (c*i) v))
+                         in k (\(Z :. j) a -> func (Z :. (j + c*i)) a)
         v = toPull vec
 
 -- | Permutes the elements of a one-dimensional vector according to the
@@ -1055,20 +1066,22 @@ dup :: (Pushy vec, VecShape vec ~ DIM1) => vec a -> Push DIM1 a
 dup vec = vec ++ vec
 
 -- Multidimensional push vectors
-data Push sh a = Push ((Shape sh -> a -> M ()) -> M ()) (Shape sh)
+data Push sh a = Push (PushK sh a) (Shape sh)
+
+type PushK sh a = forall b . Type b => (Shape sh -> a -> Data (Elements b)) -> Data (Elements b)
 
 type DPush sh a = Push sh (Data a)
 
 instance Functor (Push sh) where
-  fmap f (Push k l) = Push k' l
-    where k' func   = k (\sh a -> func sh (f a))
+   fmap f (Push k ext) = Push (\ w -> k (\ ix d -> w ix (f d))) ext
 
 -- | The empty push vector.
-empty :: Shapely sh => Push sh a
-empty = Push (const (return ())) zeroDim
+empty :: (Shapely sh, Syntax a) => Push sh a
+empty = Push (const skip) zeroDim
 
 -- | Concatenation along the the outmost dimension
-(++) :: (Pushy vec1, VecShape vec1 ~ (sh :. Data Length)
+(++) :: forall vec1 vec2 sh a .
+        (Pushy vec1, VecShape vec1 ~ (sh :. Data Length)
         ,Pushy vec2, VecShape vec2 ~ (sh :. Data Length)) =>
         vec1 a
      -> vec2 a
@@ -1078,14 +1091,16 @@ vec1 ++ vec2 = Push k (sh1 :. (l1 + l2))
         Push k2 ext2 = toPush vec2
         (sh1,l1) = uncons ext1
         (sh2,l2) = uncons ext2
+        k :: PushK (sh :. Data Length) a
         k func = k1 func
-                 >>
+                 `par`
                  k2 (\ (sh :. i) a -> func (sh :. (i + l1)) a)
 -- Assumption sh1 == sh2
 
 -- | Concatenation along the outermost dimension where the two vectors have
 --   the same length. There is no check that the lengths are equal.
-(+=+) :: (Pully vec1, VecShape vec1 ~ (sh :. Data Length)
+(+=+) :: forall vec1 vec2 sh a .
+         (Pully vec1, VecShape vec1 ~ (sh :. Data Length)
          ,Pully vec2, VecShape vec2 ~ (sh :. Data Length)) =>
          vec1 a
       -> vec2 a
@@ -1095,20 +1110,22 @@ vec1 +=+ vec2 = Push f (sh1 :. (l1 + l2))
         Pull ixf2 ext2 = toPull vec2
         (sh1,l1) = uncons ext1
         (sh2,l2) = uncons ext2
-        f k = forShape (sh1 :. l1) $ \ (shi :. i) ->
-                do k (shi :. i)      (ixf1 (shi :. i))
-                   k (shi :. i + l1) (ixf2 (shi :. i))
+        f :: PushK (sh :. Data Length) a
+        f k = parForShape (sh1 :. l1) $ \ (shi :. i) ->
+                k (shi :. i)      (ixf1 (shi :. i)) `par`
+                k (shi :. i + l1) (ixf2 (shi :. i))
 
 -- | Flattens a vector of pairs such that the elements of a pair end up next
 --   to each other in the resulting vector.
-unpair :: (Pushy vec, VecShape vec ~ (sh :. Data Length))
+unpair :: forall vec sh a . (Pushy vec, VecShape vec ~ (sh :. Data Length))
        => vec (a,a)
        -> Push (sh :. Data Length) a
 unpair v = Push f' (sh :. (l * 2))
   where (Push f ex) = toPush v
         (sh,l) = uncons ex
+        f' :: PushK (sh :. Data Length) a
         f' k = f (\ (sh :. i) (a,b) -> k (sh :. (2 * i)) a
-                                    >> k (sh :. (2 * i + 1)) b)
+                                    `par` k (sh :. (2 * i + 1)) b)
 
 -- | Similar to 'unpair' but allows control over where the elements end up
 --   in the result vector.
@@ -1116,7 +1133,7 @@ unpair v = Push f' (sh :. (l * 2))
 -- @
 --   unpair = unpairWith (\(sh :. i) -> (sh :. 2*i)) (\(sh :. i) -> (sh :. 2*i+1))
 -- @
-unpairWith :: (Pushy vec, VecShape vec ~ (sh :. Data Length))
+unpairWith :: forall vec sh a . (Pushy vec, VecShape vec ~ (sh :. Data Length))
            => (Shape (sh :. Data Length) -> Shape (sh :. Data Length))
            -> (Shape (sh :. Data Length) -> Shape (sh :. Data Length))
            -> vec (a,a)
@@ -1124,7 +1141,8 @@ unpairWith :: (Pushy vec, VecShape vec ~ (sh :. Data Length))
 unpairWith ix1 ix2 vec = Push f' (sh :. (l*2))
   where (Push f ex) = toPush vec
         (sh,l) = uncons ex
-        f' k = f (\ix (a,b) -> k (ix1 ix) a >> k (ix2 ix) b)
+        f' :: PushK (sh :. Data Length) a
+        f' k = f (\ix (a,b) -> k (ix1 ix) a `par` k (ix2 ix) b)
 
 -- Some helper functions in Repa to help us define riffle
 
@@ -1159,20 +1177,22 @@ interleave :: (Pully vec1, VecShape vec1 ~ (sh :. Data Length)
 interleave v1 v2 = unpair (zip v1 v2)
 
 -- | Forward permute a push vector.
-forwardPermute :: (Pushy vec, VecShape vec ~ sh) =>
+forwardPermute :: forall vec sh a . (Pushy vec, VecShape vec ~ sh) =>
                   (Shape sh -> Shape sh -> Shape sh) ->
                   vec a ->  Push sh a
 forwardPermute p vec = Push g sh
   where Push f sh = toPush vec
+        g :: PushK sh a
         g k = f (\ix a -> k (p sh ix) a)
 
 reversePush :: Push (sh :. Data Length) a -> Push (sh :. Data Length) a
 reversePush (Push f (sh :. l)) =
   Push (\k -> f (\(sh' :. ix) a -> k (sh' :. (l - ix - 1)) a)) (sh :. l)
 
-ifPush :: Data Bool -> Push sh a -> Push sh a -> Push sh a
+ifPush :: forall sh a . Data Bool -> Push sh a -> Push sh a -> Push sh a
 ifPush cond (Push ixf1 sh1) (Push ixf2 sh2) = Push ixf sh
-  where ixf wf = ifM cond (ixf1 wf) (ixf2 wf)
+  where ixf :: PushK sh a
+        ixf wf = cond ? (ixf1 wf) $ (ixf2 wf)
         sh     = zipShape (cond ?) sh1 sh2
 
 -- Pinpointing one particular dimension
@@ -1202,20 +1222,22 @@ instance Selector This (sh :. Data Length) where
   adjustDimension This f (sh :. l) = sh :. f l
 
 -- | Concatenating vectors along a particular dimension
-conc :: Selector sel sh =>
+conc :: forall sel sh a . Selector sel sh =>
          Select sel -> Push sh a -> Push sh a -> Push sh a
 conc s (Push k1 sh1) (Push k2 sh2)
      = Push k (adjustDimension s (+ selectDimension s sh2) sh1)
-  where k func = k1 func
-                 >>
+  where k :: PushK sh a
+        k func = k1 func
+                 `par`
                  k2 (\ sh a -> func (adjustDimension s (+ selectDimension s sh1) sh) a)
 -- Assumption sh1 == sh2
 
 -- | Reverse a vector along a particular dimension.
-rev :: Selector sel sh =>
+rev :: forall sel sh a . Selector sel sh =>
        Select sel -> Push sh a -> Push sh a
 rev s (Push k sh) = Push k' sh
-  where k' func = k (\sh a -> func (adjustDimension s (selectDimension s sh -) sh) a)
+  where k' :: PushK sh a
+        k' func = k (\sh a -> func (adjustDimension s (selectDimension s sh -) sh) a)
 
 -- | This class captures all types of vectors which can turned into a 'Push'
 --   vector cheaply
@@ -1226,17 +1248,15 @@ instance Pushy (Push sh) where
   toPush = id
 
 instance Pushy (Pull sh) where
-  toPush (Pull ixf l) = Push f l
-    where f k = forShapeR l $ \i ->
-                 k i (ixf i)
+  toPush (Pull ixf l) = Push (\k -> parForShapeR l $ \ i ->
+                                      k i (ixf i))
+                             l
 
 -- | Store a vector in memory as a flat array
 fromPush :: Type a
          => Push sh (Data a) -> Data [a]
-fromPush (Push ixf l) = runMutableArray $
-                          do marr <- newArr_ (size l)
-                             ixf (\ix a -> setArr marr (toIndex l ix) a)
-                             return marr
+fromPush (Push ixf l) = materialize (size l) $
+                          ixf (\ix a -> write (toIndex l ix) a)
 
 freezePush :: (Type a, Shapely sh) =>
               Push sh (Data a) -> (Data [Length], Data [a])
@@ -1248,11 +1268,12 @@ freezePush1 :: (Type a) =>
 freezePush1 v = fromPush v
 
 
-thawPush :: (Type a, Shapely sh) =>
+thawPush :: forall a sh . (Type a, Shapely sh) =>
               (Data [Length], Data [a]) -> Push sh (Data a)
 thawPush (l,arr) = Push f sh
   where sh = toShape 0 l
-        f k = forShape sh $ \i ->
+        f :: PushK sh (Data a)
+        f k = parForShape sh $ \i ->
                 k i (arr ! (toIndex sh i))
 
 thawPush1 :: (Type a) => Data [a] -> Push DIM1 (Data a)
@@ -1273,12 +1294,13 @@ instance (Syntax a, Shapely sh) => Syntactic (Push sh a)
         _ :. _ :. _ -> fmap resugar $ thawPush $ sugar v
 
 -- | Flatten a pull vector of lists so that the lists become an extra dimension
-flattenList :: Shapely sh => Pull sh [a] -> Push (sh :. Data Length) a
+flattenList :: forall sh a . Shapely sh => Pull sh [a] -> Push (sh :. Data Length) a
 flattenList (Pull ixf sh) = Push f sz
-  where f k = forShape sh $ \i ->
-               do let indices = fmap (\j -> i :. j) $
+  where f :: PushK (sh :. Data Length) a
+        f k = parForShape sh $ \i ->
+                 let indices = fmap (\j -> i :. j) $
                                  fmap value [0..l-1]
-                  zipWithM_ k indices (ixf i)
+                  in P.foldr (\ (i,a) e -> k i a `par` e) skip $ P.zip indices (ixf i)
         sz  = sh :. value l
         l   = P.fromIntegral $
               P.length (ixf fakeShape)
@@ -1287,41 +1309,46 @@ flattenList (Pull ixf sh) = Push f sz
 -- KFFs extensions
 
 -- | Split the innermost dimension of a push vector in two
-expandS :: (Pushy vec, VecShape vec ~ (sh :. Data Length)) =>
+expandS :: forall vec sh a . (Pushy vec, VecShape vec ~ (sh :. Data Length)) =>
            Data Length -> vec a ->
            Push (sh :. Data Length :. Data Length) a
 expandS n v = Push g $ insLeft n $ insLeft p $ ext'
   where (Push f ext) = toPush v
         (m, ext') = peelLeft ext
         p = m `div` n
+        g :: PushK (sh :. Data Length :. Data Length) a
         g k = f $ \ ix v -> let (i,ix') = peelLeft ix in k (insLeft (i `div` p) $ insLeft (i `Feldspar.mod` p) $ ix') v
 
-contractS :: (Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
+contractS :: forall vec sh a . (Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
              vec a ->
              Push (sh :. Data Length) a
 contractS v = Push g $ insLeft (m*n) $ ext'
   where (Push f ext) = toPush v
         (m, n, ext') = peelLeft2 ext
+        g :: PushK (sh :. Data Length) a
         g k = f $ \ ix v -> let (i, j, ix') = peelLeft2 ix in k (insLeft (i*n + j) ix') v
 
-transS :: (Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
+transS :: forall vec sh a . (Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
           vec a ->
           Push (sh :. Data Length :. Data Length) a
 transS v = Push g $ insLeft n $ insLeft m $ ext'
   where (Push f ext) = toPush v
         (m, n, ext') = peelLeft2 ext
+        g :: PushK (sh :. Data Length :. Data Length) a
         g k = f $ \ ix v -> let (i, j, ix') = peelLeft2 ix in k (insLeft j $ insLeft i $ ix') v
 
 -- | Instantiate the innermost dimension from an abstracted push vector
-uncurryS :: Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
+uncurryS :: forall sh a . Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
 uncurryS m f = Push g (insLeft m ext)
   where Push _ ext = f (undefined :: Data Length)
-        g k = forM m $ \ i -> let Push h _ = f i in h (\ ix v -> k (insLeft i ix) v)
+        g :: PushK (sh :. Data Length) a
+        g k = parFor m $ \ i -> let Push h _ = f i in h (\ ix v -> k (insLeft i ix) v)
 
-uncurryS' :: Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
+uncurryS' :: forall sh a . Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
 uncurryS' m f = Push g (ext :. m)
   where Push _ ext = f (undefined :: Data Length)
-        g k = forM m $ \ i -> let Push h _ = f i in h (\ ix v -> k (ix :. i) v)
+        g :: PushK (sh :. Data Length) a
+        g k = parFor m $ \ i -> let Push h _ = f i in h (\ ix v -> k (ix :. i) v)
 
 expandST :: (Pushy vec, VecShape vec ~ (sh :. Data Length)) =>
             Data Length -> vec a ->
@@ -1379,54 +1406,21 @@ arrToManifest (ls,arr) = Manifest arr (toShape 0 ls)
 --   is an array of pairs, which can be flattened into a pair of arrays.
 class Flat sh a where
   type FlatManifest sh a
-  type Arr a
-  allocArray  :: Proxy a -> Proxy sh -> Data Length -> M (Arr a)
-  writeArray  :: Proxy sh -> Arr a -> ((Data Index -> a -> M ()) -> M ()) -> M ()
-  freezeArr   :: Proxy a -> Shape sh -> Arr a -> M (FlatManifest sh a)
+  aos2soa :: Push sh a -> FlatManifest sh a
 
 instance Type a => Flat sh (Data a) where
   type FlatManifest sh (Data a) = Manifest sh (Data a)
-  type Arr (Data a) = Data (MArr a)
-  allocArray _ _ = newArr_
-  writeArray _ marr f = f (\i a -> setArr marr i a)
-  freezeArr _ sh arr = fmap (\a -> Manifest a sh) $
-                       freezeArray arr
+  aos2soa vec = Manifest (fromPush vec) (extent vec)
 
 instance (Flat sh a, Flat sh b) => Flat sh (a,b) where
   type FlatManifest sh (a,b) = (FlatManifest sh a, FlatManifest sh b)
-  type Arr (a,b) = (Arr a, Arr b)
-  allocArray (_ :: Proxy (a,b)) (_ :: Proxy sh) l = do
-    a1 <- allocArray (Proxy :: Proxy a) (Proxy :: Proxy sh) l
-    a2 <- allocArray (Proxy :: Proxy b) (Proxy :: Proxy sh) l
-    return (a1,a2)
-  writeArray (_ :: Proxy sh) (arr1,arr2) f =
-    f (\i (a,b) -> writeArray (Proxy :: Proxy sh) arr1 (\k -> k i a) >>
-                   writeArray (Proxy :: Proxy sh) arr2 (\k -> k i b)
-      )
-  freezeArr (_ :: Proxy (a,b)) sh (arr1,arr2) = do
-    a1 <- freezeArr (Proxy :: Proxy a) sh arr1
-    a2 <- freezeArr (Proxy :: Proxy b) sh arr2
-    return (a1,a2)
+  aos2soa vec = (aos2soa $ fmap fst vec, aos2soa $ fmap snd vec)
 
 instance (Flat sh a, Flat sh b, Flat sh c) => Flat sh (a,b,c) where
-  type FlatManifest sh (a,b,c) = (FlatManifest sh a, FlatManifest sh b,FlatManifest sh c)
-  type Arr (a,b,c) = (Arr a, Arr b, Arr c)
-  allocArray (p :: Proxy (a,b,c)) (_ :: Proxy sh) l = do
-    a1 <- allocArray (Proxy :: Proxy a) (Proxy :: Proxy sh) l
-    a2 <- allocArray (Proxy :: Proxy b) (Proxy :: Proxy sh) l
-    a3 <- allocArray (Proxy :: Proxy c) (Proxy :: Proxy sh) l
-    return (a1,a2,a3)
-  writeArray (_ :: Proxy sh) (arr1,arr2,arr3) f =
-    f (\i (a,b,c) ->
-        writeArray (Proxy :: Proxy sh) arr1 (\k -> k i a) >>
-        writeArray (Proxy :: Proxy sh) arr2 (\k -> k i b) >>
-        writeArray (Proxy :: Proxy sh) arr3 (\k -> k i c)
-      )
-  freezeArr (p :: Proxy (a,b,c)) sh (arr1,arr2,arr3) = do
-    a1 <- freezeArr (Proxy :: Proxy a) sh arr1
-    a2 <- freezeArr (Proxy :: Proxy b) sh arr2
-    a3 <- freezeArr (Proxy :: Proxy c) sh arr3
-    return (a1,a2,a3)
+  type FlatManifest sh (a,b,c) = (FlatManifest sh a, FlatManifest sh b, FlatManifest sh c)
+  aos2soa vec = (aos2soa $ fmap (\(a,_,_) -> a) vec,
+                 aos2soa $ fmap (\(_,b,_) -> b) vec,
+                 aos2soa $ fmap (\(_,_,c) -> c) vec)
 
 -- | Stores a vector into one or several flattened manifest vectors. The
 --   elements of the vector have to be instances of the 'Flat' type class.
@@ -1436,11 +1430,7 @@ storeFlat :: forall a vec sh.
             (Flat sh a, Pushy vec, VecShape vec ~ sh
             ,Syntax (FlatManifest sh a)) =>
              vec a -> FlatManifest sh a
-storeFlat vec = runMutable $ do
-                  arr <- allocArray (Proxy :: Proxy a) (Proxy :: Proxy sh) (size l)
-                  writeArray (Proxy :: Proxy sh) arr (\k -> f (\sh a -> k (toIndex l sh) a))
-                  freezeArr (Proxy :: Proxy a) l arr
-  where (Push f l) = toPush vec
+storeFlat vec = aos2soa $ toPush vec
 
 -- | This class captures all vectors which can be turned into a 'Pull' vector
 --   without allocating memory.

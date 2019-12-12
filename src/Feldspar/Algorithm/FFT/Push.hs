@@ -1,5 +1,7 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Feldspar.Algorithm.FFT.Push
   ( fft
@@ -25,16 +27,17 @@ import Test.QuickCheck
 
 
 -- | Utilities that should go into Feldspar.Vector
-chnk :: (Pushy arr1, VecShape arr1 ~ DIM1, Syntax b)
+chnk :: forall arr1 a b . (Pushy arr1, VecShape arr1 ~ DIM1, Syntax b)
       => Data Length          -- ^ Number of chunks
       -> Data Length          -- ^ Size of the chunks
       -> (Pull DIM1 a -> arr1 b) -- ^ Applied to every chunk
       -> Pull DIM1 a
       -> Push DIM1 b
 chnk r c f v = Push loop $ extent v
-  where loop func = forM r $ \i ->
-                      do let (Push k _) = toPush $ f (take c (drop (c*i) v))
-                         k (\(Z:.j) a -> func (Z:.(c*i + j)) a)
+  where loop :: PushK DIM1 b
+        loop func = parFor r $ \i ->
+                      let (Push k _) = toPush $ f (take c (drop (c*i) v))
+                      in k (\(Z:.j) a -> func (Z:.(c*i + j)) a)
 
 unhalve :: (Syntax a)
         => Pull DIM1 (a,a) -> Push DIM1 a
