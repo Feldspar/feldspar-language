@@ -100,6 +100,7 @@ simpLoop env r op t (eTC:es) = go op (simplify env eTC) es
 simpApp :: SM -> ValueInfo -> Op -> Type -> [AExp] -> AExp
 simpApp env r op t es = go op t es
   where eOrig = AIn r $ App op t es
+        go :: Op -> Type -> [AExp] -> AExp
         go Add _ [e1, e2]
          | zero e1 = e2
          | zero e2 = e1
@@ -207,7 +208,8 @@ simpApp env r op t es = go op t es
         -- Fall through
         go _ _ _ = eOrig
 
-uLogOf (IntType sgn sz) (Literal (LInt sgn' sz' n))
+uLogOf :: Type -> UExp -> Maybe (Signedness, AExp)
+uLogOf (_ :# IntType sgn sz) (Literal (LInt sgn' sz' n))
   | sz == convSize NNative
   , n > 0
   , Just m <- intLog2 n
@@ -227,13 +229,16 @@ rshift Unsigned = ShiftRU
 rshift Signed   = ShiftR
 
 convert :: Lit -> Type -> Maybe AExp
-convert (LInt s1 sz1 n) (IntType s2 sz2) = Just $ aLit $ LInt s2 sz2 n
-convert (LInt s1 sz1 n) FloatType        = Just $ aLit $ LFloat $ fromIntegral n
-convert (LInt s1 sz1 n) DoubleType       = Just $ aLit $ LDouble $ fromIntegral n
+convert (LInt s1 sz1 n) (1 :# IntType s2 sz2) = Just $ aLit $ LInt s2 sz2 n
+convert (LInt s1 sz1 n) (1 :# FloatType)
+  = Just $ aLit $ LFloat $ fromIntegral n
+convert (LInt s1 sz1 n) (1 :# DoubleType)
+  = Just $ aLit $ LDouble $ fromIntegral n
 convert _ _ = Nothing
 
-compatible (IntType s1 sz1) (IntType s2 sz2) (IntType s3 sz3)
-  | sz2 >= sz3 || s1 == s2 && sz1 <= sz2 = True
+compatible :: Type -> Type -> Type -> Bool
+compatible (n1 :# IntType s1 sz1) (n2 :# IntType s2 sz2) (n3 :# IntType s3 sz3)
+  | n1 == n2 && n2 == n3 = sz2 >= sz3 || s1 == s2 && sz1 <= sz2
 compatible _ _ _ = False
 
 extend :: SM -> Var -> AExp -> SM
@@ -334,7 +339,7 @@ constFold e _ _ _ = e
 
 constFold1 :: AUntypedFeld ValueInfo -> Op -> Lit -> AUntypedFeld ValueInfo
 constFold1 e GetLength (LArray _ xs)
-  | IntType s n <- typeof e = aLit (LInt s n $ fromIntegral $ length xs)
+  | 1 :# IntType s n <- typeof e = aLit (LInt s n $ fromIntegral $ length xs)
 constFold1 e _ _ = e
 
 -- | Scan an Epar/Ewrite-nest and return the element written to a position.
