@@ -34,7 +34,8 @@ import Data.Complex
 
 import Feldspar.Core.Types
 import Feldspar.Core.UntypedRepresentation hiding ( Lambda, UntypedFeldF(..)
-                                                  , Size, Type(..), Signedness
+                                                  , Size, ScalarType(..)
+                                                  , Type(..), Signedness
                                                   , Op(..)
                                                   )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
@@ -43,11 +44,11 @@ import Feldspar.Range
 
 untypeType :: TypeRep a -> Size a -> Ut.Type
 untypeType UnitType _               = Ut.TupType []
-untypeType BoolType _               = Ut.BoolType
-untypeType (IntType s n) _          = Ut.IntType (convSign s) (convSize n)
-untypeType FloatType _              = Ut.FloatType
-untypeType DoubleType _             = Ut.DoubleType
-untypeType (ComplexType t) _        = Ut.ComplexType (untypeType t (defaultSize t))
+untypeType BoolType _               = 1 Ut.:# Ut.BoolType
+untypeType (IntType s n) _          = 1 Ut.:# (Ut.IntType (convSign s) (convSize n))
+untypeType FloatType _              = 1 Ut.:# Ut.FloatType
+untypeType DoubleType _             = 1 Ut.:# Ut.DoubleType
+untypeType (ComplexType t) _        = 1 Ut.:# (Ut.ComplexType (untypeType t (defaultSize t)))
 untypeType (Tup2Type a b) (sa,sb)
   = Ut.TupType [untypeType a sa, untypeType b sb]
 untypeType (Tup3Type a b c) (sa,sb,sc)

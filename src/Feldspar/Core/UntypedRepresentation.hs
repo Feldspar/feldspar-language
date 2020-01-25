@@ -44,6 +44,7 @@ module Feldspar.Core.UntypedRepresentation (
   , AUntypedFeld
   , UntypedFeldF(..)
   , Op(..)
+  , ScalarType(..)
   , Type(..)
   , Lit(..)
   , Var(..)
@@ -165,13 +166,17 @@ data Signedness = Signed | Unsigned
 data Fork = None | Future | Par | Loop
     deriving (Eq,Show)
 
-data Type =
+data ScalarType =
      BoolType
    | BitType
    | IntType Signedness Size
    | FloatType
    | DoubleType
    | ComplexType Type
+   deriving (Eq,Show)
+
+data Type =
+     Length :# ScalarType
    | TupType [Type]
    | MutType Type
    | RefType Type
@@ -183,7 +188,6 @@ data Type =
    | FunType Type Type
    | FValType Type
    deriving (Eq,Show)
-
 
 data Var = Var { varNum :: VarId
                , varType :: Type
@@ -234,14 +238,19 @@ literalVI (LComplex re im) = VIProd [literalVI re, literalVI im]
 literalVI (LArray t xs) = foldr lubVI (botInfo t) $ map literalVI xs
 literalVI (LTup xs) = VIProd $ map literalVI xs
 
+-- | The bottom (most informative) elements of the info domains for each scalar type.
+botInfoST :: ScalarType -> ValueInfo
+botInfoST BoolType         = boolBot
+botInfoST BitType          = VIWord8 $ Range 1 0 -- Provisionally
+botInfoST (IntType sgn sz) = constantIntRange sgn sz emptyRange
+botInfoST FloatType        = VIFloat
+botInfoST DoubleType       = VIDouble
+botInfoST (ComplexType t)  = VIProd [botInfo t, botInfo t]
+
 -- | The bottom (most informative) elements of the info domains for each type.
 botInfo :: Type -> ValueInfo
-botInfo BoolType         = boolBot
-botInfo BitType          = VIWord8 $ Range 1 0 -- Provisionally
-botInfo (IntType sgn sz) = constantIntRange sgn sz emptyRange
-botInfo FloatType        = VIFloat
-botInfo DoubleType       = VIDouble
-botInfo (ComplexType t)  = VIProd [botInfo t, botInfo t]
+-- FIXME: Should (n :# t) be VIProd (replicate n botInfoST t)?
+botInfo (_ :# t)         = botInfoST t
 botInfo (TupType ts)     = VIProd $ map botInfo ts
 botInfo (MutType t)      = botInfo t
 botInfo (RefType t)      = botInfo t
@@ -253,14 +262,19 @@ botInfo (IVarType t)     = botInfo t
 botInfo (FunType _ t)    = botInfo t
 botInfo (FValType t)     = botInfo t
 
+-- | The top (least informative) elements of the info domains for each scalar type.
+topInfoST :: ScalarType -> ValueInfo
+topInfoST BoolType         = boolTop
+topInfoST BitType          = VIWord8 $ Range 0 1 -- Provisionally
+topInfoST (IntType sgn sz) = constantIntRange sgn sz fullRange
+topInfoST FloatType        = VIFloat
+topInfoST DoubleType       = VIDouble
+topInfoST (ComplexType t)  = VIProd [topInfo t, topInfo t]
+
 -- | The top (least informative) elements of the info domains for each type.
 topInfo :: Type -> ValueInfo
-topInfo BoolType         = boolTop
-topInfo BitType          = VIWord8 $ Range 0 1 -- Provisionally
-topInfo (IntType sgn sz) = constantIntRange sgn sz fullRange
-topInfo FloatType        = VIFloat
-topInfo DoubleType       = VIDouble
-topInfo (ComplexType t)  = VIProd [topInfo t, topInfo t]
+-- FIXME: Should (n :# t) be VIProd (replicate n topInfoST t)?
+topInfo (_ :# t)         = topInfoST t
 topInfo (TupType ts)     = VIProd $ map topInfo ts
 topInfo (MutType t)      = topInfo t
 topInfo (RefType t)      = topInfo t
@@ -295,7 +309,7 @@ prettyVI t (VIProd vs)  = pr t vs
 
 -- | The Type used to represent indexes, to which Index is mapped.
 indexType :: Type
-indexType = IntType Unsigned S32
+indexType = 1 :# (IntType Unsigned S32)
 
 -- | Construct an Elements value info from those of the index and value parts
 elementsVI :: ValueInfo -> ValueInfo -> ValueInfo
@@ -556,17 +570,21 @@ instance (Show e) => Show (UntypedFeldF e) where
     = show p ++ "{" ++ show t ++ "} " ++ unwords (map show es)
    show (App p _ es)                = show p ++ " " ++ unwords (map show es)
 
--- | Compute a compact text representation of a type
-prType :: Type -> String
-prType BoolType         = "bool"
-prType BitType          = "bit"
-prType (IntType s sz)   = prS s ++ prSz sz
+-- | Compute a compact text representation of a scalar type
+prTypeST :: ScalarType -> String
+prTypeST BoolType         = "bool"
+prTypeST BitType          = "bit"
+prTypeST (IntType s sz)   = prS s ++ prSz sz
   where prS Signed   = "i"
         prS Unsigned = "u"
         prSz s       = drop 1 $ show s
-prType FloatType        = "f32"
-prType DoubleType       = "f64"
-prType (ComplexType t)  = "c" ++ prType t
+prTypeST FloatType        = "f32"
+prTypeST DoubleType       = "f64"
+prTypeST (ComplexType t)  = "c" ++ prType t
+
+-- | Compute a compact text representation of a type
+prType :: Type -> String
+prType (n :# t)         = show n ++ 'x':prTypeST t
 prType (TupType ts)     = "(" ++ intercalate "," (map prType ts) ++ ")"
 prType (MutType t)      = "M" ++ prType t
 prType (RefType t)      = "R" ++ prType t
@@ -656,13 +674,13 @@ instance HasType Var where
     typeof Var{..}  = varType
 
 instance HasType Lit where
-    type TypeOf Lit      = Type
-    typeof (LInt s n _)  = IntType s n
-    typeof LDouble{}     = DoubleType
-    typeof LFloat{}      = FloatType
-    typeof LBool{}       = BoolType
+    type TypeOf Lit       = Type
+    typeof (LInt s n _)   = 1 :# (IntType s n)
+    typeof LDouble{}      = 1 :# DoubleType
+    typeof LFloat{}       = 1 :# FloatType
+    typeof LBool{}        = 1 :# BoolType
     typeof (LArray t es) = ArrayType (singletonRange $ fromIntegral $ length es) t
-    typeof (LComplex r _) = ComplexType $ typeof r
+    typeof (LComplex r _) = 1 :# (ComplexType $ typeof r)
     typeof (LTup ls)     = TupType (map typeof ls)
 
 instance HasType UntypedFeld where
@@ -777,7 +795,7 @@ legalToShare _                    = True
 
 -- | Expressions that are expensive enough to be worth sharing
 goodToShare :: AUntypedFeld a -> Bool
-goodToShare (AIn _ (Literal l)) 
+goodToShare (AIn _ (Literal l))
   | LArray _ (_:_) <- l = True
   | LTup (_:_)     <- l = True
 goodToShare (AIn _ (App _ _ _)) = True
