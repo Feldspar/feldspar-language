@@ -66,7 +66,6 @@ library
     Feldspar.Core.Collection
     Feldspar.Core
     Feldspar.BitVector
-    Feldspar.FixedPoint
     Feldspar.Future
     Feldspar.Memoize
     Feldspar.Mutable
