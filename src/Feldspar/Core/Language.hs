@@ -575,9 +575,6 @@ instance Integral IntN
 -- Literal.hs
 --------------------------------------------------
 
--- value :: Syntax a => Internal a -> a
--- value = sugarSymF . Literal
-
 false :: Data Bool
 false = value False
 
@@ -1039,12 +1036,6 @@ sourceData info = sugarSym1 (Decor info Id)
 --------------------------------------------------
 -- Switch.hs
 --------------------------------------------------
-
--- | Select between the cases based on the value of the scrutinee.
-select :: (Eq a, Syntax b) => Data a -> [(Data a, b)] -> b -> b
-select s cs def = foldr (\(c,a) b -> c == s ? a $ b) def cs
-
-{-# DEPRECATED select "select will generate a tree of if-statements. Use switch instead" #-}
 
 -- | Select between the cases based on the value of the scrutinee.
 -- If no match is found return the first argument
