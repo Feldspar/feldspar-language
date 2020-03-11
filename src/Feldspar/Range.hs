@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -66,16 +65,8 @@ instance (Show a, Bounded a, Eq a) => Show (Range a)
 type BoundedInt a = (BoundedSuper a, BoundedSuper (UnsignedRep a))
 
 -- | Super class to 'BoundedInt'
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
 class    (Ord a, Num a, Bounded a, Integral a, FiniteBits a) => BoundedSuper a
 instance (Ord a, Num a, Bounded a, Integral a, FiniteBits a) => BoundedSuper a
-#else
-class    (Ord a, Num a, Bounded a, Integral a, Bits a) => BoundedSuper a
-instance (Ord a, Num a, Bounded a, Integral a, Bits a) => BoundedSuper a
-
-finiteBitSize :: (Bits b) => b -> Int
-finiteBitSize = bitSize
-#endif
 
 -- | Type famliy to determine the bit representation of a type
 type family UnsignedRep a
