@@ -1432,23 +1432,6 @@ type instance Size (IV a)          = Size a
 type instance Size (FVal a)        = Size a
 
 
--- | A generalization of 'Range' that serves two purposes: (1) Adding an extra
--- 'Universal' constructor to support unbounded types ('Range' can only
--- represent bounded ranges), and (2) pack a 'BoundedInt' constraint with the
--- 'RangeSet' constructor. This is what allows 'sizeToRange' to be defined as a
--- total function with 'Type' as the only constraint.
-data RangeSet a
-  where
-    RangeSet  :: BoundedInt a => Range a -> RangeSet a
-    Universal :: RangeSet a
-
--- | Cast a 'Size' to a 'RangeSet'
-sizeToRange :: forall a . Type a => Size a -> RangeSet a
-sizeToRange sz = case typeRep :: TypeRep a of
-    IntType _ _ -> RangeSet sz
-    _           -> Universal
-
-
 tIntN :: Patch IntN IntN
 tIntN = id
 
@@ -1463,4 +1446,3 @@ tLength = id
 
 tArr :: Patch a a -> Patch [a] [a]
 tArr _ = id
-
