@@ -1,9 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GADTs #-}
@@ -45,7 +41,6 @@ import Feldspar.Core.Tuple
 import Feldspar.Range
 import Feldspar.Lattice
 
-import Data.Typeable (Typeable)
 import qualified Data.Map as M
 
 look :: TypeF a => BindEnv -> Var a -> AExpr a
