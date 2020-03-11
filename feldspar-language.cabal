@@ -127,7 +127,7 @@ library
 
   hs-source-dirs: src examples
 
-  ghc-options: -fcontext-stack=100
+  ghc-options: -freduction-depth=100
 
 test-suite range
   type: exitcode-stdio-1.0
