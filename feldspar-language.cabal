@@ -93,7 +93,7 @@ library
     base-orphans,
     bytestring                  >= 0.10   && < 0.11,
     containers                  >= 0.4    && < 0.6,
-    comonad                     >= 4.2    && < 5.0,
+    comonad                     >= 4.2    && < 6.0,
     mtl                         >= 2.0    && < 2.3,
     QuickCheck                  >= 2.7    && < 3,
     patch-combinators           >= 0.2    && < 0.3,

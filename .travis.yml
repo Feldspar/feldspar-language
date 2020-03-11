@@ -7,12 +7,10 @@ cache:
 
 matrix:
   include:
-    - env: CABALVER=1.22 GHCVER=7.10.3
-      addons: {apt: {sources: [hvr-ghc], packages: [cabal-install-1.22,ghc-7.10.3,happy-1.19.5,alex-3.1.7]}}
     - env: CABALVER=1.24 GHCVER=8.0.2
       addons: {apt: {sources: [hvr-ghc], packages: [cabal-install-1.24,ghc-8.0.2,happy-1.19.5,alex-3.1.7]}}
-    - env: CABALVER=head GHCVER=head
-      addons: {apt: {sources: [hvr-ghc], packages: [cabal-install-head,ghc-head,happy-1.19.5,alex-3.1.7]}}
+    - env: CABALVER=2.2 GHCVER=8.4.4
+      addons: {apt: {sources: [hvr-ghc], packages: [cabal-install-2.2,ghc-8.4.4,happy-1.19.5,alex-3.1.7]}}
 
   allow_failures:
     - env: CABALVER=head GHCVER=head
