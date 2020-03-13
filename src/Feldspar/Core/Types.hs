@@ -173,7 +173,7 @@ signedness U = "Word"
 signedness S = "Int"
 
 -- | A generalization of unsigned and signed integers. The first parameter
--- represents the signedness and the sectond parameter the number of bits.
+-- represents the signedness and the second parameter the number of bits.
 type family GenericInt s n
 type instance GenericInt U N8      = Word8
 type instance GenericInt S N8      = Int8
@@ -185,30 +185,6 @@ type instance GenericInt U N64     = Word64
 type instance GenericInt S N64     = Int64
 type instance GenericInt U NNative = WordN
 type instance GenericInt S NNative = IntN
-
-type family WidthOf a
-type instance WidthOf Word8  = N8
-type instance WidthOf Int8   = N8
-type instance WidthOf Word16 = N16
-type instance WidthOf Int16  = N16
-type instance WidthOf Word32 = N32
-type instance WidthOf Int32  = N32
-type instance WidthOf Word64 = N64
-type instance WidthOf Int64  = N64
-type instance WidthOf WordN  = NNative
-type instance WidthOf IntN   = NNative
-
-type family SignOf a
-type instance SignOf Word8  = U
-type instance SignOf Int8   = S
-type instance SignOf Word16 = U
-type instance SignOf Int16  = S
-type instance SignOf Word32 = U
-type instance SignOf Int32  = S
-type instance SignOf Word64 = U
-type instance SignOf Int64  = S
-type instance SignOf WordN  = U
-type instance SignOf IntN   = S
 
 fromWordN :: BitWidth n -> WordN -> GenericInt U n
 fromWordN N8      = fromInteger . toInteger
@@ -428,12 +404,6 @@ instance Show (TypeRep a)
     show (TupleType t)                   = "<" ++ show t ++ ">"
     show (IVarType ta)                   = unwords ["IVar", show ta]
     show (FValType ta)                   = unwords ["FVal", show ta]
-
-argType :: TypeRep (a -> b) -> TypeRep a
-argType (FunType ta _) = ta
-
-resType :: TypeRep (a -> b) -> TypeRep b
-resType (FunType _ tb) = tb
 
 -- | Type equality witness
 data TypeEq a b
@@ -818,7 +788,6 @@ typeEq (IVarType t1) (IVarType t2) = do
 typeEq (FValType t1) (FValType t2) = do
     TypeEq <- typeEq t1 t2
     return TypeEq
-
 typeEq _ _ = Nothing
 
 showTup :: [String] -> String
@@ -1327,11 +1296,6 @@ instance Type a => Type (FVal a)
 
     toTarget = error "toTarget: FVal" -- TODO
 
-
-
-typeRepByProxy :: Type a => Proxy a -> TypeRep a
-typeRepByProxy _ = typeRep
-
 -- | Extend the class Type to higher order types
 class (Typeable a, Show (Size a), Lattice (Size a)) => TypeF a where
   typeRepF :: TypeRep a
@@ -1354,8 +1318,6 @@ instance {-# OVERLAPPING #-} TypeF (RTuple TNil)
 instance {-# OVERLAPPABLE #-} (Typeable a, Type a) => TypeF a where
   typeRepF = typeRep
   sizeOfF = sizeOf
-
-
 
 --------------------------------------------------------------------------------
 -- * Sized types

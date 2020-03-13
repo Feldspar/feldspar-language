@@ -110,9 +110,6 @@ asVar _ = typeRepF
 asExpr :: TypeF a => R.Expr a -> TypeRep a
 asExpr _ = typeRepF
 
-asValue :: TypeF a => a -> TypeRep a
-asValue _ = typeRepF
-
 asOpT :: TypeF a => R.Op a -> TypeRep a
 asOpT _ = typeRepF
 
@@ -125,7 +122,7 @@ toU (i :& e) = AIn (toAnno i) (toUr e)
 toUr :: TypeF a => R.Expr a -> UntypedFeldF (AUntypedFeld ValueInfo)
 toUr (R.Variable v) = Variable $ trV v
 toUr (R.Literal v) = Literal $ literal tr (defaultSize tr) v
-  where tr = asValue v
+  where tr = typeRep
 toUr e@(R.Operator op) = App (trOp op) (toType $ asExpr e) []
 toUr (f :@ a) = toApp f [toU a]
 toUr (R.Lambda v e) = Lambda (trV v) (toU e)
