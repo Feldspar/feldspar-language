@@ -41,9 +41,10 @@ import Feldspar.Core.Tuple
 import Feldspar.Range
 import Feldspar.Lattice
 
-import qualified Data.Map as M
+import Data.Typeable (Typeable)
+import qualified Data.Map as M (empty)
 
-look :: TypeF a => BindEnv -> Var a -> AExpr a
+look :: Typeable a => BindEnv -> Var a -> AExpr a
 look vm v = lookupBE "SizeProp.look" vm v
 
 extend :: TypeF a => BindEnv -> Var a -> Info a -> BindEnv
@@ -510,19 +511,18 @@ spBind vm a f = (Info bs, a1, f1)
         (bs,f1) = spLambda vm (exprSize a1) f
 
 -- | Helper for lambdas
-spLambda :: (TypeF a, TypeF b) => BindEnv -> Size a -> AExpr (a -> b) -> (Size b, AExpr (a -> b))
+spLambda :: BindEnv -> Size a -> AExpr (a -> b) -> (Size b, AExpr (a -> b))
 spLambda vm s (_ :& Lambda v e) = (exprSize e1, Info (s, exprSize e1) :& Lambda v e1)
   where e1 = spA (extend vm v $ Info s) e
-spLambda _  _ e = error $ "SizeProp.spLambda: not a lambda abstraction: " ++ show e
+spLambda _  _ _ = error "SizeProp.spLambda: not a lambda abstraction."
 
 -- | Helper for two levels of lambdas
-spLambda2 :: (TypeF a, TypeF b, TypeF c)
-          => BindEnv -> Size a -> Size b -> AExpr (a -> b -> c) -> (Size c, AExpr (a -> b -> c))
+spLambda2 :: BindEnv -> Size a -> Size b -> AExpr (a -> b -> c) -> (Size c, AExpr (a -> b -> c))
 spLambda2 vm s t (_ :& Lambda v (_ :& Lambda w e)) = (exprSize e1, f1)
   where e1 = spA (extend (extend vm v $ Info s) w $ Info t) e
         u1 = (t, exprSize e1)
         f1 = Info (s, u1) :& Lambda v (Info u1 :& Lambda w e1)
-spLambda2 _  _ _ e = error $ "SizeProp.spLambda2: not a lambda abstraction: " ++ show e
+spLambda2 _  _ _ _ = error "SizeProp.spLambda2: not a lambda abstraction."
 
 -- | Nullary applications
 spApp0 :: BindEnv -> Op u -> Size u -> AExpr u
