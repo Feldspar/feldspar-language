@@ -165,10 +165,10 @@ exprType _ = typeRepF
 literal :: LiteralType a => a -> AExpr a
 literal x = Info (sizeOf x) :& Literal x
 
-instance Show (Size a) => Show (Expr a) where
+instance Show (Expr a) where
   show e = showExpr 0 e ""
 
-showExpr :: Show (Size a) => Int -> Expr a -> String -> String
+showExpr :: Int -> Expr a -> String -> String
 showExpr _ (Literal l)    r = show l ++ r
 showExpr _ (Operator op)  r = show op ++ r
 showExpr _ (Variable v)   r = "v" ++ show (varNum v) ++ r
