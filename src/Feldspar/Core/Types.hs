@@ -174,17 +174,17 @@ signedness S = "Int"
 
 -- | A generalization of unsigned and signed integers. The first parameter
 -- represents the signedness and the second parameter the number of bits.
-type family GenericInt s n
-type instance GenericInt U N8      = Word8
-type instance GenericInt S N8      = Int8
-type instance GenericInt U N16     = Word16
-type instance GenericInt S N16     = Int16
-type instance GenericInt U N32     = Word32
-type instance GenericInt S N32     = Int32
-type instance GenericInt U N64     = Word64
-type instance GenericInt S N64     = Int64
-type instance GenericInt U NNative = WordN
-type instance GenericInt S NNative = IntN
+type family GenericInt s n where
+  GenericInt U N8      = Word8
+  GenericInt S N8      = Int8
+  GenericInt U N16     = Word16
+  GenericInt S N16     = Int16
+  GenericInt U N32     = Word32
+  GenericInt S N32     = Int32
+  GenericInt U N64     = Word64
+  GenericInt S N64     = Int64
+  GenericInt U NNative = WordN
+  GenericInt S NNative = IntN
 
 fromWordN :: BitWidth n -> WordN -> GenericInt U n
 fromWordN N8      = fromInteger . toInteger
@@ -793,45 +793,45 @@ typeEq _ _ = Nothing
 showTup :: [String] -> String
 showTup as =  "(" ++ intercalate "," as ++ ")"
 
-type family TargetType n a
-type instance TargetType n ()              = ()
-type instance TargetType n Bool            = Bool
-type instance TargetType n Word8           = Word8
-type instance TargetType n Int8            = Int8
-type instance TargetType n Word16          = Word16
-type instance TargetType n Int16           = Int16
-type instance TargetType n Word32          = Word32
-type instance TargetType n Int32           = Int32
-type instance TargetType n Word64          = Word64
-type instance TargetType n Int64           = Int64
-type instance TargetType n WordN           = GenericInt U n
-type instance TargetType n IntN            = GenericInt S n
-type instance TargetType n Float           = Float
-type instance TargetType n Double          = Double
-type instance TargetType n (Complex a)     = Complex (TargetType n a)
-type instance TargetType n [a]             = TargetArr n (TargetType n a)
-type instance TargetType n (a,b)           = (TargetType n a, TargetType n b)
-type instance TargetType n (a,b,c)         = (TargetType n a, TargetType n b, TargetType n c)
-type instance TargetType n (a,b,c,d)       = (TargetType n a, TargetType n b, TargetType n c, TargetType n d)
-type instance TargetType n (a,b,c,d,e)     = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e)
-type instance TargetType n (a,b,c,d,e,f)   = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f)
-type instance TargetType n (a,b,c,d,e,f,g) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g)
-type instance TargetType n (a,b,c,d,e,f,g,h) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h)
-type instance TargetType n (a,b,c,d,e,f,g,h,i) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i)
-type instance TargetType n (a,b,c,d,e,f,g,h,i,j) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j)
-type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k)
-type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k,l) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l)
-type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m)
-type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m,n') = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m, TargetType n n')
-type instance TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m, TargetType n n', TargetType n o)
-type instance TargetType n (IORef a)       = IORef (TargetType n a)
-type instance TargetType n (MArr a)        = MArr (TargetType n a)
-type instance TargetType n (Elements a)    = Elements (TargetType n a)
-type instance TargetType n (RTuple (a:*b)) = RTuple (TargetType n a :* TargetType n b)
-type instance TargetType n (RTuple TNil)   = Tuple TNil
-type instance TargetType n (Tuple a)       = Tuple (TargetType n a)
-type instance TargetType n (IV a)          = IV (TargetType n a)
-type instance TargetType n (FVal a)        = FVal (TargetType n a)
+type family TargetType n a where
+  TargetType n ()              = ()
+  TargetType n Bool            = Bool
+  TargetType n Word8           = Word8
+  TargetType n Int8            = Int8
+  TargetType n Word16          = Word16
+  TargetType n Int16           = Int16
+  TargetType n Word32          = Word32
+  TargetType n Int32           = Int32
+  TargetType n Word64          = Word64
+  TargetType n Int64           = Int64
+  TargetType n WordN           = GenericInt U n
+  TargetType n IntN            = GenericInt S n
+  TargetType n Float           = Float
+  TargetType n Double          = Double
+  TargetType n (Complex a)     = Complex (TargetType n a)
+  TargetType n [a]             = TargetArr n (TargetType n a)
+  TargetType n (a,b)           = (TargetType n a, TargetType n b)
+  TargetType n (a,b,c)         = (TargetType n a, TargetType n b, TargetType n c)
+  TargetType n (a,b,c,d)       = (TargetType n a, TargetType n b, TargetType n c, TargetType n d)
+  TargetType n (a,b,c,d,e)     = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e)
+  TargetType n (a,b,c,d,e,f)   = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f)
+  TargetType n (a,b,c,d,e,f,g) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g)
+  TargetType n (a,b,c,d,e,f,g,h) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h)
+  TargetType n (a,b,c,d,e,f,g,h,i) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i)
+  TargetType n (a,b,c,d,e,f,g,h,i,j) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j)
+  TargetType n (a,b,c,d,e,f,g,h,i,j,k) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k)
+  TargetType n (a,b,c,d,e,f,g,h,i,j,k,l) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l)
+  TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m)
+  TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m,n') = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m, TargetType n n')
+  TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m, TargetType n n', TargetType n o)
+  TargetType n (IORef a)       = IORef (TargetType n a)
+  TargetType n (MArr a)        = MArr (TargetType n a)
+  TargetType n (Elements a)    = Elements (TargetType n a)
+  TargetType n (RTuple (a:*b)) = RTuple (TargetType n a :* TargetType n b)
+  TargetType n (RTuple TNil)   = Tuple TNil
+  TargetType n (Tuple a)       = Tuple (TargetType n a)
+  TargetType n (IV a)          = IV (TargetType n a)
+  TargetType n (FVal a)        = FVal (TargetType n a)
 
 -- | The set of supported types
 class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a), TypeF a) => Type a
@@ -1348,50 +1348,49 @@ instance Lattice AnySize
     (\/) = anySizeFun2
     (/\) = anySizeFun2
 
-type family Size a
-
-type instance Size ()              = AnySize
-type instance Size Bool            = AnySize
-type instance Size Word8           = Range Word8
-type instance Size Int8            = Range Int8
-type instance Size Word16          = Range Word16
-type instance Size Int16           = Range Int16
-type instance Size Word32          = Range Word32
-type instance Size Int32           = Range Int32
-type instance Size Word64          = Range Word64
-type instance Size Int64           = Range Int64
-type instance Size WordN           = Range WordN
-type instance Size IntN            = Range IntN
-type instance Size Float           = AnySize
-type instance Size Double          = AnySize
-type instance Size (Complex a)     = AnySize
-type instance Size [a]             = Range Length :> Size a
-type instance Size (TargetArr n a) = Range (GenericInt U n) :> Size a
-type instance Size (a,b)           = (Size a, Size b)
-type instance Size (a,b,c)         = (Size a, Size b, Size c)
-type instance Size (a,b,c,d)       = (Size a, Size b, Size c, Size d)
-type instance Size (a,b,c,d,e)     = (Size a, Size b, Size c, Size d, Size e)
-type instance Size (a,b,c,d,e,f)   = (Size a, Size b, Size c, Size d, Size e, Size f)
-type instance Size (a,b,c,d,e,f,g) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g)
-type instance Size (a,b,c,d,e,f,g,h) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h)
-type instance Size (a,b,c,d,e,f,g,h,i) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i)
-type instance Size (a,b,c,d,e,f,g,h,i,j) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j)
-type instance Size (a,b,c,d,e,f,g,h,i,j,k) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k)
-type instance Size (a,b,c,d,e,f,g,h,i,j,k,l) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l)
-type instance Size (a,b,c,d,e,f,g,h,i,j,k,l,m) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m)
-type instance Size (a,b,c,d,e,f,g,h,i,j,k,l,m,n) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m, Size n)
-type instance Size (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m, Size n, Size o)
-type instance Size (a -> b)        = (Size a, Size b)
-type instance Size (Mut a)         = Size a
-type instance Size (IORef a)       = Size a
-type instance Size (MArr a)        = Range Length :> Size a
-type instance Size (Par a)         = Size a
-type instance Size (Elements a)    = Range Length :> Size a
-type instance Size (RTuple (a :* b)) = (Size a, Size (RTuple b))
-type instance Size (RTuple TNil)   = Size ()
-type instance Size (Tuple a)       = Size (RTuple a)
-type instance Size (IV a)          = Size a
-type instance Size (FVal a)        = Size a
+type family Size a where
+  Size ()              = AnySize
+  Size Bool            = AnySize
+  Size Word8           = Range Word8
+  Size Int8            = Range Int8
+  Size Word16          = Range Word16
+  Size Int16           = Range Int16
+  Size Word32          = Range Word32
+  Size Int32           = Range Int32
+  Size Word64          = Range Word64
+  Size Int64           = Range Int64
+  Size WordN           = Range WordN
+  Size IntN            = Range IntN
+  Size Float           = AnySize
+  Size Double          = AnySize
+  Size (Complex a)     = AnySize
+  Size [a]             = Range Length :> Size a
+  Size (TargetArr n a) = Range (GenericInt U n) :> Size a
+  Size (a,b)           = (Size a, Size b)
+  Size (a,b,c)         = (Size a, Size b, Size c)
+  Size (a,b,c,d)       = (Size a, Size b, Size c, Size d)
+  Size (a,b,c,d,e)     = (Size a, Size b, Size c, Size d, Size e)
+  Size (a,b,c,d,e,f)   = (Size a, Size b, Size c, Size d, Size e, Size f)
+  Size (a,b,c,d,e,f,g) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g)
+  Size (a,b,c,d,e,f,g,h) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h)
+  Size (a,b,c,d,e,f,g,h,i) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i)
+  Size (a,b,c,d,e,f,g,h,i,j) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j)
+  Size (a,b,c,d,e,f,g,h,i,j,k) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k)
+  Size (a,b,c,d,e,f,g,h,i,j,k,l) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l)
+  Size (a,b,c,d,e,f,g,h,i,j,k,l,m) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m)
+  Size (a,b,c,d,e,f,g,h,i,j,k,l,m,n) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m, Size n)
+  Size (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m, Size n, Size o)
+  Size (a -> b)        = (Size a, Size b)
+  Size (Mut a)         = Size a
+  Size (IORef a)       = Size a
+  Size (MArr a)        = Range Length :> Size a
+  Size (Par a)         = Size a
+  Size (Elements a)    = Range Length :> Size a
+  Size (RTuple (a :* b)) = (Size a, Size (RTuple b))
+  Size (RTuple TNil)   = Size ()
+  Size (Tuple a)       = Size (RTuple a)
+  Size (IV a)          = Size a
+  Size (FVal a)        = Size a
 
 
 tIntN :: Patch IntN IntN
