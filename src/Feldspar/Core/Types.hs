@@ -11,7 +11,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -43,12 +42,12 @@
 
 module Feldspar.Core.Types
        ( module Feldspar.Core.Types
+       , IntN, WordN
        , tuple, Tuple(), RTuple(..), sel, Skip(..), First(..), (:*), TNil -- From NestedTuples
        ) where
 
 
-
-import Data.Array.IO
+import Data.Array.IO (IOArray(..))
 import Data.Bits
 import Data.Complex
 import Data.Int
@@ -57,7 +56,6 @@ import Data.List
 import Data.Typeable (Typeable)
 import Data.Orphans
 import Data.Word
-import Data.Default
 import Data.Hash
 import Test.QuickCheck
 import System.Random (Random(..))
@@ -65,9 +63,6 @@ import qualified Control.Monad.Par as MonadPar
 
 import Data.Patch
 import Data.Proxy
-
-import Control.DeepSeq (NFData(..))
-import Foreign.Storable (Storable)
 
 import Feldspar.Lattice
 import Feldspar.Range
@@ -91,39 +86,6 @@ instance (Lattice a, Lattice b) => Lattice (a :> b)
     (a1:>a2) \/ (b1:>b2) = (a1 \/ b1) :> (a2 \/ b2)
     (a1:>a2) /\ (b1:>b2) = (a1 /\ b1) :> (a2 /\ b2)
 
-
-
---------------------------------------------------------------------------------
--- * Integers
---------------------------------------------------------------------------------
-
--- | Target-dependent unsigned integers
-newtype WordN = WordN Word32
-  deriving
-    ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
-    , Arbitrary, Random, Storable, NFData, Default
-    , FiniteBits, Hashable
-    )
-
-type instance UnsignedRep WordN = Word32
-
--- | Target-dependent signed integers
-newtype IntN = IntN Int32
-  deriving
-    ( Eq, Ord, Num, Enum, Ix, Real, Integral, Bits, Bounded, Typeable
-    , Arbitrary, Random, Storable, NFData, Default
-    , FiniteBits, Hashable
-    )
-
-type instance UnsignedRep IntN = Word32
-
-instance Show WordN
-  where
-    show (WordN a) = show a
-
-instance Show IntN
-  where
-    show (IntN a) = show a
 
 -- | Type representation of 8 bits
 data N8
