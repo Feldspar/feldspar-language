@@ -5,6 +5,8 @@
 {-# OPTIONS_GHC -Wall #-}
 -- FIXME: Current data structures make incomplete checking impossible.
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+-- GHC 8.6.5 runs out of stack in the reduction with the default value.
+{-# OPTIONS_GHC -freduction-depth=0 #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB

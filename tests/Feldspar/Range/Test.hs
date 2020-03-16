@@ -154,11 +154,12 @@ typedTestsTwo name t1 t2 =
 instance (Bounded a, Ord a, Enum a, Arbitrary a) => Arbitrary (Range a)
   where
     arbitrary = do
-      [bound1,bound2] <- vectorOf 2 $ oneof
+      tmp <- vectorOf 2 $ oneof
                          [ arbitrary
                          , elements $ [minBound,toEnum 0,toEnum 1,maxBound]
                             ++ [toEnum (-1) | fromEnum (minBound :: a) < 0]]
-      frequency
+      case tmp of
+        [bound1,bound2] -> frequency
                 [ (10, return $
                      Range (min bound1 bound2) (max bound1 bound2))
                 , (1 , return $
