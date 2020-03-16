@@ -106,25 +106,6 @@ library
     data-hash                   >= 0.2.0.1 && < 100,
     tree-view
 
-  other-extensions:
-    ConstraintKinds
-    DeriveDataTypeable
-    EmptyDataDecls
-    FlexibleInstances
-    FlexibleContexts
-    FunctionalDependencies
-    GADTs
-    GeneralizedNewtypeDeriving
-    MultiParamTypeClasses
-    PatternGuards
-    Rank2Types
-    ScopedTypeVariables
-    StandaloneDeriving
-    TypeFamilies
-    TypeOperators
-    TypeSynonymInstances
-    ViewPatterns
-
   hs-source-dirs: src examples
 
   ghc-options: -freduction-depth=100
