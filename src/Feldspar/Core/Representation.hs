@@ -106,8 +106,6 @@ type Full a = a
 -- We currently do not use the type constructor :->
 type a :-> b = a -> b
 
-type FExpr a = Expr (Full a)
-
 -- | The type of information, for instance range information. Currently only size info.
 data Info a = Info {infoSize :: Size a}
 
@@ -118,7 +116,7 @@ instance Show (Size a) => Show (Info a) where
   show (Info x) = show x
 
 -- | Adding default info to an Expr
-toAExpr :: Lattice (Size a) => FExpr a -> AExpr a
+toAExpr :: Lattice (Size a) => Expr (Full a) -> AExpr a
 toAExpr e = Info top :& e
 
 -- | Constructing an annotation for a Lambda
