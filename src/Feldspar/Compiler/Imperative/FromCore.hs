@@ -277,13 +277,15 @@ compileProg loc (In (App Ut.Sequential _ [len, init', In (Ut.Lambda (Ut.Var v ti
         let st = mkPointer (compileType opts tst) s
             st_val = Deref $ varToExpr st
         declareAlias st
-        (_, Block ds (Sequence body)) <- confiscateBlock $ withAlias s st_val $ compileProg (mkArrayElem <$> loc <*> pure [ix]) step
-        withAlias s st_val $ compileProg (Just st1) init'
-        tellProg [ Assign (varToExpr st) (AddrOf st1)
-                 , initArray loc len']
-        tellProg [toProg $ Block (concat dss ++ ds) $
-                  for Sequential (varExpr ix) (litI32 0) len' (litI32 1) $
-                               toBlock $ Sequence (concat lets ++ body ++ maybe [] (\arr -> [Assign (varToExpr st) $ AddrOf (mkArrayElem arr [ix])]) loc)]
+        tmp1 <- confiscateBlock $ withAlias s st_val $ compileProg (mkArrayElem <$> loc <*> pure [ix]) step
+        case tmp1 of
+          (_, Block ds (Sequence body)) -> do
+            withAlias s st_val $ compileProg (Just st1) init'
+            tellProg [ Assign (varToExpr st) (AddrOf st1)
+                     , initArray loc len']
+            tellProg [toProg $ Block (concat dss ++ ds) $
+                      for Sequential (varExpr ix) (litI32 0) len' (litI32 1) $
+                                   toBlock $ Sequence (concat lets ++ body ++ maybe [] (\arr -> [Assign (varToExpr st) $ AddrOf (mkArrayElem arr [ix])]) loc)]
 compileProg loc (In (App Ut.Sequential _ [len, st, In (Ut.Lambda (Ut.Var v t _) (In (Ut.Lambda (Ut.Var s _ _) step)))]))
   = do
        opts <- asks backendOpts
@@ -291,14 +293,16 @@ compileProg loc (In (App Ut.Sequential _ [len, st, In (Ut.Lambda (Ut.Var v t _) 
        let ix = mkVar (compileType opts t) v
        len' <- mkLength len t
        tmp  <- freshVar opts "seq" tr'
-       (_, Block ds (Sequence body)) <- confiscateBlock $ withAlias s (StructField tmp "member2") $ compileProg (Just tmp) step
-       tellProg [initArray loc len']
-       compileProg (Just $ StructField tmp "member2") st
-       tellProg [toProg $ Block ds $
-                 for Sequential (varExpr ix) (litI32 0) len' (litI32 1) $ toBlock $
-                   Sequence $ body ++
-                     [copyProg (mkArrayElem <$> loc <*> pure [ix]) [StructField tmp "member1"]
-                     ]]
+       tmp1 <- confiscateBlock $ withAlias s (StructField tmp "member2") $ compileProg (Just tmp) step
+       case tmp1 of
+         (_, Block ds (Sequence body)) -> do
+          tellProg [initArray loc len']
+          compileProg (Just $ StructField tmp "member2") st
+          tellProg [toProg $ Block ds $
+                     for Sequential (varExpr ix) (litI32 0) len' (litI32 1) $ toBlock $
+                       Sequence $ body ++
+                        [copyProg (mkArrayElem <$> loc <*> pure [ix]) [StructField tmp "member1"]
+                        ]]
 compileProg loc (In (App Ut.Append _ [a, b])) = do
    a' <- compileExpr a
    b' <- compileExpr b
