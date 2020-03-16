@@ -1271,12 +1271,12 @@ instance Type a => Type (Elements a)
 
     toTarget = error "toTarget: Elements"  -- TODO Requires IO
 
-instance (Typeable a, TypeF (RTuple a), Eq (Tuple a), Show (Tuple a), Size (Tuple a) ~ Size (RTuple a))
+instance (Type a, Type (RTuple a), Eq (Tuple a), Size (Tuple a) ~ Size (RTuple a))
   => Type (Tuple a)
   where
-    typeRep = TupleType typeRepF
+    typeRep = TupleType typeRep
 
-    sizeOf (Tuple xs) = sizeOfF xs
+    sizeOf (Tuple xs) = sizeOf xs
 
     toTarget = error "toTarget: Tuple"
 
