@@ -96,8 +96,7 @@ evalBind :: TypeF a => ASTF a -> a
 evalBind = evalTop . unASTF ()
 
 render :: TypeF a => ASTF a -> String
-render (ASTF (m,e) _) = unwords $ show e : "where" : map rendb (map snd $ M.toList m)
-  where rendb (CBind v e) = show v ++ " = " ++ show e
+render (ASTF (m,e) _) = unwords $ show e : "where" : map (show . snd) (M.toList m)
 
 instance TypeF a => Show (ASTF a) where
   show = render
