@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -38,9 +39,19 @@
 
 module Feldspar.Range where
 
+import qualified Data.Array.IO as IO
 import Data.Bits
 import Data.Int
+import Data.Typeable (Typeable)
 import Data.Word
+import Data.Default
+import Data.Hash
+import qualified Test.QuickCheck as Q
+import System.Random (Random(..))
+
+import Control.DeepSeq (NFData(..))
+import Foreign.Storable (Storable)
+
 import Feldspar.Lattice
 
 --------------------------------------------------------------------------------
@@ -61,6 +72,36 @@ instance (Show a, Bounded a, Eq a) => Show (Range a)
         sl = if l == minBound then "*" else show l
         su = if u == maxBound then "*" else show u
 
+--------------------------------------------------------------------------------
+-- * Integers
+--------------------------------------------------------------------------------
+
+-- FIXME: These types are declared here to be able to close UnsignedRep.
+
+-- | Target-dependent unsigned integers
+newtype WordN = WordN Word32
+  deriving
+    ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded, Typeable
+    , Q.Arbitrary, Random, Storable, NFData, Default
+    , FiniteBits, Hashable
+    )
+
+-- | Target-dependent signed integers
+newtype IntN = IntN Int32
+  deriving
+    ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded, Typeable
+    , Q.Arbitrary, Random, Storable, NFData, Default
+    , FiniteBits, Hashable
+    )
+
+instance Show WordN
+  where
+    show (WordN a) = show a
+
+instance Show IntN
+  where
+    show (IntN a) = show a
+
 -- | Convenience alias for bounded integers
 type BoundedInt a = (BoundedSuper a, BoundedSuper (UnsignedRep a))
 
@@ -69,16 +110,18 @@ class    (Ord a, Num a, Bounded a, Integral a, FiniteBits a) => BoundedSuper a
 instance (Ord a, Num a, Bounded a, Integral a, FiniteBits a) => BoundedSuper a
 
 -- | Type famliy to determine the bit representation of a type
-type family UnsignedRep a
-type instance UnsignedRep Int8   = Word8
-type instance UnsignedRep Word8  = Word8
-type instance UnsignedRep Int16  = Word16
-type instance UnsignedRep Word16 = Word16
-type instance UnsignedRep Int32  = Int32
-type instance UnsignedRep Word32 = Word32
-type instance UnsignedRep Int64  = Word64
-type instance UnsignedRep Word64 = Word64
-type instance UnsignedRep Int    = Word
+type family UnsignedRep a where
+  UnsignedRep Int8   = Word8
+  UnsignedRep Word8  = Word8
+  UnsignedRep Int16  = Word16
+  UnsignedRep Word16 = Word16
+  UnsignedRep Int32  = Int32
+  UnsignedRep Word32 = Word32
+  UnsignedRep Int64  = Word64
+  UnsignedRep Word64 = Word64
+  UnsignedRep Int    = Word
+  UnsignedRep WordN  = Word32
+  UnsignedRep IntN   = Word32
 
 -- | Convert an 'Integral' to its unsigned representation while preserving
 -- bit width
