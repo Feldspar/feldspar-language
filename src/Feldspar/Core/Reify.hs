@@ -150,7 +150,7 @@ flattenCSE (m,e) | not $ sharable e = (m, e)
 flattenCSE (m,e) = mergeMapCExpr (M.singleton (varNum v) (CBind v e)) (m, aeInfo e :& Variable v)
    where v = Var (hashExpr e) B.empty
 
-applyCSE :: (ExprCtx a, ExprCtx b) => CSEExpr (Expr (a -> b)) -> CSEExpr (AExpr a) -> CSEExpr (Expr b)
+applyCSE :: ExprCtx a => CSEExpr (Expr (a -> b)) -> CSEExpr (AExpr a) -> CSEExpr (Expr b)
 applyCSE (lm,f) (rm,e) = (m, f :@ e1)
    where (m,e1) = mergeMapCExpr lm (rm,e)
 
