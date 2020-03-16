@@ -1438,14 +1438,36 @@ infixl 5 @@
   where go (ASTF ce j) = (applyCSE cf ce, P.max i j)
 
 -- | Convenience wrappers for sugarSym
+sugarSym0 :: (Syntactic a, TypeF (Internal a)) => Op (Internal a) -> a
 sugarSym0 op         = unFull $ sugarSym op
+sugarSym1
+  :: (TypeF (Internal a), TypeF (Internal b), Syntactic a, Syntactic b)
+  => Op (Internal a -> Internal b) -> a -> b
 sugarSym1 op a       = unFull $ sugarSym op a
+sugarSym2
+  :: (TypeF (Internal a), TypeF (Internal b), TypeF (Internal c),
+      Syntactic a, Syntactic b, Syntactic c) =>
+     Op (Internal a -> Internal b -> Internal c) -> a -> b -> c
 sugarSym2 op a b     = unFull $ sugarSym op a b
+sugarSym3
+  :: (TypeF (Internal a), TypeF (Internal b), TypeF (Internal c),
+      TypeF (Internal d), Syntactic a, Syntactic b, Syntactic c,
+      Syntactic d) =>
+     Op (Internal a -> Internal b -> Internal c -> Internal d)
+     -> a -> b -> c -> d
 sugarSym3 op a b c   = unFull $ sugarSym op a b c
+sugarSym4
+  :: (TypeF (Internal a), TypeF (Internal b), TypeF (Internal c),
+      TypeF (Internal d), TypeF (Internal e), Syntactic a, Syntactic b,
+      Syntactic c, Syntactic d, Syntactic e) =>
+     Op
+       (Internal a
+        -> Internal b -> Internal c -> Internal d -> Internal e)
+     -> a -> b -> c -> d -> e
 sugarSym4 op a b c d = unFull $ sugarSym op a b c d
 
 -- | Convert an 'Op' to a function that builds the corresponding syntax tree
-sugarSym :: (SugarF a) => Op (SugarT a) -> a
+sugarSym :: SugarF a => Op (SugarT a) -> a
 sugarSym = sugarF . op2f
 
 -- | Mark an application as full rather than partial
