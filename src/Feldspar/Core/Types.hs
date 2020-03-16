@@ -42,7 +42,7 @@
 
 module Feldspar.Core.Types
        ( module Feldspar.Core.Types
-       , IntN, WordN
+       , IntN(..), WordN(..)
        , tuple, Tuple(), RTuple(..), sel, Skip(..), First(..), (:*), TNil -- From NestedTuples
        ) where
 
