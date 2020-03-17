@@ -144,7 +144,7 @@ eu ai vm (App Let t [eRhs, AIn r (Lambda v eBody)])
        let bsB1 = if inline then bsB else shiftBIs bsB
        return (fvsB, (bsR ++ bsB1, if inline then dropAnnotation eB else eNew))
 eu ai vm (App op t [eLen, eInit, AIn r1 (Lambda vIx (AIn r2 (Lambda vSt eBody)))])
-  | elem op [ForLoop, Sequential]
+  | op `elem` [ForLoop, Sequential]
   = do (fvsL,bseL) <- expE ai vm eLen
        let (bsL,eL) = bseL
        (fvsI,bseI) <- expE ai vm eInit
@@ -152,15 +152,14 @@ eu ai vm (App op t [eLen, eInit, AIn r1 (Lambda vIx (AIn r2 (Lambda vSt eBody)))
        -- Maybe the trip count should be bound to a variable
        let aiB = LoopI {trip = (fvsL,eL), ixVar = vIx, absVars = S.singleton vSt} : ai
        let vmB = M.insert vIx (S.singleton vIx, Variable vIx) $
-                 M.insert vSt (S.singleton vSt, Variable vSt) $
-                 vm
+                 M.insert vSt (S.singleton vSt, Variable vSt) vm
        (fvsB,bseB) <- expE aiB vmB eBody
        let (bsB,eB) = bseB
        return (fvsL `S.union` fvsI `S.union` (fvsB S.\\ S.fromList [vIx, vSt]),
                (bsL ++ bsI ++ shiftBIs bsB,
                 App op t [eL, eI, AIn r1 $ Lambda vIx $ AIn r2 $ Lambda vSt eB]))
 eu ai vm (App op t [eLen, AIn r1 (Lambda vIx eBody)])
-  | elem op [Parallel, EparFor, For]
+  | op `elem` [Parallel, EparFor, For]
   = do (fvsL,bseL) <- expE ai vm eLen
        let (bsL,eL) = bseL
        -- Maybe the trip count should be bound to a variable
@@ -200,7 +199,7 @@ expCost ai vm (AIn _ e) = go e
         go _             = 5
 
 appCost :: [AbsInfo] -> VarMap -> Op -> [UExp] -> Int
-appCost ai vm op es = go op es
+appCost ai vm = go
   where go Mul [AIn _ (Variable v), AIn _ (Variable u)]
            | ixAndInv ai v (fst $ vm M.! u) = 1
         go _   _                            = 5

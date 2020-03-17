@@ -6,7 +6,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
@@ -47,7 +46,7 @@ module Feldspar.Core.Frontend
     , SyntacticFeld
     , Syntax
 
-    , module Frontend
+    , module Feldspar.Core.Language
 
     , FeldOpts
     , defaultFeldOpts
@@ -109,7 +108,7 @@ import Feldspar.Core.Interpretation
 import Feldspar.Core.Middleend.FromTyped
 import Feldspar.Core.UntypedRepresentation (VarId, stringTree)
 import Feldspar.Core.Constructs
-import Feldspar.Core.Language                  as Frontend
+import Feldspar.Core.Language
 
 reifyFeldM :: (SyntacticFeld a, MonadState VarId m)
     => FeldOpts
@@ -124,7 +123,7 @@ reifyFeld :: Syntactic a
           -> BitWidth n
           -> a
           -> ASTF (Internal a)
-reifyFeld _ _ x = Syntactic.desugar x
+reifyFeld _ _ = Syntactic.desugar
 
 reifyFeldUnOpt :: Syntactic a
                 => FeldOpts

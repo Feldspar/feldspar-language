@@ -225,13 +225,13 @@ literalVI (LInt sgn sz n) = go sgn sz
         go Signed    S32 = singletonVI (fromInteger n :: Int32)
         go Signed    S40 = singletonVI (fromInteger n :: Int64)
         go Signed    S64 = singletonVI (fromInteger n :: Int64)
-        go Signed   S128 = error $ "UntypedRepresentation.literalVI: not supported"
+        go Signed   S128 = error "UntypedRepresentation.literalVI: not supported"
         go Unsigned   S8 = singletonVI (fromInteger n :: Word8)
         go Unsigned  S16 = singletonVI (fromInteger n :: Word16)
         go Unsigned  S32 = singletonVI (fromInteger n :: Word32)
         go Unsigned  S40 = singletonVI (fromInteger n :: Word64)
         go Unsigned  S64 = singletonVI (fromInteger n :: Word64)
-        go Unsigned S128 = error $ "UntypedRepresentation.literalVI: not supported"
+        go Unsigned S128 = error "UntypedRepresentation.literalVI: not supported"
 literalVI (LFloat  x) = singletonVI x
 literalVI (LDouble x) = singletonVI x
 literalVI (LComplex re im) = VIProd [literalVI re, literalVI im]
@@ -309,7 +309,7 @@ prettyVI t (VIProd vs)  = pr t vs
 
 -- | The Type used to represent indexes, to which Index is mapped.
 indexType :: Type
-indexType = 1 :# (IntType Unsigned S32)
+indexType = 1 :# IntType Unsigned S32
 
 -- | Construct an Elements value info from those of the index and value parts
 elementsVI :: ValueInfo -> ValueInfo -> ValueInfo
@@ -643,7 +643,7 @@ prettyExp prA e = render (pr 0 0 e)
         prP t r = " {" ++ prType t ++ prA t r ++ "}"
         prC t   = " : " ++ prType t
 
-        par p i [] = error $ "UntypedRepresentation.prettyExp: parethesisizing empty text"
+        par p i [] = error "UntypedRepresentation.prettyExp: parethesisizing empty text"
         par p i ls = if p <= i then ls else prepend "(" $ append ")" ls
         prepend s ((i,n,v) : ls) = ((i, n + length s, s ++ v) : ls)
         append s [(i,n,v)] = [(i, n + length s, v ++ s)]
@@ -675,7 +675,7 @@ instance HasType Var where
 
 instance HasType Lit where
     type TypeOf Lit       = Type
-    typeof (LInt s n _)   = 1 :# (IntType s n)
+    typeof (LInt s n _)   = 1 :# IntType s n
     typeof LDouble{}      = 1 :# DoubleType
     typeof LFloat{}       = 1 :# FloatType
     typeof LBool{}        = 1 :# BoolType
@@ -716,7 +716,7 @@ fvU' vs (In (Variable v)) | v `elem` vs  = []
 fvU' vs (In (Lambda v e))                = fvU' (v:vs) e
 fvU' vs (In (LetFun (_, _, e1) e2))      = fvU' vs e1 ++ fvU' vs e2
    -- Literal
-fvU' _  (In (Literal{}))                 = []
+fvU' _  (In  Literal{})                  = []
 -- Common nodes.
 fvU' vs (In (App _ _ es))                = concatMap (fvU' vs) es
 
@@ -727,7 +727,7 @@ allVars = nub . go
     go (In (Variable v))           = [v]
     go (In (Lambda v e))           = v : go e
     go (In (LetFun (_, _, e1) e2)) = go e1 ++ go e2
-    go (In (Literal{}))            = []
+    go (In  Literal{})             = []
     go (In (App _ _ es))           = concatMap go es
 
 -- | Collect nested let binders into the binders and the body.
@@ -798,7 +798,7 @@ goodToShare :: AUntypedFeld a -> Bool
 goodToShare (AIn _ (Literal l))
   | LArray _ (_:_) <- l = True
   | LTup (_:_)     <- l = True
-goodToShare (AIn _ (App _ _ _)) = True
+goodToShare (AIn _ App{})       = True
 goodToShare _                   = False
 
 legalToInline :: AUntypedFeld a -> Bool

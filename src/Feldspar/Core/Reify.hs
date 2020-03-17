@@ -85,7 +85,7 @@ resugar = sugar . desugar
 data ASTF a = ASTF (CExpr a) Int
 
 alphaEq :: T.Type a => ASTF a -> ASTF a -> Bool
-alphaEq (ASTF (ml,el) _) (ASTF (mr,er) _) = error $ "alphaEq not supported (binding time violation)"
+alphaEq (ASTF (ml,el) _) (ASTF (mr,er) _) = error "alphaEq not supported (binding time violation)"
 
 -- | Convert an ASTF to an expression
 unASTF :: TypeF a => b -> ASTF a -> (AExpr a)
@@ -296,7 +296,7 @@ appHash = 655360 + 40960 + 2560 + 160 + 10 + 17
 absHash = 327680 + 20480 + 1280 +  80 +  5
 
 combineHashL :: Integral a => [a] -> a
-combineHashL xs = foldr combineHash 0 xs
+combineHashL = foldr combineHash 0
 
 combineHash :: Integral a => a -> a -> a
 combineHash l r = fromInteger $ mod (toInteger l + 127 * toInteger r) hashMod

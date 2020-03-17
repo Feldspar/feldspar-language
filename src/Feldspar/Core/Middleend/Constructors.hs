@@ -79,7 +79,7 @@ fromExpr :: AUntypedFeld a -> AExpB a
 fromExpr e = (Bags [], e)
 
 unAnnotateB :: AExpB a -> RExpB a
-unAnnotateB (b, (AIn _ e)) = (b, e)
+unAnnotateB (b, AIn _ e) = (b, e)
 
 fromRExpr :: RRExp a -> RExpB a
 fromRExpr e = (Bags [], e)

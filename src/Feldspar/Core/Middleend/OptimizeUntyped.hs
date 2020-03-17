@@ -86,14 +86,12 @@ simpLoop env r op t (eTC:es) = go op (simplify env eTC) es
          , Lambda vIx eLam1 <- unwrap eLam
          , Lambda vSt body <- unwrap eLam1
          = simplify env $ mkLet vIx (aLit $ LInt s sz 0)
-                        $ mkLet vSt eSt
-                        $ body
+                        $ mkLet vSt eSt body
         go EparFor tc [AIn _ (Lambda vIx body)]
          | zero tc
          = AIn r $ App ESkip t []
          | Literal (LInt s sz 1) <- unwrap tc
-         = simplify env $ mkLet vIx (aLit $ LInt s sz 0)
-                        $ body
+         = simplify env $ mkLet vIx (aLit $ LInt s sz 0) body
         -- Fall through
         go op tc es = AIn r $ App op t (tc : map (simplify env) es)
 

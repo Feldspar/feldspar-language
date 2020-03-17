@@ -1,6 +1,5 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -60,7 +59,7 @@ defaultFeldOpts = FeldOpts { targets = [] }
 
 -- | Decide whether a Target is enabled in FeldOpts.
 inTarget :: Target -> FeldOpts -> Bool
-inTarget t opts = t `elem` (targets opts)
+inTarget t opts = t `elem` targets opts
 
 -- | Variable identifier
 newtype VarId = VarId { varInteger :: Integer }
