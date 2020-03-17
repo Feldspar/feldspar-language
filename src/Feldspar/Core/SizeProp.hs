@@ -488,8 +488,6 @@ topF2 _ _ = top
 topF3 :: Lattice u => a -> b -> c -> u
 topF3 _ _ _ = top
 
-topF = undefined
-
 finalInfo :: Lattice (Size a) => AExpr a -> Size a -> Info a
 finalInfo e s = Info $ exprSize e \/ s
 
