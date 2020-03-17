@@ -9,10 +9,8 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -85,7 +83,7 @@ instance Show (RTuple a) => Show (Tuple a) where
   show t = "<" ++ show (unTup t) ++ ">"
 
 tuple :: RTuple a -> Tuple a
-tuple t = Tuple t
+tuple = Tuple
 
 -- | Selecting components of a tuple
 

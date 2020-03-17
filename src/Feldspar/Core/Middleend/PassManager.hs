@@ -63,15 +63,15 @@ class Pretty a where
 
 prOrStop :: (Pretty a, Eq b, Show b) => String -> [b] -> [b] -> b -> Prog a c -> Prog a c
 prOrStop pos prs stop pass (Prog (Just p) ss s)
-  = Prog (if elem pass stop then Nothing else Just p)
-         (ss ++ if elem pass prs then [preamble ++ pretty p ++ "\n"] else [])
+  = Prog (if pass `elem` stop then Nothing else Just p)
+         (ss ++ [preamble ++ pretty p ++ "\n" | pass `elem` prs])
          s
   where preamble = "\n========== " ++ pos ++ " " ++ show pass ++ " ==========\n\n"
 prOrStop _ _ _ _ prog = prog
 
 runPassC :: (Eq b ) => [b] -> b -> (a -> a) -> Prog a c -> Prog a c
 runPassC skips pass f (Prog (Just p) ss s)
-  = Prog (Just $ if elem pass skips then p else f p) ss s
+  = Prog (Just $ if pass `elem` skips then p else f p) ss s
 runPassC _ _ _ prog = prog
 
 runPassT :: (a -> b) -> Prog a c -> Prog b c
@@ -80,7 +80,7 @@ runPassT f (Prog Nothing ss s) = Prog Nothing ss s
 
 runPassS :: Eq b => [b] -> b -> ((c,a) -> (c,a)) -> Prog a c -> Prog a c
 runPassS skips pass f (Prog (Just p) ss s)
-  | notElem pass skips = Prog (Just p1) ss s1
+  | pass `notElem` skips = Prog (Just p1) ss s1
   where (s1,p1) = f (s,p)
 
 passC :: (Pretty a, Eq b, Show b) => PassCtrl b -> b -> (a -> a) -> Prog a c -> Prog a c

@@ -65,9 +65,9 @@ push v rhs r = snd . goA False False
         go lo pa (App op t es) = (n, app op t es1)
            where (ns,es1) = unzip $ map (goA lo1 pa) es
                  n = foldr (liftDS both) zeroDS ns
-                 lo1 = elem op [Parallel, Sequential, EparFor, ForLoop, WhileLoop, For, While]
+                 lo1 = op `elem` [Parallel, Sequential, EparFor, ForLoop, WhileLoop, For, While]
         go lo pa e@(Lambda u _) | u == v = (zeroDS, fromRExpr e)
-        go lo pa (Lambda u e) = (lamDS lo n1, lambda u $ e1)
+        go lo pa (Lambda u e) = (lamDS lo n1, lambda u e1)
            where (n1,e1) = goA False pa e
 
 lamDS :: Bool -> DSCount -> DSCount

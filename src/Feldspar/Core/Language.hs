@@ -6,10 +6,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 --
@@ -49,7 +47,6 @@ import Feldspar.Core.Constructs (Data(..), Syntax(..), SyntacticFeld(..))
 import Feldspar.Core.Middleend.FromTypeUtil (untypeType, literal)
 import Feldspar.Core.NestedTuples
 
-import Feldspar.Core.Collection
 import Feldspar.Range
 import Feldspar.Core.Collection
 import Feldspar.Core.Interpretation hiding (SizeProp, sizeProp, literal)

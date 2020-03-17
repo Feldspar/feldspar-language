@@ -76,8 +76,7 @@ untype opts = cleanUp opts
 
 -- | External module interface.
 untypeDecor :: TypeF a => FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
-untypeDecor opts = id
-                 . pushLets
+untypeDecor opts = pushLets
                  . optimize
                  . sinkLets opts
                  . justUntype opts

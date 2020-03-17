@@ -45,10 +45,10 @@ import Feldspar.Range
 untypeType :: TypeRep a -> Size a -> Ut.Type
 untypeType UnitType _               = Ut.TupType []
 untypeType BoolType _               = 1 Ut.:# Ut.BoolType
-untypeType (IntType s n) _          = 1 Ut.:# (Ut.IntType (convSign s) (convSize n))
+untypeType (IntType s n) _          = 1 Ut.:# Ut.IntType (convSign s) (convSize n)
 untypeType FloatType _              = 1 Ut.:# Ut.FloatType
 untypeType DoubleType _             = 1 Ut.:# Ut.DoubleType
-untypeType (ComplexType t) _        = 1 Ut.:# (Ut.ComplexType (untypeType t (defaultSize t)))
+untypeType (ComplexType t) _        = 1 Ut.:# Ut.ComplexType (untypeType t (defaultSize t))
 untypeType (Tup2Type a b) (sa,sb)
   = Ut.TupType [untypeType a sa, untypeType b sb]
 untypeType (Tup3Type a b c) (sa,sb,sc)
@@ -287,12 +287,12 @@ toValueInfo (Tup15Type a b c d e f g h i j k l m n o) (sa,sb,sc,sd,se,sf,sg,sh,s
            ]
 toValueInfo (MutType a) sz                  = toValueInfo a sz
 toValueInfo (RefType a) sz                  = toValueInfo a sz
-toValueInfo (ArrayType a) ((Range (WordN l) (WordN r)) :> es)
+toValueInfo (ArrayType a) (Range (WordN l) (WordN r) :> es)
   = VIProd [VIWord32 (Range l r), toValueInfo a es]
-toValueInfo (MArrType a) ((Range (WordN l) (WordN r)) :> es)
+toValueInfo (MArrType a) (Range (WordN l) (WordN r) :> es)
   = VIProd [VIWord32 (Range l r), toValueInfo a es]
 toValueInfo (ParType a) sz                  = toValueInfo a sz
-toValueInfo (ElementsType a) ((Range (WordN l) (WordN r)) :> es)
+toValueInfo (ElementsType a) (Range (WordN l) (WordN r) :> es)
   = VIProd [VIWord32 (Range l r), toValueInfo a es]
 toValueInfo (ConsType a b) (sa,sb) = VIProd $ toValueInfo a sa : ss
   where VIProd ss = toValueInfo b sb
