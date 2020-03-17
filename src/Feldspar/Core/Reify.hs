@@ -178,7 +178,7 @@ hashError sect = error $ "CSE.mergeCSE: hash conflict, diff is" ++ concatMap sho
 {- | Functions for floating bindings out of lambdas whenever possible.
 -}
 
-floatBindings :: [VarId] -> M.Map VarId CBind -> (M.Map VarId CBind, [CBind])
+floatBindings :: [VarId] -> CSEMap -> (CSEMap, [CBind])
 floatBindings vs bm = (M.fromAscList [(bvId b, b) | b <- fbs], concat nfBss)
    where arr = accumArray f [] (0, fromIntegral $ len-1)
              $ map toPair
