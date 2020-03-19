@@ -45,7 +45,7 @@ data Closure where
   Clo :: Typeable a => a -> Closure
 
 evalTop :: AExpr a -> a
-evalTop e = evalA M.empty e
+evalTop = evalA M.empty
 
 evalA :: CloEnv -> AExpr a -> a
 evalA bm (_ :& e) = evalE bm e
