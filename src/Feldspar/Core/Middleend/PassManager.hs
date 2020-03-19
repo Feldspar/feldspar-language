@@ -69,7 +69,7 @@ prOrStop pos prs stop pass (Prog (Just p) ss s)
   where preamble = "\n========== " ++ pos ++ " " ++ show pass ++ " ==========\n\n"
 prOrStop _ _ _ _ prog = prog
 
-runPassC :: (Eq b ) => [b] -> b -> (a -> a) -> Prog a c -> Prog a c
+runPassC :: Eq b => [b] -> b -> (a -> a) -> Prog a c -> Prog a c
 runPassC skips pass f (Prog (Just p) ss s)
   = Prog (Just $ if pass `elem` skips then p else f p) ss s
 runPassC _ _ _ prog = prog

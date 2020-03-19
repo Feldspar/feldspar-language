@@ -44,14 +44,14 @@ import Data.Typeable
 data Closure where
   Clo :: Typeable a => a -> Closure
 
-evalTop :: TypeF a => AExpr a -> a
+evalTop :: AExpr a -> a
 evalTop e = evalA M.empty e
 
-evalA :: TypeF a => CloEnv -> AExpr a -> a
+evalA :: CloEnv -> AExpr a -> a
 evalA bm (_ :& e) = evalE bm e
 
 
-evalE :: TypeF a => CloEnv -> Expr a -> a
+evalE :: Typeable a => CloEnv -> Expr a -> a
 evalE bm (Literal l) = l
 evalE bm (Variable v) = lookupCE "Eval.evalE" bm v
 evalE bm (Operator op) = semSem $ semantics op
@@ -71,5 +71,3 @@ lookupCE msg bm (v :: Var a)
 
 extendCE :: Typeable a => CloEnv -> Var a -> a -> CloEnv
 extendCE bm v x = M.insert (varNum v) (Clo x) bm
-
-

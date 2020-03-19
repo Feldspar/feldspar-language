@@ -50,14 +50,14 @@ look vm v = lookupBE "SizeProp.look" vm v
 extend :: TypeF a => BindEnv -> Var a -> Info a -> BindEnv
 extend vm v info = extendBE vm $ CBind v $ info :& Variable v
 
-sizeProp :: (Show (Size a), Lattice (Size a), Typeable a) => AExpr a -> AExpr a
+sizeProp :: (Show (Size a), Lattice (Size a)) => AExpr a -> AExpr a
 sizeProp = spA M.empty
 
-spA :: (Show (Size a), Lattice (Size a), Typeable a)
+spA :: (Show (Size a), Lattice (Size a))
     => BindEnv -> AExpr a -> AExpr a
 spA vm (_ :& e) = spApp vm e
 
-spApp :: (Show (Size a), Lattice (Size a), Typeable a) => BindEnv -> Expr a -> AExpr a
+spApp :: (TypeF a, Show (Size a), Lattice (Size a)) => BindEnv -> Expr a -> AExpr a
 -- | Variables and literals
 spApp vm (Variable v) = look vm v
 spApp vm (Literal l)  = literal l
@@ -493,7 +493,7 @@ finalInfo :: (Show (Size a), Lattice (Size a)) => AExpr a -> Size a -> Info a
 finalInfo e s = Info $ exprSize e \/ s
 
 -- | Indexed loops without state (Parallel, EparFor, ...)
-spLoI :: (Show (Size u), Lattice (Size u))
+spLoI :: (TypeF u, Show (Size u), Lattice (Size u))
       => BindEnv -> Op (Length -> (Index -> b) -> u)
       -> (Size Index -> Size b -> Size u)
       -> AExpr Length -> AExpr (Index -> b)
@@ -527,18 +527,19 @@ spLambda2 vm s t (_ :& Lambda v (_ :& Lambda w e)) = (exprSize e1, f1)
 spLambda2 _  _ _ _ = error "SizeProp.spLambda2: not a lambda abstraction."
 
 -- | Nullary applications
-spApp0 :: (Show (Size u), Lattice (Size u)) => BindEnv -> Op u -> Size u -> AExpr u
+spApp0 :: (TypeF u, Show (Size u), Lattice (Size u))
+       => BindEnv -> Op u -> Size u -> AExpr u
 spApp0 vm op s = Info s :& Operator op
 
 -- | Unary applications
-spApp1 :: (TypeF a, Show (Size u), Lattice (Size u))
+spApp1 :: (TypeF a, TypeF u, Show (Size u), Lattice (Size u))
        => BindEnv -> Op (a -> u) -> (Size a -> Size u) -> AExpr a -> AExpr u
 spApp1 vm op f a = Info (f ai) :& Operator op :@ a1
   where a1 = spA vm a
         ai = infoSize $ aeInfo a1
 
 -- | Binary applications
-spApp2 :: (TypeF a, TypeF b, Show (Size u), Lattice (Size u))
+spApp2 :: (TypeF a, TypeF b, TypeF u, Show (Size u), Lattice (Size u))
        => BindEnv -> Op (a -> b -> u) -> (Size a -> Size b -> Size u)
        -> AExpr a -> AExpr b -> AExpr u
 spApp2 vm op f a b = Info (f ai bi) :& Operator op :@ a1 :@ b1
@@ -548,11 +549,10 @@ spApp2 vm op f a b = Info (f ai bi) :& Operator op :@ a1 :@ b1
         bi = infoSize $ aeInfo b1
 
 -- | Ternary applications
-spApp3 :: (TypeF a, TypeF b, TypeF c, Show (Size u), Lattice (Size u))
+spApp3 :: (TypeF a, TypeF b, TypeF c, TypeF u, Show (Size u), Lattice (Size u))
        => BindEnv -> Op (a -> b -> c -> u)
        -> (Size a -> Size b -> Size c -> Size u)
-       -> AExpr a -> AExpr b -> AExpr c
-       -> AExpr u
+       -> AExpr a -> AExpr b -> AExpr c -> AExpr u
 spApp3 vm op f a b c = Info (f ai bi ci) :& Operator op :@ a1 :@ b1 :@ c1
   where a1 = spA vm a
         ai = infoSize $ aeInfo a1
