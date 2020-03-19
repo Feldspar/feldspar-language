@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 --
@@ -140,7 +139,7 @@ unAnnotate (AIn _ e) = In $ go e
 
 -- | Add annotations using an annotation function
 annotate :: (UntypedFeldF (AUntypedFeld a) -> a) -> UntypedFeld -> AUntypedFeld a
-annotate anno e = goA e
+annotate anno = goA
   where go (Lambda v e)         = Lambda v $ goA e
         go (LetFun (s,k,e1) e2) = LetFun (s, k, goA e1) $ goA e2
         go (App f t es)         = App f t $ map goA es
@@ -653,10 +652,10 @@ prettyExp prA e = render (pr 0 0 e)
           | indent x <= indent y &&
             all ((==) (indent y) . indent) xs &&
             l <= 60
-          = [(indent x, l, intercalate " " $ map val $ x:y:xs)]
+          = [(indent x, l, unwords $ map val $ x:y:xs)]
             where l = sum (map len $ x:y:xs) + length xs + 1
         join xs = xs
-        render ls = foldr (\ (i,_,cs) str -> replicate i ' ' ++ cs ++ "\n" ++ str) "" ls
+        render = foldr (\ (i,_,cs) str -> replicate i ' ' ++ cs ++ "\n" ++ str) ""
         line i cs = [(i, length cs, cs)]
         indent (i,_,_) = i
         len (_,l,_) = l
