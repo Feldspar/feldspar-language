@@ -107,20 +107,22 @@ type Full a = a
 type a :-> b = a -> b
 
 -- | The type of information, for instance range information. Currently only size info.
-data Info a = Info {infoSize :: Size a}
+data Info a where
+  Info :: (Show (Size a), Lattice (Size a)) => {infoSize :: Size a} -> Info a
 
-instance Eq (Size a) => Eq (Info a) where
+instance Eq (Info a) where
   Info x == Info y = x == y
 
-instance Show (Size a) => Show (Info a) where
+instance Show (Info a) where
   show (Info x) = show x
 
 -- | Adding default info to an Expr
-toAExpr :: Lattice (Size a) => Expr (Full a) -> AExpr a
+toAExpr :: (Show (Size a), Lattice (Size a)) => Expr (Full a) -> AExpr a
 toAExpr e = Info top :& e
 
 -- | Constructing an annotation for a Lambda
-funInfo :: AExpr a -> AExpr e -> Info (a -> e)
+funInfo :: (Show (Size a), Lattice (Size a), Show (Size e), Lattice (Size e))
+         => AExpr a -> AExpr e -> Info (a -> e)
 funInfo a e = Info (exprSize a, exprSize e)
 
 -- | Getting the size (value info) of an expression from its annotation
