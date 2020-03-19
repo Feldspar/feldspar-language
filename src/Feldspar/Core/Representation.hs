@@ -47,7 +47,6 @@ module Feldspar.Core.Representation
   , literal
   , ExprCtx(..)
   , toAExpr
-  , funInfo
   , exprSize
   , (:->)
   , EqBox(..)
@@ -119,11 +118,6 @@ instance Show (Info a) where
 -- | Adding default info to an Expr
 toAExpr :: (Show (Size a), Lattice (Size a), TypeF a) => Expr (Full a) -> AExpr a
 toAExpr e = Info top :& e
-
--- | Constructing an annotation for a Lambda
-funInfo :: (Show (Size a), Lattice (Size a), Show (Size e), Lattice (Size e))
-         => AExpr a -> AExpr e -> Info (a -> e)
-funInfo a e = Info (exprSize a, exprSize e)
 
 -- | Getting the size (value info) of an expression from its annotation
 exprSize :: AExpr a -> Size a
@@ -509,7 +503,7 @@ fviB (CBind _ e) = fvi e
 showRhs (CBind _ e) = show e
 
 mkLets :: ExprCtx a => ([CBind], AExpr a) -> AExpr a
-mkLets (CBind v rhs : bs, e) = aeInfo e :& Operator Let :@ rhs :@ (funInfo rhs e :& Lambda v (mkLets (bs,e)))
+mkLets (CBind v rhs : bs, e) = aeInfo e :& Operator Let :@ rhs :@ (Info (exprSize rhs, exprSize e) :& Lambda v (mkLets (bs,e)))
 mkLets ([], e) = e
 
 -- | Functions for bind environments
