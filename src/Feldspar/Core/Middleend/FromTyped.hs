@@ -115,7 +115,7 @@ asOpT _ = typeRepF
 toType :: TypeRep a -> Type
 toType tr = untypeType tr (defaultSize tr)
 
-toU :: TypeF a => R.AExpr a -> AUntypedFeld ValueInfo
+toU :: R.AExpr a -> AUntypedFeld ValueInfo
 toU (i :& e) = AIn (toAnno i) (toUr e)
 
 toUr :: TypeF a => R.Expr a -> UntypedFeldF (AUntypedFeld ValueInfo)
@@ -351,7 +351,7 @@ instance TypeF a => Pretty (ASTF a) where
   pretty = pretty . unASTF ()
 
 -- | Untype version to use with the new CSE
-untypeProgOpt :: TypeF a => FeldOpts -> AExpr a -> AUntypedFeld ValueInfo
+untypeProgOpt :: FeldOpts -> AExpr a -> AUntypedFeld ValueInfo
 untypeProgOpt opts = toU
 
 -- | Front-end driver

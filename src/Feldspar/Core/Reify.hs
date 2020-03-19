@@ -84,7 +84,7 @@ resugar = sugar . desugar
 --   in the expression part of the CExpr.
 data ASTF a = ASTF (CExpr a) Int
 
-alphaEq :: T.Type a => ASTF a -> ASTF a -> Bool
+alphaEq :: ASTF a -> ASTF a -> Bool
 alphaEq (ASTF (ml,el) _) (ASTF (mr,er) _) = error "alphaEq not supported (binding time violation)"
 
 -- | Convert an ASTF to an expression
@@ -95,10 +95,10 @@ unASTF _ (ASTF ce _) = fromCExp ce
 evalBind :: TypeF a => ASTF a -> a
 evalBind = evalTop . unASTF ()
 
-render :: TypeF a => ASTF a -> String
+render :: ASTF a -> String
 render (ASTF (m,e) _) = unwords $ show e : "where" : map (show . snd) (M.toList m)
 
-instance TypeF a => Show (ASTF a) where
+instance Show (ASTF a) where
   show = render
 
 class Syntactic a where
@@ -213,10 +213,10 @@ catchBindings vs (m,e) = (m1, mkLets (bs,e))
 {- | Functions for constructing hash values.
 -}
 
-hashExpr :: TypeF a => AExpr a -> VarId
+hashExpr :: AExpr a -> VarId
 hashExpr (_ :& e) = (hash2VarId $ hash $ exprType e) `combineHash` hashExprR e
 
-hashExprR :: TypeF a => Expr a -> VarId
+hashExprR :: Expr a -> VarId
 hashExprR (Variable v) = varNum v
 hashExprR (Literal c) = hash2VarId $ hash c
 hashExprR (Operator op) = hashOp op

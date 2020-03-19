@@ -38,10 +38,10 @@ module Feldspar.Core.AdjustBindings (adjustBindings) where
 
 import Feldspar.Core.Representation
 
-adjustBindings :: ExprCtx a => AExpr a -> AExpr a
+adjustBindings :: AExpr a -> AExpr a
 adjustBindings e = adjA e
 
-adjA :: ExprCtx a => AExpr a -> AExpr a
+adjA :: AExpr a -> AExpr a
 adjA (i :& e) = i :& adj e
 
 adj :: ExprCtx a => Expr a -> Expr a

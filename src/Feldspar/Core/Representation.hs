@@ -117,7 +117,7 @@ instance Show (Info a) where
   show (Info x) = show x
 
 -- | Adding default info to an Expr
-toAExpr :: (Show (Size a), Lattice (Size a)) => Expr (Full a) -> AExpr a
+toAExpr :: (Show (Size a), Lattice (Size a), TypeF a) => Expr (Full a) -> AExpr a
 toAExpr e = Info top :& e
 
 -- | Constructing an annotation for a Lambda
@@ -131,16 +131,17 @@ exprSize = infoSize . aeInfo
 
 -- | Annotated expression, that is, an expression together with extra information,
 --   for instance from a program analysis.
-data AExpr a = (:&) {aeInfo :: Info a, aeExpr :: Expr (Full a)}
+data AExpr a where
+  (:&) :: TypeF a => {aeInfo :: Info a, aeExpr :: Expr (Full a)} -> AExpr a
 
 -- | Equality for AExps
-instance (Eq (Size a), Typeable a) => Eq (AExpr a) where
+instance Eq (AExpr a) where
   (:&) il el == (:&) ir er = il == ir && el == er
 
-instance TypeF a => Show (AExpr a) where
+instance Show (AExpr a) where
   show e = showAExpr 0 e ""
 
-showAExpr :: TypeF a => Int -> AExpr a -> String -> String
+showAExpr :: Int -> AExpr a -> String -> String
 showAExpr n (i :& e) r = "{" ++ show (infoSize i) ++ " : " ++ show (exprType e) ++ "} " ++ showExpr n e r
 
 type LiteralType a = (Hashable a, Type a)
@@ -352,7 +353,7 @@ data Op a where
     UnTup ::           Op (Tuple a :-> Full (RTuple a))
 
     -- | NoInline
-    NoInline :: (Type a) => Op (a :-> Full a)
+    NoInline :: Type a => Op (a :-> Full a)
 
     -- | Num
     Abs  :: (Type a, Num a, Num (Size a)) => Op (a :-> Full a)
@@ -389,7 +390,7 @@ data Op a where
         EqBox (Size a -> Size b) -> Op (a :-> b :-> Full b)
 
     -- | Switch
-    Switch :: (Type b) => Op (b :-> Full b)
+    Switch :: Type b => Op (b :-> Full b)
 
     -- Tuple
     Tup0  :: Op (Full ())
@@ -527,7 +528,7 @@ extendBE :: BindEnv -> CBind -> BindEnv
 extendBE bm b = M.insert (bvId b) b bm
 
 -- | Expressions that can and should be shared
-sharable :: TypeF a => AExpr a -> Bool
+sharable :: AExpr a -> Bool
 sharable e = legalToShare e && goodToShare e
 
 -- | Expressions that can be shared without breaking fromCore
@@ -575,8 +576,8 @@ shOp UnTup     = False
 shOp _ = True
 
 -- | Expressions that are expensive enough to be worth sharing
-goodToShare :: TypeF a => AExpr a -> Bool
-goodToShare (_ :& Literal (l :: a)) = largeLit (typeRepF :: TypeRep a) l
+goodToShare :: AExpr a -> Bool
+goodToShare (_ :& Literal (l :: a)) = largeLit (typeRep :: TypeRep a) l
 -- The case below avoids constructing a let-binding for an array stored
 -- in a tuple. This is beneficial because the select operator is order
 -- of magnitudes cheaper than the array copy generated for the let-binding.
