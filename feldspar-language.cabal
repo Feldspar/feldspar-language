@@ -92,7 +92,7 @@ library
     base                        >= 4      && < 5.9,
     base-orphans,
     bytestring                  >= 0.10   && < 0.11,
-    containers                  >= 0.4    && < 0.6,
+    containers                  >= 0.4    && < 0.7,
     comonad                     >= 4.2    && < 6.0,
     mtl                         >= 2.0    && < 2.3,
     QuickCheck                  >= 2.7    && < 3,
@@ -102,7 +102,7 @@ library
     monad-par                   >= 0.3.4.5,
     deepseq,
     random                      >= 1.0    && < 1.2,
-    data-default                >= 0.5.3  && < 0.6,
+    data-default                >= 0.5.3  && < 0.8,
     data-hash                   >= 0.2.0.1 && < 100,
     tree-view
 
