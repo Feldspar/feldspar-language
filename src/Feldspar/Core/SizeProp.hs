@@ -43,7 +43,7 @@ import Data.Typeable (Typeable)
 import qualified Data.Map as M (empty)
 
 look :: Typeable a => BindEnv -> Var a -> AExpr a
-look vm v = lookupBE "SizeProp.look" vm v
+look = lookupBE "SizeProp.look"
 
 extend :: TypeF a => BindEnv -> Var a -> Info a -> BindEnv
 extend vm v info = extendBE vm $ CBind v $ info :& Variable v
@@ -121,7 +121,7 @@ spA vm (_ :& Operator           Floor :@ a)           = spApp1 vm           Floo
 -- | Elements
 spA vm (_ :& Operator    EMaterialize :@ a :@ b)      = spApp2 vm    EMaterialize (\ _ s -> s) a b
 spA vm (_ :& Operator          EWrite :@ a :@ b)      = spApp2 vm          EWrite (:>) a b
-spA vm (_ :& Operator           ESkip)                = spApp0 vm           ESkip bot
+spA vm (_ :& Operator           ESkip)                = spApp0              ESkip bot
 spA vm (_ :& Operator            EPar :@ a :@ b)      = spApp2 vm            EPar (\/) a b
 spA vm (_ :& Operator         EparFor :@ a :@ b)      = spLoI  vm         EparFor (\ _ s -> s) a b
 
@@ -130,11 +130,11 @@ spA vm (_ :& Operator           Equal :@ a :@ b)      = spApp2 vm           Equa
 spA vm (_ :& Operator        NotEqual :@ a :@ b)      = spApp2 vm        NotEqual topF2 a b
 
 -- | Error
-spA vm (_ :& Operator       Undefined)                = spApp0 vm       Undefined bot
+spA vm (_ :& Operator       Undefined)                = spApp0          Undefined bot
 spA vm (_ :& Operator      (Assert s) :@ a :@ b)      = spApp2 vm      (Assert s) (\ _ s -> s) a b
 
 -- | Floating
-spA vm (_ :& Operator              Pi)                = spApp0 vm              Pi top
+spA vm (_ :& Operator              Pi)                = spApp0                 Pi top
 spA vm (_ :& Operator             Exp :@ a)           = spApp1 vm             Exp topF1 a
 spA vm (_ :& Operator            Sqrt :@ a)           = spApp1 vm            Sqrt topF1 a
 spA vm (_ :& Operator             Log :@ a)           = spApp1 vm             Log topF1 a
@@ -206,7 +206,7 @@ spA vm (_ :& Operator          ModRef :@ a :@ b)      = spApp2 vm          ModRe
 
 -- | Nested tuples
 spA vm (_ :& Operator            Cons :@ a :@ b)      = spApp2 vm            Cons (,) a b
-spA vm (_ :& Operator             Nil)                = spApp0 vm             Nil top
+spA vm (_ :& Operator             Nil)                = spApp0                Nil top
 spA vm (_ :& Operator             Car :@ a)           = spApp1 vm             Car fst a
 spA vm (_ :& Operator             Cdr :@ a)           = spApp1 vm             Cdr snd a
 spA vm (_ :& Operator             Tup :@ a)           = spApp1 vm             Tup id  a
@@ -232,11 +232,11 @@ spA vm (_ :& Operator             Max :@ a :@ b)      = spApp2 vm             Ma
 
 -- | Par
 spA vm (_ :& Operator          ParRun :@ a)           = spApp1 vm          ParRun id a
-spA vm (_ :& Operator          ParNew)                = spApp0 vm          ParNew top
+spA vm (_ :& Operator          ParNew)                = spApp0             ParNew top
 spA vm (_ :& Operator          ParGet :@ a)           = spApp1 vm          ParGet topF1 a
 spA vm (_ :& Operator          ParPut :@ a :@ b)      = spApp2 vm          ParPut topF2 a b
 spA vm (_ :& Operator         ParFork :@ a)           = spApp1 vm         ParFork topF1 a
-spA vm (_ :& Operator        ParYield)                = spApp0 vm        ParYield top
+spA vm (_ :& Operator        ParYield)                = spApp0             ParYield top
 
 -- | RealFloat
 spA vm (_ :& Operator           Atan2 :@ a :@ b)      = spApp2 vm           Atan2 topF2 a b
@@ -516,8 +516,8 @@ spLambda2 vm s t (_ :& Lambda v (_ :& Lambda w e)) = (exprSize e1, f1)
 spLambda2 _  _ _ _ = error "SizeProp.spLambda2: not a lambda abstraction."
 
 -- | Nullary applications
-spApp0 :: TypeF u => BindEnv -> Op u -> Size u -> AExpr u
-spApp0 vm op s = Info s :& Operator op
+spApp0 :: TypeF u => Op u -> Size u -> AExpr u
+spApp0 op s = Info s :& Operator op
 
 -- | Unary applications
 spApp1 :: (TypeF a, TypeF u)
