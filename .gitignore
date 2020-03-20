@@ -14,5 +14,6 @@ cabal.sandbox.config
 *.prof
 *.aux
 *.hp
+.stack-work/
 
 tests/*.txt
