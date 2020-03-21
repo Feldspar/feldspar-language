@@ -483,7 +483,7 @@ viSet v = S.singleton $ varNum v
 
 
 data CBind where
-  CBind :: (ExprCtx a) => Var a -> AExpr a -> CBind
+  CBind :: Typeable a => Var a -> AExpr a -> CBind
 
 instance Eq CBind where
   CBind (v1 :: Var a) e1 == CBind (v2 :: Var b) e2
@@ -502,8 +502,9 @@ fviB (CBind _ e) = fvi e
 
 showRhs (CBind _ e) = show e
 
-mkLets :: ExprCtx a => ([CBind], AExpr a) -> AExpr a
-mkLets (CBind v rhs : bs, e) = aeInfo e :& Operator Let :@ rhs :@ (Info (exprSize rhs, exprSize e) :& Lambda v (mkLets (bs,e)))
+mkLets :: ([CBind], AExpr a) -> AExpr a
+mkLets (CBind v e1@(i :& _) : bs, e@(i2 :& _)) = i2 :& Operator Let :@ e1 :@ bs'
+  where bs' = Info (infoSize i, infoSize i2) :& Lambda v (mkLets (bs,e))
 mkLets ([], e) = e
 
 -- | Functions for bind environments
