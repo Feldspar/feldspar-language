@@ -1429,7 +1429,7 @@ full (ce, i) = ASTF (flattenCSE $ transCSEExpr toAExpr ce) i
 infixl 5 @@
 
 -- Construct an application
-(@@) :: (Syntactic a, TypeF (Internal a), TypeF b)
+(@@) :: Syntactic a
      => (CSEExpr (Expr (Internal a -> b)), Int) -> a -> (CSEExpr (Expr b), Int)
 (cf,i) @@ e = go $ desugar e
   where go (ASTF ce j) = (applyCSE cf ce, P.max i j)

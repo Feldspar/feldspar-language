@@ -56,7 +56,7 @@ module Feldspar.Core.Reify
        , hashBase
        ) where
 
-import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..), ExprCtx(..),
+import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..),
                                      VarId(..), Op(..), fvi, CBind(..), TypeF(..),
                                      bvId, fviB, showRhs, mkLets, sharable, exprType)
 import qualified Feldspar.Core.Types as T
@@ -150,9 +150,9 @@ flattenCSE (m,e@(i :& _))
   = mergeMapCExpr (M.singleton (varNum v) (CBind v e)) (m, i :& Variable v)
    where v = Var (hashExpr e) B.empty
 
-applyCSE :: ExprCtx a => CSEExpr (Expr (a -> b)) -> CSEExpr (AExpr a) -> CSEExpr (Expr b)
-applyCSE (lm,f) (rm,e) = (m, f :@ e1)
-   where (m,e1) = mergeMapCExpr lm (rm,e)
+applyCSE :: CSEExpr (Expr (a -> b)) -> CSEExpr (AExpr a) -> CSEExpr (Expr b)
+applyCSE (lm, f) s@(_, (_ :& _)) = (m, f :@ e1)
+   where (m, e1) = mergeMapCExpr lm s
 
 mergeMapCExpr :: CSEMap -> CExpr a -> CExpr a
 mergeMapCExpr lm (rm,e) = (M.union lm rm1, e1)
