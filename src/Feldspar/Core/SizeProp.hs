@@ -42,9 +42,6 @@ import Feldspar.Lattice
 import Data.Typeable (Typeable)
 import qualified Data.Map as M (empty)
 
-extend :: TypeF a => BindEnv -> Var a -> Info a -> BindEnv
-extend vm v info = extendBE vm $ CBind v $ info :& Variable v
-
 sizeProp :: AExpr a -> AExpr a
 sizeProp = spA M.empty
 
@@ -489,7 +486,7 @@ spLoI :: TypeF u
 spLoI vm op f a (_ :& Lambda v e) = Info (f i $ exprSize e1) :& Operator op :@ a1 :@ (Info (exprSize a1, exprSize e1) :& Lambda v e1)
   where a1 = spA vm a
         i  = exprSize a1
-        e1 = spA (extend vm v $ Info i) e
+        e1 = spA (extendBE vm (CBind v $ Info i :& Variable v)) e
 
 -- | Helper for binds
 spBind :: (Typeable a, Show (Size c), Lattice (Size c), Size a ~ Size b)
@@ -501,13 +498,14 @@ spBind vm a f = (Info bs, a1, f1)
 -- | Helper for lambdas
 spLambda :: BindEnv -> Size a -> AExpr (a -> b) -> (Size b, AExpr (a -> b))
 spLambda vm s (_ :& Lambda v e) = (exprSize e1, Info (s, exprSize e1) :& Lambda v e1)
-  where e1 = spA (extend vm v $ Info s) e
+  where e1 = spA (extendBE vm (CBind v $ Info s :& Variable v)) e
 spLambda _  _ _ = error "SizeProp.spLambda: not a lambda abstraction."
 
 -- | Helper for two levels of lambdas
 spLambda2 :: BindEnv -> Size a -> Size b -> AExpr (a -> b -> c) -> (Size c, AExpr (a -> b -> c))
 spLambda2 vm s t (_ :& Lambda v (_ :& Lambda w e)) = (exprSize e1, f1)
-  where e1 = spA (extend (extend vm v $ Info s) w $ Info t) e
+  where e1 = spA (extendBE vm' (CBind w $ Info t :& Variable w)) e
+        vm' = extendBE vm (CBind v $ Info s :& Variable v)
         u1 = (t, exprSize e1)
         f1 = Info (s, u1) :& Lambda v (Info u1 :& Lambda w e1)
 spLambda2 _  _ _ _ = error "SizeProp.spLambda2: not a lambda abstraction."
