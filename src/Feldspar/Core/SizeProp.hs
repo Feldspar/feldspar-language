@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE TypeFamilies #-}
 
 --
@@ -50,7 +51,9 @@ spA :: BindEnv -> AExpr a -> AExpr a
 spA vm (_ :& Variable v) = lookupBE "SizeProp.look" vm v
 spA vm (_ :& Literal l)  = Info (T.sizeOf l) :& Literal l
 -- Top level lambda
-spA vm (_ :& Lambda v e) = snd $ spLambda vm top (Info top :& Lambda v e)
+spA vm (_ :& Lambda v e)
+  | e1@(Info i1 :& _) <- spA (extendBE vm (CBind v $ Info top :& Variable v)) e
+  = Info (top, i1) :& Lambda v e1
 -- | Applications and lambdas based on head operator
 -- | Array
 spA vm (_ :& Operator        Parallel :@ a :@ b)      = spLoI  vm        Parallel (:>) a b
@@ -172,10 +175,13 @@ spA vm (_ :& Operator ForLoop :@ a :@ b :@ c) = Info (exprSize  b1 \/ s) :& Oper
         b1 = spA vm b
         (s,c1) = spLambda2 vm (exprSize a1) top c
 
-spA vm (_ :& Operator  WhileLoop :@ a :@ b :@ c) = Info (exprSize a1 \/ s) :& Operator WhileLoop :@ a1 :@ b1 :@ c1
-  where a1 = spA vm a
-        (_,b1) = spLambda vm top b
-        (s,c1) = spLambda vm top c
+spA vm (_ :& Operator  WhileLoop :@ a :@ b@(_ :& Lambda v1 e1) :@ c@(_ :& Lambda v2 e2))
+  | a1@(Info ai1 :& _) <- spA vm a
+  , e1'@(Info ei1' :& _) <- spA (extendBE vm (CBind v1 $ Info top :& Variable v1)) e1
+  , e2'@(Info ei2' :& _) <- spA (extendBE vm (CBind v2 $ Info top :& Variable v2)) e2
+  , b1 <- Info (top, ei1') :& Lambda v1 e1'
+  , c1 <- Info (top, ei2') :& Lambda v2 e2'
+  = Info (ai1 \/ ei2') :& Operator WhileLoop :@ a1 :@ b1 :@ c1
 
 -- | Mutable
 spA vm (_ :& Operator             Run :@ a)           = spApp1 vm             Run id a
@@ -483,23 +489,18 @@ spLoI :: TypeF u
       -> (Size Index -> Size b -> Size u)
       -> AExpr Length -> AExpr (Index -> b)
       -> AExpr u
-spLoI vm op f a (_ :& Lambda v e) = Info (f i $ exprSize e1) :& Operator op :@ a1 :@ (Info (exprSize a1, exprSize e1) :& Lambda v e1)
-  where a1 = spA vm a
-        i  = exprSize a1
-        e1 = spA (extendBE vm (CBind v $ Info i :& Variable v)) e
+spLoI vm op f a (_ :& Lambda v e)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
+  = Info (f ai1 $ ei1) :& Operator op :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
 
 -- | Helper for binds
-spBind :: (Typeable a, Show (Size c), Lattice (Size c), Size a ~ Size b)
+spBind :: Size a ~ Size b
         => BindEnv -> AExpr a -> AExpr (b -> c) -> (Info c, AExpr a, AExpr (b -> c))
-spBind vm a f = (Info bs, a1, f1)
-  where a1  = spA vm a
-        (bs,f1) = spLambda vm (exprSize a1) f
-
--- | Helper for lambdas
-spLambda :: BindEnv -> Size a -> AExpr (a -> b) -> (Size b, AExpr (a -> b))
-spLambda vm s (_ :& Lambda v e) = (exprSize e1, Info (s, exprSize e1) :& Lambda v e1)
-  where e1 = spA (extendBE vm (CBind v $ Info s :& Variable v)) e
-spLambda _  _ _ = error "SizeProp.spLambda: not a lambda abstraction."
+spBind vm a f@(_ :& Lambda v e)
+  | a1@(Info i1 :& _) <- spA vm a
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info i1 :& Variable v)) e
+  = (Info ei1, a1, Info (i1, ei1) :& Lambda v e1)
 
 -- | Helper for two levels of lambdas
 spLambda2 :: BindEnv -> Size a -> Size b -> AExpr (a -> b -> c) -> (Size c, AExpr (a -> b -> c))
