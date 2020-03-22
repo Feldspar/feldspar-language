@@ -45,7 +45,6 @@ module Feldspar.Core.Representation
   , Expr(..)
   , exprType
   , literal
-  , ExprCtx(..)
   , toAExpr
   , exprSize
   , (:->)
@@ -138,7 +137,6 @@ showAExpr :: Int -> AExpr a -> String -> String
 showAExpr n (i :& e) r = "{" ++ show (infoSize i) ++ " : " ++ show (exprType e) ++ "} " ++ showExpr n e r
 
 type LiteralType a = (Hashable a, Type a)
-type ExprCtx a = (TypeF a)
 
 {- | The main expression type.
      Applications always have an operator at the left end, and are never annotated.
