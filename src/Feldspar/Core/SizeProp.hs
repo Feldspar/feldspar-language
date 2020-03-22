@@ -42,9 +42,6 @@ import Feldspar.Lattice
 import Data.Typeable (Typeable)
 import qualified Data.Map as M (empty)
 
-look :: Typeable a => BindEnv -> Var a -> AExpr a
-look = lookupBE "SizeProp.look"
-
 extend :: TypeF a => BindEnv -> Var a -> Info a -> BindEnv
 extend vm v info = extendBE vm $ CBind v $ info :& Variable v
 
@@ -53,8 +50,8 @@ sizeProp = spA M.empty
 
 spA :: BindEnv -> AExpr a -> AExpr a
 -- | Variables and literals
-spA vm (_ :& Variable v) = look vm v
-spA vm (_ :& Literal l)  = literal l
+spA vm (_ :& Variable v) = lookupBE "SizeProp.look" vm v
+spA vm (_ :& Literal l)  = Info (T.sizeOf l) :& Literal l
 -- Top level lambda
 spA vm (_ :& Lambda v e) = snd $ spLambda vm top (Info top :& Lambda v e)
 -- | Applications and lambdas based on head operator
