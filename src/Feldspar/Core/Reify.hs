@@ -167,8 +167,7 @@ toCExpr :: e -> CSEExpr e
 toCExpr e = (M.empty, e)
 
 fromCExp :: CExpr a -> AExpr a
-fromCExp (m,e) = mkLets (bs, e)
-  where (_,bs) = floatBindings [] m
+fromCExp (m,e) = mkLets (snd $ floatBindings [] m, e)
 
 hashError :: M.Map VarId (CBind,CBind) -> a
 hashError sect = error $ "CSE.mergeCSE: hash conflict, diff is" ++ concatMap showDiff diffs

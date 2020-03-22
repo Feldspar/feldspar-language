@@ -133,7 +133,8 @@ instance Show (AExpr a) where
   show e = showAExpr 0 e ""
 
 showAExpr :: Int -> AExpr a -> String -> String
-showAExpr n (i :& e) r = "{" ++ show (infoSize i) ++ " : " ++ show (exprType e) ++ "} " ++ showExpr n e r
+showAExpr n (i :& (e :: Expr (Full a))) r = '{':inf ++ "} " ++ showExpr n e r
+  where inf = show (infoSize i) ++ " : " ++ show (typeRepF :: TypeRep a)
 
 type LiteralType a = (Hashable a, Type a)
 
