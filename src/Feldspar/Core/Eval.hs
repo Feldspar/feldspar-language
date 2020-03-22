@@ -50,7 +50,6 @@ evalTop = evalA M.empty
 evalA :: CloEnv -> AExpr a -> a
 evalA bm (_ :& e) = evalE bm e
 
-
 evalE :: CloEnv -> Expr a -> a
 evalE bm (Literal l) = l
 evalE bm (Variable v) = lookupCE "Eval.evalE" bm v
