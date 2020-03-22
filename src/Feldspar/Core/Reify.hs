@@ -88,7 +88,7 @@ alphaEq :: ASTF a -> ASTF a -> Bool
 alphaEq (ASTF (ml,el) _) (ASTF (mr,er) _) = error "alphaEq not supported (binding time violation)"
 
 -- | Convert an ASTF to an expression
-unASTF :: b -> ASTF a -> (AExpr a)
+unASTF :: b -> ASTF a -> AExpr a
 unASTF _ (ASTF ce _) = fromCExp ce
 
 -- | Evaluate an ASTF

@@ -3,6 +3,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -35,7 +36,6 @@
 
 module Feldspar.Core.Middleend.FromTyped
   ( untype
-  , untypeType
   , untypeDecor
   , untypeUnOpt
   , FrontendPass(..)
@@ -67,7 +67,7 @@ import Feldspar.Core.SizeProp
 import Feldspar.Core.AdjustBindings
 
 -- | External module interface. Untype, optimize and unannotate.
-untype :: TypeF a => FeldOpts -> ASTF a -> UntypedFeld
+untype :: FeldOpts -> ASTF a -> UntypedFeld
 untype opts = cleanUp opts
             . pushLets
             . optimize
@@ -75,19 +75,19 @@ untype opts = cleanUp opts
             . justUntype opts
 
 -- | External module interface.
-untypeDecor :: TypeF a => FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
+untypeDecor :: FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
 untypeDecor opts = pushLets
                  . optimize
                  . sinkLets opts
                  . justUntype opts
 
 -- | External module interface.
-untypeUnOpt :: TypeF a => FeldOpts -> ASTF a -> UntypedFeld
+untypeUnOpt :: FeldOpts -> ASTF a -> UntypedFeld
 untypeUnOpt opts = cleanUp opts
                  . justUntype opts
 
 -- | Only do the conversion to AUntypedFeld ValueInfo
-justUntype :: TypeF a => FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
+justUntype :: FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
 justUntype opts = renameExp . toU . sizeProp . adjustBindings . unASTF opts
 
 -- | Prepare the code for fromCore
@@ -96,15 +96,6 @@ cleanUp opts = createTasks opts . unAnnotate . uniqueVars
 
 renameExp :: AUntypedFeld a -> AUntypedFeld a
 renameExp e = evalState (rename e) 0
-
-toAnno :: TypeF a => R.Info a -> ValueInfo
-toAnno info = toValueInfo (asInfo info) (R.infoSize info)
-
-asInfo :: TypeF a => R.Info a -> TypeRep a
-asInfo _ = typeRepF
-
-asVar :: TypeF a => R.Var a -> TypeRep a
-asVar _ = typeRepF
 
 asExpr :: TypeF a => R.Expr a -> TypeRep a
 asExpr _ = typeRepF
@@ -116,18 +107,18 @@ toType :: TypeRep a -> Type
 toType tr = untypeType tr (defaultSize tr)
 
 toU :: R.AExpr a -> AUntypedFeld ValueInfo
-toU (i :& e) = AIn (toAnno i) (toUr e)
+toU ((i :: R.Info a) :& e)
+  = AIn (toValueInfo (typeRepF :: TypeRep a) (R.infoSize i)) $ toUr e
 
 toUr :: TypeF a => R.Expr a -> UntypedFeldF (AUntypedFeld ValueInfo)
-toUr (R.Variable v) = Variable $ trV v
+toUr (R.Variable ((R.Var n s) :: R.Var a))
+  = Variable $ Var n (toType (typeRepF :: TypeRep a)) s
 toUr (R.Literal v) = Literal $ literal tr (defaultSize tr) v
   where tr = typeRep
 toUr e@(R.Operator op) = App (trOp op) (toType $ asExpr e) []
 toUr (f :@ a) = toApp f [toU a]
-toUr (R.Lambda v e) = Lambda (trV v) (toU e)
-
-trV :: TypeF a => R.Var a -> Var
-trV v =  Var {varNum = R.varNum v, varType = toType $ asVar v, varName = R.varName v}
+toUr (R.Lambda ((R.Var n s) :: R.Var a) e)
+  = Lambda (Var n (toType (typeRepF :: TypeRep a)) s) $ toU e
 
 toApp :: TypeF a => R.Expr a -> [AUntypedFeld ValueInfo] -> UntypedFeldF (AUntypedFeld ValueInfo)
 toApp (R.Operator R.Cons) [e, AIn _ (App Tup (TupType ts) es)]
@@ -344,10 +335,10 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
   pretty = prettyExp f
      where f t x = " | " ++ prettyInfo t x
 
-instance TypeF a => Pretty (AExpr a) where
+instance Pretty (AExpr a) where
   pretty = show
 
-instance TypeF a => Pretty (ASTF a) where
+instance Pretty (ASTF a) where
   pretty = pretty . unASTF ()
 
 -- | Untype version to use with the new CSE
@@ -355,7 +346,7 @@ untypeProgOpt :: FeldOpts -> AExpr a -> AUntypedFeld ValueInfo
 untypeProgOpt opts = toU
 
 -- | Front-end driver
-frontend :: TypeF a => PassCtrl FrontendPass -> FeldOpts -> ASTF a -> ([String], Maybe UntypedFeld)
+frontend :: PassCtrl FrontendPass -> FeldOpts -> ASTF a -> ([String], Maybe UntypedFeld)
 frontend ctrl opts = evalPasses 0
                    $ pc FPCreateTasks      (createTasks opts)
                    . pt FPUnAnnotate       unAnnotate
