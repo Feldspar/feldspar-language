@@ -88,9 +88,8 @@ infixr :->
 infixl 5 :@
 infix 1 :&
 
-data Var a = Var { varNum :: VarId
-                 , varName :: B.ByteString
-                 }
+data Var a where
+  Var :: Typeable a => { varNum :: VarId, varName :: B.ByteString} -> Var a
 
 instance Eq (Var a) where
   v1 == v2 = varNum v1 == varNum v2
@@ -151,8 +150,8 @@ data Expr a where
   Literal  :: LiteralType a          => a -> Expr (Full a)
   Operator ::                           Op a -> Expr a
   Variable ::                           Var a -> Expr (Full a)
-  (:@)     :: ExprCtx a              => Expr (a -> b) -> AExpr a -> Expr b
-  Lambda   :: (ExprCtx a, ExprCtx b) => Var a -> AExpr b -> Expr (Full (a -> b))
+  (:@)     :: TypeF a                => Expr (a -> b) -> AExpr a -> Expr b
+  Lambda   :: TypeF a                => Var a -> AExpr b -> Expr (Full (a -> b))
 
 exprType :: TypeF a => Expr a -> TypeRep a
 exprType _ = typeRepF
@@ -483,13 +482,13 @@ viSet v = S.singleton $ varNum v
 
 
 data CBind where
-  CBind :: Typeable a => Var a -> AExpr a -> CBind
+  CBind :: Var a -> AExpr a -> CBind
 
 instance Eq CBind where
-  CBind (v1 :: Var a) e1 == CBind (v2 :: Var b) e2
+  CBind (v1@(Var n1 _) :: Var a) e1 == CBind (v2@(Var n2 _) :: Var b) e2
       = case eqT :: Maybe (a :~: b) of
           Nothing -> False
-          Just Refl -> varNum v1 == varNum v2 && e1 == e2
+          Just Refl -> n1 == n2 && e1 == e2
 
 instance Show CBind where
   show (CBind v e) = show v ++ " = " ++ show e
@@ -510,11 +509,11 @@ mkLets ([], e) = e
 -- | Functions for bind environments
 type BindEnv = M.Map VarId CBind
 
-lookupBE :: Typeable a => String -> BindEnv -> Var a -> AExpr a
-lookupBE msg bm (v :: Var a)
-               = case M.lookup (varNum v) bm of
+lookupBE :: String -> BindEnv -> Var a -> AExpr a
+lookupBE msg bm (v@(Var n _) :: Var a)
+               = case M.lookup n bm of
                       Nothing -> error $ msg ++ ": lookupBE does not find variable " ++ show v
-                      Just (CBind (u :: Var b) e)
+                      Just (CBind (u@Var{} :: Var b) e)
                            -> case eqT :: Maybe (a :~: b) of
                                    Nothing -> error $ msg ++ ": lookupBE finds conflicing types for " ++ show v
                                    Just Refl -> e

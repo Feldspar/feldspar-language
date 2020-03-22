@@ -51,23 +51,20 @@ evalA :: CloEnv -> AExpr a -> a
 evalA bm (_ :& e) = evalE bm e
 
 
-evalE :: Typeable a => CloEnv -> Expr a -> a
+evalE :: CloEnv -> Expr a -> a
 evalE bm (Literal l) = l
 evalE bm (Variable v) = lookupCE "Eval.evalE" bm v
 evalE bm (Operator op) = semSem $ semantics op
 evalE bm (f :@ e) = evalE bm f $ evalA bm e
-evalE bm (Lambda v e) = \ x -> evalA (extendCE bm v x) e
+evalE bm (Lambda (Var n _) e) = \x -> evalA (M.insert n (Clo x) bm) e
 
 type CloEnv = M.Map VarId Closure
 
-lookupCE :: Typeable a => String -> CloEnv -> Var a -> a
-lookupCE msg bm (v :: Var a)
-               = case M.lookup (varNum v) bm of
+lookupCE :: String -> CloEnv -> Var a -> a
+lookupCE msg bm (v@(Var n _) :: Var a)
+               = case M.lookup n bm of
                       Nothing -> error $ msg ++ ": lookupCE does not find variable " ++ show v
                       Just (Clo (x :: b))
                            -> case eqT :: Maybe (a :~: b) of
                                    Nothing -> error $ msg ++ ": lookupCE finds conflicing types for " ++ show v
                                    Just Refl -> x
-
-extendCE :: Typeable a => CloEnv -> Var a -> a -> CloEnv
-extendCE bm v x = M.insert (varNum v) (Clo x) bm
