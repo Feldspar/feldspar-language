@@ -44,7 +44,6 @@ module Feldspar.Core.Representation
   , Info(..)
   , Expr(..)
   , exprType
-  , literal
   , toAExpr
   , exprSize
   , (:->)
@@ -153,9 +152,6 @@ data Expr a where
 
 exprType :: TypeF a => Expr a -> TypeRep a
 exprType _ = typeRepF
-
-literal :: LiteralType a => a -> AExpr a
-literal x = Info (sizeOf x) :& Literal x
 
 instance Show (Expr a) where
   show e = showExpr 0 e ""

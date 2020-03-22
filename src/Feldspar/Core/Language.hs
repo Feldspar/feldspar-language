@@ -1485,7 +1485,7 @@ class SugarF a where
   type SugarT a
   sugarF :: (RCSExpr (SugarT a), Int) -> a
 
-instance (Syntactic b, TypeF (Internal b), TypeF (SugarT c), SugarF c) => SugarF (b -> c) where
+instance (Syntactic b, TypeF (SugarT c), SugarF c) => SugarF (b -> c) where
   type SugarT (b -> c) = Internal b -> SugarT c
   sugarF f = \ e -> sugarF $ f @@ e
 
