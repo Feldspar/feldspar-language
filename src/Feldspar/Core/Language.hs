@@ -44,7 +44,6 @@ import Feldspar.Core.Reify
 import Feldspar.Core.Representation as R
 import Feldspar.Core.Types as T
 import Feldspar.Core.Constructs (Data(..), Syntax(..), SyntacticFeld(..))
-import Feldspar.Core.Middleend.FromTypeUtil (untypeType, literal)
 import Feldspar.Core.NestedTuples
 
 import Feldspar.Range
@@ -1361,10 +1360,9 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
 instance (Type (Internal a), TypeF (Internal b), Syntactic a, Syntactic b) => Syntactic (a -> b) where
   type Internal (a -> b) = Internal a -> Internal b
   sugar e = undefined
-  desugar f = ASTF func (i+1)
+  desugar f = ASTF (m1, toAExpr $ Lambda v e1) $ i + 1
     where ASTF ce i = desugar $ f (sugar $ ASTF (toCExpr $ toAExpr $ Variable v) 0)
           (m1,e1) = catchBindings [varNum v] ce
-          func = (m1, toAExpr $ Lambda v e1)
           v = Var (P.fromIntegral i + hashBase) B.empty
 
 -------------------------------------------------
