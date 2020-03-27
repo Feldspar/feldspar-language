@@ -47,6 +47,7 @@ import Feldspar.Core.Constructs (Data(..), Syntax(..), SyntacticFeld(..))
 import Feldspar.Core.NestedTuples
 
 import Feldspar.Range
+import Feldspar.Lattice (top)
 import Feldspar.Core.Collection
 import Feldspar.Core.Interpretation hiding (SizeProp, sizeProp, literal)
 
@@ -64,6 +65,7 @@ import Data.Hash (Hashable)
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Bits as B
+import qualified Data.Map.Strict as M
 import Prelude.EDSL
 import Prelude (Float, Double, Rational, ($), foldr)
 import qualified Prelude as P
@@ -580,7 +582,7 @@ true = value True
 instance Syntactic ()
   where
     type Internal () = ()
-    desugar _ = ASTF (toCExpr $ toAExpr $ Literal ()) 0 -- Maybe more helpers?
+    desugar _ = ASTF (M.empty, Info top :& Literal ()) 0
     sugar _ = ()
 
 --------------------------------------------------
@@ -1360,8 +1362,8 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
 instance (Type (Internal a), TypeF (Internal b), Syntactic a, Syntactic b) => Syntactic (a -> b) where
   type Internal (a -> b) = Internal a -> Internal b
   sugar e = undefined
-  desugar f = ASTF (m1, toAExpr $ Lambda v e1) $ i + 1
-    where ASTF ce i = desugar $ f (sugar $ ASTF (toCExpr $ toAExpr $ Variable v) 0)
+  desugar f = ASTF (m1, Info top :& Lambda v e1) $ i + 1
+    where ASTF ce i = desugar $ f (sugar $ ASTF (M.empty, Info top :& Variable v) 0)
           (m1,e1) = catchBindings [varNum v] ce
           v = Var (P.fromIntegral i + hashBase) B.empty
 
@@ -1370,7 +1372,7 @@ instance (Type (Internal a), TypeF (Internal b), Syntactic a, Syntactic b) => Sy
 -------------------------------------------------
 
 value :: (Syntax a, Hashable (Internal a)) => Internal a -> a
-value v = sugar $ ASTF (flattenCSE $ toCExpr $ toAExpr $ Literal v) 0
+value v = sugar $ ASTF (flattenCSE (M.empty, Info top :& Literal v)) 0
 
 -------------------------------------------------
 -- Support functions for monads
@@ -1422,7 +1424,7 @@ instance ( Syntactic a
 -------------------------------------------------
 -- | Convert a CSE map, an Expr and an Int to an ASTF
 full :: TypeF b => (CSEExpr (Expr b), Int) -> ASTF b
-full (ce, i) = ASTF (flattenCSE $ transCSEExpr toAExpr ce) i
+full (~(m, e), i) = ASTF (flattenCSE (m, Info top :& e)) i
 
 infixl 5 @@
 
@@ -1474,7 +1476,7 @@ unFull :: FFF a -> a
 unFull (FFF x) = x
 
 op2f :: Op a -> (RCSExpr a, Int)
-op2f op = (toCExpr $ Operator op, 0)
+op2f op = ((M.empty, Operator op), 0)
 
 type RCSExpr a = CSEExpr (Expr a)
 
@@ -1489,5 +1491,4 @@ instance (Syntactic b, SugarF c) => SugarF (b -> c) where
 
 instance (Syntactic b, TypeF (Internal b)) => SugarF (FFF b) where
   type SugarT (FFF b) = Internal b
-  sugarF (ce,i) = FFF $ sugar $ ASTF (flattenCSE $ transCSEExpr toAExpr ce) i
-
+  sugarF (~(m, e),i) = FFF $ sugar $ ASTF (flattenCSE (m, Info top :& e)) i

@@ -43,8 +43,6 @@ module Feldspar.Core.Representation
   , AExpr(..)
   , Info(..)
   , Expr(..)
-  , exprType
-  , toAExpr
   , (:->)
   , EqBox(..)
   , Op(..)
@@ -53,7 +51,6 @@ module Feldspar.Core.Representation
   , CBind(..)
   , bvId
   , fviB
-  , showRhs
   , BindEnv(..)
   , lookupBE
   , extendBE
@@ -111,10 +108,6 @@ instance Eq (Info a) where
 instance Show (Info a) where
   show (Info x) = show x
 
--- | Adding default info to an Expr
-toAExpr :: (Show (Size a), Lattice (Size a), TypeF a) => Expr (Full a) -> AExpr a
-toAExpr e = Info top :& e
-
 -- | Annotated expression, that is, an expression together with extra information,
 --   for instance from a program analysis.
 data AExpr a where
@@ -145,9 +138,6 @@ data Expr a where
   Variable ::                           Var a -> Expr (Full a)
   (:@)     :: TypeF a                => Expr (a -> b) -> AExpr a -> Expr b
   Lambda   :: TypeF a                => Var a -> AExpr b -> Expr (Full (a -> b))
-
-exprType :: TypeF a => Expr a -> TypeRep a
-exprType _ = typeRepF
 
 instance Show (Expr a) where
   show e = showExpr 0 e ""
@@ -319,7 +309,7 @@ data Op a where
 
     -- | MutableToPure
     RunMutableArray :: Type a => Op (Mut (MArr a) :-> Full [a])
-    WithArray       :: (Type a, Type b) => Op (MArr a :-> ([a] -> Mut b) :-> Full (Mut b))
+    WithArray       :: Type b => Op (MArr a :-> ([a] -> Mut b) :-> Full (Mut b))
 
     -- | MutableReference
     NewRef :: Type a => Op (a :-> Full (Mut (IORef a)))
@@ -431,7 +421,7 @@ data Op a where
 
     -- | Mutable
     Return :: (Monad m, Size (m a) ~ Size a)         => Op (a    :-> Full (m a))
-    Bind   :: (Monad m, Size (m a) ~ Size a, Type a) => Op (m a  :-> (a -> m b) :-> Full (m b))
+    Bind   :: (Monad m, Size (m a) ~ Size a)         => Op (m a  :-> (a -> m b) :-> Full (m b))
     Then   :: Monad m                                => Op (m a  :-> m b        :-> Full (m b))
     When   :: Monad m                                => Op (Bool :-> m ()       :-> Full (m ()))
 
@@ -488,8 +478,6 @@ bvId (CBind v _) = varNum v
 
 fviB :: CBind -> S.Set VarId
 fviB (CBind _ e) = fvi e
-
-showRhs (CBind _ e) = show e
 
 mkLets :: ([CBind], AExpr a) -> AExpr a
 mkLets (CBind v e1@(i :& _) : bs, e@(i2 :& _)) = i2 :& Operator Let :@ e1 :@ bs'

@@ -4,6 +4,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -48,8 +49,6 @@ module Feldspar.Core.Reify
        , flattenCSE
        , applyCSE
        , mergeMapCExpr
-       , transCSEExpr
-       , toCExpr
        , fromCExp
        , floatBindings
        , catchBindings
@@ -58,7 +57,7 @@ module Feldspar.Core.Reify
 
 import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..),
                                      VarId(..), Op(..), fvi, CBind(..), TypeF(..),
-                                     bvId, fviB, showRhs, mkLets, sharable, exprType)
+                                     bvId, fviB, mkLets, sharable)
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.Eval (evalTop)
 
@@ -160,12 +159,6 @@ mergeMapCExpr lm (rm,e) = (M.union lm rm1, e1)
          (rm1,e1) = if null colls then (rm,e) else catchBindings (map fst colls) (rm,e)
          colls = filter (uncurry (/=) . snd) $ M.toList sect
 
-transCSEExpr :: (a -> b) -> CSEExpr a -> CSEExpr b
-transCSEExpr f (m,e) = (m, f e)
-
-toCExpr :: e -> CSEExpr e
-toCExpr e = (M.empty, e)
-
 fromCExp :: CExpr a -> AExpr a
 fromCExp (m,e) = mkLets (snd $ floatBindings [] m, e)
 
@@ -173,7 +166,7 @@ hashError :: M.Map VarId (CBind,CBind) -> a
 hashError sect = error $ "CSE.mergeCSE: hash conflict, diff is" ++ concatMap showDiff diffs
   where diffs = filter (uncurry (/=)) $ map snd $ M.toList sect
         showDiff (b1,b2) = "\nDiff for " ++ show (bvId b1) ++ "\n"
-                                    ++ showRhs b1 ++ "\n--\n" ++ showRhs b2
+--                                    ++ showRhs b1 ++ "\n--\n" ++ showRhs b2
 
 {- | Functions for floating bindings out of lambdas whenever possible.
 -}
@@ -214,7 +207,7 @@ catchBindings vs (m,e) = (m1, mkLets (bs,e))
 -}
 
 hashExpr :: AExpr a -> VarId
-hashExpr (_ :& e) = (hash2VarId $ hash $ exprType e) `combineHash` hashExprR e
+hashExpr (_ :& (e :: Expr a)) = (hash2VarId $ hash (typeRepF :: T.TypeRep a)) `combineHash` hashExprR e
 
 hashExprR :: Expr a -> VarId
 hashExprR (Variable v) = varNum v
@@ -306,4 +299,3 @@ hashMod = 1024 * 1024 * 1024 * 1024 * 1023 + 1
 
 hashBase :: VarId
 hashBase = 10000 * 1000000 * 1000000
-

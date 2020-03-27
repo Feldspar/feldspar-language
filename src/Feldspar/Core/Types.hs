@@ -738,8 +738,7 @@ typeEq (ConsType a1 b1) (ConsType a2 b2) = do
     TypeEq <- typeEq a1 a2
     TypeEq <- typeEq b1 b2
     return TypeEq
-typeEq NilType NilType = do
-    return TypeEq
+typeEq NilType NilType = Just TypeEq
 typeEq (TupleType t1) (TupleType t2) = do
     TypeEq <- typeEq t1 t2
     return TypeEq
