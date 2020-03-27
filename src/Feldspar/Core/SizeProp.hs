@@ -57,15 +57,19 @@ spA vm (_ :& Lambda v e)
 -- | Applications and lambdas based on head operator
 -- | Array
 spA vm (_ :& Operator        Parallel :@ a :@ b)      = spLoI  vm        Parallel (:>) a b
-spA vm (_ :& Operator      Sequential :@ a :@ b :@ c)
+spA vm (_ :& Operator      Sequential :@ a :@ b :@ (_ :& Lambda v (_ :& Lambda w e)))
   | a1@(Info ai1 :& _) <- spA vm a
-  , b1@(Info bi1 :& _) <- spA vm b
-  , ((s,_), c1) <- spLambda2 vm ai1 top c
-  = Info (ai1 :> s) :& Operator Sequential :@ a1 :@ b1 :@ c1
+  , b1 <- spA vm b
+  , vm' <- extendBE vm (CBind v $ Info ai1 :& Variable v)
+  , e1@(Info ei1@(s, _) :& _) <- spA (extendBE vm' (CBind w $ Info top :& Variable w)) e
+  = Info (ai1 :> s) :& Operator Sequential :@ a1 :@ b1 :@ (Info (ai1, (top, ei1)) :& Lambda v (Info (top, ei1) :& Lambda w e1))
 spA vm (_ :& Operator          Append :@ a :@ b)      = spApp2 vm          Append appF a b
   where appF (alen :> aelem) (blen :> belem) = alen + blen :> aelem \/ belem
 spA vm (_ :& Operator           GetIx :@ a :@ b)      = spApp2 vm           GetIx (\ (_ :> i) _ -> i) a b
-spA vm (_ :& Operator           SetIx :@ a :@ b :@ c) = spApp3 vm           SetIx (\ (l :> i) _ j -> l :> i \/ j) a b c
+spA vm (_ :& Operator           SetIx :@ a :@ b :@ c)
+  | a1@(Info (l :> i) :& _) <- spA vm a
+  , c1@(Info ci1 :& _) <- spA vm c
+  = Info (l :> i \/ ci1) :& Operator SetIx :@ a1 :@ spA vm b :@ c1
 spA vm (_ :& Operator       GetLength :@ a)           = spApp1 vm       GetLength (\ (l :> _) -> l) a
 spA vm (_ :& Operator       SetLength :@ a :@ b)      = spApp2 vm       SetLength (\ l (_ :> i) -> l :> i) a b
 
@@ -108,7 +112,10 @@ spA vm (_ :& Operator           Phase :@ a)           = spApp1 vm           Phas
 spA vm (_ :& Operator             Cis :@ a)           = spApp1 vm             Cis topF1 a
 
 -- | Condition
-spA vm (_ :& Operator       Condition :@ a :@ b :@ c) = spApp3 vm       Condition (const (\/)) a b c
+spA vm (_ :& Operator       Condition :@ a :@ b :@ c)
+  | b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  = Info (bi1 \/ ci1) :& Operator Condition :@ spA vm a :@ b1 :@ c1
 
 -- | Conversion
 spA vm (_ :& Operator             F2I :@ a)           = spApp1 vm             F2I topF1 a
@@ -176,11 +183,13 @@ spA vm (_ :& Operator              Or :@ a :@ b)      = spApp2 vm              O
 spA vm (_ :& Operator             Not :@ a)           = spApp1 vm             Not topF1 a
 
 -- | Loop
-spA vm (_ :& Operator ForLoop :@ a :@ b :@ c)
+spA vm (_ :& Operator ForLoop :@ a :@ b :@ (_ :& Lambda v (_ :& Lambda w e)))
   | a1@(Info ai1 :& _) <- spA vm a
   , b1@(Info bi1 :& _) <- spA vm b
-  , (s, c1) <- spLambda2 vm ai1 top c
-  = Info (bi1 \/ s) :& Operator ForLoop :@ a1 :@ b1 :@ c1
+  , vm' <- extendBE vm (CBind v $ Info ai1 :& Variable v)
+  , e1@(Info ei1 :& _) <- spA (extendBE vm' (CBind w $ Info top :& Variable w)) e
+  , r1 <- Info (ai1, (top, ei1)) :& Lambda v (Info (top, ei1) :& Lambda w e1)
+  = Info (bi1 \/ ei1):& Operator ForLoop :@ a1 :@ b1 :@ r1
 
 spA vm (_ :& Operator  WhileLoop :@ a :@ b@(_ :& Lambda v1 e1) :@ c@(_ :& Lambda v2 e2))
   | a1@(Info ai1 :& _) <- spA vm a
@@ -197,13 +206,16 @@ spA vm (_ :& Operator             Run :@ a)           = spApp1 vm             Ru
 spA vm (_ :& Operator          NewArr :@ a :@ b)      = spApp2 vm          NewArr (\ s _ -> s :> top) a b
 spA vm (_ :& Operator         NewArr_ :@ a)           = spApp1 vm         NewArr_ (\ s -> s :> top) a
 spA vm (_ :& Operator          GetArr :@ a :@ b)      = spApp2 vm          GetArr topF2 a b
-spA vm (_ :& Operator          SetArr :@ a :@ b :@ c) = spApp3 vm          SetArr topF3 a b c
+spA vm (_ :& Operator          SetArr :@ a :@ b :@ c)
+  = Info top :& Operator SetArr :@ spA vm a :@ spA vm b :@ spA vm c
 spA vm (_ :& Operator       ArrLength :@ a)           = spApp1 vm       ArrLength (\ (l :> _) -> l) a
 
 -- | MutableToPure
 spA vm (_ :& Operator RunMutableArray :@ a)           = spApp1 vm RunMutableArray id a
-spA vm (_ :& Operator       WithArray :@ a :@ f)      = i :& Operator WithArray :@ a1 :@ f1
-  where (i,a1,f1) = spBind vm a f
+spA vm (_ :& Operator       WithArray :@ a :@ f@(_ :& Lambda v e))
+  | a1@(Info ai1 :& _) <- spA vm a
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
+  = Info ei1:& Operator WithArray :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
 
 -- | MutableReference
 spA vm (_ :& Operator          NewRef :@ a)           = spApp1 vm          NewRef topF1 a
@@ -456,7 +468,10 @@ spA vm (_ :& Operator           Sel14 :@ a)           = spApp1 vm           Sel1
 spA vm (_ :& Operator           Sel15 :@ a)           = spApp1 vm           Sel15 sel15 a
 
 -- | ConditionM
-spA vm (_ :& Operator      ConditionM :@ a :@ b :@ c) = spApp3 vm      ConditionM (const (\/)) a b c
+spA vm (_ :& Operator      ConditionM :@ a :@ b :@ c)
+  | b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  = Info (bi1 \/ ci1) :& Operator ConditionM :@ spA vm a :@ b1 :@ c1
 
 -- | LoopM
 spA vm (_ :& Operator           While :@ a :@ b)      = spApp2 vm           While topF2 a b
@@ -493,22 +508,6 @@ spLoI vm op f a (_ :& Lambda v e)
   , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Variable v)) e
   = Info (f ai1 ei1) :& Operator op :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
 
--- | Helper for binds
-spBind :: Size a ~ Size b
-        => BindEnv -> AExpr a -> AExpr (b -> c) -> (Info c, AExpr a, AExpr (b -> c))
-spBind vm a f@(_ :& Lambda v e)
-  | a1@(Info i1 :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info i1 :& Variable v)) e
-  = (Info ei1, a1, Info (i1, ei1) :& Lambda v e1)
-
--- | Helper for two levels of lambdas
-spLambda2 :: BindEnv -> Size a -> Size b -> AExpr (a -> b -> c) -> (Size c, AExpr (a -> b -> c))
-spLambda2 vm s t (_ :& Lambda v (_ :& Lambda w e))
-  | vm' <- extendBE vm (CBind v $ Info s :& Variable v)
-  , e1@(Info ei1 :& _) <- spA (extendBE vm' (CBind w $ Info t :& Variable w)) e
-  = (ei1, Info (s, (t, ei1)) :& Lambda v (Info (t, ei1) :& Lambda w e1))
-spLambda2 _  _ _ _ = error "SizeProp.spLambda2: not a lambda abstraction."
-
 -- | Unary applications
 spApp1 :: TypeF u
        => BindEnv -> Op (a -> u) -> (Size a -> Size u) -> AExpr a -> AExpr u
@@ -524,17 +523,6 @@ spApp2 vm op f a b
   | a1@(Info ai1 :& _) <- spA vm a
   , b1@(Info bi1 :& _) <- spA vm b
   = Info (f ai1 bi1) :& Operator op :@ a1 :@ b1
-
--- | Ternary applications
-spApp3 :: TypeF u
-       => BindEnv -> Op (a -> b -> c -> u)
-       -> (Size a -> Size b -> Size c -> Size u)
-       -> AExpr a -> AExpr b -> AExpr c -> AExpr u
-spApp3 vm op f a b c
-  | a1@(Info ai1 :& _) <- spA vm a
-  , b1@(Info bi1 :& _) <- spA vm b
-  , c1@(Info ci1 :& _) <- spA vm c
-  = Info (f ai1 bi1 ci1) :& Operator op :@ a1 :@ b1 :@ c1
 
 -- | Support functions
 

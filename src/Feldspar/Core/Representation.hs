@@ -480,8 +480,8 @@ fviB :: CBind -> S.Set VarId
 fviB (CBind _ e) = fvi e
 
 mkLets :: ([CBind], AExpr a) -> AExpr a
-mkLets (CBind v e1@(i :& _) : bs, e@(i2 :& _)) = i2 :& Operator Let :@ e1 :@ bs'
-  where bs' = Info (infoSize i, infoSize i2) :& Lambda v (mkLets (bs,e))
+mkLets (CBind v e1@(Info i1 :& _) : bs, e@(Info i2 :& _))
+  = Info i2 :& Operator Let :@ e1 :@ (Info (i1, i2) :& Lambda v (mkLets (bs, e)))
 mkLets ([], e) = e
 
 -- | Functions for bind environments
