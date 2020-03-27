@@ -45,7 +45,6 @@ module Feldspar.Core.Representation
   , Expr(..)
   , exprType
   , toAExpr
-  , exprSize
   , (:->)
   , EqBox(..)
   , Op(..)
@@ -115,10 +114,6 @@ instance Show (Info a) where
 -- | Adding default info to an Expr
 toAExpr :: (Show (Size a), Lattice (Size a), TypeF a) => Expr (Full a) -> AExpr a
 toAExpr e = Info top :& e
-
--- | Getting the size (value info) of an expression from its annotation
-exprSize :: AExpr a -> Size a
-exprSize = infoSize . aeInfo
 
 -- | Annotated expression, that is, an expression together with extra information,
 --   for instance from a program analysis.

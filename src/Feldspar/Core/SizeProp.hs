@@ -57,20 +57,23 @@ spA vm (_ :& Lambda v e)
 -- | Applications and lambdas based on head operator
 -- | Array
 spA vm (_ :& Operator        Parallel :@ a :@ b)      = spLoI  vm        Parallel (:>) a b
-spA vm (_ :& Operator      Sequential :@ a :@ b :@ c) = Info (exprSize a1 :> s) :& Operator Sequential :@ a1 :@ b1 :@ c1
-  where a1 = spA vm a
-        b1 = spA vm b
-        ((s,_),c1) = spLambda2 vm (exprSize a1) top c
+spA vm (_ :& Operator      Sequential :@ a :@ b :@ c)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , ((s,_), c1) <- spLambda2 vm ai1 top c
+  = Info (ai1 :> s) :& Operator Sequential :@ a1 :@ b1 :@ c1
 spA vm (_ :& Operator          Append :@ a :@ b)      = spApp2 vm          Append appF a b
-  where appF (alen :> aelem) (blen :> belem) = (alen + blen :> aelem \/ belem)
+  where appF (alen :> aelem) (blen :> belem) = alen + blen :> aelem \/ belem
 spA vm (_ :& Operator           GetIx :@ a :@ b)      = spApp2 vm           GetIx (\ (_ :> i) _ -> i) a b
 spA vm (_ :& Operator           SetIx :@ a :@ b :@ c) = spApp3 vm           SetIx (\ (l :> i) _ j -> l :> i \/ j) a b c
 spA vm (_ :& Operator       GetLength :@ a)           = spApp1 vm       GetLength (\ (l :> _) -> l) a
 spA vm (_ :& Operator       SetLength :@ a :@ b)      = spApp2 vm       SetLength (\ l (_ :> i) -> l :> i) a b
 
 -- | Binding
-spA vm (_ :& Operator             Let :@ a :@ b)      = i :& Operator Let :@ a1 :@ b1
-  where (i,a1,b1) = spBind vm a b
+spA vm (_ :& Operator             Let :@ a :@ b@(_ :& Lambda v e))
+  | a1@(Info ai1 :& _) <- spA vm a
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
+  = Info ei1 :& Operator Let :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
 
 -- | Bits
 spA vm (_ :& Operator            BAnd :@ a :@ b)      = spApp2 vm            BAnd rangeAnd a b
@@ -118,7 +121,8 @@ spA vm (_ :& Operator           Floor :@ a)           = spApp1 vm           Floo
 -- | Elements
 spA vm (_ :& Operator    EMaterialize :@ a :@ b)      = spApp2 vm    EMaterialize (\ _ s -> s) a b
 spA vm (_ :& Operator          EWrite :@ a :@ b)      = spApp2 vm          EWrite (:>) a b
-spA vm (_ :& Operator           ESkip)                = spApp0              ESkip bot
+spA vm (_ :& Operator           ESkip)
+  = Info bot :& Operator ESkip
 spA vm (_ :& Operator            EPar :@ a :@ b)      = spApp2 vm            EPar (\/) a b
 spA vm (_ :& Operator         EparFor :@ a :@ b)      = spLoI  vm         EparFor (\ _ s -> s) a b
 
@@ -127,11 +131,13 @@ spA vm (_ :& Operator           Equal :@ a :@ b)      = spApp2 vm           Equa
 spA vm (_ :& Operator        NotEqual :@ a :@ b)      = spApp2 vm        NotEqual topF2 a b
 
 -- | Error
-spA vm (_ :& Operator       Undefined)                = spApp0          Undefined bot
+spA vm (_ :& Operator       Undefined)
+  = Info bot :& Operator Undefined
 spA vm (_ :& Operator      (Assert s) :@ a :@ b)      = spApp2 vm      (Assert s) (\ _ s -> s) a b
 
 -- | Floating
-spA vm (_ :& Operator              Pi)                = spApp0                 Pi top
+spA vm (_ :& Operator              Pi)
+  = Info top :& Operator Pi
 spA vm (_ :& Operator             Exp :@ a)           = spApp1 vm             Exp topF1 a
 spA vm (_ :& Operator            Sqrt :@ a)           = spApp1 vm            Sqrt topF1 a
 spA vm (_ :& Operator             Log :@ a)           = spApp1 vm             Log topF1 a
@@ -170,10 +176,11 @@ spA vm (_ :& Operator              Or :@ a :@ b)      = spApp2 vm              O
 spA vm (_ :& Operator             Not :@ a)           = spApp1 vm             Not topF1 a
 
 -- | Loop
-spA vm (_ :& Operator ForLoop :@ a :@ b :@ c) = Info (exprSize  b1 \/ s) :& Operator ForLoop :@ a1 :@ b1 :@ c1
-  where a1 = spA vm a
-        b1 = spA vm b
-        (s,c1) = spLambda2 vm (exprSize a1) top c
+spA vm (_ :& Operator ForLoop :@ a :@ b :@ c)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , (s, c1) <- spLambda2 vm ai1 top c
+  = Info (bi1 \/ s) :& Operator ForLoop :@ a1 :@ b1 :@ c1
 
 spA vm (_ :& Operator  WhileLoop :@ a :@ b@(_ :& Lambda v1 e1) :@ c@(_ :& Lambda v2 e2))
   | a1@(Info ai1 :& _) <- spA vm a
@@ -206,7 +213,8 @@ spA vm (_ :& Operator          ModRef :@ a :@ b)      = spApp2 vm          ModRe
 
 -- | Nested tuples
 spA vm (_ :& Operator            Cons :@ a :@ b)      = spApp2 vm            Cons (,) a b
-spA vm (_ :& Operator             Nil)                = spApp0                Nil top
+spA vm (_ :& Operator             Nil)
+  = Info top :& Operator Nil
 spA vm (_ :& Operator             Car :@ a)           = spApp1 vm             Car fst a
 spA vm (_ :& Operator             Cdr :@ a)           = spApp1 vm             Cdr snd a
 spA vm (_ :& Operator             Tup :@ a)           = spApp1 vm             Tup id  a
@@ -232,11 +240,13 @@ spA vm (_ :& Operator             Max :@ a :@ b)      = spApp2 vm             Ma
 
 -- | Par
 spA vm (_ :& Operator          ParRun :@ a)           = spApp1 vm          ParRun id a
-spA vm (_ :& Operator          ParNew)                = spApp0             ParNew top
+spA vm (_ :& Operator          ParNew)
+  = Info top :& Operator ParNew
 spA vm (_ :& Operator          ParGet :@ a)           = spApp1 vm          ParGet topF1 a
 spA vm (_ :& Operator          ParPut :@ a :@ b)      = spApp2 vm          ParPut topF2 a b
 spA vm (_ :& Operator         ParFork :@ a)           = spApp1 vm         ParFork topF1 a
-spA vm (_ :& Operator        ParYield)                = spApp0             ParYield top
+spA vm (_ :& Operator        ParYield)
+  = Info top :& Operator ParYield
 
 -- | RealFloat
 spA vm (_ :& Operator           Atan2 :@ a :@ b)      = spApp2 vm           Atan2 topF2 a b
@@ -251,196 +261,183 @@ spA vm (_ :& Operator    (PropSize f) :@ a :@ b)      = spApp2 vm    (PropSize f
 spA vm (_ :& Operator          Switch :@ a)           = spApp1 vm          Switch id a
 
 -- | Tuple
-spA vm (_ :& Operator Tup0) = Info bot :& Operator Tup0
+spA vm (_ :& Operator Tup0)
+  = Info bot :& Operator Tup0
 
 spA vm (_ :& Operator Tup2 :@ a :@ b)
-  = Info (s a1, s b1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  = Info (ai1, bi1)
     :& Operator Tup2 :@ a1 :@ b1
-  where a1 = spA vm a
-        b1 = spA vm b
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup3 :@ a :@ b :@ c)
-  = Info (s a1, s b1, s c1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  = Info (ai1, bi1, ci1)
     :& Operator Tup3 :@ a1 :@ b1 :@ c1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup4 :@ a :@ b :@ c :@ d)
-  = Info (s a1, s b1, s c1, s d1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  = Info (ai1, bi1, ci1, di1)
     :& Operator Tup4 :@ a1 :@ b1 :@ c1 :@ d1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup5 :@ a :@ b :@ c :@ d :@ e)
-  = Info (s a1, s b1, s c1, s d1, s e1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  = Info (ai1, bi1, ci1, di1, ei1)
     :& Operator Tup5 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup6 :@ a :@ b :@ c :@ d :@ e :@ f)
-  = Info (s a1, s b1, s c1, s d1, s e1, s f1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  , f1@(Info fi1 :& _) <- spA vm f
+  = Info (ai1, bi1, ci1, di1, ei1, fi1)
     :& Operator Tup6 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        f1 = spA vm f
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup7 :@ a :@ b :@ c :@ d :@ e :@ f :@ g)
-  = Info (s a1, s b1, s c1, s d1, s e1, s f1, s g1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  , f1@(Info fi1 :& _) <- spA vm f
+  , g1@(Info gi1 :& _) <- spA vm g
+  = Info (ai1, bi1, ci1, di1, ei1, fi1, gi1)
     :& Operator Tup7 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1 :@ g1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        f1 = spA vm f
-        g1 = spA vm g
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup8 :@ a :@ b :@ c :@ d :@ e :@ f :@ g :@ h)
-  = Info (s a1, s b1, s c1, s d1, s e1, s f1, s g1, s h1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  , f1@(Info fi1 :& _) <- spA vm f
+  , g1@(Info gi1 :& _) <- spA vm g
+  , h1@(Info hi1 :& _) <- spA vm h
+  = Info (ai1, bi1, ci1, di1, ei1, fi1, gi1, hi1)
     :& Operator Tup8 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1 :@ g1 :@ h1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        f1 = spA vm f
-        g1 = spA vm g
-        h1 = spA vm h
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup9 :@ a :@ b :@ c :@ d :@ e :@ f :@ g :@ h :@ i)
-  = Info (s a1, s b1, s c1, s d1, s e1, s f1, s g1, s h1, s i1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  , f1@(Info fi1 :& _) <- spA vm f
+  , g1@(Info gi1 :& _) <- spA vm g
+  , h1@(Info hi1 :& _) <- spA vm h
+  , i1@(Info ii1 :& _) <- spA vm i
+  = Info (ai1, bi1, ci1, di1, ei1, fi1, gi1, hi1, ii1)
     :& Operator Tup9 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1 :@ g1 :@ h1 :@ i1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        f1 = spA vm f
-        g1 = spA vm g
-        h1 = spA vm h
-        i1 = spA vm i
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup10 :@ a :@ b :@ c :@ d :@ e :@ f :@ g :@ h :@ i :@ j)
-  = Info (s a1, s b1, s c1, s d1, s e1, s f1, s g1, s h1, s i1, s j1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  , f1@(Info fi1 :& _) <- spA vm f
+  , g1@(Info gi1 :& _) <- spA vm g
+  , h1@(Info hi1 :& _) <- spA vm h
+  , i1@(Info ii1 :& _) <- spA vm i
+  , j1@(Info ji1 :& _) <- spA vm j
+  = Info (ai1, bi1, ci1, di1, ei1, fi1, gi1, hi1, ii1, ji1)
     :& Operator Tup10 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1 :@ g1 :@ h1 :@ i1 :@ j1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        f1 = spA vm f
-        g1 = spA vm g
-        h1 = spA vm h
-        i1 = spA vm i
-        j1 = spA vm j
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup11 :@ a :@ b :@ c :@ d :@ e :@ f :@ g :@ h :@ i :@ j :@ k)
-  = Info (s a1, s b1, s c1, s d1, s e1, s f1, s g1, s h1, s i1, s j1, s k1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  , f1@(Info fi1 :& _) <- spA vm f
+  , g1@(Info gi1 :& _) <- spA vm g
+  , h1@(Info hi1 :& _) <- spA vm h
+  , i1@(Info ii1 :& _) <- spA vm i
+  , j1@(Info ji1 :& _) <- spA vm j
+  , k1@(Info ki1 :& _) <- spA vm k
+  = Info (ai1, bi1, ci1, di1, ei1, fi1, gi1, hi1, ii1, ji1, ki1)
     :& Operator Tup11 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1 :@ g1 :@ h1 :@ i1 :@ j1 :@ k1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        f1 = spA vm f
-        g1 = spA vm g
-        h1 = spA vm h
-        i1 = spA vm i
-        j1 = spA vm j
-        k1 = spA vm k
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup12 :@ a :@ b :@ c :@ d :@ e :@ f :@ g :@ h :@ i :@ j :@ k :@ l)
-  = Info (s a1, s b1, s c1, s d1, s e1, s f1, s g1, s h1, s i1, s j1, s k1, s l1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  , f1@(Info fi1 :& _) <- spA vm f
+  , g1@(Info gi1 :& _) <- spA vm g
+  , h1@(Info hi1 :& _) <- spA vm h
+  , i1@(Info ii1 :& _) <- spA vm i
+  , j1@(Info ji1 :& _) <- spA vm j
+  , k1@(Info ki1 :& _) <- spA vm k
+  , l1@(Info li1 :& _) <- spA vm l
+  = Info (ai1, bi1, ci1, di1, ei1, fi1, gi1, hi1, ii1, ji1, ki1, li1)
     :& Operator Tup12 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1 :@ g1 :@ h1 :@ i1 :@ j1 :@ k1 :@ l1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        f1 = spA vm f
-        g1 = spA vm g
-        h1 = spA vm h
-        i1 = spA vm i
-        j1 = spA vm j
-        k1 = spA vm k
-        l1 = spA vm l
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup13 :@ a :@ b :@ c :@ d :@ e :@ f :@ g :@ h :@ i :@ j :@ k :@ l :@ m)
-  = Info (s a1, s b1, s c1, s d1, s e1, s f1, s g1, s h1, s i1, s j1, s k1, s l1, s m1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  , f1@(Info fi1 :& _) <- spA vm f
+  , g1@(Info gi1 :& _) <- spA vm g
+  , h1@(Info hi1 :& _) <- spA vm h
+  , i1@(Info ii1 :& _) <- spA vm i
+  , j1@(Info ji1 :& _) <- spA vm j
+  , k1@(Info ki1 :& _) <- spA vm k
+  , l1@(Info li1 :& _) <- spA vm l
+  , m1@(Info mi1 :& _) <- spA vm m  
+  = Info (ai1, bi1, ci1, di1, ei1, fi1, gi1, hi1, ii1, ji1, ki1, li1, mi1)
     :& Operator Tup13 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1 :@ g1 :@ h1 :@ i1 :@ j1 :@ k1 :@ l1 :@ m1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        f1 = spA vm f
-        g1 = spA vm g
-        h1 = spA vm h
-        i1 = spA vm i
-        j1 = spA vm j
-        k1 = spA vm k
-        l1 = spA vm l
-        m1 = spA vm m
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup14 :@ a :@ b :@ c :@ d :@ e :@ f :@ g :@ h :@ i :@ j :@ k :@ l :@ m :@ n)
-  = Info (s a1, s b1, s c1, s d1, s e1, s f1, s g1, s h1, s i1, s j1, s k1, s l1, s m1, s n1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  , f1@(Info fi1 :& _) <- spA vm f
+  , g1@(Info gi1 :& _) <- spA vm g
+  , h1@(Info hi1 :& _) <- spA vm h
+  , i1@(Info ii1 :& _) <- spA vm i
+  , j1@(Info ji1 :& _) <- spA vm j
+  , k1@(Info ki1 :& _) <- spA vm k
+  , l1@(Info li1 :& _) <- spA vm l
+  , m1@(Info mi1 :& _) <- spA vm m
+  , n1@(Info ni1 :& _) <- spA vm n
+  = Info (ai1, bi1, ci1, di1, ei1, fi1, gi1, hi1, ii1, ji1, ki1, li1, mi1, ni1)
     :& Operator Tup14 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1 :@ g1 :@ h1 :@ i1 :@ j1 :@ k1 :@ l1 :@ m1 :@ n1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        f1 = spA vm f
-        g1 = spA vm g
-        h1 = spA vm h
-        i1 = spA vm i
-        j1 = spA vm j
-        k1 = spA vm k
-        l1 = spA vm l
-        m1 = spA vm m
-        n1 = spA vm n
-        s e = exprSize e
 
 spA vm (_ :& Operator Tup15 :@ a :@ b :@ c :@ d :@ e :@ f :@ g :@ h :@ i :@ j :@ k :@ l :@ m :@ n :@ o)
-  = Info (s a1, s b1, s c1, s d1, s e1, s f1, s g1, s h1, s i1, s j1, s k1, s l1, s m1, s n1, s o1)
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  , d1@(Info di1 :& _) <- spA vm d
+  , e1@(Info ei1 :& _) <- spA vm e
+  , f1@(Info fi1 :& _) <- spA vm f
+  , g1@(Info gi1 :& _) <- spA vm g
+  , h1@(Info hi1 :& _) <- spA vm h
+  , i1@(Info ii1 :& _) <- spA vm i
+  , j1@(Info ji1 :& _) <- spA vm j
+  , k1@(Info ki1 :& _) <- spA vm k
+  , l1@(Info li1 :& _) <- spA vm l
+  , m1@(Info mi1 :& _) <- spA vm m
+  , n1@(Info ni1 :& _) <- spA vm n
+  , o1@(Info oi1 :& _) <- spA vm o
+  = Info (ai1, bi1, ci1, di1, ei1, fi1, gi1, hi1, ii1, ji1, ki1, li1, mi1, ni1, oi1)
     :& Operator Tup15 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1 :@ g1 :@ h1 :@ i1 :@ j1 :@ k1 :@ l1 :@ m1 :@ n1 :@ o1
-  where a1 = spA vm a
-        b1 = spA vm b
-        c1 = spA vm c
-        d1 = spA vm d
-        e1 = spA vm e
-        f1 = spA vm f
-        g1 = spA vm g
-        h1 = spA vm h
-        i1 = spA vm i
-        j1 = spA vm j
-        k1 = spA vm k
-        l1 = spA vm l
-        m1 = spA vm m
-        n1 = spA vm n
-        o1 = spA vm o
-        s e = exprSize e
 
 spA vm (_ :& Operator            Sel1 :@ a)           = spApp1 vm            Sel1 sel1 a
 spA vm (_ :& Operator            Sel2 :@ a)           = spApp1 vm            Sel2 sel2 a
@@ -467,8 +464,10 @@ spA vm (_ :& Operator             For :@ a :@ b)      = spApp2 vm             Fo
 
 -- | Mutable
 spA vm (_ :& Operator          Return :@ a)           = spApp1 vm          Return id a
-spA vm (_ :& Operator            Bind :@ a :@ f)      = i :& Operator Bind :@ a1 :@ f1
-  where (i,a1,f1) = spBind vm a f
+spA vm (_ :& Operator            Bind :@ a :@ f@(_ :& Lambda v e))
+  | a1@(Info ai1 :& _) <- spA vm a
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
+  = Info ei1 :& Operator Bind :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
 spA vm (_ :& Operator            Then :@ a :@ b)      = spApp2 vm            Then (flip const) a b
 spA vm (_ :& Operator            When :@ a :@ b)      = spApp2 vm            When (\ _ _ -> top) a b
 
@@ -490,9 +489,9 @@ spLoI :: TypeF u
       -> AExpr Length -> AExpr (Index -> b)
       -> AExpr u
 spLoI vm op f a (_ :& Lambda v e)
-  | a1@(Info ai1 :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
-  = Info (f ai1 $ ei1) :& Operator op :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
+  | a1@(i1@(Info ai1) :& _) <- spA vm a
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Variable v)) e
+  = Info (f ai1 ei1) :& Operator op :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
 
 -- | Helper for binds
 spBind :: Size a ~ Size b
@@ -504,46 +503,38 @@ spBind vm a f@(_ :& Lambda v e)
 
 -- | Helper for two levels of lambdas
 spLambda2 :: BindEnv -> Size a -> Size b -> AExpr (a -> b -> c) -> (Size c, AExpr (a -> b -> c))
-spLambda2 vm s t (_ :& Lambda v (_ :& Lambda w e)) = (exprSize e1, f1)
-  where e1 = spA (extendBE vm' (CBind w $ Info t :& Variable w)) e
-        vm' = extendBE vm (CBind v $ Info s :& Variable v)
-        u1 = (t, exprSize e1)
-        f1 = Info (s, u1) :& Lambda v (Info u1 :& Lambda w e1)
+spLambda2 vm s t (_ :& Lambda v (_ :& Lambda w e))
+  | vm' <- extendBE vm (CBind v $ Info s :& Variable v)
+  , e1@(Info ei1 :& _) <- spA (extendBE vm' (CBind w $ Info t :& Variable w)) e
+  = (ei1, Info (s, (t, ei1)) :& Lambda v (Info (t, ei1) :& Lambda w e1))
 spLambda2 _  _ _ _ = error "SizeProp.spLambda2: not a lambda abstraction."
 
--- | Nullary applications
-spApp0 :: TypeF u => Op u -> Size u -> AExpr u
-spApp0 op s = Info s :& Operator op
-
 -- | Unary applications
-spApp1 :: (TypeF a, TypeF u)
+spApp1 :: TypeF u
        => BindEnv -> Op (a -> u) -> (Size a -> Size u) -> AExpr a -> AExpr u
-spApp1 vm op f a = Info (f ai) :& Operator op :@ a1
-  where a1 = spA vm a
-        ai = infoSize $ aeInfo a1
-
+spApp1 vm op f a
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (f ai1) :& Operator op :@ a1
+ 
 -- | Binary applications
-spApp2 :: (TypeF a, TypeF b, TypeF u)
+spApp2 :: TypeF u
        => BindEnv -> Op (a -> b -> u) -> (Size a -> Size b -> Size u)
        -> AExpr a -> AExpr b -> AExpr u
-spApp2 vm op f a b = Info (f ai bi) :& Operator op :@ a1 :@ b1
-  where a1 = spA vm a
-        ai = infoSize $ aeInfo a1
-        b1 = spA vm b
-        bi = infoSize $ aeInfo b1
+spApp2 vm op f a b
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  = Info (f ai1 bi1) :& Operator op :@ a1 :@ b1
 
 -- | Ternary applications
-spApp3 :: (TypeF a, TypeF b, TypeF c, TypeF u)
+spApp3 :: TypeF u
        => BindEnv -> Op (a -> b -> c -> u)
        -> (Size a -> Size b -> Size c -> Size u)
        -> AExpr a -> AExpr b -> AExpr c -> AExpr u
-spApp3 vm op f a b c = Info (f ai bi ci) :& Operator op :@ a1 :@ b1 :@ c1
-  where a1 = spA vm a
-        ai = infoSize $ aeInfo a1
-        b1 = spA vm b
-        bi = infoSize $ aeInfo b1
-        c1 = spA vm c
-        ci = infoSize $ aeInfo c1
+spApp3 vm op f a b c
+  | a1@(Info ai1 :& _) <- spA vm a
+  , b1@(Info bi1 :& _) <- spA vm b
+  , c1@(Info ci1 :& _) <- spA vm c
+  = Info (f ai1 bi1 ci1) :& Operator op :@ a1 :@ b1 :@ c1
 
 -- | Support functions
 
@@ -567,4 +558,3 @@ rangeProp (Range l u)
 
 resultType1 :: Type b => Op (a -> b) -> T.TypeRep b
 resultType1 _ = T.typeRep
-
