@@ -49,14 +49,17 @@ sizeProp = spA M.empty
 spA :: BindEnv -> AExpr a -> AExpr a
 -- | Variables and literals
 spA vm (_ :& Variable v) = lookupBE "SizeProp.look" vm v
-spA vm (_ :& Literal l)  = Info (T.sizeOf l) :& Literal l
+spA vm (_ :& Literal  l) = Info (T.sizeOf l) :& Literal l
 -- Top level lambda
 spA vm (_ :& Lambda v e)
   | e1@(Info i1 :& _) <- spA (extendBE vm (CBind v $ Info top :& Variable v)) e
   = Info (top, i1) :& Lambda v e1
 -- | Applications and lambdas based on head operator
 -- | Array
-spA vm (_ :& Operator        Parallel :@ a :@ b)      = spLoI  vm        Parallel (:>) a b
+spA vm (_ :& Operator        Parallel :@ a :@ (_ :& Lambda v e))
+  | a1@(i1@(Info ai1) :& _) <- spA vm a
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Variable v)) e
+  = Info (ai1 :> ei1) :& Operator Parallel :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
 spA vm (_ :& Operator      Sequential :@ a :@ b :@ (_ :& Lambda v (_ :& Lambda w e)))
   | a1@(Info ai1 :& _) <- spA vm a
   , b1 <- spA vm b
@@ -70,7 +73,9 @@ spA vm (_ :& Operator           SetIx :@ a :@ b :@ c)
   | a1@(Info (l :> i) :& _) <- spA vm a
   , c1@(Info ci1 :& _) <- spA vm c
   = Info (l :> i \/ ci1) :& Operator SetIx :@ a1 :@ spA vm b :@ c1
-spA vm (_ :& Operator       GetLength :@ a)           = spApp1 vm       GetLength (\ (l :> _) -> l) a
+spA vm (_ :& Operator       GetLength :@ a)
+  | a1@(Info (l :> _) :& _) <- spA vm a
+  = Info l :& Operator GetLength :@ a1
 spA vm (_ :& Operator       SetLength :@ a :@ b)      = spApp2 vm       SetLength (\ l (_ :> i) -> l :> i) a b
 
 -- | Binding
@@ -83,8 +88,11 @@ spA vm (_ :& Operator             Let :@ a :@ b@(_ :& Lambda v e))
 spA vm (_ :& Operator            BAnd :@ a :@ b)      = spApp2 vm            BAnd rangeAnd a b
 spA vm (_ :& Operator             BOr :@ a :@ b)      = spApp2 vm             BOr rangeOr  a b
 spA vm (_ :& Operator            BXor :@ a :@ b)      = spApp2 vm            BXor rangeXor a b
-spA vm (_ :& Operator      Complement :@ a)           = spApp1 vm      Complement rangeComplement a
-spA vm (_ :& Operator             Bit :@ a)           = spApp1 vm             Bit topF1 a
+spA vm (_ :& Operator      Complement :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (rangeComplement ai1) :& Operator Complement :@ a1
+spA vm (_ :& Operator             Bit :@ a)
+  = Info top :& Operator Bit :@ spA vm a
 spA vm (_ :& Operator          SetBit :@ a :@ b)      = spApp2 vm          SetBit topF2 a b
 spA vm (_ :& Operator        ClearBit :@ a :@ b)      = spApp2 vm        ClearBit topF2 a b
 spA vm (_ :& Operator   ComplementBit :@ a :@ b)      = spApp2 vm   ComplementBit topF2 a b
@@ -97,19 +105,28 @@ spA vm (_ :& Operator        RotateLU :@ a :@ b)      = spApp2 vm        RotateL
 spA vm (_ :& Operator        RotateRU :@ a :@ b)      = spApp2 vm        RotateRU topF2 a b
 spA vm (_ :& Operator         RotateL :@ a :@ b)      = spApp2 vm         RotateL topF2 a b
 spA vm (_ :& Operator         RotateR :@ a :@ b)      = spApp2 vm         RotateR topF2 a b
-spA vm (_ :& Operator     ReverseBits :@ a)           = spApp1 vm     ReverseBits topF1 a
-spA vm (_ :& Operator         BitScan :@ a)           = spApp1 vm         BitScan topF1 a
-spA vm (_ :& Operator        BitCount :@ a)           = spApp1 vm        BitCount topF1 a -- We could do better
+spA vm (_ :& Operator     ReverseBits :@ a)
+  = Info top :& Operator ReverseBits :@ spA vm a
+spA vm (_ :& Operator         BitScan :@ a)
+  = Info top :& Operator BitScan :@ spA vm a
+spA vm (_ :& Operator        BitCount :@ a)
+  = Info top :& Operator BitCount :@ spA vm a -- Info can be improved.
 
 -- | Complex
 spA vm (_ :& Operator       MkComplex :@ a :@ b)      = spApp2 vm       MkComplex topF2 a b
-spA vm (_ :& Operator        RealPart :@ a)           = spApp1 vm        RealPart topF1 a
-spA vm (_ :& Operator        ImagPart :@ a)           = spApp1 vm        ImagPart topF1 a
-spA vm (_ :& Operator       Conjugate :@ a)           = spApp1 vm       Conjugate topF1 a
+spA vm (_ :& Operator        RealPart :@ a)
+  = Info top :& Operator RealPart :@ spA vm a
+spA vm (_ :& Operator        ImagPart :@ a)
+  = Info top :& Operator ImagPart :@ spA vm a
+spA vm (_ :& Operator       Conjugate :@ a)
+  = Info top :& Operator Conjugate :@ spA vm a
 spA vm (_ :& Operator         MkPolar :@ a :@ b)      = spApp2 vm         MkPolar topF2 a b
-spA vm (_ :& Operator       Magnitude :@ a)           = spApp1 vm       Magnitude topF1 a
-spA vm (_ :& Operator           Phase :@ a)           = spApp1 vm           Phase topF1 a
-spA vm (_ :& Operator             Cis :@ a)           = spApp1 vm             Cis topF1 a
+spA vm (_ :& Operator       Magnitude :@ a)
+  = Info top :& Operator Magnitude :@ spA vm a
+spA vm (_ :& Operator           Phase :@ a)
+  = Info top :& Operator Phase :@ spA vm a
+spA vm (_ :& Operator             Cis :@ a)
+  = Info top :& Operator Cis :@ spA vm a
 
 -- | Condition
 spA vm (_ :& Operator       Condition :@ a :@ b :@ c)
@@ -118,12 +135,20 @@ spA vm (_ :& Operator       Condition :@ a :@ b :@ c)
   = Info (bi1 \/ ci1) :& Operator Condition :@ spA vm a :@ b1 :@ c1
 
 -- | Conversion
-spA vm (_ :& Operator             F2I :@ a)           = spApp1 vm             F2I topF1 a
-spA vm (_ :& Operator          op@I2N :@ a)           = spApp1 vm             I2N (spI2N op) a
-spA vm (_ :& Operator          op@B2I :@ a)           = spApp1 vm             B2I (spB2I op) a
-spA vm (_ :& Operator           Round :@ a)           = spApp1 vm           Round topF1 a
-spA vm (_ :& Operator         Ceiling :@ a)           = spApp1 vm         Ceiling topF1 a
-spA vm (_ :& Operator           Floor :@ a)           = spApp1 vm           Floor topF1 a
+spA vm (_ :& Operator             F2I :@ a)
+  = Info top :& Operator F2I :@ spA vm a
+spA vm (_ :& Operator          op@I2N :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (spI2N op ai1) :& Operator I2N :@ a1
+spA vm (_ :& Operator          op@B2I :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (spB2I op ai1) :& Operator B2I :@ a1
+spA vm (_ :& Operator           Round :@ a)
+  = Info top :& Operator Round :@ spA vm a
+spA vm (_ :& Operator         Ceiling :@ a)
+  = Info top :& Operator Ceiling :@ spA vm a
+spA vm (_ :& Operator           Floor :@ a)
+  = Info top :& Operator Floor :@ spA vm a
 
 -- | Elements
 spA vm (_ :& Operator    EMaterialize :@ a :@ b)      = spApp2 vm    EMaterialize (\ _ s -> s) a b
@@ -131,7 +156,10 @@ spA vm (_ :& Operator          EWrite :@ a :@ b)      = spApp2 vm          EWrit
 spA vm (_ :& Operator           ESkip)
   = Info bot :& Operator ESkip
 spA vm (_ :& Operator            EPar :@ a :@ b)      = spApp2 vm            EPar (\/) a b
-spA vm (_ :& Operator         EparFor :@ a :@ b)      = spLoI  vm         EparFor (\ _ s -> s) a b
+spA vm (_ :& Operator         EparFor :@ a :@ (_ :& Lambda v e))
+  | a1@(i1@(Info ai1) :& _) <- spA vm a
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Variable v)) e
+  = Info ei1 :& Operator EparFor :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
 
 -- | Eq
 spA vm (_ :& Operator           Equal :@ a :@ b)      = spApp2 vm           Equal topF2 a b
@@ -145,30 +173,49 @@ spA vm (_ :& Operator      (Assert s) :@ a :@ b)      = spApp2 vm      (Assert s
 -- | Floating
 spA vm (_ :& Operator              Pi)
   = Info top :& Operator Pi
-spA vm (_ :& Operator             Exp :@ a)           = spApp1 vm             Exp topF1 a
-spA vm (_ :& Operator            Sqrt :@ a)           = spApp1 vm            Sqrt topF1 a
-spA vm (_ :& Operator             Log :@ a)           = spApp1 vm             Log topF1 a
+spA vm (_ :& Operator             Exp :@ a)
+  = Info top :& Operator Exp :@ spA vm a
+spA vm (_ :& Operator            Sqrt :@ a)
+  = Info top :& Operator Sqrt :@ spA vm a
+spA vm (_ :& Operator             Log :@ a)
+  = Info top :& Operator Log :@ spA vm a
 spA vm (_ :& Operator             Pow :@ a :@ b)      = spApp2 vm             Pow topF2 a b
 spA vm (_ :& Operator         LogBase :@ a :@ b)      = spApp2 vm         LogBase topF2 a b
-spA vm (_ :& Operator             Sin :@ a)           = spApp1 vm             Sin topF1 a
-spA vm (_ :& Operator             Tan :@ a)           = spApp1 vm             Tan topF1 a
-spA vm (_ :& Operator             Cos :@ a)           = spApp1 vm             Cos topF1 a
-spA vm (_ :& Operator            Asin :@ a)           = spApp1 vm            Asin topF1 a
-spA vm (_ :& Operator            Atan :@ a)           = spApp1 vm            Atan topF1 a
-spA vm (_ :& Operator            Acos :@ a)           = spApp1 vm            Acos topF1 a
-spA vm (_ :& Operator            Sinh :@ a)           = spApp1 vm            Sinh topF1 a
-spA vm (_ :& Operator            Tanh :@ a)           = spApp1 vm            Tanh topF1 a
-spA vm (_ :& Operator            Cosh :@ a)           = spApp1 vm            Cosh topF1 a
-spA vm (_ :& Operator           Asinh :@ a)           = spApp1 vm           Asinh topF1 a
-spA vm (_ :& Operator           Atanh :@ a)           = spApp1 vm           Atanh topF1 a
-spA vm (_ :& Operator           Acosh :@ a)           = spApp1 vm           Acosh topF1 a
+spA vm (_ :& Operator             Sin :@ a)
+  = Info top :& Operator Sin :@ spA vm a
+spA vm (_ :& Operator             Tan :@ a)
+  = Info top :& Operator Tan :@ spA vm a
+spA vm (_ :& Operator             Cos :@ a)
+  = Info top :& Operator Cos :@ spA vm a
+spA vm (_ :& Operator            Asin :@ a)
+  = Info top :& Operator Asin :@ spA vm a
+spA vm (_ :& Operator            Atan :@ a)
+  = Info top :& Operator Atan :@ spA vm a
+spA vm (_ :& Operator            Acos :@ a)
+  = Info top :& Operator Acos :@ spA vm a
+spA vm (_ :& Operator            Sinh :@ a)
+  = Info top :& Operator Sinh :@ spA vm a
+spA vm (_ :& Operator            Tanh :@ a)
+  = Info top :& Operator Tanh :@ spA vm a
+spA vm (_ :& Operator            Cosh :@ a)
+  = Info top :& Operator Cosh :@ spA vm a
+spA vm (_ :& Operator           Asinh :@ a)
+  = Info top :& Operator Asinh :@ spA vm a
+spA vm (_ :& Operator           Atanh :@ a)
+  = Info top :& Operator Atanh :@ spA vm a
+spA vm (_ :& Operator           Acosh :@ a)
+  = Info top :& Operator Acosh :@ spA vm a
 
 -- | Fractional
 spA vm (_ :& Operator         DivFrac :@ a :@ b)      = spApp2 vm         DivFrac topF2 a b
 
 -- | Future
-spA vm (_ :& Operator        MkFuture :@ a)           = spApp1 vm        MkFuture id a
-spA vm (_ :& Operator           Await :@ a)           = spApp1 vm           Await id a
+spA vm (_ :& Operator        MkFuture :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator MkFuture :@ a1
+spA vm (_ :& Operator           Await :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator Await :@ a1
 
 -- | Integral
 spA vm (_ :& Operator            Quot :@ a :@ b)      = spApp2 vm            Quot rangeQuot a b
@@ -180,7 +227,8 @@ spA vm (_ :& Operator            IExp :@ a :@ b)      = spApp2 vm            IEx
 -- | Logic
 spA vm (_ :& Operator             And :@ a :@ b)      = spApp2 vm             And topF2 a b
 spA vm (_ :& Operator              Or :@ a :@ b)      = spApp2 vm              Or topF2 a b
-spA vm (_ :& Operator             Not :@ a)           = spApp1 vm             Not topF1 a
+spA vm (_ :& Operator             Not :@ a)
+  = Info top :& Operator Not :@ spA vm a
 
 -- | Loop
 spA vm (_ :& Operator ForLoop :@ a :@ b :@ (_ :& Lambda v (_ :& Lambda w e)))
@@ -200,26 +248,36 @@ spA vm (_ :& Operator  WhileLoop :@ a :@ b@(_ :& Lambda v1 e1) :@ c@(_ :& Lambda
   = Info (ai1 \/ ei2') :& Operator WhileLoop :@ a1 :@ b1 :@ c1
 
 -- | Mutable
-spA vm (_ :& Operator             Run :@ a)           = spApp1 vm             Run id a
+spA vm (_ :& Operator             Run :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator Run :@ a1
 
 -- | MutableArray
 spA vm (_ :& Operator          NewArr :@ a :@ b)      = spApp2 vm          NewArr (\ s _ -> s :> top) a b
-spA vm (_ :& Operator         NewArr_ :@ a)           = spApp1 vm         NewArr_ (\ s -> s :> top) a
+spA vm (_ :& Operator         NewArr_ :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (ai1 :> top) :& Operator NewArr_ :@ a1
 spA vm (_ :& Operator          GetArr :@ a :@ b)      = spApp2 vm          GetArr topF2 a b
 spA vm (_ :& Operator          SetArr :@ a :@ b :@ c)
   = Info top :& Operator SetArr :@ spA vm a :@ spA vm b :@ spA vm c
-spA vm (_ :& Operator       ArrLength :@ a)           = spApp1 vm       ArrLength (\ (l :> _) -> l) a
+spA vm (_ :& Operator       ArrLength :@ a)
+  | a1@(Info (l :> _) :& _) <- spA vm a
+  = Info l :& Operator ArrLength :@ a1
 
 -- | MutableToPure
-spA vm (_ :& Operator RunMutableArray :@ a)           = spApp1 vm RunMutableArray id a
+spA vm (_ :& Operator RunMutableArray :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator RunMutableArray :@ a1
 spA vm (_ :& Operator       WithArray :@ a :@ f@(_ :& Lambda v e))
   | a1@(Info ai1 :& _) <- spA vm a
   , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
   = Info ei1:& Operator WithArray :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
 
 -- | MutableReference
-spA vm (_ :& Operator          NewRef :@ a)           = spApp1 vm          NewRef topF1 a
-spA vm (_ :& Operator          GetRef :@ a)           = spApp1 vm          GetRef topF1 a
+spA vm (_ :& Operator          NewRef :@ a)
+  = Info top :& Operator NewRef :@ spA vm a
+spA vm (_ :& Operator          GetRef :@ a)
+  = Info top :& Operator GetRef :@ spA vm a
 spA vm (_ :& Operator          SetRef :@ a :@ b)      = spApp2 vm          SetRef topF2 a b
 spA vm (_ :& Operator          ModRef :@ a :@ b)      = spApp2 vm          ModRef topF2 a b
 
@@ -227,17 +285,31 @@ spA vm (_ :& Operator          ModRef :@ a :@ b)      = spApp2 vm          ModRe
 spA vm (_ :& Operator            Cons :@ a :@ b)      = spApp2 vm            Cons (,) a b
 spA vm (_ :& Operator             Nil)
   = Info top :& Operator Nil
-spA vm (_ :& Operator             Car :@ a)           = spApp1 vm             Car fst a
-spA vm (_ :& Operator             Cdr :@ a)           = spApp1 vm             Cdr snd a
-spA vm (_ :& Operator             Tup :@ a)           = spApp1 vm             Tup id  a
-spA vm (_ :& Operator           UnTup :@ a)           = spApp1 vm           UnTup id  a
+spA vm (_ :& Operator             Car :@ a)
+  | a1@(Info (ai1, _) :& _) <- spA vm a
+  = Info ai1 :& Operator Car :@ a1
+spA vm (_ :& Operator             Cdr :@ a)
+  | a1@(Info (_, ai1) :& _) <- spA vm a
+  = Info ai1 :& Operator Cdr :@ a1
+spA vm (_ :& Operator             Tup :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator Tup :@ a1
+spA vm (_ :& Operator           UnTup :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator UnTup :@ a1
 
 -- | NoInline
-spA vm (_ :& Operator        NoInline :@ a)           = spApp1 vm        NoInline topF1 a -- Could we not have 'id'?
+spA vm (_ :& Operator        NoInline :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator NoInline :@ a1
 
 -- | Num
-spA vm (_ :& Operator             Abs :@ a)           = spApp1 vm             Abs abs a
-spA vm (_ :& Operator            Sign :@ a)           = spApp1 vm            Sign signum a
+spA vm (_ :& Operator             Abs :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (abs ai1) :& Operator Abs :@ a1
+spA vm (_ :& Operator            Sign :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (signum ai1) :& Operator Sign :@ a1
 spA vm (_ :& Operator             Add :@ a :@ b)      = spApp2 vm             Add (+) a b
 spA vm (_ :& Operator             Sub :@ a :@ b)      = spApp2 vm             Sub (-) a b
 spA vm (_ :& Operator             Mul :@ a :@ b)      = spApp2 vm             Mul (*) a b
@@ -251,12 +323,16 @@ spA vm (_ :& Operator             Min :@ a :@ b)      = spApp2 vm             Mi
 spA vm (_ :& Operator             Max :@ a :@ b)      = spApp2 vm             Max max a b
 
 -- | Par
-spA vm (_ :& Operator          ParRun :@ a)           = spApp1 vm          ParRun id a
+spA vm (_ :& Operator          ParRun :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator ParRun :@ a1
 spA vm (_ :& Operator          ParNew)
   = Info top :& Operator ParNew
-spA vm (_ :& Operator          ParGet :@ a)           = spApp1 vm          ParGet topF1 a
+spA vm (_ :& Operator          ParGet :@ a)
+  = Info top :& Operator ParGet :@ spA vm a
 spA vm (_ :& Operator          ParPut :@ a :@ b)      = spApp2 vm          ParPut topF2 a b
-spA vm (_ :& Operator         ParFork :@ a)           = spApp1 vm         ParFork topF1 a
+spA vm (_ :& Operator         ParFork :@ a)
+  = Info top :& Operator ParFork :@ spA vm a
 spA vm (_ :& Operator        ParYield)
   = Info top :& Operator ParYield
 
@@ -264,13 +340,17 @@ spA vm (_ :& Operator        ParYield)
 spA vm (_ :& Operator           Atan2 :@ a :@ b)      = spApp2 vm           Atan2 topF2 a b
 
 -- | Save
-spA vm (_ :& Operator            Save :@ a)           = spApp1 vm            Save id a
+spA vm (_ :& Operator            Save :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator Save :@ a1
 
 -- PropSize
 spA vm (_ :& Operator    (PropSize f) :@ a :@ b)      = spApp2 vm    (PropSize f) (\ s t -> unEqBox f s /\ t) a b
 
 -- | Switch
-spA vm (_ :& Operator          Switch :@ a)           = spApp1 vm          Switch id a
+spA vm (_ :& Operator          Switch :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator Switch :@ a1
 
 -- | Tuple
 spA vm (_ :& Operator Tup0)
@@ -451,21 +531,51 @@ spA vm (_ :& Operator Tup15 :@ a :@ b :@ c :@ d :@ e :@ f :@ g :@ h :@ i :@ j :@
   = Info (ai1, bi1, ci1, di1, ei1, fi1, gi1, hi1, ii1, ji1, ki1, li1, mi1, ni1, oi1)
     :& Operator Tup15 :@ a1 :@ b1 :@ c1 :@ d1 :@ e1 :@ f1 :@ g1 :@ h1 :@ i1 :@ j1 :@ k1 :@ l1 :@ m1 :@ n1 :@ o1
 
-spA vm (_ :& Operator            Sel1 :@ a)           = spApp1 vm            Sel1 sel1 a
-spA vm (_ :& Operator            Sel2 :@ a)           = spApp1 vm            Sel2 sel2 a
-spA vm (_ :& Operator            Sel3 :@ a)           = spApp1 vm            Sel3 sel3 a
-spA vm (_ :& Operator            Sel4 :@ a)           = spApp1 vm            Sel4 sel4 a
-spA vm (_ :& Operator            Sel5 :@ a)           = spApp1 vm            Sel5 sel5 a
-spA vm (_ :& Operator            Sel6 :@ a)           = spApp1 vm            Sel6 sel6 a
-spA vm (_ :& Operator            Sel7 :@ a)           = spApp1 vm            Sel7 sel7 a
-spA vm (_ :& Operator            Sel8 :@ a)           = spApp1 vm            Sel8 sel8 a
-spA vm (_ :& Operator            Sel9 :@ a)           = spApp1 vm            Sel9 sel9 a
-spA vm (_ :& Operator           Sel10 :@ a)           = spApp1 vm           Sel10 sel10 a
-spA vm (_ :& Operator           Sel11 :@ a)           = spApp1 vm           Sel11 sel11 a
-spA vm (_ :& Operator           Sel12 :@ a)           = spApp1 vm           Sel12 sel12 a
-spA vm (_ :& Operator           Sel13 :@ a)           = spApp1 vm           Sel13 sel13 a
-spA vm (_ :& Operator           Sel14 :@ a)           = spApp1 vm           Sel14 sel14 a
-spA vm (_ :& Operator           Sel15 :@ a)           = spApp1 vm           Sel15 sel15 a
+spA vm (_ :& Operator            Sel1 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel1 ai1) :& Operator Sel1 :@ a1
+spA vm (_ :& Operator            Sel2 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel2 ai1) :& Operator Sel2 :@ a1
+spA vm (_ :& Operator            Sel3 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel3 ai1) :& Operator Sel3 :@ a1
+spA vm (_ :& Operator            Sel4 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel4 ai1) :& Operator Sel4 :@ a1
+spA vm (_ :& Operator            Sel5 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel5 ai1) :& Operator Sel5 :@ a1
+spA vm (_ :& Operator            Sel6 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel6 ai1) :& Operator Sel6 :@ a1
+spA vm (_ :& Operator            Sel7 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel7 ai1) :& Operator Sel7 :@ a1
+spA vm (_ :& Operator            Sel8 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel8 ai1) :& Operator Sel8 :@ a1
+spA vm (_ :& Operator            Sel9 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel9 ai1) :& Operator Sel9 :@ a1
+spA vm (_ :& Operator           Sel10 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel10 ai1) :& Operator Sel10 :@ a1
+spA vm (_ :& Operator           Sel11 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel11 ai1) :& Operator Sel11 :@ a1
+spA vm (_ :& Operator           Sel12 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel12 ai1) :& Operator Sel12 :@ a1
+spA vm (_ :& Operator           Sel13 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel13 ai1) :& Operator Sel13 :@ a1
+spA vm (_ :& Operator           Sel14 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel14 ai1) :& Operator Sel14 :@ a1
+spA vm (_ :& Operator           Sel15 :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info (sel15 ai1) :& Operator Sel15 :@ a1
 
 -- | ConditionM
 spA vm (_ :& Operator      ConditionM :@ a :@ b :@ c)
@@ -478,7 +588,9 @@ spA vm (_ :& Operator           While :@ a :@ b)      = spApp2 vm           Whil
 spA vm (_ :& Operator             For :@ a :@ b)      = spApp2 vm             For topF2 a b
 
 -- | Mutable
-spA vm (_ :& Operator          Return :@ a)           = spApp1 vm          Return id a
+spA vm (_ :& Operator          Return :@ a)
+  | a1@(Info ai1 :& _) <- spA vm a
+  = Info ai1 :& Operator Return :@ a1
 spA vm (_ :& Operator            Bind :@ a :@ f@(_ :& Lambda v e))
   | a1@(Info ai1 :& _) <- spA vm a
   , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
@@ -488,33 +600,9 @@ spA vm (_ :& Operator            When :@ a :@ b)      = spApp2 vm            Whe
 
 -- | Help functions
 
-topF1 :: Lattice u => a -> u
-topF1 _ = top
-
 topF2 :: Lattice u => a -> b -> u
 topF2 _ _ = top
 
-topF3 :: Lattice u => a -> b -> c -> u
-topF3 _ _ _ = top
-
--- | Indexed loops without state (Parallel, EparFor, ...)
-spLoI :: TypeF u
-      => BindEnv -> Op (Length -> (Index -> b) -> u)
-      -> (Size Index -> Size b -> Size u)
-      -> AExpr Length -> AExpr (Index -> b)
-      -> AExpr u
-spLoI vm op f a (_ :& Lambda v e)
-  | a1@(i1@(Info ai1) :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Variable v)) e
-  = Info (f ai1 ei1) :& Operator op :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
-
--- | Unary applications
-spApp1 :: TypeF u
-       => BindEnv -> Op (a -> u) -> (Size a -> Size u) -> AExpr a -> AExpr u
-spApp1 vm op f a
-  | a1@(Info ai1 :& _) <- spA vm a
-  = Info (f ai1) :& Operator op :@ a1
- 
 -- | Binary applications
 spApp2 :: TypeF u
        => BindEnv -> Op (a -> b -> u) -> (Size a -> Size b -> Size u)
@@ -527,10 +615,10 @@ spApp2 vm op f a b
 -- | Support functions
 
 spB2I :: Type b => Op (Bool -> b) -> a -> Size b
-spB2I op _ = rangeToSize (resultType1 op) $ range 0 1
+spB2I op _ = rangeToSize (resultType op) $ range 0 1
 
 spI2N :: (Type b, Integral a) => Op (a -> b) -> Range a -> Size b
-spI2N op r = rangeToSize (resultType1 op) $ mapMonotonic toInteger r
+spI2N op r = rangeToSize (resultType op) $ mapMonotonic toInteger r
 
 rangeToSize :: Lattice (Size a) => T.TypeRep a -> Range Integer -> Size a
 rangeToSize (T.IntType _ _) r = rangeProp r
@@ -544,5 +632,5 @@ rangeProp (Range l u)
   where withinBounds i = toInteger (minBound :: a) <= i &&
                          i <= toInteger (maxBound :: a)
 
-resultType1 :: Type b => Op (a -> b) -> T.TypeRep b
-resultType1 _ = T.typeRep
+resultType :: Type b => Op (a -> b) -> T.TypeRep b
+resultType _ = T.typeRep
