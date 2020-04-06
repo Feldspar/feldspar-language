@@ -1359,7 +1359,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
 -- Functions
 -------------------------------------------------
 
-instance (Type (Internal a), TypeF (Internal b), Syntactic a, Syntactic b) => Syntactic (a -> b) where
+instance (Type (Internal a), TypeF (Internal b), Syntax a, Syntactic b) => Syntactic (a -> b) where
   type Internal (a -> b) = Internal a -> Internal b
   sugar e = undefined
   desugar f = ASTF (m1, Info top :& Lambda v e1) $ i + 1
@@ -1423,7 +1423,7 @@ instance ( Syntactic a
 -- Support functions
 -------------------------------------------------
 -- | Convert a CSE map, an Expr and an Int to an ASTF
-full :: TypeF b => (CSEExpr (Expr b), Int) -> ASTF b
+full :: Type b => (CSEExpr (Expr b), Int) -> ASTF b
 full (~(m, e), i) = ASTF (flattenCSE (m, Info top :& e)) i
 
 infixl 5 @@
@@ -1453,15 +1453,6 @@ sugarSym3
      Op (Internal a -> Internal b -> Internal c -> Internal d)
      -> a -> b -> c -> d
 sugarSym3 op a b c   = unFull $ sugarSym op a b c
-sugarSym4
-  :: (TypeF (Internal a), TypeF (Internal b), TypeF (Internal c),
-      TypeF (Internal d), TypeF (Internal e), Syntactic a, Syntactic b,
-      Syntactic c, Syntactic d, Syntactic e) =>
-     Op
-       (Internal a
-        -> Internal b -> Internal c -> Internal d -> Internal e)
-     -> a -> b -> c -> d -> e
-sugarSym4 op a b c d = unFull $ sugarSym op a b c d
 
 -- | Convert an 'Op' to a function that builds the corresponding syntax tree
 sugarSym :: SugarF a => Op (SugarT a) -> a
