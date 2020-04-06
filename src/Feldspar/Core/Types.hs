@@ -1207,7 +1207,7 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i
         , toTarget n o
         )
 
-instance (Type a, Show (IORef a)) => Type (IORef a)
+instance Type a => Type (IORef a)
   where
     typeRep = RefType typeRep
 
