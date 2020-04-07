@@ -38,19 +38,13 @@ module Feldspar.Core.Reify
        ( Syntactic(..)
        , ASTF(..)
        , unASTF
-       , evalBind
        , render
        , resugar
-       , alphaEq
        , Mon(..)
-       , CSEMap(..)
        , CSEExpr(..)
-       , CExpr(..)
+       , full
        , flattenCSE
        , applyCSE
-       , mergeMapCExpr
-       , fromCExp
-       , floatBindings
        , catchBindings
        , hashBase
        ) where
@@ -59,7 +53,7 @@ import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..),
                                      VarId(..), Op(..), fvi, CBind(..), TypeF(..),
                                      bvId, fviB, mkLets, sharable)
 import qualified Feldspar.Core.Types as T
-import Feldspar.Core.Eval (evalTop)
+import Feldspar.Lattice (top)
 
 import Control.Applicative
 import Control.Monad.Cont
@@ -83,19 +77,12 @@ resugar = sugar . desugar
 --   in the expression part of the CExpr.
 data ASTF a = ASTF (CExpr a) Int
 
-alphaEq :: ASTF a -> ASTF a -> Bool
-alphaEq (ASTF (ml,el) _) (ASTF (mr,er) _) = error "alphaEq not supported (binding time violation)"
-
 -- | Convert an ASTF to an expression
 unASTF :: b -> ASTF a -> AExpr a
 unASTF _ (ASTF ce _) = fromCExp ce
 
--- | Evaluate an ASTF
-evalBind :: ASTF a -> a
-evalBind = evalTop . unASTF ()
-
 render :: ASTF a -> String
-render (ASTF (m,e) _) = unwords $ show e : "where" : map (show . snd) (M.toList m)
+render (ASTF (m,e) _) = unwords $ show e : "where" : map show (M.elems m)
 
 instance Show (ASTF a) where
   show = render
@@ -142,6 +129,10 @@ instance (Monad m, Applicative m) => Applicative (Mon m)
 type CSEMap = M.Map VarId CBind
 type CSEExpr e = (CSEMap, e)
 type CExpr a = CSEExpr (AExpr a)
+
+-- | Convert a CSE map, an Expr and an Int to an ASTF
+full :: T.Type b => (CSEExpr (Expr b), Int) -> ASTF b
+full (~(m, e), i) = ASTF (flattenCSE (m, Info top :& e)) i
 
 flattenCSE :: CExpr a -> CExpr a
 flattenCSE (m,e) | not $ sharable e = (m, e)

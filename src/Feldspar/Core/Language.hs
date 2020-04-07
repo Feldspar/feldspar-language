@@ -1420,10 +1420,6 @@ instance ( Syntactic a
 -------------------------------------------------
 -- Support functions
 -------------------------------------------------
--- | Convert a CSE map, an Expr and an Int to an ASTF
-full :: Type b => (CSEExpr (Expr b), Int) -> ASTF b
-full (~(m, e), i) = ASTF (flattenCSE (m, Info top :& e)) i
-
 infixl 5 @@
 
 -- Construct an application

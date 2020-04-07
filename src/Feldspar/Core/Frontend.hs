@@ -99,7 +99,7 @@ import Data.Hash
 import qualified Feldspar.Core.Syntactic as Syntactic
 import qualified Feldspar.Core.Render as Syntactic
 import Feldspar.Core.Syntactic hiding (showAST, drawAST, writeHtmlAST, desugar, sugar, resugar)
-import Feldspar.Core.Reify (unASTF)
+import Feldspar.Core.Eval (evalBind)
 import Feldspar.Core.Render (StringTree)
 
 import Feldspar.Range
@@ -269,4 +269,3 @@ nlz x = bitCount $ complement $ foldl go x $ takeWhile (P.< bitSize' x) $ P.map 
   where
     go b s = share b $ \b' -> b' .|. (b' .>>. value s)
       -- TODO share is probably not needed when observable sharing is implemented
-
