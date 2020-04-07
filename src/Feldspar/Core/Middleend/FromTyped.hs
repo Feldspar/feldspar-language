@@ -1,10 +1,6 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -55,26 +51,26 @@ import Feldspar.Core.Middleend.UniqueVars
 import Feldspar.Core.Middleend.PassManager
 import qualified Feldspar.Core.UntypedRepresentation as U
 import Feldspar.Core.Reify (ASTF(..), unASTF)
-import Feldspar.Core.Types (TypeRep(..), typeRep, defaultSize, TypeF(..))
+import Feldspar.Core.Types (TypeRep(..), typeRep, defaultSize, TypeF(..),
+                            (:>)(..))
 import qualified Feldspar.Core.Types as T
-import Feldspar.Core.UntypedRepresentation as U
+import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
 import Feldspar.ValueInfo
+import Feldspar.Range
 import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr((:&)), Expr((:@)))
-import Control.Monad.State
-import Data.Typeable (Typeable)
 import Feldspar.Core.SizeProp
 import Feldspar.Core.AdjustBindings
+import Control.Monad.State
+import Data.Complex (Complex(..))
+import Data.Typeable (Typeable)
 
 -- | External module interface. Untype, optimize and unannotate.
 untype :: FeldOpts -> ASTF a -> UntypedFeld
 untype opts = cleanUp opts
-            . pushLets
-            . optimize
-            . sinkLets opts
-            . justUntype opts
+            . untypeDecor opts
 
--- | External module interface.
+-- | External module interface. Untype and optimize.
 untypeDecor :: FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
 untypeDecor opts = pushLets
                  . optimize
@@ -103,7 +99,7 @@ asExpr _ = typeRepF
 asOpT :: TypeF a => R.Op a -> TypeRep a
 asOpT _ = typeRepF
 
-toType :: TypeRep a -> Type
+toType :: TypeRep a -> U.Type
 toType tr = untypeType tr (defaultSize tr)
 
 toU :: R.AExpr a -> AUntypedFeld ValueInfo
@@ -121,17 +117,18 @@ toUr (R.Lambda ((R.Var n s) :: R.Var a) e)
   = Lambda (Var n (toType (typeRepF :: TypeRep a)) s) $ toU e
 
 toApp :: TypeF a => R.Expr a -> [AUntypedFeld ValueInfo] -> UntypedFeldF (AUntypedFeld ValueInfo)
-toApp (R.Operator R.Cons) [e, AIn _ (App Tup (TupType ts) es)]
-      = App Tup (TupType $ typeof e : ts) $ e : es
-toApp (R.Operator R.Cdr) [AIn _ (App (DropN n) (TupType (_:ts)) es)]
-      = App (DropN $ n+1) (TupType ts) es
-toApp (R.Operator R.Car) [AIn _ (App (DropN n) (TupType (t:_)) es)] = App (SelN $ n+1) t es
+toApp (R.Operator R.Cons) [e, AIn _ (App Tup (U.TupType ts) es)]
+  = App Tup (U.TupType $ typeof e : ts) $ e : es
+toApp (R.Operator R.Cdr) [AIn _ (App (DropN n) (U.TupType (_:ts)) es)]
+  = App (DropN $ n+1) (U.TupType ts) es
+toApp (R.Operator R.Car) [AIn _ (App (DropN n) (U.TupType (t:_)) es)]
+  = App (SelN $ n+1) t es
 toApp (R.Operator R.Tup) [AIn _ e] = e
 toApp (R.Operator R.UnTup) [e] = App (DropN 0) (typeof e) [e]
 toApp (R.Operator op) es = App (trOp op) (unwind es $ toType $ asOpT op) es
 toApp (f :@ e) es = toApp f $ toU e : es
 
-unwind :: [AUntypedFeld a] -> Type -> Type
+unwind :: [AUntypedFeld a] -> U.Type -> U.Type
 unwind (_:es) (U.FunType _ t) = unwind es t
 unwind []     t               = t
 unwind es     t               = error $ "FromTyped.unwind: fun tye mismatch between "
@@ -299,6 +296,257 @@ trOp R.Tup14           = Tup
 trOp R.Tup15           = Tup
 trOp op                = error $ "FromTyped.trOp: unknown op: " ++ show op
 
+untypeType :: TypeRep a -> T.Size a -> U.Type
+untypeType UnitType _               = U.TupType []
+untypeType BoolType _               = 1 U.:# U.BoolType
+untypeType (IntType s n) _          = 1 U.:# U.IntType (convSign s) (convSize n)
+untypeType FloatType _              = 1 U.:# U.FloatType
+untypeType DoubleType _             = 1 U.:# U.DoubleType
+untypeType (ComplexType t) _        = 1 U.:# U.ComplexType (untypeType t (defaultSize t))
+untypeType (Tup2Type a b) (sa,sb)
+  = U.TupType [untypeType a sa, untypeType b sb]
+untypeType (Tup3Type a b c) (sa,sb,sc)
+  = U.TupType [untypeType a sa, untypeType b sb, untypeType c sc]
+untypeType (Tup4Type a b c d) (sa,sb,sc,sd)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd
+              ]
+untypeType (Tup5Type a b c d e) (sa,sb,sc,sd,se)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se
+              ]
+untypeType (Tup6Type a b c d e f) (sa,sb,sc,sd,se,sf)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se, untypeType f sf
+              ]
+untypeType (Tup7Type a b c d e f g) (sa,sb,sc,sd,se,sf,sg)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se, untypeType f sf
+              , untypeType g sg
+              ]
+untypeType (Tup8Type a b c d e f g h) (sa,sb,sc,sd,se,sf,sg,sh)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se, untypeType f sf
+              , untypeType g sg, untypeType h sh
+              ]
+untypeType (Tup9Type a b c d e f g h i) (sa,sb,sc,sd,se,sf,sg,sh,si)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se, untypeType f sf
+              , untypeType g sg, untypeType h sh, untypeType i si
+              ]
+untypeType (Tup10Type a b c d e f g h i j) (sa,sb,sc,sd,se,sf,sg,sh,si,sj)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se, untypeType f sf
+              , untypeType g sg, untypeType h sh, untypeType i si
+              , untypeType j sj
+              ]
+untypeType (Tup11Type a b c d e f g h i j k) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se, untypeType f sf
+              , untypeType g sg, untypeType h sh, untypeType i si
+              , untypeType j sj, untypeType k sk
+              ]
+untypeType (Tup12Type a b c d e f g h i j k l) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se, untypeType f sf
+              , untypeType g sg, untypeType h sh, untypeType i si
+              , untypeType j sj, untypeType k sk, untypeType l sl
+              ]
+untypeType (Tup13Type a b c d e f g h i j k l m) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl,sm)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se, untypeType f sf
+              , untypeType g sg, untypeType h sh, untypeType i si
+              , untypeType j sj, untypeType k sk, untypeType l sl
+              , untypeType m sm
+              ]
+untypeType (Tup14Type a b c d e f g h i j k l m n) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl,sm,sn)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se, untypeType f sf
+              , untypeType g sg, untypeType h sh, untypeType i si
+              , untypeType j sj, untypeType k sk, untypeType l sl
+              , untypeType m sm, untypeType n sn
+              ]
+untypeType (Tup15Type a b c d e f g h i j k l m n o) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl,sm,sn,so)
+  = U.TupType [ untypeType a sa, untypeType b sb, untypeType c sc
+              , untypeType d sd, untypeType e se, untypeType f sf
+              , untypeType g sg, untypeType h sh, untypeType i si
+              , untypeType j sj, untypeType k sk, untypeType l sl
+              , untypeType m sm, untypeType n sn, untypeType o so
+              ]
+untypeType (MutType a) sz              = U.MutType (untypeType a sz)
+untypeType (RefType a) sz              = U.RefType (untypeType a sz)
+untypeType (ArrayType a) (rs :> es)    = U.ArrayType rs (untypeType a es)
+untypeType (MArrType a) (rs :> es)     = U.MArrType rs (untypeType a es)
+untypeType (ParType a) sz              = U.ParType (untypeType a sz)
+untypeType (ElementsType a) (rs :> es) = U.ElementsType (untypeType a es)
+untypeType (ConsType a b) (sa,sb)      = U.TupType $ untypeTup (ConsType a b) (sa,sb)
+untypeType NilType        _            = U.TupType []
+untypeType (TupleType t) sz            = untypeType t sz
+untypeType (IVarType a) sz             = U.IVarType $ untypeType a sz
+untypeType (FunType a b) (sa, sz)      = U.FunType (untypeType a sa) (untypeType b sz)
+untypeType (FValType a) sz             = U.FValType (untypeType a sz)
+untypeType _ _                       = error "untypeType: missing "
+
+untypeTup :: TypeRep (T.RTuple a) -> T.Size (T.RTuple a) -> [U.Type]
+untypeTup (ConsType a b) (sa,sb) = untypeType a sa : untypeTup b sb
+untypeTup NilType        _       = []
+
+convSign :: T.Signedness a -> U.Signedness
+convSign T.U       = Unsigned
+convSign T.S       = Signed
+
+literal :: TypeRep a -> T.Size a -> a -> Lit
+literal t@UnitType        sz a = literalConst t sz a
+literal t@BoolType        sz a = literalConst t sz a
+literal t@IntType{}       sz a = literalConst t sz a
+literal t@FloatType       sz a = literalConst t sz a
+literal t@DoubleType      sz a = literalConst t sz a
+literal t@ComplexType{}   sz a = literalConst t sz a
+literal t@ArrayType{}     sz a = literalConst t sz a
+literal (Tup2Type ta tb) (sa,sb) (a,b)
+    = LTup [literal ta sa a, literal tb sb b]
+literal (Tup3Type ta tb tc) (sa,sb,sc) (a,b,c)
+    = LTup [literal ta sa a, literal tb sb b, literal tc sc c]
+literal (Tup4Type ta tb tc td) (sa,sb,sc,sd) (a,b,c,d)
+    = LTup [ literal ta sa a, literal tb sb b, literal tc sc c
+           , literal td sd d
+           ]
+literal (Tup5Type ta tb tc td te) (sa,sb,sc,sd,se) (a,b,c,d,e)
+    = LTup [ literal ta sa a, literal tb sb b, literal tc sc c
+           , literal td sd d, literal te se e
+           ]
+literal (Tup6Type ta tb tc td te tf) (sa,sb,sc,sd,se,sf) (a,b,c,d,e,f)
+    = LTup [ literal ta sa a, literal tb sb b, literal tc sc c
+           , literal td sd d, literal te se e, literal tf sf f
+           ]
+literal (Tup7Type ta tb tc td te tf tg) (sa,sb,sc,sd,se,sf,sg) (a,b,c,d,e,f,g)
+    = LTup [ literal ta sa a, literal tb sb b, literal tc sc c
+           , literal td sd d, literal te se e, literal tf sf f
+           , literal tg sg g
+           ]
+literal _ _ _ = error "Missing pattern: FromTyped.hs: literal"
+
+literalConst :: TypeRep a -> T.Size a -> a -> Lit
+literalConst UnitType        _  ()     = LTup []
+literalConst BoolType        _  a      = LBool a
+literalConst (IntType s n)   sz a      = LInt (convSign s) (convSize n) (toInteger a)
+literalConst FloatType       _  a      = LFloat a
+literalConst DoubleType      _  a      = LDouble a
+literalConst (ArrayType t)   _  a      = LArray t' $ map (literalConst t (defaultSize t)) a
+  where t' = untypeType t (defaultSize t)
+literalConst (ComplexType t) _  (r:+i) = LComplex re ie
+  where re = literalConst t (defaultSize t) r
+        ie = literalConst t (defaultSize t) i
+
+-- | Construct a ValueInfo from a TypeRep and a Size
+toValueInfo :: TypeRep a -> T.Size a -> ValueInfo
+toValueInfo UnitType          _             = VIProd []
+-- FIXME: No range for boolean types yet.
+toValueInfo BoolType          _             = VIBool    (Range 0 1)
+toValueInfo (IntType T.U T.N8)      r       = VIWord8   r
+toValueInfo (IntType T.S T.N8)      r       = VIInt8    r
+toValueInfo (IntType T.U T.N16)     r       = VIWord16  r
+toValueInfo (IntType T.S T.N16)     r       = VIInt16   r
+toValueInfo (IntType T.U T.N32)     r       = VIWord32  r
+toValueInfo (IntType T.S T.N32)     r       = VIInt32   r
+toValueInfo (IntType T.U T.N64)     r       = VIWord64  r
+toValueInfo (IntType T.S T.N64)     r       = VIInt64   r
+toValueInfo (IntType T.U T.NNative) r       = VIWordN   r
+toValueInfo (IntType T.S T.NNative) r       = VIIntN    r
+-- FIXME: No range for FP types and ComplexType yet.
+toValueInfo FloatType         _             = VIFloat
+toValueInfo DoubleType        _             = VIDouble
+toValueInfo (ComplexType _)   _             = VIProd []
+toValueInfo (Tup2Type a b) (sa,sb)
+  = VIProd [toValueInfo a sa, toValueInfo b sb]
+toValueInfo (Tup3Type a b c) (sa,sb,sc)
+  = VIProd [toValueInfo a sa, toValueInfo b sb, toValueInfo c sc]
+toValueInfo (Tup4Type a b c d) (sa,sb,sc,sd)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd
+           ]
+toValueInfo (Tup5Type a b c d e) (sa,sb,sc,sd,se)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se
+           ]
+toValueInfo (Tup6Type a b c d e f) (sa,sb,sc,sd,se,sf)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se, toValueInfo f sf
+           ]
+toValueInfo (Tup7Type a b c d e f g) (sa,sb,sc,sd,se,sf,sg)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se, toValueInfo f sf
+           , toValueInfo g sg
+           ]
+toValueInfo (Tup8Type a b c d e f g h) (sa,sb,sc,sd,se,sf,sg,sh)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se, toValueInfo f sf
+           , toValueInfo g sg, toValueInfo h sh
+           ]
+toValueInfo (Tup9Type a b c d e f g h i) (sa,sb,sc,sd,se,sf,sg,sh,si)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se, toValueInfo f sf
+           , toValueInfo g sg, toValueInfo h sh, toValueInfo i si
+            ]
+toValueInfo (Tup10Type a b c d e f g h i j) (sa,sb,sc,sd,se,sf,sg,sh,si,sj)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se, toValueInfo f sf
+           , toValueInfo g sg, toValueInfo h sh, toValueInfo i si
+           , toValueInfo j sj
+           ]
+toValueInfo (Tup11Type a b c d e f g h i j k) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se, toValueInfo f sf
+           , toValueInfo g sg, toValueInfo h sh, toValueInfo i si
+           , toValueInfo j sj, toValueInfo k sk
+           ]
+toValueInfo (Tup12Type a b c d e f g h i j k l) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se, toValueInfo f sf
+           , toValueInfo g sg, toValueInfo h sh, toValueInfo i si
+           , toValueInfo j sj, toValueInfo k sk, toValueInfo l sl
+           ]
+toValueInfo (Tup13Type a b c d e f g h i j k l m) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl,sm)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se, toValueInfo f sf
+           , toValueInfo g sg, toValueInfo h sh, toValueInfo i si
+           , toValueInfo j sj, toValueInfo k sk, toValueInfo l sl
+           , toValueInfo m sm
+           ]
+toValueInfo (Tup14Type a b c d e f g h i j k l m n) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl,sm,sn)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se, toValueInfo f sf
+           , toValueInfo g sg, toValueInfo h sh, toValueInfo i si
+           , toValueInfo j sj, toValueInfo k sk, toValueInfo l sl
+           , toValueInfo m sm, toValueInfo n sn
+           ]
+toValueInfo (Tup15Type a b c d e f g h i j k l m n o) (sa,sb,sc,sd,se,sf,sg,sh,si,sj,sk,sl,sm,sn,so)
+  = VIProd [ toValueInfo a sa, toValueInfo b sb, toValueInfo c sc
+           , toValueInfo d sd, toValueInfo e se, toValueInfo f sf
+           , toValueInfo g sg, toValueInfo h sh, toValueInfo i si
+           , toValueInfo j sj, toValueInfo k sk, toValueInfo l sl
+           , toValueInfo m sm, toValueInfo n sn, toValueInfo o so
+           ]
+toValueInfo (MutType a) sz                  = toValueInfo a sz
+toValueInfo (RefType a) sz                  = toValueInfo a sz
+toValueInfo (ArrayType a) (Range (WordN l) (WordN r) :> es)
+  = VIProd [VIWord32 (Range l r), toValueInfo a es]
+toValueInfo (MArrType a) (Range (WordN l) (WordN r) :> es)
+  = VIProd [VIWord32 (Range l r), toValueInfo a es]
+toValueInfo (ParType a) sz                  = toValueInfo a sz
+toValueInfo (ElementsType a) (Range (WordN l) (WordN r) :> es)
+  = VIProd [VIWord32 (Range l r), toValueInfo a es]
+toValueInfo (ConsType a b) (sa,sb) = VIProd $ toValueInfo a sa : ss
+  where VIProd ss = toValueInfo b sb
+toValueInfo NilType _ = VIProd []
+toValueInfo (TupleType t) sz = toValueInfo t sz
+toValueInfo (IVarType a) sz                 = toValueInfo a sz
+-- TODO: Maybe keep argument information for FunType.
+toValueInfo (FunType a b) (sa, _)           = toValueInfo a sa
+toValueInfo (FValType a) sz                 = toValueInfo a sz
+toValueInfo typ _
+  = error $ "toValueInfo: missing case for " ++ show typ
+
 -- The front-end driver.
 
 -- | Enumeration of front end passes
@@ -341,10 +589,6 @@ instance Pretty (AExpr a) where
 instance Pretty (ASTF a) where
   pretty = pretty . unASTF ()
 
--- | Untype version to use with the new CSE
-untypeProgOpt :: FeldOpts -> AExpr a -> AUntypedFeld ValueInfo
-untypeProgOpt opts = toU
-
 -- | Front-end driver
 frontend :: PassCtrl FrontendPass -> FeldOpts -> ASTF a -> ([String], Maybe UntypedFeld)
 frontend ctrl opts = evalPasses 0
@@ -356,7 +600,7 @@ frontend ctrl opts = evalPasses 0
                    . pc FPOptimize         optimize
                    . pc FPSinkLets         (sinkLets opts)
                    . pc FPRename           renameExp
-                   . pt FPUntype           (untypeProgOpt opts)
+                   . pt FPUntype           toU
                    . pc FPSizeProp         sizeProp
                    . pc FPAdjustBind       adjustBindings
                    . pt FPUnASTF           (unASTF opts)
