@@ -75,7 +75,7 @@ import qualified Prelude as P
 --------------------------------------------------
 
 parallel :: Type a => Data Length -> (Data Index -> Data a) -> Data [a]
-parallel n f = sugarSym2 R.Parallel n f
+parallel = sugarSym2 Parallel
 
 
 sequential :: (Type a, Syntax s) =>
@@ -211,7 +211,7 @@ class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
     isSigned'     :: Data a -> Bool
     isSigned'     = const $ B.isSigned (undefined :: a)
 
-finiteBitSize :: (B.FiniteBits b) => b -> Int
+finiteBitSize :: B.FiniteBits b => b -> Int
 finiteBitSize = B.finiteBitSize
 
 instance Bits Word8
@@ -227,11 +227,11 @@ instance Bits IntN
 
 -- * Combinators
 
-(⊕)    :: (Bits a) => Data a -> Data a -> Data a
+(⊕)    :: Bits a => Data a -> Data a -> Data a
 (⊕)    =  xor
-(.<<.) :: (Bits a) => Data a -> Data Index -> Data a
+(.<<.) :: Bits a => Data a -> Data Index -> Data a
 (.<<.) =  shiftLU
-(.>>.) :: (Bits a) => Data a -> Data Index -> Data a
+(.>>.) :: Bits a => Data a -> Data Index -> Data a
 (.>>.) =  shiftRU
 
 -- | Set all bits to one
@@ -292,15 +292,15 @@ iunit = 0 +. 1
 -- Condition.hs
 --------------------------------------------------
 
-condition :: (Syntax a) => Data Bool -> a -> a -> a
-condition c t f = sugarSym3 Condition c t f
+condition :: Syntax a => Data Bool -> a -> a -> a
+condition = sugarSym3 Condition
 
 -- | Condition operator. Use as follows:
 -- > cond1 ? ex1 $
 -- > cond2 ? ex2 $
 -- > cond3 ? ex3 $
 -- >   exDefault
-(?) :: (Syntax a) => Data Bool -> a -> a -> a
+(?) :: Syntax a => Data Bool -> a -> a -> a
 (?) = condition
 
 infixl 1 ?
@@ -373,7 +373,7 @@ infix 4 ==
 infix 4 /=
 
 -- | Redefinition of the standard 'P.Eq' class for Feldspar
-class (Type a) => Eq a
+class Type a => Eq a
   where
     (==) :: Data a -> Data a -> Data Bool
     (==) = sugarSym2 Equal
@@ -507,7 +507,7 @@ instance Fraction Double
 
 instance (Fraction a, P.RealFloat a) => Fraction (Complex a)
 
-instance (Fraction a) => Fractional (Data a)
+instance Fraction a => Fractional (Data a)
   where
     fromRational = fromRationalFrac
     (/)          = divFrac
@@ -553,8 +553,7 @@ class (Ord a, Numeric a, BoundedInt a, P.Integral a, Size a ~ Range a) => Integr
     (^)  :: Data a -> Data a -> Data a
     (^)  = sugarSym2 IExp
 
-divSem :: Integral a
-       => Data a -> Data a -> Data a
+divSem :: Integral a => Data a -> Data a -> Data a
 divSem x y = (x > 0 && y < 0 || x < 0 && y > 0) && rem x y /= 0 ?   quot x y P.- 1
                                                                 P.$ quot x y
 
@@ -626,7 +625,7 @@ whileLoop = sugarSym3 WhileLoop
 -- LoopM.hs
 --------------------------------------------------
 
-forM :: (Syntax a) => Data Length -> (Data Index -> M a) -> M ()
+forM :: Syntax a => Data Length -> (Data Index -> M a) -> M ()
 forM = sugarSym2 For
 
 whileM :: Syntax a => M (Data Bool) -> M a -> M ()
@@ -679,8 +678,7 @@ forArr :: Syntax a => Data Length -> (Data Index -> M a) -> M ()
 forArr = sugarSym2 For
 
 -- | Swap two elements
-swap :: Type a
-     => Data (MArr a) -> Data Index -> Data Index -> M ()
+swap :: Type a => Data (MArr a) -> Data Index -> Data Index -> M ()
 swap a i1 i2 = do
     tmp <- getArr a i1
     getArr a i2 >>= setArr a i1
@@ -862,7 +860,7 @@ instance Numeric Double
 
 instance (Type a, P.RealFloat a, Hashable a) => Numeric (Complex a)
 
-instance (Numeric a) => Num (Data a)
+instance Numeric a => Num (Data a)
   where
     fromInteger = fromIntegerNum
     abs         = absNum
