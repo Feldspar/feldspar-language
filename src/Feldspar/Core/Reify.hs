@@ -164,7 +164,7 @@ fromCExp (m,e) = mkLets (snd $ floatBindings [] m, e)
 
 hashError :: M.Map VarId (CBind,CBind) -> a
 hashError sect = error $ "CSE.mergeCSE: hash conflict, diff is" ++ concatMap showDiff diffs
-  where diffs = filter (uncurry (/=)) $ map snd $ M.toList sect
+  where diffs = filter (uncurry (/=)) $ M.elems sect
         showDiff (b1,b2) = "\nDiff for " ++ show (bvId b1) ++ "\n"
 --                                    ++ showRhs b1 ++ "\n--\n" ++ showRhs b2
 
@@ -182,8 +182,10 @@ floatBindings vs bm = (M.fromAscList [(bvId b, b) | b <- fbs], concat nfBss)
          len = head $ filter (>= m) $ iterate (*2) 2 :: VarId
          f xs x = x:xs
          n = M.size bm
-         bs = map snd $ M.toList bm :: [CBind]
-         (fbs,nfbs) = if null vs then ([], bs) else partition ((< bindThreshold) . hashLook arr . bvId) bs
+         bs = M.elems bm
+         (fbs, nfbs)
+           | null vs   = ([], bs)
+           | otherwise = partition ((< bindThreshold) . hashLook arr . bvId) bs
          nfArr = accumArray
                     (flip (:))
                     []
