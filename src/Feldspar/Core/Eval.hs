@@ -33,16 +33,21 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-module Feldspar.Core.Eval (evalE, evalA, evalTop) where
+module Feldspar.Core.Eval (evalE, evalA, evalTop, evalBind) where
 
 import Feldspar.Core.Representation
 import Feldspar.Core.Semantics
+import Feldspar.Core.Reify (ASTF, unASTF)
 
 import qualified Data.Map.Strict as M
 import Data.Typeable
 
 data Closure where
   Clo :: Typeable a => a -> Closure
+
+-- | Evaluate an ASTF
+evalBind :: ASTF a -> a
+evalBind = evalTop . unASTF ()
 
 evalTop :: AExpr a -> a
 evalTop = evalA M.empty

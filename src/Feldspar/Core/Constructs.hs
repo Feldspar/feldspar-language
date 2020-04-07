@@ -76,7 +76,7 @@ reifyF = desugar
 
 instance Type a => Eq (Data a)
   where
-    Data a == Data b = alphaEq (reifyF a) (reifyF b)
+    (==) _ _ = error "Eq (Data a): Binding time violation"
 
 instance Type a => Show (Data a)
   where
