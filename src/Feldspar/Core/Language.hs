@@ -1393,7 +1393,6 @@ sugarMonad
     :: ( Monad m
        , Typeable m
        , Typeable a
-       -- , pVar a
        , Type (m a)
        , Type a
        , Size a ~ Size (m a)
@@ -1405,7 +1404,6 @@ instance ( Syntactic a
          , Monad m
          , Typeable m
          , Typeable (Internal a)
-         -- , pVar (Internal a)
          , Type (Internal a)
          , Type (m (Internal a))
          , Size (Internal a) ~ Size (m (Internal a))
