@@ -72,7 +72,7 @@ module Feldspar.Vector (
 
 import qualified Prelude as P
 
-import Feldspar.Core.Syntactic hiding (fold,size)
+import Feldspar.Core.Reify (Syntactic(..), resugar)
 import Feldspar hiding (desugar,sugar,resugar)
 import qualified Feldspar as F
 import Feldspar.Core.Language
@@ -1534,4 +1534,3 @@ tPull _ = id
 
 tPull1 :: Patch a a -> Patch (Pull1 a) (Pull1 a)
 tPull1 _ = id
-

@@ -37,7 +37,7 @@
 module Feldspar.Core.Constructs where
 
 import Data.Typeable
-import Feldspar.Core.Syntactic
+import Feldspar.Core.Reify (Syntactic(..), ASTF(..), render)
 
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
