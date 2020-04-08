@@ -39,7 +39,7 @@ import Feldspar hiding (sugar,desugar)
 import Feldspar.Mutable
 import qualified Feldspar.SimpleVector as V
 
-import Feldspar.Core.Syntactic (Syntactic(..))
+import Feldspar.Core.Reify (Syntactic(..))
 
 data PushVector a where
   Push :: ((Data Index -> a -> M ()) -> M ()) -> Data Length -> PushVector a

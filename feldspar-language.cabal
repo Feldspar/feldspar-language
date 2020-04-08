@@ -46,7 +46,6 @@ library
     Feldspar.Core.Representation
     Feldspar.Core.Semantics
     Feldspar.Core.SizeProp
-    Feldspar.Core.Syntactic
     Feldspar.Core.Tuple
     Feldspar.Core.Types
     Feldspar.Core.UntypedRepresentation

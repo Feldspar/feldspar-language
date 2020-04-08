@@ -1,7 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 --
@@ -40,11 +39,10 @@ import qualified Prelude
 import Control.Applicative (Applicative(..))
 import Control.Monad
 
-import Feldspar.Core.Syntactic
+import Feldspar.Core.Reify (ASTF, Syntactic(..), resugar)
 
 import Feldspar hiding (sugar,desugar,resugar)
 import Feldspar.Mutable
-
 
 
 data Option a = Option { isSome :: Data Bool, fromSome :: a }
@@ -126,4 +124,3 @@ a <? b = option a id b
 
 infixr 0 <?
 infixr 0 ?>
-

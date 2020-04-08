@@ -96,11 +96,11 @@ import Data.Patch
 import Data.Tree.View
 import Data.Hash
 
-import qualified Feldspar.Core.Syntactic as Syntactic
+import qualified Feldspar.Core.Reify as Syntactic
 import qualified Feldspar.Core.Render as Syntactic
-import Feldspar.Core.Syntactic hiding (showAST, drawAST, writeHtmlAST, desugar, sugar, resugar)
+import Feldspar.Core.Reify hiding (showAST, drawAST, writeHtmlAST, desugar, sugar, resugar)
 import Feldspar.Core.Eval (evalBind)
-import Feldspar.Core.Render (StringTree)
+import Feldspar.Core.Render (StringTree, render)
 
 import Feldspar.Range
 import Feldspar.Core.Types
