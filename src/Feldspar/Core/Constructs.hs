@@ -37,7 +37,7 @@
 module Feldspar.Core.Constructs where
 
 import Data.Typeable
-import Feldspar.Core.Reify (Syntactic(..), ASTF(..), render)
+import Feldspar.Core.Reify (Syntactic(..), ASTF, render)
 
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation
@@ -56,11 +56,9 @@ instance Syntactic (Data a)
     desugar = unData
     sugar   = Data
 
-type SyntacticFeld a = Syntactic a
-
 -- | Specialization of the 'Syntactic' class for first class values (eg not functions)
-class    (SyntacticFeld a, Type (Internal a)) => Syntax a
-instance (SyntacticFeld a, Type (Internal a)) => Syntax a
+class    (Syntactic a, Type (Internal a)) => Syntax a
+instance (Syntactic a, Type (Internal a)) => Syntax a
   -- It would be possible to let 'Syntax' be an alias instead of giving separate
   -- instances for all types. However, this leads to horrible error messages.
   -- For example, if 'Syntax' is an alias, the following expression gives a huge
