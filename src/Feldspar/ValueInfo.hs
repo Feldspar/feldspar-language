@@ -41,7 +41,6 @@
 module Feldspar.ValueInfo where
 
 import Feldspar.Range
-import Feldspar.Core.Types (IntN, WordN)
 import Feldspar.Lattice ((/\), (\/))
 
 import Data.Int
@@ -140,15 +139,15 @@ boolBot = VIBool $ Range 1 0
 
 -- | Least upper bound and greatest lower bound for value info
 lubVI :: ValueInfo -> ValueInfo -> ValueInfo
-lubVI l r = bop rangeUnion l r
+lubVI = bop rangeUnion
 glbVI :: ValueInfo -> ValueInfo -> ValueInfo
-glbVI l r = bop rangeIntersection l r
+glbVI = bop rangeIntersection
 
 -- | Setting lower and upper bounds
 setLB :: Integral a => a -> ValueInfo -> ValueInfo
-setLB l vi = uop (\ r -> r{lowerBound = fromIntegral l}) vi
+setLB l = uop (\ r -> r{lowerBound = fromIntegral l})
 setUB :: Integral a => a -> ValueInfo -> ValueInfo
-setUB l vi = uop (\ r -> r{upperBound = fromIntegral l}) vi
+setUB l = uop (\ r -> r{upperBound = fromIntegral l})
 
 -- | Apply a binary operation to two ValueInfos
 --   BoundedInt is needed to derive 'Num (Range a)'.

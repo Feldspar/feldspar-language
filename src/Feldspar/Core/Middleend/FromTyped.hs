@@ -55,13 +55,13 @@ import Feldspar.Core.Types (TypeRep(..), typeRep, defaultSize, TypeF(..),
                             (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
-import Feldspar.ValueInfo
-import Feldspar.Range
+import Feldspar.ValueInfo (ValueInfo(..))
+import Feldspar.Range (Range(..))
 import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr((:&)), Expr((:@)))
 import Feldspar.Core.SizeProp
 import Feldspar.Core.AdjustBindings
-import Control.Monad.State
+import Control.Monad.State (evalState)
 import Data.Complex (Complex(..))
 import Data.Typeable (Typeable)
 
@@ -529,12 +529,12 @@ toValueInfo (Tup15Type a b c d e f g h i j k l m n o) (sa,sb,sc,sd,se,sf,sg,sh,s
            ]
 toValueInfo (MutType a) sz                  = toValueInfo a sz
 toValueInfo (RefType a) sz                  = toValueInfo a sz
-toValueInfo (ArrayType a) (Range (WordN l) (WordN r) :> es)
+toValueInfo (ArrayType a) (Range (T.WordN l) (T.WordN r) :> es)
   = VIProd [VIWord32 (Range l r), toValueInfo a es]
-toValueInfo (MArrType a) (Range (WordN l) (WordN r) :> es)
+toValueInfo (MArrType a) (Range (T.WordN l) (T.WordN r) :> es)
   = VIProd [VIWord32 (Range l r), toValueInfo a es]
 toValueInfo (ParType a) sz                  = toValueInfo a sz
-toValueInfo (ElementsType a) (Range (WordN l) (WordN r) :> es)
+toValueInfo (ElementsType a) (Range (T.WordN l) (T.WordN r) :> es)
   = VIProd [VIWord32 (Range l r), toValueInfo a es]
 toValueInfo (ConsType a b) (sa,sb) = VIProd $ toValueInfo a sa : ss
   where VIProd ss = toValueInfo b sb

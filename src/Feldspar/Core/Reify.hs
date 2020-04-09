@@ -50,7 +50,7 @@ module Feldspar.Core.Reify
        ) where
 
 import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..),
-                                     VarId(..), Op(..), fvi, CBind(..), TypeF(..),
+                                     VarId, Op(..), fvi, CBind(..), TypeF(..),
                                      bvId, fviB, mkLets, sharable)
 import qualified Feldspar.Core.Types as T
 import Feldspar.Lattice (top)
@@ -61,7 +61,7 @@ import Data.Typeable
 import Data.Hash (Hashable(..), asWord64, combine, hashInt, Hash)
 
 import qualified Data.ByteString.Char8 as B
-import Data.Array (Array, accumArray,(!),bounds,elems)
+import Data.Array (Array, accumArray, (!), bounds, elems)
 import Data.List (partition)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
