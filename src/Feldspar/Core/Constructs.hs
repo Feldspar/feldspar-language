@@ -56,7 +56,7 @@ instance Syntactic (Data a)
     desugar = unData
     sugar   = Data
 
-type SyntacticFeld a = (Syntactic a, TypeF (Internal a))
+type SyntacticFeld a = Syntactic a
 
 -- | Specialization of the 'Syntactic' class for first class values (eg not functions)
 class    (SyntacticFeld a, Type (Internal a)) => Syntax a
