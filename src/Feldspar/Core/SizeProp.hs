@@ -34,11 +34,11 @@
 module Feldspar.Core.SizeProp (sizeProp) where
 
 import Feldspar.Core.Representation
-import Feldspar.Core.Types (Size(..), Type, TypeF, (:>)(..), Index, Length)
+import Feldspar.Core.Types (Size, Type, (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.Tuple
 import Feldspar.Range
-import Feldspar.Lattice
+import Feldspar.Lattice (Lattice, universal, top, bot, (\/), (/\))
 
 import Data.Typeable (Typeable)
 import qualified Data.Map as M (empty)

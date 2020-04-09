@@ -34,7 +34,6 @@ module Feldspar.Core.Semantics (Semantics(..), semantics) where
 
 import Control.Monad
 import Control.Monad.Par.Scheds.TraceInternal (yield)
-import Control.Monad.Reader
 import Data.Array.IArray
 import Data.Array.IO
 import Data.Array.MArray (freeze)
@@ -44,16 +43,12 @@ import Data.Complex
 import Data.Function (on)
 import Data.IORef
 import Data.List
-import qualified Data.Map as M
 import Data.Maybe
 import Data.Typeable
-import Feldspar.Core.Interpretation
 import Feldspar.Core.Representation
 import Feldspar.Core.Tuple
 import Feldspar.Core.NestedTuples
 import Feldspar.Core.Types
-import Feldspar.Lattice
-import Feldspar.Range
 import qualified Control.Exception as C
 import qualified Control.Monad.Par as CMP
 import System.IO.Unsafe
@@ -359,6 +354,3 @@ withArrayEval :: forall a b. MArr a -> ([a] -> Mut b) -> Mut b
 withArrayEval ma f
     = do a <- f (elems (unsafePerformIO $ freeze ma :: Array Integer a))
          C.evaluate a
-
-
-

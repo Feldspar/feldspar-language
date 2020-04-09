@@ -1,8 +1,4 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -89,7 +85,7 @@ module Feldspar.Core.Frontend
 
 import Prelude as P
 
-import Control.Monad.State
+import Control.Monad.State (MonadState)
 import Test.QuickCheck
 
 import Data.Patch
@@ -104,10 +100,10 @@ import Feldspar.Core.Render (StringTree, render)
 
 import Feldspar.Range
 import Feldspar.Core.Types
-import Feldspar.Core.Interpretation
-import Feldspar.Core.Middleend.FromTyped
+import Feldspar.Core.Interpretation (FeldOpts, defaultFeldOpts)
+import Feldspar.Core.Middleend.FromTyped (untype)
 import Feldspar.Core.UntypedRepresentation (VarId, stringTree)
-import Feldspar.Core.Constructs
+import Feldspar.Core.Constructs (SyntacticFeld, Syntax, Data)
 import Feldspar.Core.Language
 
 reifyFeldM :: (SyntacticFeld a, MonadState VarId m)

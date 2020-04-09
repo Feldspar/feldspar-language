@@ -71,13 +71,10 @@ instance (SyntacticFeld a, Type (Internal a)) => Syntax a
   -- The type error is not very readable now either, but at least it fits on the
   -- screen.
 
-reifyF :: SyntacticFeld a => a -> ASTF (Internal a)
-reifyF = desugar
-
 instance Type a => Eq (Data a)
   where
     (==) _ _ = error "Eq (Data a): Binding time violation"
 
 instance Type a => Show (Data a)
   where
-    show = render . reifyF . unData
+    show = render . desugar . unData
