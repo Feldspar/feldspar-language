@@ -43,7 +43,7 @@ module Feldspar.Core.Language where
 import Feldspar.Core.Reify
 import Feldspar.Core.Representation as R
 import Feldspar.Core.Types as T
-import Feldspar.Core.Constructs (Data(..), Syntax(..), SyntacticFeld(..))
+import Feldspar.Core.Constructs (Data(..), Syntax(..))
 import Feldspar.Core.NestedTuples
 
 import Feldspar.Range

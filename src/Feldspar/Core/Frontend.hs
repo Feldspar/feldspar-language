@@ -39,7 +39,6 @@ module Feldspar.Core.Frontend
     , Internal
 
     , Data
-    , SyntacticFeld
     , Syntax
 
     , module Feldspar.Core.Language
@@ -103,10 +102,10 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation (FeldOpts, defaultFeldOpts)
 import Feldspar.Core.Middleend.FromTyped (untype)
 import Feldspar.Core.UntypedRepresentation (VarId, stringTree)
-import Feldspar.Core.Constructs (SyntacticFeld, Syntax, Data)
+import Feldspar.Core.Constructs (Syntax, Data)
 import Feldspar.Core.Language
 
-reifyFeldM :: (SyntacticFeld a, MonadState VarId m)
+reifyFeldM :: (Syntactic a, MonadState VarId m)
     => FeldOpts
     -> BitWidth n
     -> a
@@ -128,65 +127,65 @@ reifyFeldUnOpt :: Syntactic a
                 -> ASTF (Internal a)
 reifyFeldUnOpt = reifyFeld
 
-showExpr :: SyntacticFeld a => a -> String
+showExpr :: Syntactic a => a -> String
 showExpr = render . reifyFeld defaultFeldOpts N32
 
 -- | Print an optimized untyped expression
-printExpr2 :: SyntacticFeld a => a -> IO ()
+printExpr2 :: Syntactic a => a -> IO ()
 printExpr2 = printExpr2With defaultFeldOpts
 
 -- | Draw the untyped syntax tree using unicode art
-drawUntyped :: SyntacticFeld a => a -> IO ()
+drawUntyped :: Syntactic a => a -> IO ()
 drawUntyped = drawUntypedWith defaultFeldOpts
 
 -- | Draw the untyped syntax tree using unicode art
-drawUntypedWith :: SyntacticFeld a => FeldOpts -> a -> IO ()
+drawUntypedWith :: Syntactic a => FeldOpts -> a -> IO ()
 drawUntypedWith opts = drawTree . stringTree . untype opts . reifyFeld opts N32
 
 -- | Print an optimized expression
-printExpr :: SyntacticFeld a => a -> IO ()
+printExpr :: Syntactic a => a -> IO ()
 printExpr = print . reifyFeld defaultFeldOpts N32
 
 -- | Print an optimized untyped expression with options
-printExpr2With :: SyntacticFeld a => FeldOpts -> a -> IO ()
+printExpr2With :: Syntactic a => FeldOpts -> a -> IO ()
 printExpr2With opts = print . untype opts . reifyFeld opts N32
 
 -- | Print an optimized expression with options
-printExprWith :: SyntacticFeld a => FeldOpts -> a -> IO ()
+printExprWith :: Syntactic a => FeldOpts -> a -> IO ()
 printExprWith opts = print . reifyFeld opts N32
 
 -- | Print an unoptimized expression
-printExprUnOpt :: SyntacticFeld a => a -> IO ()
+printExprUnOpt :: Syntactic a => a -> IO ()
 printExprUnOpt = print . reifyFeldUnOpt defaultFeldOpts N32
 
 -- | Show the syntax tree using Unicode art
-showAST :: SyntacticFeld a => a -> String
+showAST :: Syntactic a => a -> String
 showAST = Syntactic.showAST . reifyFeld defaultFeldOpts N32
 
 -- | Draw the syntax tree on the terminal using Unicode art
-drawAST :: SyntacticFeld a => a -> IO ()
+drawAST :: Syntactic a => a -> IO ()
 drawAST = Syntactic.drawAST . reifyFeld defaultFeldOpts N32
 
-drawASTUnOpt :: SyntacticFeld a => a -> IO ()
+drawASTUnOpt :: Syntactic a => a -> IO ()
 drawASTUnOpt = Syntactic.drawAST . reifyFeldUnOpt defaultFeldOpts N32
 
 -- | Write the syntax tree to an HTML file with foldable nodes
-writeHtmlAST :: SyntacticFeld a => FilePath -> a -> IO ()
+writeHtmlAST :: Syntactic a => FilePath -> a -> IO ()
 writeHtmlAST file = Syntactic.writeHtmlAST file . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
-showDecor :: SyntacticFeld a => a -> String
+showDecor :: Syntactic a => a -> String
 showDecor = Syntactic.showDecorWith show . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
-drawDecor :: SyntacticFeld a => a -> IO ()
+drawDecor :: Syntactic a => a -> IO ()
 drawDecor = Syntactic.drawDecorWith show . reifyFeld defaultFeldOpts N32
 
-eval :: SyntacticFeld a => a -> Internal a
+eval :: Syntactic a => a -> Internal a
 eval = evalBind . reifyFeld defaultFeldOpts N32
 
 evalTarget
-    :: ( SyntacticFeld a
+    :: ( Syntactic a
        , BoundedInt (GenericInt U n)
        , BoundedInt (GenericInt S n)
        )
@@ -194,13 +193,13 @@ evalTarget
 evalTarget n = evalBind . reifyFeld defaultFeldOpts n
   -- TODO This doesn't work yet, because 'targetSpecialization' is not implemented
 
-desugar :: SyntacticFeld a => a -> Data (Internal a)
+desugar :: Syntactic a => a -> Data (Internal a)
 desugar = Syntactic.resugar
 
-sugar :: SyntacticFeld a => Data (Internal a) -> a
+sugar :: Syntactic a => Data (Internal a) -> a
 sugar = Syntactic.resugar
 
-resugar :: (SyntacticFeld a, SyntacticFeld b, Internal a ~ Internal b) => a -> b
+resugar :: (Syntactic a, Syntactic b, Internal a ~ Internal b) => a -> b
 resugar = Syntactic.resugar
 
 
