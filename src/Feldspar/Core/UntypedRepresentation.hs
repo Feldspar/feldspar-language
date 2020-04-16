@@ -93,7 +93,7 @@ import Data.Tree
 import Data.Int
 import Data.Word
 
-import Feldspar.Core.Interpretation (VarId (..))
+import Feldspar.Core.Representation (VarId(..))
 
 import Feldspar.Range (Range(..), singletonRange, fullRange, emptyRange)
 import Feldspar.Core.Types (Length)
@@ -839,5 +839,3 @@ simpleInline = goA M.empty
         go m (App op t es) = App op t $ map (goA m) es
         go m (Lambda v e) = Lambda v (goA m e) -- Here we assume no name capture or shadowing
         unA (AIn _ r) = r
-
-

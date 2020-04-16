@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
@@ -33,8 +31,6 @@
 
 module Feldspar.Core.Interpretation where
 
-import Data.Ix
-
 -- | Possible compilation targets in a broad sense.
 data Target = RegionInf | Wool | CSE | SICS | BA
   deriving Eq
@@ -51,11 +47,3 @@ defaultFeldOpts = FeldOpts { targets = [] }
 -- | Decide whether a Target is enabled in FeldOpts.
 inTarget :: Target -> FeldOpts -> Bool
 inTarget t opts = t `elem` targets opts
-
--- | Variable identifier
-newtype VarId = VarId { varInteger :: Integer }
-  deriving (Eq, Ord, Num, Real, Integral, Enum, Ix)
-
-instance Show VarId
-  where
-    show (VarId i) = show i
