@@ -44,7 +44,7 @@ module Feldspar.Par
   , divConq
   )
 where
-import Feldspar.Core.Constructs (Syntax())
+import Feldspar.Core.Frontend (Syntax)
 import Feldspar.Core.Language hiding (pval)
 import Feldspar.Core.Representation
 
@@ -88,4 +88,3 @@ divConq indiv split join f = go
             | otherwise  = do
                 sols <- parMapM go (split prob)
                 return (join sols)
-
