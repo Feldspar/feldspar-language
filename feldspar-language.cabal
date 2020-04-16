@@ -60,7 +60,6 @@ library
     Feldspar.Core.Middleend.PushLets
     Feldspar.Core.Middleend.UniqueVars
     Feldspar.Core.Interpretation
-    Feldspar.Core.Constructs
     Feldspar.Core.Frontend
     Feldspar.Core.Collection
     Feldspar.Core

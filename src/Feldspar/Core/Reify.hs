@@ -40,6 +40,7 @@ module Feldspar.Core.Reify
        , unASTF
        , render
        , resugar
+       , Data(..)
        , Mon(..)
        , CSEExpr(..)
        , (@@)
@@ -100,6 +101,26 @@ instance Syntactic (ASTF a)
     sugar   = id
     {-# INLINABLE desugar #-}
     {-# INLINABLE sugar #-}
+
+--------------------------------------------------------------------------------
+-- * Front end
+--------------------------------------------------------------------------------
+
+newtype Data a = Data { unData :: ASTF a }
+
+deriving instance Typeable Data
+
+instance Syntactic (Data a)
+  where
+    type Internal (Data a) = a
+    desugar = unData
+    sugar   = Data
+
+instance Eq (Data a) where
+    (==) _ _ = error "Eq (Data a): Binding time violation"
+
+instance Show (Data a) where
+    show = render . desugar . unData
 
 -- | User interface to embedded monadic programs
 newtype Mon m a

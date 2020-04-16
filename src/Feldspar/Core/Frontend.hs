@@ -39,7 +39,6 @@ module Feldspar.Core.Frontend
     , Internal
 
     , Data
-    , Syntax
 
     , module Feldspar.Core.Language
 
@@ -102,7 +101,6 @@ import Feldspar.Core.Types
 import Feldspar.Core.Interpretation (FeldOpts, defaultFeldOpts)
 import Feldspar.Core.Middleend.FromTyped (untype)
 import Feldspar.Core.UntypedRepresentation (VarId, stringTree)
-import Feldspar.Core.Constructs (Syntax, Data)
 import Feldspar.Core.Language
 
 reifyFeldM :: (Syntactic a, MonadState VarId m)
