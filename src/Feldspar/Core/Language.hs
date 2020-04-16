@@ -1357,7 +1357,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
 -- Functions
 -------------------------------------------------
 
-instance (Type (Internal a), TypeF (Internal b), Syntax a, Syntactic b) => Syntactic (a -> b) where
+instance (TypeF (Internal b), Syntax a, Syntactic b) => Syntactic (a -> b) where
   type Internal (a -> b) = Internal a -> Internal b
   sugar e = P.error "sugar not implemented for a -> b"
   desugar f = ASTF (m1, Info top :& Lambda v e1) $ i + 1
