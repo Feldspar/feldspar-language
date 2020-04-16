@@ -42,9 +42,9 @@ module Feldspar.Core.Reify
        , resugar
        , Mon(..)
        , CSEExpr(..)
+       , (@@)
        , full
        , flattenCSE
-       , applyCSE
        , catchBindings
        , hashBase
        ) where
@@ -122,6 +122,14 @@ instance (Monad m, Applicative m) => Applicative (Mon m)
   where
     pure  = return
     (<*>) = ap
+
+infixl 5 @@
+
+-- | Construct an application
+(@@) :: Syntactic a
+     => (CSEExpr (Expr (Internal a -> b)), Int) -> a -> (CSEExpr (Expr b), Int)
+(cf,i) @@ e = go $ desugar e
+  where go (ASTF ce j) = (applyCSE cf ce, max i j)
 
 {- | Functions for incremental common subexpression elimination.
 -}

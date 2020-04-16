@@ -1418,13 +1418,6 @@ instance ( Syntactic a
 -------------------------------------------------
 -- Support functions
 -------------------------------------------------
-infixl 5 @@
-
--- Construct an application
-(@@) :: Syntactic a
-     => (CSEExpr (Expr (Internal a -> b)), Int) -> a -> (CSEExpr (Expr b), Int)
-(cf,i) @@ e = go $ desugar e
-  where go (ASTF ce j) = (applyCSE cf ce, P.max i j)
 
 -- | Convenience wrappers for sugarSym
 sugarSym0 :: (Syntactic a, TypeF (Internal a)) => Op (Internal a) -> a
