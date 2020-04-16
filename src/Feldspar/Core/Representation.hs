@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -60,7 +61,6 @@ module Feldspar.Core.Representation
   , goodToShare
   ) where
 
-import Feldspar.Core.Interpretation (VarId (..))
 import Feldspar.Core.Types (Type(typeRep,sizeOf), TypeF(..), TypeRep(..), Length, Index, IntN,
                             Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV, Tuple(..), RTuple, (:*), TNil)
 import Feldspar.Range
@@ -74,6 +74,7 @@ import qualified Data.Map.Strict as M
 
 import Data.Bits (Bits)
 import Data.Complex (Complex)
+import Data.Ix
 import Data.IORef (IORef)
 
 import Feldspar.Core.Tuple
@@ -81,6 +82,13 @@ import Feldspar.Core.Tuple
 infixr :->
 infixl 5 :@
 infix 1 :&
+
+-- | Variable identifier
+newtype VarId = VarId { varInteger :: Integer }
+  deriving (Eq, Ord, Num, Real, Integral, Enum, Ix)
+
+instance Show VarId where
+    show (VarId i) = show i
 
 data Var a where
   Var :: Typeable a => { varNum :: VarId, varName :: B.ByteString} -> Var a
