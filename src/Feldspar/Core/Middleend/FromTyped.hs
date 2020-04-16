@@ -103,18 +103,21 @@ toType :: TypeRep a -> U.Type
 toType tr = untypeType tr (defaultSize tr)
 
 toU :: R.AExpr a -> AUntypedFeld ValueInfo
-toU ((i :: R.Info a) :& e)
-  = AIn (toValueInfo (typeRepF :: TypeRep a) (R.infoSize i)) $ toUr e
-
-toUr :: TypeF a => R.Expr a -> UntypedFeldF (AUntypedFeld ValueInfo)
-toUr (R.Variable ((R.Var n s) :: R.Var a))
-  = Variable $ Var n (toType (typeRepF :: TypeRep a)) s
-toUr (R.Literal v) = Literal $ literal tr (defaultSize tr) v
-  where tr = typeRep
-toUr e@(R.Operator op) = App (trOp op) (toType $ asExpr e) []
-toUr (f :@ a) = toApp f [toU a]
-toUr (R.Lambda ((R.Var n s) :: R.Var a) e)
-  = Lambda (Var n (toType (typeRepF :: TypeRep a)) s) $ toU e
+toU (((R.Info i) :: R.Info a) :& e)
+  | (R.Variable ((R.Var n s) :: R.Var b)) <- e
+  , tr2 <- typeRepF :: TypeRep b
+  = i2 $ Variable $ Var n (toType tr2) s
+  | (R.Literal v) <- e
+  = i2 $ Literal $ literal tr (defaultSize tr) v
+  | (R.Operator op) <- e
+  = i2 $ App (trOp op) (toType $ asExpr e) []
+  | (R.Lambda ((R.Var n s) :: R.Var b) e') <- e
+  , tr2 <- typeRepF :: TypeRep b
+  = i2 $ Lambda (Var n (toType tr2) s) $ toU e'
+  | (f :@ a) <- e
+  = i2 $ toApp f [toU a]
+  where tr = typeRepF :: TypeRep a
+        i2 = AIn $ toValueInfo tr i
 
 toApp :: TypeF a => R.Expr a -> [AUntypedFeld ValueInfo] -> UntypedFeldF (AUntypedFeld ValueInfo)
 toApp (R.Operator R.Cons) [e, AIn _ (App Tup (U.TupType ts) es)]
