@@ -92,7 +92,7 @@ import Data.Hash
 
 import qualified Feldspar.Core.Reify as Syntactic
 import qualified Feldspar.Core.Render as Syntactic
-import Feldspar.Core.Reify hiding (desugar, sugar, resugar)
+import Feldspar.Core.Reify hiding (desugar, sugar)
 import Feldspar.Core.Eval (evalBind)
 import Feldspar.Core.Render (StringTree, render)
 
@@ -192,15 +192,10 @@ evalTarget n = evalBind . reifyFeld defaultFeldOpts n
   -- TODO This doesn't work yet, because 'targetSpecialization' is not implemented
 
 desugar :: Syntactic a => a -> Data (Internal a)
-desugar = Syntactic.resugar
+desugar = resugar
 
 sugar :: Syntactic a => Data (Internal a) -> a
-sugar = Syntactic.resugar
-
-resugar :: (Syntactic a, Syntactic b, Internal a ~ Internal b) => a -> b
-resugar = Syntactic.resugar
-
-
+sugar = resugar
 
 --------------------------------------------------------------------------------
 -- * QuickCheck
