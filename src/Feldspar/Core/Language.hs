@@ -49,7 +49,6 @@ import Feldspar.Core.NestedTuples
 import Feldspar.Range
 import Feldspar.Lattice (top)
 import Feldspar.Core.Collection
-import Feldspar.Core.Interpretation hiding (SizeProp, sizeProp, literal)
 
 import Control.Monad.Cont (runCont, cont)
 import Data.Typeable (Typeable)
