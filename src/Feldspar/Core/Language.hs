@@ -698,10 +698,10 @@ instance Syntax a => Syntactic (M a)
     sugar   = M . sugar
 
 instance P.Eq (Mut a) where
- (==) = undefined
+ (==) = P.error "Eq not implemented for Mut a"
 
 instance Show (Mut a) where
-  show = undefined
+  show = P.error "Show not implemented for Mut a"
 
 runMutable :: Syntax a => M a -> a
 runMutable = sugarSym1 Run
@@ -715,8 +715,8 @@ unless = when . not
 instance Type a => Type (Mut a)
   where
     typeRep       = T.MutType typeRep
-    sizeOf as     = undefined
-    toTarget n as = undefined
+    sizeOf as     = P.error "sizeOf not implemented for Mut a"
+    toTarget n as = P.error "toTarget not implemented for Mut a"
 
 --------------------------------------------------
 -- MutableReference.hs
@@ -933,16 +933,16 @@ instance Syntax a => Syntactic (IVar a)
     sugar   = IVar . sugar
 
 instance P.Eq (Par a) where
- (==) = undefined
+ (==) = P.error "Eq not implemented for Par a"
 
 instance Show (Par a) where
-  show = undefined
+  show = P.error "Show not implemented for Par a"
 
 instance Type a => Type (Par a)
   where
     typeRep       = T.ParType typeRep
-    sizeOf as     = undefined
-    toTarget n as = undefined
+    sizeOf as     = P.error "sizeOf not implemented for Par a"
+    toTarget n as = P.error "toTarget not implemented for Par a"
 
 --------------------------------------------------
 -- RealFloat.hs
@@ -1359,7 +1359,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
 
 instance (Type (Internal a), TypeF (Internal b), Syntax a, Syntactic b) => Syntactic (a -> b) where
   type Internal (a -> b) = Internal a -> Internal b
-  sugar e = undefined
+  sugar e = P.error "sugar not implemented for a -> b"
   desugar f = ASTF (m1, Info top :& Lambda v e1) $ i + 1
     where ASTF ce i = desugar $ f (sugar $ ASTF (M.empty, Info top :& Variable v) 0)
           (m1,e1) = catchBindings [varNum v] ce
