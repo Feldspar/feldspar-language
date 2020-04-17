@@ -93,12 +93,6 @@ cleanUp opts = createTasks opts . unAnnotate . uniqueVars
 renameExp :: AUntypedFeld a -> AUntypedFeld a
 renameExp e = evalState (rename e) 0
 
-asExpr :: TypeF a => R.Expr a -> TypeRep a
-asExpr _ = typeRepF
-
-asOpT :: TypeF a => R.Op a -> TypeRep a
-asOpT _ = typeRepF
-
 toType :: TypeRep a -> U.Type
 toType tr = untypeType tr (defaultSize tr)
 
@@ -110,7 +104,7 @@ toU (((R.Info i) :: R.Info a) :& e)
   | (R.Literal v) <- e
   = i2 $ Literal $ literal tr (defaultSize tr) v
   | (R.Operator op) <- e
-  = i2 $ App (trOp op) (toType $ asExpr e) []
+  = i2 $ App (trOp op) (toType tr) []
   | (R.Lambda ((R.Var n s) :: R.Var b) e') <- e
   , tr2 <- typeRepF :: TypeRep b
   = i2 $ Lambda (Var n (toType tr2) s) $ toU e'
@@ -128,7 +122,8 @@ toApp (R.Operator R.Car) [AIn _ (App (DropN n) (U.TupType (t:_)) es)]
   = App (SelN $ n+1) t es
 toApp (R.Operator R.Tup) [AIn _ e] = e
 toApp (R.Operator R.UnTup) [e] = App (DropN 0) (typeof e) [e]
-toApp (R.Operator op) es = App (trOp op) (unwind es $ toType $ asOpT op) es
+toApp (R.Operator (op :: R.Op b)) es
+  = App (trOp op) (unwind es $ toType (typeRepF :: TypeRep b)) es
 toApp (f :@ e) es = toApp f $ toU e : es
 
 unwind :: [AUntypedFeld a] -> U.Type -> U.Type
