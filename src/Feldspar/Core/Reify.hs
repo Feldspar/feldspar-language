@@ -5,6 +5,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -44,8 +45,12 @@ module Feldspar.Core.Reify
        , Mon(..)
        , CSEExpr(..)
        , (@@)
+       , SugarF(..)
+       , sugarSym
+       , op2f
+       , unFull
+       , value
        , full
-       , flattenCSE
        ) where
 
 import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..),
@@ -161,6 +166,43 @@ infixl 5 @@
      => (CSEExpr (Expr (Internal a -> b)), Int) -> a -> (CSEExpr (Expr b), Int)
 (cf,i) @@ e = go $ desugar e
   where go (ASTF ce j) = (applyCSE cf ce, max i j)
+
+-- | Convert an 'Op' to a function that builds the corresponding syntax tree
+sugarSym :: SugarF a => Op (SugarT a) -> a
+sugarSym = sugarF . op2f
+
+-- | Mark an application as full rather than partial
+newtype FFF a = FFF a
+
+-- | Force the argument to be a full applicaton, resolving the
+--   overloading in sugarSym
+unFull :: FFF a -> a
+unFull (FFF x) = x
+
+op2f :: Op a -> (RCSExpr a, Int)
+op2f op = ((M.empty, Operator op), 0)
+
+type RCSExpr a = CSEExpr (Expr a)
+
+-- | Support for the overloaded sugarSym function
+class SugarF a where
+  type SugarT a
+  sugarF :: (RCSExpr (SugarT a), Int) -> a
+
+instance (Syntactic b, SugarF c) => SugarF (b -> c) where
+  type SugarT (b -> c) = Internal b -> SugarT c
+  sugarF f = \ e -> sugarF $ f @@ e
+
+instance (Syntactic b, TypeF (Internal b)) => SugarF (FFF b) where
+  type SugarT (FFF b) = Internal b
+  sugarF (~(m, e),i) = FFF $ sugar $ ASTF (flattenCSE (m, Info top :& e)) i
+
+-------------------------------------------------
+-- Converting Haskell values to Feldspar
+-------------------------------------------------
+
+value :: (Syntactic a, T.Type (Internal a), Hashable (Internal a)) => Internal a -> a
+value v = sugar $ ASTF (flattenCSE (M.empty, Info top :& Literal v)) 0
 
 {- | Functions for incremental common subexpression elimination.
 -}

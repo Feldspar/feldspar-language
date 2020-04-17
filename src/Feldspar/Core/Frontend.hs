@@ -66,6 +66,7 @@ module Feldspar.Core.Frontend
     , desugar
     , sugar
     , resugar
+    , value
 
     -- * QuickCheck
     , (===>)
