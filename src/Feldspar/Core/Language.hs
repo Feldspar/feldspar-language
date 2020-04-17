@@ -1,8 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -1365,13 +1363,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                               @@ k @@ l @@ m @@ n @@ o
 
 -------------------------------------------------
--- Converting Haskell values to Feldspar
--------------------------------------------------
-
-value :: (Syntax a, Hashable (Internal a)) => Internal a -> a
-value v = sugar $ ASTF (flattenCSE (M.empty, Info top :& Literal v)) 0
-
--------------------------------------------------
 -- Support functions for monads
 -------------------------------------------------
 
@@ -1437,33 +1428,3 @@ sugarSym3
      Op (Internal a -> Internal b -> Internal c -> Internal d)
      -> a -> b -> c -> d
 sugarSym3 op a b c   = unFull $ sugarSym op a b c
-
--- | Convert an 'Op' to a function that builds the corresponding syntax tree
-sugarSym :: SugarF a => Op (SugarT a) -> a
-sugarSym = sugarF . op2f
-
--- | Mark an application as full rather than partial
-newtype FFF a = FFF a
-
--- | Force the argument to be a full applicaton, resolving the
---   overloading in sugarSym
-unFull :: FFF a -> a
-unFull (FFF x) = x
-
-op2f :: Op a -> (RCSExpr a, Int)
-op2f op = ((M.empty, Operator op), 0)
-
-type RCSExpr a = CSEExpr (Expr a)
-
--- | Support for the overloaded sugarSym function
-class SugarF a where
-  type SugarT a
-  sugarF :: (RCSExpr (SugarT a), Int) -> a
-
-instance (Syntactic b, SugarF c) => SugarF (b -> c) where
-  type SugarT (b -> c) = Internal b -> SugarT c
-  sugarF f = \ e -> sugarF $ f @@ e
-
-instance (Syntactic b, TypeF (Internal b)) => SugarF (FFF b) where
-  type SugarT (FFF b) = Internal b
-  sugarF (~(m, e),i) = FFF $ sugar $ ASTF (flattenCSE (m, Info top :& e)) i
