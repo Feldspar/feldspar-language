@@ -66,19 +66,6 @@ import Prelude.EDSL
 import Prelude (Float, Double, Rational, ($), foldr)
 import qualified Prelude as P
 
--- | Specialization of the 'Syntactic' class for first class values (eg not functions)
-class    (Syntactic a, Type (Internal a)) => Syntax a
-instance (Syntactic a, Type (Internal a)) => Syntax a
-  -- It would be possible to let 'Syntax' be an alias instead of giving separate
-  -- instances for all types. However, this leads to horrible error messages.
-  -- For example, if 'Syntax' is an alias, the following expression gives a huge
-  -- type error:
-  --
-  -- > eval (forLoop 10 0 (const (+id)))
-  --
-  -- The type error is not very readable now either, but at least it fits on the
-  -- screen.
-
 --------------------------------------------------
 -- Array.hs
 --------------------------------------------------

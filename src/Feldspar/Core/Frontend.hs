@@ -36,6 +36,7 @@
 module Feldspar.Core.Frontend
     ( module Data.Patch
     , Syntactic
+    , Syntax
     , Internal
 
     , Data
