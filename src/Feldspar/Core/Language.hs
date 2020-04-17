@@ -1365,18 +1365,6 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                               @@ k @@ l @@ m @@ n @@ o
 
 -------------------------------------------------
--- Functions
--------------------------------------------------
-
-instance (TypeF (Internal b), Syntax a, Syntactic b) => Syntactic (a -> b) where
-  type Internal (a -> b) = Internal a -> Internal b
-  sugar e = P.error "sugar not implemented for a -> b"
-  desugar f = ASTF (m1, Info top :& Lambda v e1) $ i + 1
-    where ASTF ce i = desugar $ f (sugar $ ASTF (M.empty, Info top :& Variable v) 0)
-          (m1,e1) = catchBindings [varNum v] ce
-          v = Var (P.fromIntegral i + hashBase) B.empty
-
--------------------------------------------------
 -- Converting Haskell values to Feldspar
 -------------------------------------------------
 

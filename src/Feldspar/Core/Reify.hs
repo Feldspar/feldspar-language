@@ -46,8 +46,6 @@ module Feldspar.Core.Reify
        , (@@)
        , full
        , flattenCSE
-       , catchBindings
-       , hashBase
        ) where
 
 import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..),
@@ -121,6 +119,18 @@ instance Eq (Data a) where
 
 instance Show (Data a) where
     show = render . desugar . unData
+
+-------------------------------------------------
+-- Functions
+-------------------------------------------------
+
+instance (Syntactic a, T.Type (Internal a), Syntactic b, TypeF (Internal b)) => Syntactic (a -> b) where
+  type Internal (a -> b) = Internal a -> Internal b
+  sugar e = error "sugar not implemented for a -> b"
+  desugar f = ASTF (m1, Info top :& Lambda v e1) $ i + 1
+    where ASTF ce i = desugar $ f (sugar $ ASTF (M.empty, Info top :& Variable v) 0)
+          (m1, e1) = catchBindings [varNum v] ce
+          v = Var (fromIntegral i + hashBase) B.empty
 
 -- | User interface to embedded monadic programs
 newtype Mon m a
