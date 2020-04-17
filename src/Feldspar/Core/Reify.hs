@@ -4,6 +4,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -37,6 +38,7 @@
 
 module Feldspar.Core.Reify
        ( Syntactic(..)
+       , Syntax(..)
        , ASTF(..)
        , unASTF
        , render
@@ -105,6 +107,19 @@ instance Syntactic (ASTF a)
     {-# INLINABLE desugar #-}
     {-# INLINABLE sugar #-}
 
+-- | Specialization of the 'Syntactic' class for first class values (eg not functions)
+class    (Syntactic a, T.Type (Internal a)) => Syntax a
+instance (Syntactic a, T.Type (Internal a)) => Syntax a
+  -- It would be possible to let 'Syntax' be an alias instead of giving separate
+  -- instances for all types. However, this leads to horrible error messages.
+  -- For example, if 'Syntax' is an alias, the following expression gives a huge
+  -- type error:
+  --
+  -- > eval (forLoop 10 0 (const (+id)))
+  --
+  -- The type error is not very readable now either, but at least it fits on the
+  -- screen.
+
 --------------------------------------------------------------------------------
 -- * Front end
 --------------------------------------------------------------------------------
@@ -129,7 +144,7 @@ instance Show (Data a) where
 -- Functions
 -------------------------------------------------
 
-instance (Syntactic a, T.Type (Internal a), Syntactic b, TypeF (Internal b)) => Syntactic (a -> b) where
+instance (Syntax a, Syntactic b, TypeF (Internal b)) => Syntactic (a -> b) where
   type Internal (a -> b) = Internal a -> Internal b
   sugar e = error "sugar not implemented for a -> b"
   desugar f = ASTF (m1, Info top :& Lambda v e1) $ i + 1
@@ -201,7 +216,7 @@ instance (Syntactic b, TypeF (Internal b)) => SugarF (FFF b) where
 -- Converting Haskell values to Feldspar
 -------------------------------------------------
 
-value :: (Syntactic a, T.Type (Internal a), Hashable (Internal a)) => Internal a -> a
+value :: (Syntax a, Hashable (Internal a)) => Internal a -> a
 value v = sugar $ ASTF (flattenCSE (M.empty, Info top :& Literal v)) 0
 
 {- | Functions for incremental common subexpression elimination.
