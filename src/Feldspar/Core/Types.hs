@@ -787,8 +787,8 @@ type family TargetType n a where
   TargetType n (IORef a)       = IORef (TargetType n a)
   TargetType n (MArr a)        = MArr (TargetType n a)
   TargetType n (Elements a)    = Elements (TargetType n a)
-  TargetType n (RTuple (a:*b)) = RTuple (TargetType n a :* TargetType n b)
-  TargetType n (RTuple TNil)   = Tuple TNil
+  TargetType n (RTuple (a:*b)) = TargetType n a :* TargetType n (RTuple b)
+  TargetType n (RTuple TNil)   = RTuple TNil
   TargetType n (Tuple a)       = Tuple (TargetType n a)
   TargetType n (IV a)          = IV (TargetType n a)
   TargetType n (FVal a)        = FVal (TargetType n a)
@@ -1207,6 +1207,22 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i
         , toTarget n o
         )
 
+instance (Type a, Typeable b, Type (RTuple b)) => Type (RTuple (a :* b))
+  where
+    typeRep = ConsType typeRep typeRep
+
+    sizeOf (x :* xs) = (sizeOf x, sizeOf xs)
+
+    toTarget n (x :* xs) = error "toTarget: RTuple (a :* b)"
+
+instance Type (RTuple TNil)
+  where
+    typeRep = NilType
+
+    sizeOf _ = AnySize
+
+    toTarget n _ = TNil
+
 instance Type a => Type (IORef a)
   where
     typeRep = RefType typeRep
@@ -1264,16 +1280,6 @@ class (Typeable a, Show (Size a), Lattice (Size a)) => TypeF a where
 instance {-# OVERLAPPING #-} (TypeF a, TypeF b) => TypeF (a -> b) where
   typeRepF = FunType typeRepF typeRepF
   sizeOfF f = universal
-
-instance {-# OVERLAPPING #-} (Type a, Typeable b, TypeF (RTuple b)) => TypeF (RTuple (a :* b))
-  where
-    typeRepF = ConsType typeRep typeRepF
-    sizeOfF (x :* xs) = (sizeOf x, sizeOfF xs)
-
-instance {-# OVERLAPPING #-} TypeF (RTuple TNil)
-  where
-    typeRepF = NilType
-    sizeOfF _ = universal
 
 instance {-# OVERLAPPABLE #-} (Typeable a, Type a) => TypeF a where
   typeRepF = typeRep
@@ -1347,7 +1353,7 @@ type family Size a where
   Size (Par a)         = Size a
   Size (Elements a)    = Range Length :> Size a
   Size (RTuple (a :* b)) = (Size a, Size (RTuple b))
-  Size (RTuple TNil)   = Size ()
+  Size (RTuple TNil)   = AnySize
   Size (Tuple a)       = Size (RTuple a)
   Size (IV a)          = Size a
   Size (FVal a)        = Size a
