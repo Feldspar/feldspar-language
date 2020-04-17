@@ -85,7 +85,7 @@ data ASTF a = ASTF (CExpr a) Int
 
 -- | Convert an ASTF to an expression
 unASTF :: b -> ASTF a -> AExpr a
-unASTF _ (ASTF ce _) = fromCExp ce
+unASTF _ (ASTF ce _) = snd $ catchBindings [] ce
 
 render :: ASTF a -> String
 render (ASTF (m,e) _) = unwords $ show e : "where" : map show (M.elems m)
@@ -245,9 +245,6 @@ mergeMapCExpr lm (rm,e) = (M.union lm rm1, e1)
    where sect = M.intersectionWith (,) lm rm
          (rm1,e1) = if null colls then (rm,e) else catchBindings (map fst colls) (rm,e)
          colls = filter (uncurry (/=) . snd) $ M.toList sect
-
-fromCExp :: CExpr a -> AExpr a
-fromCExp (m,e) = mkLets (snd $ floatBindings [] m, e)
 
 hashError :: M.Map VarId (CBind,CBind) -> a
 hashError sect = error $ "CSE.mergeCSE: hash conflict, diff is" ++ concatMap showDiff diffs
