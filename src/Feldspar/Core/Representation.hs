@@ -51,7 +51,6 @@ module Feldspar.Core.Representation
   , fviR
   , CBind(..)
   , bvId
-  , fviB
   , BindEnv(..)
   , lookupBE
   , extendBE
@@ -483,9 +482,6 @@ instance Show CBind where
 
 bvId :: CBind -> VarId
 bvId (CBind v _) = varNum v
-
-fviB :: CBind -> S.Set VarId
-fviB (CBind _ e) = fvi e
 
 mkLets :: ([CBind], AExpr a) -> AExpr a
 mkLets (CBind v e1@(Info i1 :& _) : bs, e@(Info i2 :& _))
