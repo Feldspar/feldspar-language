@@ -514,8 +514,8 @@ data Op =
    | Sel13
    | Sel14
    | Sel15
-   | SelN Int
-   | DropN Int
+   | Sel Int
+   | Drop Int
    -- Common nodes
    | Call Fork String
    deriving (Eq, Show)
