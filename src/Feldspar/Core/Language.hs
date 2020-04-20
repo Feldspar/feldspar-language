@@ -1042,8 +1042,8 @@ switch def cs s = let s' = resugar s
 
 instance (Syntax a, Syntax b) => Syntactic (a, b) where
   type Internal (a, b) = (Internal a, Internal b)
-  sugar e = (sugar $ sugarSym1 Sel1 $ Data e,
-             sugar $ sugarSym1 Sel2 $ Data e)
+  sugar e = (sugar $ sugarSym1 Sel1 e,
+             sugar $ sugarSym1 Sel2 e)
   desugar (x,y) = full $ op2f Tup2 @@ x @@ y
 
 instance ( Syntax a, Syntax b, Syntax c )
@@ -1051,9 +1051,9 @@ instance ( Syntax a, Syntax b, Syntax c )
   where
     type Internal (a, b, c) =
                   ( Internal a, Internal b, Internal c )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1 e
+              , sugar $ sugarSym1 Sel2 e
+              , sugar $ sugarSym1 Sel3 e
               )
     desugar (a, b, c)
           = full $ op2f Tup3 @@ a @@ b @@ c
@@ -1063,10 +1063,10 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d )
   where
     type Internal (a, b, c, d) =
                   ( Internal a, Internal b, Internal c, Internal d )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1 e
+              , sugar $ sugarSym1 Sel2 e
+              , sugar $ sugarSym1 Sel3 e
+              , sugar $ sugarSym1 Sel4 e
               )
     desugar (a, b, c, d)
           = full $ op2f Tup4 @@ a @@ b @@ c @@ d
@@ -1080,11 +1080,11 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   ( Internal a, Internal b, Internal c, Internal d
                   , Internal e
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1 e
+              , sugar $ sugarSym1 Sel2 e
+              , sugar $ sugarSym1 Sel3 e
+              , sugar $ sugarSym1 Sel4 e
+              , sugar $ sugarSym1 Sel5 e
               )
     desugar (a, b, c, d, e)
           = full $ op2f Tup5 @@ a @@ b @@ c @@ d @@ e
@@ -1098,12 +1098,12 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   ( Internal a, Internal b, Internal c, Internal d
                   , Internal e, Internal f
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
-              , sugar $ sugarSym1 Sel6  $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1 e
+              , sugar $ sugarSym1 Sel2 e
+              , sugar $ sugarSym1 Sel3 e
+              , sugar $ sugarSym1 Sel4 e
+              , sugar $ sugarSym1 Sel5 e
+              , sugar $ sugarSym1 Sel6 e
               )
     desugar (a, b, c, d, e, f)
           = full $ op2f Tup6 @@ a @@ b @@ c @@ d @@ e @@ f
@@ -1117,13 +1117,13 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   ( Internal a, Internal b, Internal c, Internal d
                   , Internal e, Internal f, Internal g
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
-              , sugar $ sugarSym1 Sel6  $ Data e
-              , sugar $ sugarSym1 Sel7  $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1 e
+              , sugar $ sugarSym1 Sel2 e
+              , sugar $ sugarSym1 Sel3 e
+              , sugar $ sugarSym1 Sel4 e
+              , sugar $ sugarSym1 Sel5 e
+              , sugar $ sugarSym1 Sel6 e
+              , sugar $ sugarSym1 Sel7 e
               )
     desugar (a, b, c, d, e, f, g)
           = full $ op2f Tup7 @@ a @@ b @@ c @@ d @@ e @@ f @@ g
@@ -1137,14 +1137,14 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   ( Internal a, Internal b, Internal c, Internal d
                   , Internal e, Internal f, Internal g, Internal h
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
-              , sugar $ sugarSym1 Sel6  $ Data e
-              , sugar $ sugarSym1 Sel7  $ Data e
-              , sugar $ sugarSym1 Sel8  $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1 e
+              , sugar $ sugarSym1 Sel2 e
+              , sugar $ sugarSym1 Sel3 e
+              , sugar $ sugarSym1 Sel4 e
+              , sugar $ sugarSym1 Sel5 e
+              , sugar $ sugarSym1 Sel6 e
+              , sugar $ sugarSym1 Sel7 e
+              , sugar $ sugarSym1 Sel8 e
               )
     desugar (a, b, c, d, e, f, g, h)
           = full $ op2f Tup8 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h
@@ -1160,15 +1160,15 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal e, Internal f, Internal g, Internal h
                   , Internal i
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
-              , sugar $ sugarSym1 Sel6  $ Data e
-              , sugar $ sugarSym1 Sel7  $ Data e
-              , sugar $ sugarSym1 Sel8  $ Data e
-              , sugar $ sugarSym1 Sel9  $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1 e
+              , sugar $ sugarSym1 Sel2 e
+              , sugar $ sugarSym1 Sel3 e
+              , sugar $ sugarSym1 Sel4 e
+              , sugar $ sugarSym1 Sel5 e
+              , sugar $ sugarSym1 Sel6 e
+              , sugar $ sugarSym1 Sel7 e
+              , sugar $ sugarSym1 Sel8 e
+              , sugar $ sugarSym1 Sel9 e
               )
     desugar (a, b, c, d, e, f, g, h, i)
           = full $ op2f Tup9 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i
@@ -1184,16 +1184,16 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal e, Internal f, Internal g, Internal h
                   , Internal i, Internal j
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
-              , sugar $ sugarSym1 Sel6  $ Data e
-              , sugar $ sugarSym1 Sel7  $ Data e
-              , sugar $ sugarSym1 Sel8  $ Data e
-              , sugar $ sugarSym1 Sel9  $ Data e
-              , sugar $ sugarSym1 Sel10 $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1  e
+              , sugar $ sugarSym1 Sel2  e
+              , sugar $ sugarSym1 Sel3  e
+              , sugar $ sugarSym1 Sel4  e
+              , sugar $ sugarSym1 Sel5  e
+              , sugar $ sugarSym1 Sel6  e
+              , sugar $ sugarSym1 Sel7  e
+              , sugar $ sugarSym1 Sel8  e
+              , sugar $ sugarSym1 Sel9  e
+              , sugar $ sugarSym1 Sel10 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j)
           = full $ op2f Tup10 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
@@ -1209,17 +1209,17 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal e, Internal f, Internal g, Internal h
                   , Internal i, Internal j, Internal k
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
-              , sugar $ sugarSym1 Sel6  $ Data e
-              , sugar $ sugarSym1 Sel7  $ Data e
-              , sugar $ sugarSym1 Sel8  $ Data e
-              , sugar $ sugarSym1 Sel9  $ Data e
-              , sugar $ sugarSym1 Sel10 $ Data e
-              , sugar $ sugarSym1 Sel11 $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1  e
+              , sugar $ sugarSym1 Sel2  e
+              , sugar $ sugarSym1 Sel3  e
+              , sugar $ sugarSym1 Sel4  e
+              , sugar $ sugarSym1 Sel5  e
+              , sugar $ sugarSym1 Sel6  e
+              , sugar $ sugarSym1 Sel7  e
+              , sugar $ sugarSym1 Sel8  e
+              , sugar $ sugarSym1 Sel9  e
+              , sugar $ sugarSym1 Sel10 e
+              , sugar $ sugarSym1 Sel11 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k)
           = full $ op2f Tup11 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
@@ -1236,18 +1236,18 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal e, Internal f, Internal g, Internal h
                   , Internal i, Internal j, Internal k, Internal l
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
-              , sugar $ sugarSym1 Sel6  $ Data e
-              , sugar $ sugarSym1 Sel7  $ Data e
-              , sugar $ sugarSym1 Sel8  $ Data e
-              , sugar $ sugarSym1 Sel9  $ Data e
-              , sugar $ sugarSym1 Sel10 $ Data e
-              , sugar $ sugarSym1 Sel11 $ Data e
-              , sugar $ sugarSym1 Sel12 $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1  e
+              , sugar $ sugarSym1 Sel2  e
+              , sugar $ sugarSym1 Sel3  e
+              , sugar $ sugarSym1 Sel4  e
+              , sugar $ sugarSym1 Sel5  e
+              , sugar $ sugarSym1 Sel6  e
+              , sugar $ sugarSym1 Sel7  e
+              , sugar $ sugarSym1 Sel8  e
+              , sugar $ sugarSym1 Sel9  e
+              , sugar $ sugarSym1 Sel10 e
+              , sugar $ sugarSym1 Sel11 e
+              , sugar $ sugarSym1 Sel12 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l)
           = full $ op2f Tup12 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
@@ -1266,19 +1266,19 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal i, Internal j, Internal k, Internal l
                   , Internal m
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
-              , sugar $ sugarSym1 Sel6  $ Data e
-              , sugar $ sugarSym1 Sel7  $ Data e
-              , sugar $ sugarSym1 Sel8  $ Data e
-              , sugar $ sugarSym1 Sel9  $ Data e
-              , sugar $ sugarSym1 Sel10 $ Data e
-              , sugar $ sugarSym1 Sel11 $ Data e
-              , sugar $ sugarSym1 Sel12 $ Data e
-              , sugar $ sugarSym1 Sel13 $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1  e
+              , sugar $ sugarSym1 Sel2  e
+              , sugar $ sugarSym1 Sel3  e
+              , sugar $ sugarSym1 Sel4  e
+              , sugar $ sugarSym1 Sel5  e
+              , sugar $ sugarSym1 Sel6  e
+              , sugar $ sugarSym1 Sel7  e
+              , sugar $ sugarSym1 Sel8  e
+              , sugar $ sugarSym1 Sel9  e
+              , sugar $ sugarSym1 Sel10 e
+              , sugar $ sugarSym1 Sel11 e
+              , sugar $ sugarSym1 Sel12 e
+              , sugar $ sugarSym1 Sel13 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l, m)
           = full $ op2f Tup13 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
@@ -1297,20 +1297,20 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal i, Internal j, Internal k, Internal l
                   , Internal m, Internal n
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
-              , sugar $ sugarSym1 Sel6  $ Data e
-              , sugar $ sugarSym1 Sel7  $ Data e
-              , sugar $ sugarSym1 Sel8  $ Data e
-              , sugar $ sugarSym1 Sel9  $ Data e
-              , sugar $ sugarSym1 Sel10 $ Data e
-              , sugar $ sugarSym1 Sel11 $ Data e
-              , sugar $ sugarSym1 Sel12 $ Data e
-              , sugar $ sugarSym1 Sel13 $ Data e
-              , sugar $ sugarSym1 Sel14 $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1  e
+              , sugar $ sugarSym1 Sel2  e
+              , sugar $ sugarSym1 Sel3  e
+              , sugar $ sugarSym1 Sel4  e
+              , sugar $ sugarSym1 Sel5  e
+              , sugar $ sugarSym1 Sel6  e
+              , sugar $ sugarSym1 Sel7  e
+              , sugar $ sugarSym1 Sel8  e
+              , sugar $ sugarSym1 Sel9  e
+              , sugar $ sugarSym1 Sel10 e
+              , sugar $ sugarSym1 Sel11 e
+              , sugar $ sugarSym1 Sel12 e
+              , sugar $ sugarSym1 Sel13 e
+              , sugar $ sugarSym1 Sel14 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
           = full $ op2f Tup14 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
@@ -1329,21 +1329,21 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
                   , Internal i, Internal j, Internal k, Internal l
                   , Internal m, Internal n, Internal o
                   )
-    sugar e = ( sugar $ sugarSym1 Sel1  $ Data e
-              , sugar $ sugarSym1 Sel2  $ Data e
-              , sugar $ sugarSym1 Sel3  $ Data e
-              , sugar $ sugarSym1 Sel4  $ Data e
-              , sugar $ sugarSym1 Sel5  $ Data e
-              , sugar $ sugarSym1 Sel6  $ Data e
-              , sugar $ sugarSym1 Sel7  $ Data e
-              , sugar $ sugarSym1 Sel8  $ Data e
-              , sugar $ sugarSym1 Sel9  $ Data e
-              , sugar $ sugarSym1 Sel10 $ Data e
-              , sugar $ sugarSym1 Sel11 $ Data e
-              , sugar $ sugarSym1 Sel12 $ Data e
-              , sugar $ sugarSym1 Sel13 $ Data e
-              , sugar $ sugarSym1 Sel14 $ Data e
-              , sugar $ sugarSym1 Sel15 $ Data e
+    sugar e = ( sugar $ sugarSym1 Sel1  e
+              , sugar $ sugarSym1 Sel2  e
+              , sugar $ sugarSym1 Sel3  e
+              , sugar $ sugarSym1 Sel4  e
+              , sugar $ sugarSym1 Sel5  e
+              , sugar $ sugarSym1 Sel6  e
+              , sugar $ sugarSym1 Sel7  e
+              , sugar $ sugarSym1 Sel8  e
+              , sugar $ sugarSym1 Sel9  e
+              , sugar $ sugarSym1 Sel10 e
+              , sugar $ sugarSym1 Sel11 e
+              , sugar $ sugarSym1 Sel12 e
+              , sugar $ sugarSym1 Sel13 e
+              , sugar $ sugarSym1 Sel14 e
+              , sugar $ sugarSym1 Sel15 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
           = full $ op2f Tup15 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
