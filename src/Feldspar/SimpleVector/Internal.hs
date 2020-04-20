@@ -50,7 +50,7 @@ import Feldspar hiding (sugar,desugar,resugar)
 
 import Data.Tuple.Curry
 import Data.Tuple.Select
-import Data.Hash
+import Data.Hash (Hashable)
 
 
 --------------------------------------------------------------------------------

@@ -90,7 +90,7 @@ import Test.QuickCheck
 
 import Data.Patch
 import Data.Tree.View
-import Data.Hash
+import Data.Hash (Hashable)
 
 import qualified Feldspar.Core.Reify as Syntactic
 import qualified Feldspar.Core.Render as Syntactic

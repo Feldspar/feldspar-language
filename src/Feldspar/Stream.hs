@@ -66,7 +66,7 @@ import qualified Prelude as P
 import qualified Control.Monad as P
 
 import Control.Applicative
-import Data.Hash
+import Data.Hash (Hashable)
 
 import Feldspar
 import Feldspar.Vector
@@ -532,4 +532,3 @@ iir a0 a b inp =
       (\i o -> 1 / a0 * ( scalarProd b i
                         - scalarProd a o)
       )
-

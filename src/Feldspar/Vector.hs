@@ -81,7 +81,7 @@ import Feldspar.Vector.Shape
 import Data.Tuple.Select
 import Control.Monad (zipWithM_)
 import Data.Proxy
-import Data.Hash
+import Data.Hash (Hashable)
 import Data.List (genericLength)
 
 -- $intro

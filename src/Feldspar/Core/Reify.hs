@@ -63,6 +63,7 @@ import Feldspar.Lattice (top)
 
 import Control.Applicative
 import Control.Monad.Cont
+import Data.Complex (Complex(..))
 import Data.Typeable
 import Data.Hash (Hashable(..), asWord64, combine, hashInt, Hash)
 
@@ -312,6 +313,13 @@ hashOp op = hashStr $ show op
 
 hash2VarId :: Hash -> VarId
 hash2VarId h = fromIntegral $ (fromIntegral $ asWord64 h) `mod` hashMod
+
+--------------------------------------------------------------------------------
+-- * Hashing
+--------------------------------------------------------------------------------
+
+instance Hashable a => Hashable (Complex a) where
+  hash (re :+ im) = hash re `combine` hash im
 
 instance Hashable (T.Signedness a) where
   hash T.U = hashInt 1
