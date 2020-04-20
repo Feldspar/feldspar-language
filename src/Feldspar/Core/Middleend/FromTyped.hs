@@ -116,12 +116,12 @@ toU (((R.Info i) :: R.Info a) :& e)
 toApp :: TypeF a => R.Expr a -> [AUntypedFeld ValueInfo] -> UntypedFeldF (AUntypedFeld ValueInfo)
 toApp (R.Operator R.Cons) [e, AIn _ (App Tup (U.TupType ts) es)]
   = App Tup (U.TupType $ typeof e : ts) $ e : es
-toApp (R.Operator R.Cdr) [AIn _ (App (DropN n) (U.TupType (_:ts)) es)]
-  = App (DropN $ n+1) (U.TupType ts) es
-toApp (R.Operator R.Car) [AIn _ (App (DropN n) (U.TupType (t:_)) es)]
-  = App (SelN $ n+1) t es
+toApp (R.Operator R.Cdr) [AIn _ (App (Drop n) (U.TupType (_:ts)) es)]
+  = App (Drop $ n + 1) (U.TupType ts) es
+toApp (R.Operator R.Car) [AIn _ (App (Drop n) (U.TupType (t:_)) es)]
+  = App (Sel $ n + 1) t es
 toApp (R.Operator R.Tup) [AIn _ e] = e
-toApp (R.Operator R.UnTup) [e] = App (DropN 0) (typeof e) [e]
+toApp (R.Operator R.UnTup) [e] = App (Drop 0) (typeof e) [e]
 toApp (R.Operator (op :: R.Op b)) es
   = App (trOp op) (unwind es $ toType (typeRepF :: TypeRep b)) es
 toApp (f :@ e) es = toApp f $ toU e : es

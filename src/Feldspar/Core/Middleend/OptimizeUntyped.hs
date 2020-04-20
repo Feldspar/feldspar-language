@@ -259,7 +259,7 @@ unwrap :: AExp -> UExp
 unwrap (AIn r e) = e
 
 decodeSelect :: Op -> Maybe Int
-decodeSelect (SelN n) = Just $ n-1
+decodeSelect (Sel n) = Just $ n-1
 decodeSelect op = lookup op selectTable
 
 -- | Mapping of select operators of the form Sel<n> to their
