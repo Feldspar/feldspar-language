@@ -55,7 +55,6 @@ import Data.List
 import Data.Typeable (Typeable)
 import Data.Orphans
 import Data.Word
-import Data.Hash
 import Test.QuickCheck
 import System.Random (Random(..))
 import qualified Control.Monad.Par as MonadPar
@@ -275,13 +274,6 @@ instance Show (FVal a)
 instance Eq a => Eq (FVal a)
   where
     (FVal a) == (FVal b) = a == b
-
---------------------------------------------------------------------------------
--- * Hashing
---------------------------------------------------------------------------------
-
-instance Hashable a => Hashable (Complex a) where
-  hash (re :+ im) = hash re `combine` hash im
 
 --------------------------------------------------------------------------------
 -- * Type representation

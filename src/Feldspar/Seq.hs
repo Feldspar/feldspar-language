@@ -7,7 +7,7 @@ import qualified Prelude as P
 import Feldspar
 import Feldspar.Vector hiding (singleton,zipWith)
 import Feldspar.Mutable
-import Data.Hash
+import Data.Hash (Hashable)
 
 data Seq a = Seq (M (Data Index -> M a)) (Data Length)
 
