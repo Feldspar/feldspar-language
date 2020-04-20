@@ -499,21 +499,6 @@ data Op =
    | Switch
    -- Tuples
    | Tup
-   | Sel1
-   | Sel2
-   | Sel3
-   | Sel4
-   | Sel5
-   | Sel6
-   | Sel7
-   | Sel8
-   | Sel9
-   | Sel10
-   | Sel11
-   | Sel12
-   | Sel13
-   | Sel14
-   | Sel15
    | Sel Int
    | Drop Int
    -- Common nodes

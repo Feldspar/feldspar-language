@@ -177,30 +177,27 @@ simpApp env r op t es = go op t es
          = eLen
 
         -- Select from a tuple expression
-        go op _ [eTup]
-         | Just n <- decodeSelect op
-         , App Tup _ es <- examine env eTup
+        go (Sel n) _ [eTup]
+         | App Tup _ es <- examine env eTup
          , n < length es
          , eComp <- es !! n
          , not $ sharable eComp
          = eComp
 
         -- Select from a tuple literal
-        go op _ [eTup]
-         | Just n <- decodeSelect op
-         , Literal (LTup es) <- examine env eTup
+        go (Sel n) _ [eTup]
+         | Literal (LTup es) <- examine env eTup
          , n < length es
          = aLit $ es !! n
 
         -- Tuple copy
         go Tup t es
          | (e:es1) <- map (examine env) es
-         , App op _ [eTup] <- e
-         , Just 0 <- decodeSelect op
+         , App (Sel 0) _ [eTup] <- e
          , typeof eTup == t
          , and $ zipWith (check eTup) es1 [1 ..]
          = eTup
-           where check eTup (App op _ [e]) i = e == eTup && decodeSelect op == Just i
+           where check eTup (App (Sel n) _ [e]) i = n == i && e == eTup
                  check _    _              _ = False
 
         -- Fall through
@@ -257,18 +254,6 @@ examine env (AIn _ e)            = e
 
 unwrap :: AExp -> UExp
 unwrap (AIn r e) = e
-
-decodeSelect :: Op -> Maybe Int
-decodeSelect (Sel n) = Just $ n-1
-decodeSelect op = lookup op selectTable
-
--- | Mapping of select operators of the form Sel<n> to their
---   corresponding 0 based indices.
-selectTable :: [(Op,Int)]
-selectTable = zip selOps [0..]
-  where selOps = [ Sel1,  Sel2,  Sel3,  Sel4,  Sel5,
-                   Sel6,  Sel7,  Sel8,  Sel9, Sel10,
-                  Sel11, Sel12, Sel13, Sel14, Sel15]
 
 -- | Is this a literal zero.
 zero :: AUntypedFeld a -> Bool
