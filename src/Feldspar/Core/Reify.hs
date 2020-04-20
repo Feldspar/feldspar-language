@@ -218,7 +218,7 @@ instance (Syntactic b, TypeF (Internal b)) => SugarF (FFF b) where
 -------------------------------------------------
 
 value :: (Syntax a, Hashable (Internal a)) => Internal a -> a
-value v = sugar $ ASTF (flattenCSE (M.empty, Info top :& Literal v)) 0
+value v = sugar $ full ((M.empty, Literal v), 0)
 
 {- | Functions for incremental common subexpression elimination.
 -}
