@@ -43,13 +43,13 @@ import Control.Applicative
 import Test.QuickCheck
 
 import Feldspar.Core.Reify (ASTF, Syntactic(..), resugar)
+import Feldspar.Core.Tuple
 
 import Feldspar.Range (rangeSubSat)
 import qualified Feldspar
 import Feldspar hiding (sugar,desugar,resugar)
 
 import Data.Tuple.Curry
-import Data.Tuple.Select
 import Data.Hash (Hashable)
 
 

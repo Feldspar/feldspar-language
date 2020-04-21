@@ -76,9 +76,9 @@ import Feldspar.Core.Reify (Syntactic(..), resugar)
 import Feldspar hiding (desugar,sugar,resugar)
 import qualified Feldspar as F
 import Feldspar.Core.Language
+import Feldspar.Core.Tuple
 import Feldspar.Vector.Shape
 
-import Data.Tuple.Select
 import Control.Monad (zipWithM_)
 import Data.Proxy
 import Data.Hash (Hashable)
