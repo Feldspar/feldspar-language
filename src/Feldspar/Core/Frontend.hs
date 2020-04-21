@@ -46,7 +46,6 @@ module Feldspar.Core.Frontend
     , FeldOpts
     , defaultFeldOpts
     , reifyFeld
-    , reifyFeldM
     , reifyFeldUnOpt
     , showExpr
     , printExpr
@@ -85,7 +84,6 @@ module Feldspar.Core.Frontend
 
 import Prelude as P
 
-import Control.Monad.State (MonadState)
 import Test.QuickCheck
 
 import Data.Patch
@@ -104,14 +102,6 @@ import Feldspar.Core.Interpretation (FeldOpts, defaultFeldOpts)
 import Feldspar.Core.Middleend.FromTyped (untype)
 import Feldspar.Core.UntypedRepresentation (VarId, stringTree)
 import Feldspar.Core.Language
-
-reifyFeldM :: (Syntactic a, MonadState VarId m)
-    => FeldOpts
-    -> BitWidth n
-    -> a
-    -> m (ASTF (Internal a))
-reifyFeldM opts n prog = return $ reifyFeld opts n prog
-
 
 reifyFeld :: Syntactic a
           => FeldOpts
