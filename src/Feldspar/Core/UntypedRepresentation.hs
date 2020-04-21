@@ -499,7 +499,7 @@ data Op =
    | Switch
    -- Tuples
    | Tup
-   | Sel Int
+   | Sel Int -- These are zero indexed.
    | Drop Int
    -- Common nodes
    | Call Fork String
