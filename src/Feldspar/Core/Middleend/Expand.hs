@@ -32,24 +32,20 @@ module Feldspar.Core.Middleend.Expand (expand) where
 
 import Feldspar.Core.UntypedRepresentation
 import Feldspar.ValueInfo
-import Feldspar.Lattice(top)
+import Feldspar.Lattice (top)
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Set as S
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Control.Monad.State
-import Data.List(partition)
-
-import Debug.Trace
+import Data.List (partition)
 
 type VarMap = M.Map Var (S.Set Var, RExp)
 type UExp = AUntypedFeld ValueInfo
 type RExp = UntypedFeldF UExp
 
-
 expand :: UExp -> UExp
-expand e = e1
-  where (_,(_,e1)) = evalState (expE [] M.empty e) 10000
+expand e = snd . snd $ evalState (expE [] M.empty e) 10000
 
 data AbsInfo = LoopI {trip :: (S.Set Var, UExp), ixVar :: Var, absVars :: S.Set Var}
              | AbsI  {absVars :: S.Set Var}
@@ -65,22 +61,21 @@ expE ai vm e = do (s,bse) <- expF ai vm e
                                 else bse)
 
 expF :: [AbsInfo] -> VarMap -> UExp -> Rename (S.Set Var, ([BindInfo], UExp))
-expF ai vm e = mdo (s,bse1) <- ea aiNew vm e
-                   let (bs1,e1) = bse1
+expF ai vm e = mdo (s, (bs1,e1)) <- ea aiNew vm e
                    let (bs2,e2) = catch bs1 e1
-                   let ai1 = if simpleExp ai vm e then [] else ai
-                   let profLoops = profitableLoops $ legalLoops s ai1
-                   let keepLoops = [ai | (False, ai@LoopI{}) <- profLoops]
-                   let aiNew = keepLoops ++ drop (length profLoops) ai1
-                   let (idxE,lenE) = idxLenExpr keepLoops
-                   let r = elementsVI (setLB 0 $ getAnnotation idxE) (getAnnotation e)
-                   let eBody = AIn r $ App EWrite (ElementsType $ typeof e) [idxE, e2]
-                   let (bs3,e3) = foldl mkBinds (bs2, eBody) keepLoops
-                   let flArr = AIn r $ App EMaterialize (ArrayType top $ typeof e) [lenE, e3]
+                       ai1 = if simpleExp ai vm e then [] else ai
+                       profLoops = profitableLoops $ legalLoops s ai1
+                       keepLoops = [ai | (False, ai@LoopI{}) <- profLoops]
+                       aiNew = keepLoops ++ drop (length profLoops) ai1
+                       (idxE, lenE) = idxLenExpr keepLoops
+                       r = elementsVI (setLB 0 $ getAnnotation idxE) (getAnnotation e)
+                       eBody = AIn r $ App EWrite (ElementsType $ typeof e) [idxE, e2]
+                       (bs3, e3) = foldl mkBinds (bs2, eBody) keepLoops
+                       flArr = AIn r $ App EMaterialize (ArrayType top $ typeof e) [lenE, e3]
                    arrV <- newVar $ Var 0 (typeof flArr) $ B.pack "a"
                    let arrVE = AIn r $ Variable arrV
-                   let b = BI {biAbsI = map snd profLoops, biBindIs = bs3, biBind = (arrV, flArr)}
-                   let refE = AIn (getAnnotation e) $ App GetIx (typeof e) [arrVE, idxE]
+                       b = BI {biAbsI = map snd profLoops, biBindIs = bs3, biBind = (arrV, flArr)}
+                       refE = AIn (getAnnotation e) $ App GetIx (typeof e) [arrVE, idxE]
                    return (s, if null keepLoops || not (sharable e1) || simpleExp ai vm e1
                                  then (bs2, e2) -- We should not float e
                                  else ([b], refE)) -- We float an expanded e in b
@@ -88,9 +83,6 @@ expF ai vm e = mdo (s,bse1) <- ea aiNew vm e
 ea :: [AbsInfo] -> VarMap -> UExp -> Rename (S.Set Var, ([BindInfo], UExp))
 ea ai vm (AIn r e) = do (s,(bs,e1)) <- eu ai vm e
                         return (s, (bs, AIn r e1))
-
--- tk str bs = if null bsi then id else trace $ str ++ "\n" ++ (unlines $ map show bsi) ++ "\n"
---   where bsi = filter ((== 10220) . varNum . fst . biBind) bs
 
 -- | Construct an index expression and length expression
 -- Absinfos are innermost first
@@ -132,41 +124,34 @@ eu :: [AbsInfo] -> VarMap -> RExp -> Rename (S.Set Var, ([BindInfo], RExp))
 eu ai vm (Variable v) = let (s,e) = vm M.! v in return (s, ([],e))
 eu ai vm (Literal l) = return (S.empty, ([], Literal l))
 eu ai vm (App Let t [eRhs, AIn r (Lambda v eBody)])
-  = do (fvsR,bseR) <- expE ai vm eRhs
-       let (bsR,eR) = bseR
+  = do (fvsR, (bsR, eR)) <- expE ai vm eRhs
        let inline = not (sharable eR) || simpleArrRef eR
-       let eR1 = if inline then dropAnnotation eR else Variable v
-       let vmB = M.insert v (fvsR, eR1) vm
-       let aiB = if inline then ai else AbsI (S.singleton v) : ai
-       (fvsB,bseB) <- expE aiB vmB eBody
-       let (bsB,eB) = bseB
+           eR1 = if inline then dropAnnotation eR else Variable v
+           vmB = M.insert v (fvsR, eR1) vm
+           aiB = if inline then ai else AbsI (S.singleton v) : ai
+       (fvsB, (bsB, eB)) <- expE aiB vmB eBody
        let eNew = App Let t [eR, AIn r $ Lambda v eB]
-       let bsB1 = if inline then bsB else shiftBIs bsB
+           bsB1 = if inline then bsB else shiftBIs bsB
        return (fvsB, (bsR ++ bsB1, if inline then dropAnnotation eB else eNew))
 eu ai vm (App op t [eLen, eInit, AIn r1 (Lambda vIx (AIn r2 (Lambda vSt eBody)))])
   | op `elem` [ForLoop, Sequential]
-  = do (fvsL,bseL) <- expE ai vm eLen
-       let (bsL,eL) = bseL
-       (fvsI,bseI) <- expE ai vm eInit
-       let (bsI,eI) = bseI
+  = do (fvsL, (bsL, eL)) <- expE ai vm eLen
+       (fvsI, (bsI, eI)) <- expE ai vm eInit
        -- Maybe the trip count should be bound to a variable
        let aiB = LoopI {trip = (fvsL,eL), ixVar = vIx, absVars = S.singleton vSt} : ai
-       let vmB = M.insert vIx (S.singleton vIx, Variable vIx) $
+           vmB = M.insert vIx (S.singleton vIx, Variable vIx) $
                  M.insert vSt (S.singleton vSt, Variable vSt) vm
-       (fvsB,bseB) <- expE aiB vmB eBody
-       let (bsB,eB) = bseB
+       (fvsB, (bsB, eB)) <- expE aiB vmB eBody
        return (fvsL `S.union` fvsI `S.union` (fvsB S.\\ S.fromList [vIx, vSt]),
                (bsL ++ bsI ++ shiftBIs bsB,
                 App op t [eL, eI, AIn r1 $ Lambda vIx $ AIn r2 $ Lambda vSt eB]))
 eu ai vm (App op t [eLen, AIn r1 (Lambda vIx eBody)])
   | op `elem` [Parallel, EparFor, For]
-  = do (fvsL,bseL) <- expE ai vm eLen
-       let (bsL,eL) = bseL
+  = do (fvsL, (bsL, eL)) <- expE ai vm eLen
        -- Maybe the trip count should be bound to a variable
        let aiB = LoopI {trip = (fvsL,eL), ixVar = vIx, absVars = S.empty} : ai
-       let vmB = M.insert vIx (S.singleton vIx, Variable vIx) vm
-       (fvsB,bseB) <- expE aiB vmB eBody
-       let (bsB,eB) = bseB
+           vmB = M.insert vIx (S.singleton vIx, Variable vIx) vm
+       (fvsB, (bsB, eB)) <- expE aiB vmB eBody
        return (fvsL `S.union` (fvsB S.\\ S.singleton vIx),
                (bsL ++ shiftBIs bsB,
                 App op t [eL, AIn r1 $ Lambda vIx eB]))
@@ -174,20 +159,18 @@ eu ai vm (App Condition t (e:es))
   = do fvbse0 <- expE [] vm e
        fvbseR <- mapM (expE ai vm) es
        let fvbses = fvbse0 : fvbseR
-       let (fvss,bses) = unzip fvbses
-       let (bss,es1) = unzip bses
+           (fvss, bses) = unzip fvbses
+           (bss, es1) = unzip bses
        return (S.unions fvss, (concat bss, App Condition t es1))
 eu ai vm (App op t es)
   = do fvbses <- mapM (expE ai vm) es
        let (fvss,bses) = unzip fvbses
-       let (bss,es1) = unzip bses
+           (bss, es1) = unzip bses
        return (S.unions fvss, (concat bss, App op t es1))
 eu ai vm (Lambda v e)
   = do let vs = S.singleton v
        (fvs,bse) <- expE (AbsI{absVars = vs} : ai) (M.insert v (vs, Variable v) vm) e
        return (fvs S.\\ vs, (shiftBIs $ fst bse, Lambda v $ snd bse))
-
-loopCost = 10
 
 simpleExp ai vm e = simpleArrRef e || expCost ai vm e <= 2
 
@@ -221,4 +204,3 @@ simpleArrRef _ = False
 
 disjoint :: Ord a => S.Set a -> S.Set a -> Bool
 disjoint xs ys = S.null $ S.intersection xs ys
-
