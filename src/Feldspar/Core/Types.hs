@@ -794,7 +794,7 @@ class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a), TypeF a) => Ty
     toTarget :: BitWidth n -> a -> TargetType n a
 
 instance Type ()      where typeRep = UnitType;          sizeOf _ = AnySize;      toTarget _ = id
-instance Type Bool    where typeRep = BoolType;          sizeOf _ = AnySize;      toTarget _ = id
+instance Type Bool    where typeRep = BoolType;          sizeOf = singletonRange; toTarget _ = id
 instance Type Word8   where typeRep = IntType U N8;      sizeOf = singletonRange; toTarget _ = id
 instance Type Int8    where typeRep = IntType S N8;      sizeOf = singletonRange; toTarget _ = id
 instance Type Word16  where typeRep = IntType U N16;     sizeOf = singletonRange; toTarget _ = id
@@ -1302,7 +1302,7 @@ instance Lattice AnySize
 
 type family Size a where
   Size ()              = AnySize
-  Size Bool            = AnySize
+  Size Bool            = Range Bool
   Size Word8           = Range Word8
   Size Int8            = Range Int8
   Size Word16          = Range Word16

@@ -703,8 +703,8 @@ spA vm (_ :& Operator            When :@ a :@ b)
 
 -- | Support functions
 
-spB2I :: Type b => Op (Bool -> b) -> a -> Size b
-spB2I op _ = rangeToSize (resultType op) $ range 0 1
+spB2I :: Type b => Op (Bool -> b) -> Range Bool -> Size b
+spB2I op r = rangeToSize (resultType op) $ mapMonotonic (toInteger . fromEnum) r
 
 spI2N :: (Type b, Integral a) => Op (a -> b) -> Range a -> Size b
 spI2N op r = rangeToSize (resultType op) $ mapMonotonic toInteger r

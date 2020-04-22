@@ -131,8 +131,6 @@ showAExpr :: Int -> AExpr a -> String -> String
 showAExpr n (i :& (e :: Expr (Full a))) r = '{':inf ++ "} " ++ showExpr n e r
   where inf = show (infoSize i) ++ " : " ++ show (typeRepF :: TypeRep a)
 
-type LiteralType a = (Hashable a, Type a)
-
 {- | The main expression type.
      Applications always have an operator at the left end, and are never annotated.
 
@@ -140,7 +138,7 @@ type LiteralType a = (Hashable a, Type a)
      the form 'Full t' for some 't'.
 -}
 data Expr a where
-  Literal  :: LiteralType a          => a -> Expr (Full a)
+  Literal  ::(Hashable a, Type a)    => a -> Expr (Full a)
   Operator ::                           Op a -> Expr a
   Variable ::                           Var a -> Expr (Full a)
   (:@)     :: TypeF a                => Expr (a -> b) -> AExpr a -> Expr b
