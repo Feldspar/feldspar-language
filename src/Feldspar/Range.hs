@@ -320,8 +320,7 @@ rangeLessEq (Range _ u1) (Range l2 _) = u1 <= l2
 
 -- | Implements 'fromInteger' as a 'singletonRange', and implements correct
 -- range propagation for arithmetic operations.
-instance (Bounded a, Integral a, FiniteBits a,
-          Num (UnsignedRep a), Bits (UnsignedRep a)) => Num (Range a)
+instance (Bounded a, Integral a, FiniteBits a) => Num (Range a)
   where
     fromInteger = singletonRange . fromInteger
     abs         = rangeAbs
@@ -453,14 +452,12 @@ rangeSubSat r1 r2 = range
     (subSat (upperBound r1) (lowerBound r2))
 
 -- | Propagates range information through multiplication
-rangeMul :: (Bounded a, Integral a, FiniteBits a, Num (UnsignedRep a),
-             Bits (UnsignedRep a))
+rangeMul :: (Bounded a, Integral a, FiniteBits a)
          => Range a -> Range a -> Range a
 rangeMul = handleSign rangeMulUnsigned rangeMulSigned
 
 -- | Signed case for 'rangeMul'.
-rangeMulSigned :: forall a . (Bounded a, Integral a, FiniteBits a,
-                              Num (UnsignedRep a), Bits (UnsignedRep a))
+rangeMulSigned :: forall a . (Bounded a, Integral a, FiniteBits a)
                => Range a -> Range a -> Range a
 rangeMulSigned r1 r2
     | r1 == singletonRange 0 || r2 == singletonRange 0 = singletonRange 0
@@ -478,8 +475,7 @@ rangeMulSigned r1 r2
         b4 = upperBound r1 * upperBound r2
 
 -- | Unsigned case for 'rangeMul'.
-rangeMulUnsigned :: forall a . (Bounded a, Integral a, FiniteBits a,
-                                Num (UnsignedRep a), Bits (UnsignedRep a))
+rangeMulUnsigned :: forall a . (Bounded a, Ord a, Num a, FiniteBits a)
                  => Range a -> Range a -> Range a
 rangeMulUnsigned r1 r2
     | bits (upperBound r1) + bits (upperBound r2)
@@ -488,22 +484,16 @@ rangeMulUnsigned r1 r2
     | otherwise = universal
 
 -- | Returns the position of the highest bit set to 1. Counting starts at 1.
-bits :: forall b. (Integral b, Bits (UnsignedRep b),
-                   Num (UnsignedRep b)) => b -> Int
-bits b = loop (unsigned b) 0
-  where
-    loop 0 c = c
-    loop n c = loop (n `shiftR` 1) (c+1)
+bits :: forall a . FiniteBits a => a -> Int
+bits b = finiteBitSize (undefined :: a) - countLeadingZeros b
 
 -- | Propagates range information through exponentiation.
-rangeExp :: (Bounded a, Ord a, Integral a, FiniteBits a,
-             Num (UnsignedRep a), Bits (UnsignedRep a))
+rangeExp :: (Bounded a, Integral a, FiniteBits a)
          => Range a -> Range a -> Range a
 rangeExp = handleSign rangeExpUnsigned rangeExpSigned
 
 -- | Unsigned case for 'rangeExp'.
-rangeExpUnsigned :: (Bounded a, Ord a, Integral a, FiniteBits a,
-                     Num (UnsignedRep a), Bits (UnsignedRep a))
+rangeExpUnsigned :: (Bounded a, Integral a, FiniteBits a)
                  => Range a -> Range a -> Range a
 rangeExpUnsigned m@(Range l1 u1) e@(Range l2 u2)
     | toInteger (bits u1) * toInteger u2 > toInteger (finiteBitSize l1) + 1 = universal
@@ -735,7 +725,7 @@ rangeShiftRUUnsigned (Range l1 u1) (Range l2 u2)
 
 -- | This is a replacement fror Haskell's shiftR. If we carelessly use
 --   Haskell's variant then we will get left shifts for very large shift values.
-correctShiftRU :: (Num a, Bits a, Ord b, Integral b) => a -> b -> a
+correctShiftRU :: (Num a, Bits a, Integral b) => a -> b -> a
 correctShiftRU _ i | i > fromIntegral (maxBound :: Int) = 0
 correctShiftRU a i = shiftR a (fromIntegral i)
 
