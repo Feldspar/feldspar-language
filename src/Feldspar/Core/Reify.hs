@@ -173,7 +173,7 @@ instance (Monad m, Applicative m) => Applicative (Mon m)
 
 -- | Convert an 'Op' to a function that builds the corresponding syntax tree
 sugarSym :: SugarF a => Op (SugarT a) -> a
-sugarSym = sugarF . op2f
+sugarSym op = sugarF ((M.empty, Operator op), 0)
 
 -- | Mark an application as full rather than partial
 newtype FFF a = FFF a
@@ -182,9 +182,6 @@ newtype FFF a = FFF a
 --   overloading in sugarSym
 unFull :: FFF a -> a
 unFull (FFF x) = x
-
-op2f :: Op a -> (RCSExpr a, Int)
-op2f op = ((M.empty, Operator op), 0)
 
 type RCSExpr a = CSEExpr (Expr a)
 
