@@ -93,7 +93,7 @@ import Data.Hash (Hashable)
 import qualified Feldspar.Core.Reify as Syntactic
 import qualified Feldspar.Core.Render as Syntactic
 import Feldspar.Core.Reify hiding (desugar, sugar)
-import Feldspar.Core.Eval (evalBind)
+import qualified Feldspar.Core.Eval as E
 import Feldspar.Core.Render (StringTree, render)
 
 import Feldspar.Range
@@ -172,7 +172,8 @@ drawDecor :: Syntactic a => a -> IO ()
 drawDecor = Syntactic.drawDecorWith show . reifyFeld defaultFeldOpts N32
 
 eval :: Syntactic a => a -> Internal a
-eval = evalBind . reifyFeld defaultFeldOpts N32
+eval = E.eval . unASTF defaultFeldOpts
+              . reifyFeld defaultFeldOpts N32
 
 evalTarget
     :: ( Syntactic a
@@ -180,7 +181,8 @@ evalTarget
        , BoundedInt (GenericInt S n)
        )
     => BitWidth n -> a -> Internal a
-evalTarget n = evalBind . reifyFeld defaultFeldOpts n
+evalTarget n = E.eval . unASTF defaultFeldOpts
+                      . reifyFeld defaultFeldOpts n
   -- TODO This doesn't work yet, because 'targetSpecialization' is not implemented
 
 desugar :: Syntactic a => a -> Data (Internal a)
