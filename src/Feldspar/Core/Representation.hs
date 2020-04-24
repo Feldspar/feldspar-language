@@ -107,12 +107,12 @@ type a :-> b = a -> b
 
 -- | The type of information, for instance range information. Currently only size info.
 data Info a where
-  Info :: (Show (Size a), Lattice (Size a)) => {infoSize :: Size a} -> Info a
+  Info :: {infoSize :: Size a} -> Info a
 
-instance Eq (Info a) where
+instance Eq (Size a) => Eq (Info a) where
   Info x == Info y = x == y
 
-instance Show (Info a) where
+instance Show (Size a) => Show (Info a) where
   show (Info x) = show x
 
 -- | Annotated expression, that is, an expression together with extra information,
@@ -470,10 +470,10 @@ data CBind where
   CBind :: Var a -> AExpr a -> CBind
 
 instance Eq CBind where
-  CBind (v1@(Var n1 _) :: Var a) e1 == CBind (v2@(Var n2 _) :: Var b) e2
+  CBind (v1@Var{} :: Var a) e1 == CBind (v2@Var{} :: Var b) e2
       = case eqT :: Maybe (a :~: b) of
           Nothing -> False
-          Just Refl -> n1 == n2 && e1 == e2
+          Just Refl -> v1 == v2 && e1 == e2
 
 instance Show CBind where
   show (CBind v e) = show v ++ " = " ++ show e
