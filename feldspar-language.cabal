@@ -42,7 +42,6 @@ library
     Feldspar.Core.Language
     Feldspar.Core.NestedTuples
     Feldspar.Core.Reify
-    Feldspar.Core.Render
     Feldspar.Core.Representation
     Feldspar.Core.Semantics
     Feldspar.Core.SizeProp

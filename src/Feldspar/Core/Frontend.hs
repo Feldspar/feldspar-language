@@ -87,21 +87,21 @@ import Prelude as P
 import Test.QuickCheck
 
 import Data.Patch
+import Data.Tree (Tree)
 import Data.Tree.View
 import Data.Hash (Hashable)
 
 import qualified Feldspar.Core.Reify as Syntactic
-import qualified Feldspar.Core.Render as Syntactic
 import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
-import Feldspar.Core.Render (StringTree, render)
 
 import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation (FeldOpts, defaultFeldOpts)
-import Feldspar.Core.Middleend.FromTyped (untype)
-import Feldspar.Core.UntypedRepresentation (VarId, stringTree)
+import Feldspar.Core.Middleend.FromTyped (untype, untypeUnOpt, untypeDecor)
+import Feldspar.Core.UntypedRepresentation (VarId, stringTree, stringTreeExp)
 import Feldspar.Core.Language
+import Feldspar.ValueInfo (ValueInfo)
 
 reifyFeld :: Syntactic a
           => FeldOpts
@@ -116,6 +116,15 @@ reifyFeldUnOpt :: Syntactic a
                 -> a
                 -> ASTF (Internal a)
 reifyFeldUnOpt = reifyFeld
+
+stringTreeASTF :: ASTF a -> Tree String
+stringTreeASTF = stringTree . untypeUnOpt defaultFeldOpts
+
+class StringTree (a :: * -> *) where
+
+showDecorWith :: (ValueInfo -> String) -> ASTF a -> String
+showDecorWith f = showTree . stringTreeExp g . untypeDecor defaultFeldOpts
+  where g x = " in " ++ f x
 
 showExpr :: Syntactic a => a -> String
 showExpr = render . reifyFeld defaultFeldOpts N32
@@ -150,26 +159,29 @@ printExprUnOpt = print . reifyFeldUnOpt defaultFeldOpts N32
 
 -- | Show the syntax tree using Unicode art
 showAST :: Syntactic a => a -> String
-showAST = Syntactic.showAST . reifyFeld defaultFeldOpts N32
+showAST = showTree . stringTreeASTF . reifyFeld defaultFeldOpts N32
 
 -- | Draw the syntax tree on the terminal using Unicode art
 drawAST :: Syntactic a => a -> IO ()
-drawAST = Syntactic.drawAST . reifyFeld defaultFeldOpts N32
+drawAST = putStrLn . showAST . reifyFeld defaultFeldOpts N32
 
 drawASTUnOpt :: Syntactic a => a -> IO ()
-drawASTUnOpt = Syntactic.drawAST . reifyFeldUnOpt defaultFeldOpts N32
+drawASTUnOpt = putStrLn . showAST . reifyFeldUnOpt defaultFeldOpts N32
 
 -- | Write the syntax tree to an HTML file with foldable nodes
 writeHtmlAST :: Syntactic a => FilePath -> a -> IO ()
-writeHtmlAST file = Syntactic.writeHtmlAST file . reifyFeld defaultFeldOpts N32
+writeHtmlAST file = writeHtmlTree Nothing file
+                  . fmap (\n -> NodeInfo InitiallyExpanded n "")
+                  . stringTreeASTF
+                  . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
 showDecor :: Syntactic a => a -> String
-showDecor = Syntactic.showDecorWith show . reifyFeld defaultFeldOpts N32
+showDecor = showDecorWith show . reifyFeld defaultFeldOpts N32
 
 -- | Draw a syntax tree decorated with type and size information
 drawDecor :: Syntactic a => a -> IO ()
-drawDecor = Syntactic.drawDecorWith show . reifyFeld defaultFeldOpts N32
+drawDecor = putStrLn . showDecorWith show . reifyFeld defaultFeldOpts N32
 
 eval :: Syntactic a => a -> Internal a
 eval = E.eval . unASTF defaultFeldOpts
