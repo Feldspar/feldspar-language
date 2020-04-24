@@ -772,7 +772,7 @@ instance (Type (Internal a), Type (RTuple (InternalTup b)), Syntactic a, Syntact
          => SyntacticTup (a :* b) where
     type InternalTup (a :* b) = Internal a :* InternalTup b
     desugarTup (x :* xs) = sugarSym2 Cons x xs
-    sugarTup e = sugar (sugarSym1 Car $ Data e) :* sugarTup (sugarSym1 Cdr $ Data e)
+    sugarTup e = sugar (sugarSym1 Car e) :* sugarTup (sugarSym1 Cdr e)
 
 instance SyntacticTup TNil where
     type InternalTup TNil = TNil
@@ -781,8 +781,8 @@ instance SyntacticTup TNil where
 
 instance SyntacticTup a => Syntactic (RTuple a) where
     type Internal (RTuple a) = RTuple (InternalTup a)
-    desugar t = desugarTup t
-    sugar e = sugarTup e
+    desugar = desugarTup
+    sugar = sugarTup
 
 car :: (Syntax a, SyntacticTup b, Type (RTuple (InternalTup b)), Typeable (InternalTup b))
     => RTuple (a :* b) -> a
