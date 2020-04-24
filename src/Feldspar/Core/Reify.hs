@@ -45,14 +45,10 @@ module Feldspar.Core.Reify
        , resugar
        , Data(..)
        , Mon(..)
-       , CSEExpr(..)
-       , (@@)
-       , SugarF(..)
+       , SugarF
        , sugarSym
-       , op2f
        , unFull
        , value
-       , full
        ) where
 
 import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..),
@@ -175,14 +171,6 @@ instance (Monad m, Applicative m) => Applicative (Mon m)
     pure  = return
     (<*>) = ap
 
-infixl 5 @@
-
--- | Construct an application
-(@@) :: Syntactic a
-     => (CSEExpr (Expr (Internal a -> b)), Int) -> a -> (CSEExpr (Expr b), Int)
-(cf,i) @@ e = go $ desugar e
-  where go (ASTF ce j) = (applyCSE cf ce, max i j)
-
 -- | Convert an 'Op' to a function that builds the corresponding syntax tree
 sugarSym :: SugarF a => Op (SugarT a) -> a
 sugarSym = sugarF . op2f
@@ -207,7 +195,8 @@ class SugarF a where
 
 instance (Syntactic b, SugarF c) => SugarF (b -> c) where
   type SugarT (b -> c) = Internal b -> SugarT c
-  sugarF f = sugarF . (@@) f
+  sugarF f@(cf,i) = sugarF . go . desugar
+    where go (ASTF ce j) = (applyCSE cf ce, max i j)
 
 instance (Syntactic b, TypeF (Internal b)) => SugarF (FFF b) where
   type SugarT (FFF b) = Internal b
