@@ -207,11 +207,11 @@ class SugarF a where
 
 instance (Syntactic b, SugarF c) => SugarF (b -> c) where
   type SugarT (b -> c) = Internal b -> SugarT c
-  sugarF f = \ e -> sugarF $ f @@ e
+  sugarF f = sugarF . (@@) f
 
 instance (Syntactic b, TypeF (Internal b)) => SugarF (FFF b) where
   type SugarT (FFF b) = Internal b
-  sugarF (~(m, e),i) = FFF $ sugar $ ASTF (flattenCSE (m, Info top :& e)) i
+  sugarF = FFF . sugar . full
 
 -------------------------------------------------
 -- Converting Haskell values to Feldspar
@@ -228,7 +228,7 @@ type CSEExpr e = (CSEMap, e)
 type CExpr a = CSEExpr (AExpr a)
 
 -- | Convert a CSE map, an Expr and an Int to an ASTF
-full :: T.Type b => (CSEExpr (Expr b), Int) -> ASTF b
+full :: TypeF b => (CSEExpr (Expr b), Int) -> ASTF b
 full (~(m, e), i) = ASTF (flattenCSE (m, Info top :& e)) i
 
 flattenCSE :: CExpr a -> CExpr a
