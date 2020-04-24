@@ -1044,7 +1044,7 @@ instance (Syntax a, Syntax b) => Syntactic (a, b) where
   type Internal (a, b) = (Internal a, Internal b)
   sugar e = (sugar $ sugarSym1 Sel1 e,
              sugar $ sugarSym1 Sel2 e)
-  desugar (x,y) = full $ op2f Tup2 @@ x @@ y
+  desugar (x,y) = unFull $ sugarSym Tup2 x y
 
 instance ( Syntax a, Syntax b, Syntax c )
       => Syntactic (a, b, c)
@@ -1056,7 +1056,7 @@ instance ( Syntax a, Syntax b, Syntax c )
               , sugar $ sugarSym1 Sel3 e
               )
     desugar (a, b, c)
-          = full $ op2f Tup3 @@ a @@ b @@ c
+          = unFull $ sugarSym Tup3 a b c
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d )
       => Syntactic (a, b, c, d)
@@ -1069,7 +1069,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d )
               , sugar $ sugarSym1 Sel4 e
               )
     desugar (a, b, c, d)
-          = full $ op2f Tup4 @@ a @@ b @@ c @@ d
+          = unFull $ sugarSym Tup4 a b c d
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e
@@ -1087,7 +1087,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel5 e
               )
     desugar (a, b, c, d, e)
-          = full $ op2f Tup5 @@ a @@ b @@ c @@ d @@ e
+          = unFull $ sugarSym Tup5 a b c d e
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f
@@ -1106,7 +1106,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel6 e
               )
     desugar (a, b, c, d, e, f)
-          = full $ op2f Tup6 @@ a @@ b @@ c @@ d @@ e @@ f
+          = unFull $ sugarSym Tup6 a b c d e f
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g
@@ -1126,7 +1126,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel7 e
               )
     desugar (a, b, c, d, e, f, g)
-          = full $ op2f Tup7 @@ a @@ b @@ c @@ d @@ e @@ f @@ g
+          = unFull $ sugarSym Tup7 a b c d e f g
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1147,7 +1147,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel8 e
               )
     desugar (a, b, c, d, e, f, g, h)
-          = full $ op2f Tup8 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h
+          = unFull $ sugarSym Tup8 a b c d e f g h
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1171,7 +1171,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel9 e
               )
     desugar (a, b, c, d, e, f, g, h, i)
-          = full $ op2f Tup9 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i
+          = unFull $ sugarSym Tup9 a b c d e f g h i
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1196,7 +1196,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel10 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j)
-          = full $ op2f Tup10 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
+          = unFull $ sugarSym Tup10 a b c d e f g h i j
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1222,8 +1222,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel11 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k)
-          = full $ op2f Tup11 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
-                              @@ k
+          = unFull $ sugarSym Tup11 a b c d e f g h i j k
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1250,8 +1249,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel12 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l)
-          = full $ op2f Tup12 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
-                              @@ k @@ l
+          = unFull $ sugarSym Tup12 a b c d e f g h i j k l
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1281,8 +1279,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel13 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l, m)
-          = full $ op2f Tup13 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
-                              @@ k @@ l @@ m
+          = unFull $ sugarSym Tup13 a b c d e f g h i j k l m
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1313,8 +1310,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel14 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
-          = full $ op2f Tup14 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
-                              @@ k @@ l @@ m @@ n
+          = unFull $ sugarSym Tup14 a b c d e f g h i j k l m n
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1346,8 +1342,7 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
               , sugar $ sugarSym1 Sel15 e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
-          = full $ op2f Tup15 @@ a @@ b @@ c @@ d @@ e @@ f @@ g @@ h @@ i @@ j
-                              @@ k @@ l @@ m @@ n @@ o
+          = unFull $ sugarSym Tup15 a b c d e f g h i j k l m n o
 
 -------------------------------------------------
 -- Support functions for monads
