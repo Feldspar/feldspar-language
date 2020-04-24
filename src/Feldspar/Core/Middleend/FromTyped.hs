@@ -50,7 +50,7 @@ import Feldspar.Core.Middleend.Expand
 import Feldspar.Core.Middleend.UniqueVars
 import Feldspar.Core.Middleend.PassManager
 import qualified Feldspar.Core.UntypedRepresentation as U
-import Feldspar.Core.Reify (ASTF(..), unASTF)
+import Feldspar.Core.Reify (ASTF, unASTF, render)
 import Feldspar.Core.Types (TypeRep(..), typeRep, defaultSize, TypeF(..),
                             (:>)(..))
 import qualified Feldspar.Core.Types as T
@@ -585,7 +585,7 @@ instance Pretty (AExpr a) where
   pretty = show
 
 instance Pretty (ASTF a) where
-  pretty = pretty . unASTF ()
+  pretty = render
 
 -- | Front-end driver
 frontend :: PassCtrl FrontendPass -> FeldOpts -> ASTF a -> ([String], Maybe UntypedFeld)
