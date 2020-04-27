@@ -36,7 +36,7 @@ module Feldspar.Repa where
 
 import qualified Prelude as P
 
-import Feldspar.Core.Reify (ASTF, Syntactic(..), resugar)
+import Feldspar.Core.Reify (Syntactic(..), resugar)
 import Feldspar hiding (desugar,sugar,resugar)
 
 -- | * Shapes
