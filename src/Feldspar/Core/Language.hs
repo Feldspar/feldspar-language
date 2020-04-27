@@ -44,7 +44,6 @@ import Feldspar.Core.Types as T
 import Feldspar.Core.NestedTuples
 
 import Feldspar.Range
-import Feldspar.Lattice (top)
 import Feldspar.Core.Collection
 
 import Control.Monad.Cont (runCont, cont)
@@ -577,7 +576,7 @@ true = value True
 instance Syntactic ()
   where
     type Internal () = ()
-    desugar _ = ASTF (M.empty, Info top :& Literal ()) 0
+    desugar _ = ASTF (M.empty, Info (sizeOf ()) :& Literal ()) 0
     sugar _ = ()
 
 --------------------------------------------------
