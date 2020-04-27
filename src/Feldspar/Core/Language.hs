@@ -390,12 +390,39 @@ instance Eq Int32
 instance Eq Int64
 instance Eq IntN
 
-instance (Eq a, Eq b)                               => Eq (a,b)
-instance (Eq a, Eq b, Eq c)                         => Eq (a,b,c)
-instance (Eq a, Eq b, Eq c, Eq d)                   => Eq (a,b,c,d)
-instance (Eq a, Eq b, Eq c, Eq d, Eq e)             => Eq (a,b,c,d,e)
-instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f)       => Eq (a,b,c,d,e,f)
-instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g) => Eq (a,b,c,d,e,f,g)
+instance (Eq a, Eq b)
+        => Eq (a, b)
+instance (Eq a, Eq b, Eq c)
+        => Eq (a, b, c)
+instance (Eq a, Eq b, Eq c, Eq d)
+        => Eq (a, b, c, d)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e)
+        => Eq (a, b ,c, d, e)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f)
+        => Eq (a, b, c, d, e, f)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g)
+        => Eq (a, b, c, d, e, f, g)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h)
+        => Eq (a, b, c, d, e, f, g, h)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i)
+        => Eq (a, b, c, d, e, f, g, h, i)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i, Eq j)
+        => Eq (a, b, c, d, e, f, g, h, i, j)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i, Eq j,
+          Eq k)
+        => Eq (a, b, c, d, e, f, g, h, i, j, k)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i, Eq j,
+          Eq k, Eq l)
+        => Eq (a, b, c, d, e, f, g, h, i, j, k, l)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i, Eq j,
+          Eq k, Eq l, Eq m)
+        => Eq (a, b, c, d, e, f, g, h, i, j, k, l, m)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i, Eq j,
+          Eq k, Eq l, Eq m, Eq n)
+        => Eq (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i, Eq j,
+          Eq k, Eq l, Eq m, Eq n, Eq o)
+        => Eq (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
 
 instance (Eq a, P.RealFloat a) => Eq (Complex a)
 
