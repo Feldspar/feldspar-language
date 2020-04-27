@@ -38,7 +38,7 @@ import Feldspar.Core.Types (Size, Type, (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.Tuple
 import Feldspar.Range
-import Feldspar.Lattice (Lattice, universal, top, bot, (\/), (/\))
+import Feldspar.Lattice (Lattice, top, bot, (\/), (/\))
 
 import Data.Typeable (Typeable)
 import qualified Data.Map as M (empty)
@@ -711,7 +711,7 @@ spI2N op r = rangeToSize (resultType op) $ mapMonotonic toInteger r
 
 rangeToSize :: Lattice (Size a) => T.TypeRep a -> Range Integer -> Size a
 rangeToSize (T.IntType _ _) r = rangeProp r
-rangeToSize _               _ = universal
+rangeToSize _               _ = top
 
 rangeProp :: forall a . (Bounded a, Integral a) => Range Integer -> Range a
 rangeProp (Range l u)
