@@ -600,12 +600,6 @@ false = value False
 true :: Data Bool
 true = value True
 
-instance Syntactic ()
-  where
-    type Internal () = ()
-    desugar _ = ASTF (M.empty, Info (sizeOf ()) :& Literal ()) 0
-    sugar _ = ()
-
 --------------------------------------------------
 -- Logic.hs
 --------------------------------------------------

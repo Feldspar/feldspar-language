@@ -39,7 +39,7 @@
 module Feldspar.Core.Reify
        ( Syntactic(..)
        , Syntax(..)
-       , ASTF(..)
+       , ASTF
        , unASTF
        , render
        , resugar
@@ -120,6 +120,12 @@ instance (Syntactic a, T.Type (Internal a)) => Syntax a
 --------------------------------------------------------------------------------
 -- * Front end
 --------------------------------------------------------------------------------
+
+instance Syntactic ()
+  where
+    type Internal () = ()
+    desugar _ = ASTF (M.empty, Info (T.sizeOf ()) :& Literal ()) 0
+    sugar _ = ()
 
 newtype Data a = Data { unData :: ASTF a }
 
