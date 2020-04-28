@@ -43,6 +43,7 @@ module Feldspar.ValueInfo where
 import Feldspar.Range
 import Feldspar.Lattice ((/\), (\/))
 
+import Data.Bits
 import Data.Int
 import Data.Word
 
@@ -143,15 +144,13 @@ lubVI = bop rangeUnion
 glbVI :: ValueInfo -> ValueInfo -> ValueInfo
 glbVI = bop rangeIntersection
 
--- | Setting lower and upper bounds
+-- | Setting lower bound
 setLB :: Integral a => a -> ValueInfo -> ValueInfo
 setLB l = uop (\ r -> r{lowerBound = fromIntegral l})
-setUB :: Integral a => a -> ValueInfo -> ValueInfo
-setUB l = uop (\ r -> r{upperBound = fromIntegral l})
 
 -- | Apply a binary operation to two ValueInfos
---   BoundedInt is needed to derive 'Num (Range a)'.
-bop :: (forall a . BoundedInt a => Range a -> Range a -> Range a) -> ValueInfo -> ValueInfo -> ValueInfo
+bop :: (forall a . (Bounded a, Integral a, FiniteBits a) => Range a -> Range a -> Range a)
+    -> ValueInfo -> ValueInfo -> ValueInfo
 bop op (VIBool r1)   (VIBool r2)   = VIBool    (op r1 r2)
 bop op (VIWord8 r1)  (VIWord8 r2)  = VIWord8   (op r1 r2)
 bop op (VIInt8 r1)   (VIInt8 r2)   = VIInt8    (op r1 r2)
@@ -169,8 +168,7 @@ bop op (VIProd l1)   (VIProd l2)   = VIProd    (zipWith (bop op) l1 l2)
 bop _ _ _ = error "ValueInfo.hs:bop: mismatched patttern."
 
 -- | Apply a unary operation to a ValueInfo
---   BoundedInt is needed to derive 'Num (Range a)'.
-uop :: (forall a . BoundedInt a => Range a -> Range a) -> ValueInfo -> ValueInfo
+uop :: (forall a . Integral a => Range a -> Range a) -> ValueInfo -> ValueInfo
 uop op (VIBool r)                 = VIBool    (op r)
 uop op (VIWord8 r)                = VIWord8   (op r)
 uop op (VIInt8 r)                 = VIInt8    (op r)
