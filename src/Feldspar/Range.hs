@@ -696,15 +696,13 @@ rangeXorUnsignedAccurate (Range a b) (Range c d) =
 
 -- |
 -- | Propagating range information through 'shiftLU'.
-rangeShiftLU :: (Bounded a, Integral a, FiniteBits a, Integral b,
-                 Num (UnsignedRep a), Bits (UnsignedRep a))
+rangeShiftLU :: (Bounded a, Integral a, FiniteBits a, Integral b)
              => Range a -> Range b -> Range a
 rangeShiftLU = handleSign rangeShiftLUUnsigned (\_ _ -> universal)
 -- TODO: improve accuracy
 
 -- | Unsigned case for 'rangeShiftLU'.
-rangeShiftLUUnsigned :: (Bounded a, Integral a, FiniteBits a, Integral b,
-                         Num (UnsignedRep a), Bits (UnsignedRep a))
+rangeShiftLUUnsigned :: (Bounded a, Integral a, FiniteBits a, Integral b)
                      => Range a -> Range b -> Range a
 rangeShiftLUUnsigned (Range _ u1) (Range _ u2)
     | toInteger (bits u1) + fromIntegral u2 > toInteger (finiteBitSize u1) = universal
@@ -718,7 +716,7 @@ rangeShiftRU = handleSign rangeShiftRUUnsigned (\_ _ -> universal)
 -- TODO: improve accuracy
 
 -- | Unsigned case for 'rangeShiftRU'.
-rangeShiftRUUnsigned :: (Num a, Bits a, Ord a, Ord b, Integral b)
+rangeShiftRUUnsigned :: (Num a, Bits a, Ord a, Integral b)
                      => Range a -> Range b -> Range a
 rangeShiftRUUnsigned (Range l1 u1) (Range l2 u2)
     = range (correctShiftRU l1 u2) (correctShiftRU u1 l2)
