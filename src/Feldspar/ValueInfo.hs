@@ -149,7 +149,7 @@ setLB :: Integral a => a -> ValueInfo -> ValueInfo
 setLB l = uop (\ r -> r{lowerBound = fromIntegral l})
 
 -- | Apply a binary operation to two ValueInfos
-bop :: (forall a . (Bounded a, Integral a, FiniteBits a) => Range a -> Range a -> Range a)
+bop :: (forall a . (Bounded a, Ord a, Num a, FiniteBits a) => Range a -> Range a -> Range a)
     -> ValueInfo -> ValueInfo -> ValueInfo
 bop op (VIBool r1)   (VIBool r2)   = VIBool    (op r1 r2)
 bop op (VIWord8 r1)  (VIWord8 r2)  = VIWord8   (op r1 r2)
