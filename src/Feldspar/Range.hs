@@ -320,7 +320,7 @@ rangeLessEq (Range _ u1) (Range l2 _) = u1 <= l2
 
 -- | Implements 'fromInteger' as a 'singletonRange', and implements correct
 -- range propagation for arithmetic operations.
-instance (Bounded a, Integral a, FiniteBits a) => Num (Range a)
+instance (Bounded a, Ord a, Num a, FiniteBits a) => Num (Range a)
   where
     fromInteger = singletonRange . fromInteger
     abs         = rangeAbs
@@ -452,12 +452,12 @@ rangeSubSat r1 r2 = range
     (subSat (upperBound r1) (lowerBound r2))
 
 -- | Propagates range information through multiplication
-rangeMul :: (Bounded a, Integral a, FiniteBits a)
+rangeMul :: (Bounded a, Ord a, Num a, FiniteBits a)
          => Range a -> Range a -> Range a
 rangeMul = handleSign rangeMulUnsigned rangeMulSigned
 
 -- | Signed case for 'rangeMul'.
-rangeMulSigned :: forall a . (Bounded a, Integral a, FiniteBits a)
+rangeMulSigned :: forall a . (Bounded a, Ord a, Num a, FiniteBits a)
                => Range a -> Range a -> Range a
 rangeMulSigned r1 r2
     | r1 == singletonRange 0 || r2 == singletonRange 0 = singletonRange 0
@@ -702,7 +702,7 @@ rangeShiftLU = handleSign rangeShiftLUUnsigned (\_ _ -> universal)
 -- TODO: improve accuracy
 
 -- | Unsigned case for 'rangeShiftLU'.
-rangeShiftLUUnsigned :: (Bounded a, Integral a, FiniteBits a, Integral b)
+rangeShiftLUUnsigned :: (Bounded a, Ord a, Num a, FiniteBits a, Integral b)
                      => Range a -> Range b -> Range a
 rangeShiftLUUnsigned (Range _ u1) (Range _ u2)
     | toInteger (bits u1) + fromIntegral u2 > toInteger (finiteBitSize u1) = universal
