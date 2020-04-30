@@ -200,11 +200,9 @@ negativeRange
   | isSigned (undefined::a) = Range minBound (-1)
   | otherwise               = emptyRange
 
--- | The size of a range. Beware that the size may not always be representable
---   for signed types. For instance
---   @rangeSize (range minBound maxBound) :: Int@ gives a nonsense answer.
-rangeSize :: Num a => Range a -> a
-rangeSize (Range l u) = u-l+1
+-- | The size of a range.
+rangeSize :: Enum a => Range a -> Int
+rangeSize (Range l u) = fromEnum u - fromEnum l + fromEnum 1
 
 -- | Checks if the range is empty
 isEmpty :: Ord a => Range a -> Bool
