@@ -190,7 +190,8 @@ disjointRanges = do
     NonEmptyRange r <- arbitrary
     u1 <- choose (minBound,lowerBound r)
     l1 <- choose (minBound,u1)
-    l2 <- choose (upperBound r,maxBound)
+    -- The if avoids returning (Range minBound minBound, Range minBound x).
+    l2 <- choose (if u1 == upperBound r then maxBound else upperBound r,maxBound)
     u2 <- choose (l2,maxBound)
     return (Range l1 u1, Range l2 u2)
 
