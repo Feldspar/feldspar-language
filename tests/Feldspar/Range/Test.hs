@@ -59,11 +59,15 @@ tests = [ testGroup "Range Int"    $ typedTestsSigned   "Int"    (undefined :: I
         , testGroup "Range Int8"   $ typedTestsSigned   "Int8"   (undefined :: Int8)
         , testGroup "Range Word8"  $ typedTestsUnsigned "Word8"  (undefined :: Word8)
         , testGroup "Range Word32" $ typedTestsUnsigned "Word32" (undefined :: Word32)
+        , testGroup "Range Bool"   $ typedTestsEnum     "Bool"   (undefined :: Bool)
         , testGroup "Range Int8, Range Int8"   $ typedTestsTwo "Int8, Int8"   (undefined :: Int8)  (undefined :: Int8)
         , testGroup "Range Word8, Range Word8" $ typedTestsTwo "Word8, Word8" (undefined :: Word8) (undefined :: Word8)
         ]
 
-typedTests name typ =
+typedTests name typ = typedTestsEnum name typ ++ typedTestsNum name typ
+
+-- | Tests where Enum a => Range a.
+typedTestsEnum name typ =
     [ testProperty (unwords ["prop_empty"          , name]) (prop_empty typ)
     , testProperty (unwords ["prop_full"           , name]) (prop_full typ)
     , testProperty (unwords ["prop_isEmpty"        , name]) (prop_isEmpty typ)
@@ -80,12 +84,17 @@ typedTests name typ =
     , testProperty (unwords ["prop_intersect2"     , name]) (prop_intersect2 typ)
     , testProperty (unwords ["prop_intersect3"     , name]) (prop_intersect3 typ)
     , testProperty (unwords ["prop_intersect4"     , name]) (prop_intersect4 typ)
-    , testProperty (unwords ["prop_intersect5"     , name]) (prop_intersect5 typ)
     , testProperty (unwords ["prop_disjoint"       , name]) (prop_disjoint typ)
     , testProperty (unwords ["prop_rangeLess1"     , name]) (prop_rangeLess1 typ)
-    , testProperty (unwords ["prop_rangeLess2"     , name]) (prop_rangeLess2 typ)
     , testProperty (unwords ["prop_rangeLessEq"    , name]) (prop_rangeLessEq typ)
-    , testProperty (unwords ["prop_rangeByRange1"  , name]) (prop_rangeByRange1 typ)
+    , testProperty (unwords ["prop_rangeByRange1"  , name]) (prop_rangeByRange1 typ)]
+
+-- | Tests where Num a => Range a.
+typedTestsNum name typ =
+    [ -- FIXME: Move intersect5, rangeLess2 and rangeByRange2 to typedTestsEnum.
+      --        The tests are here to enable partial test coverage of Bool.
+      testProperty (unwords ["prop_intersect5"     , name]) (prop_intersect5 typ)
+    , testProperty (unwords ["prop_rangeLess2"     , name]) (prop_rangeLess2 typ)
     , testProperty (unwords ["prop_rangeByRange2"  , name]) (prop_rangeByRange2 typ)
     , testProperty (unwords ["prop_fromInteger"    , name]) (prop_fromInteger typ)
     , testProperty (unwords ["prop_abs"            , name]) (prop_abs typ)
@@ -142,12 +151,13 @@ typedTestsTwo name t1 t2 =
 -- * Testing
 --------------------------------------------------------------------------------
 
-instance (Bounded a, Ord a, Num a, Arbitrary a) => Arbitrary (Range a)
+instance (Bounded a, Ord a, Enum a, Arbitrary a) => Arbitrary (Range a)
   where
     arbitrary = do
       [bound1,bound2] <- vectorOf 2 $ oneof
                          [ arbitrary
-                         , elements [minBound,-1,0,1,maxBound]]
+                         , elements $ [minBound,toEnum 0,toEnum 1,maxBound]
+                            ++ [toEnum (-1) | fromEnum (minBound :: a) < 0]]
       frequency
                 [ (10, return $
                      Range (min bound1 bound2) (max bound1 bound2))
@@ -185,7 +195,7 @@ aroundRange x = do
     u <- choose (x,maxBound)
     return $ Range l u
 
-disjointRanges :: (Arbitrary a, Num a, Ord a, Bounded a, Random a) => Gen (Range a, Range a)
+disjointRanges :: (Arbitrary a, Enum a, Ord a, Bounded a, Random a) => Gen (Range a, Range a)
 disjointRanges = do
     NonEmptyRange r <- arbitrary
     u1 <- choose (minBound,lowerBound r)
