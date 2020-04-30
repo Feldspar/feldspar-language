@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE ConstraintKinds #-}
 
@@ -143,7 +142,7 @@ typedTestsTwo name t1 t2 =
 -- * Testing
 --------------------------------------------------------------------------------
 
-instance (BoundedInt a, Arbitrary a) => Arbitrary (Range a)
+instance (Bounded a, Ord a, Num a, Arbitrary a) => Arbitrary (Range a)
   where
     arbitrary = do
       [bound1,bound2] <- vectorOf 2 $ oneof
@@ -197,7 +196,7 @@ disjointRanges = do
 
 prop_disjointGen t = forAll disjointRanges $ \(r1,r2) -> disjoint r1 (r2 `rangeTy`t)
 
-fromRange :: (BoundedInt a, Random a) => Range a -> Gen a
+fromRange :: (Bounded a, Ord a, Random a) => Range a -> Gen a
 fromRange r
     | isEmpty r = error "fromRange: empty range"
     | otherwise = frequency [(1,return (lowerBound r))
@@ -213,7 +212,7 @@ rangeTy r _ = r
 --
 -- Example usage: 'atAllTypes (quickCheck . prop_mul)'
 atAllTypes :: (Monad m) =>
-              (forall t . (Show t, BoundedInt t, Random t, Arbitrary t, Typeable t) =>
+              (forall t . (Show t, Bounded t, Random t, Arbitrary t, Typeable t) =>
                       t -> m a)
                   -> m ()
 atAllTypes test = sequence_ [test (undefined :: Int)
@@ -326,7 +325,7 @@ prop_rangeLessEq t r1 r2 =
 -- ** Propagation
 --------------------------------------------------------------------------------
 
-prop_propagation1 :: (Show t, BoundedInt t, Random t) =>
+prop_propagation1 :: (Show t, Bounded t, Ord t, Num t, FiniteBits t, Random t) =>
                      t -> (forall a . Num a => a -> a) -> Range t -> Property
 prop_propagation1 _ op r =
     not (isEmpty r) ==>
@@ -342,7 +341,7 @@ prop_propagation1 _ op r =
 -- The third argument is a precondition that is satisfied before the test is
 -- run. A good example is to make sure that the second argument is non-zero
 -- when testing division.
-rangePropagationSafetyPre :: (Show t, Random t, BoundedInt t, BoundedInt a) =>
+rangePropagationSafetyPre :: (Show t, Bounded t, Random t, Ord t, Ord a) =>
     t ->
     (t -> t -> a) -> (Range t -> Range t -> Range a) ->
     (t -> t -> Bool) ->
@@ -355,7 +354,7 @@ rangePropagationSafetyPre _ op rop pre r1 r2 =
         op v1 v2 `inRange` rop r1 r2
 
 rangePropagationSafetyPre2 ::
-    (Show t, Show t2, Random t, BoundedInt t, Random t2, BoundedInt t2, BoundedInt a) =>
+    (Show t, Show t2, Random t, Bounded t, Ord t, Random t2, Bounded t2, Ord t2, Bounded a, Ord a) =>
     t -> t2 ->
     (t -> t2 -> a) -> (Range t -> Range t2 -> Range a) ->
     (t -> t2 -> Bool) ->
@@ -378,7 +377,7 @@ rangePropSafety1 t op rop ran =
   where _ = ran `rangeTy` t
 
 prop_propagation2
-    :: (Show t, BoundedInt t, Random t) => t -> (forall a . Num a => a -> a -> a)
+    :: (Show t, Bounded t, Ord t, Num t, FiniteBits t, Random t) => t -> (forall a . Num a => a -> a -> a)
     -> Range t -> Range t -> Property
 prop_propagation2 t op = rangePropagationSafety t op op
 
@@ -524,4 +523,3 @@ prop_rangeQuot1 t =
 -- | Precondition for division like operators.
 --   Avoids division by zero and arithmetic overflow.
 divPre v1 v2 = v2 /= 0 && not (v1 == minBound && v2 == (-1))
-
