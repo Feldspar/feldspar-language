@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GADTs #-}
@@ -558,14 +559,11 @@ goodToShare (_ :& Literal (l :: a)) = largeLit (typeRep :: TypeRep a) l
 -- With a better compilation of array assignments, the need for this
 -- special case goes away.
 goodToShare (_ :& Operator op :@ e :: AExpr a)
-  | isArrayT (typeRepF :: TypeRep a) && isSelOp op && not (goodToShare e)
+  | ArrayType{} <- typeRepF :: TypeRep a
+  , isSelOp op && not (goodToShare e)
   = False
 goodToShare (_ :& _ :@ _) = True
 goodToShare _                   = False
-
-isArrayT :: TypeRep a -> Bool
-isArrayT (ArrayType _) = True
-isArrayT _             = False
 
 largeLit :: TypeRep a -> a -> Bool
 largeLit UnitType l = False
