@@ -1,7 +1,4 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -51,7 +48,7 @@ eval = evalA M.empty
 evalA :: CloEnv -> AExpr a -> a
 evalA bm (_ :& e) = evalE bm e
 
-evalE :: CloEnv -> Expr a -> a
+evalE :: Typeable a => CloEnv -> Expr a -> a
 evalE bm (Literal l) = l
 evalE bm (Variable v) = lookupCE "Eval.evalE" bm v
 evalE bm (Operator op) = semSem $ semantics op
@@ -60,7 +57,7 @@ evalE bm (Lambda (Var n _) e) = \x -> evalA (M.insert n (Clo x) bm) e
 
 type CloEnv = M.Map VarId Closure
 
-lookupCE :: String -> CloEnv -> Var a -> a
+lookupCE :: Typeable a => String -> CloEnv -> Var a -> a
 lookupCE msg bm (v@(Var n _) :: Var a)
                = case M.lookup n bm of
                       Nothing -> error $ msg ++ ": lookupCE does not find variable " ++ show v

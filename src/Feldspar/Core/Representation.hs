@@ -90,8 +90,7 @@ newtype VarId = VarId { varInteger :: Integer }
 instance Show VarId where
     show (VarId i) = show i
 
-data Var a where
-  Var :: Typeable a => { varNum :: VarId, varName :: B.ByteString} -> Var a
+data Var a = Var { varNum :: VarId, varName :: B.ByteString }
 
 instance Eq (Var a) where
   v1 == v2 = varNum v1 == varNum v2
@@ -107,8 +106,7 @@ type Full a = a
 type a :-> b = a -> b
 
 -- | The type of information, for instance range information. Currently only size info.
-data Info a where
-  Info :: {infoSize :: Size a} -> Info a
+data Info a = Info { infoSize :: Size a }
 
 instance Eq (Size a) => Eq (Info a) where
   Info x == Info y = x == y
@@ -466,7 +464,7 @@ viSet v = S.singleton $ varNum v
 
 
 data CBind where
-  CBind :: Var a -> AExpr a -> CBind
+  CBind :: Typeable a => Var a -> AExpr a -> CBind
 
 instance Eq CBind where
   CBind (v1@Var{} :: Var a) e1 == CBind (v2@Var{} :: Var b) e2
@@ -488,7 +486,7 @@ mkLets ([], e) = e
 -- | Functions for bind environments
 type BindEnv = M.Map VarId CBind
 
-lookupBE :: String -> BindEnv -> Var a -> AExpr a
+lookupBE :: Typeable a => String -> BindEnv -> Var a -> AExpr a
 lookupBE msg bm (v@(Var n _) :: Var a)
                = case M.lookup n bm of
                       Nothing -> error $ msg ++ ": lookupBE does not find variable " ++ show v
@@ -550,7 +548,7 @@ shOp _ = True
 
 -- | Expressions that are expensive enough to be worth sharing
 goodToShare :: AExpr a -> Bool
-goodToShare (_ :& Literal (l :: a)) = largeLit (typeRep :: TypeRep a) l
+goodToShare (_ :& Literal (l :: a)) = largeLit (typeRepF :: TypeRep a) l
 -- The case below avoids constructing a let-binding for an array stored
 -- in a tuple. This is beneficial because the select operator is order
 -- of magnitudes cheaper than the array copy generated for the let-binding.
