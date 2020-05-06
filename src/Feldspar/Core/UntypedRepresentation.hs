@@ -81,7 +81,6 @@ module Feldspar.Core.UntypedRepresentation (
   , Rename(..)
   , rename
   , newVar
-  , simpleInline
   )
   where
 
@@ -812,15 +811,3 @@ renameR env e = error $ "FromTyped.renameR: unexpected expression " ++ show e
 newVar v = do j <- get
               put (j+1)
               return $ v{varNum = j}
-
--- | Inline everything that is not sharable
-simpleInline :: AUntypedFeld a -> AUntypedFeld a
-simpleInline = goA M.empty
-  where goA m (AIn a r) = AIn a $ go m r
-        go m (Variable v) = M.findWithDefault (Variable v) (varNum v) m
-        go m (Literal l) = Literal l
-        go m (App Let _ [rhs, AIn a (Lambda v e)]) | not $ sharable rhs
-             = unA $ goA (M.insert (varNum v) (unA $ goA m rhs) m) e
-        go m (App op t es) = App op t $ map (goA m) es
-        go m (Lambda v e) = Lambda v (goA m e) -- Here we assume no name capture or shadowing
-        unA (AIn _ r) = r
