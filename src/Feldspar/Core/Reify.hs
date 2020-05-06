@@ -374,9 +374,6 @@ appHash, absHash :: VarId
 appHash = 655360 + 40960 + 2560 + 160 + 10 + 17
 absHash = 327680 + 20480 + 1280 +  80 +  5
 
-combineHashL :: Integral a => [a] -> a
-combineHashL = foldr combineHash 0
-
 combineHash :: Integral a => a -> a -> a
 combineHash l r = fromInteger $ mod (toInteger l + 127 * toInteger r) hashMod
 
