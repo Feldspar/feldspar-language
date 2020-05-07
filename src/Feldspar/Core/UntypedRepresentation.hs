@@ -233,7 +233,7 @@ literalVI (LInt sgn sz n) = go sgn sz
 literalVI (LFloat  x) = singletonVI x
 literalVI (LDouble x) = singletonVI x
 literalVI (LComplex re im) = VIProd [literalVI re, literalVI im]
-literalVI (LArray t xs) = foldr lubVI (botInfo t) $ map literalVI xs
+literalVI (LArray t xs) = foldr (lubVI . literalVI) (botInfo t) xs
 literalVI (LTup xs) = VIProd $ map literalVI xs
 
 -- | The bottom (most informative) elements of the info domains for each scalar type.
@@ -605,9 +605,9 @@ prettyExp prA e = render (pr 0 0 e)
   where pr p i (AIn r e) = pe p i r e
         pe p i r (Variable v) = line i $ show v
         pe p i _ (Literal l) = line i $ show l
-        pe p i _ (Lambda v e) = par p 0 $ join $ (line i $ "\\ " ++ pv Nothing v ++ " ->") ++ pr 0 (i+2) e
+        pe p i _ (Lambda v e) = par p 0 $ join $ line i ("\\ " ++ pv Nothing v ++ " ->") ++ pr 0 (i+2) e
         pe p i r (App Let t es) = par p 0 $ line i "let" ++ pLet i (AIn r $ App Let t es)
-        pe p i r (App f t es) = par p 10 $ join $ (line i $ show f ++ prP t r) ++ pArgs p (i+2) es
+        pe p i r (App f t es) = par p 10 $ join $ line i (show f ++ prP t r) ++ pArgs p (i+2) es
         pe p i r (LetFun (s,k,body) e) = line i ("letfun " ++ show k ++ " " ++ s)
                                          ++ pr 0 (i+2) body
                                          ++ line i "in"
@@ -628,7 +628,7 @@ prettyExp prA e = render (pr 0 0 e)
 
         par p i [] = error "UntypedRepresentation.prettyExp: parethesisizing empty text"
         par p i ls = if p <= i then ls else prepend "(" $ append ")" ls
-        prepend s ((i,n,v) : ls) = ((i, n + length s, s ++ v) : ls)
+        prepend s ((i,n,v) : ls) = (i, n + length s, s ++ v) : ls
         append s [(i,n,v)] = [(i, n + length s, v ++ s)]
         append s (l:ls) = l : append s ls
 
@@ -663,8 +663,8 @@ instance HasType Lit where
     typeof LFloat{}       = 1 :# FloatType
     typeof LBool{}        = 1 :# BoolType
     typeof (LArray t es) = ArrayType (singletonRange $ fromIntegral $ length es) t
-    typeof (LComplex r _) = 1 :# (ComplexType $ typeof r)
-    typeof (LTup ls)     = TupType (map typeof ls)
+    typeof (LComplex r _) = 1 :# ComplexType (typeof r)
+    typeof (LTup ls)      = TupType $ map typeof ls
 
 instance HasType UntypedFeld where
     type TypeOf UntypedFeld                = Type
