@@ -93,21 +93,17 @@ cleanUp opts = createTasks opts . unAnnotate . uniqueVars
 renameExp :: AUntypedFeld a -> AUntypedFeld a
 renameExp e = evalState (rename e) 0
 
-toType :: TypeRep a -> U.Type
-toType tr = untypeType tr (defaultSize tr)
-
 toU :: R.AExpr a -> AUntypedFeld ValueInfo
 toU (((R.Info i) :: R.Info a) :& e)
-  | (R.Variable ((R.Var n s) :: R.Var b)) <- e
-  , tr2 <- typeRepF :: TypeRep b
-  = i2 $ Variable $ Var n (toType tr2) s
+  | (R.Variable (R.Var n s)) <- e
+  = i2 $ Variable $ Var n (untypeType tr i) s
   | (R.Literal v) <- e
-  = i2 $ Literal $ literal tr (defaultSize tr) v
+  = i2 $ Literal $ literal tr i v
   | (R.Operator op) <- e
-  = i2 $ App (trOp op) (toType tr) []
-  | (R.Lambda ((R.Var n s) :: R.Var b) e') <- e
-  , tr2 <- typeRepF :: TypeRep b
-  = i2 $ Lambda (Var n (toType tr2) s) $ toU e'
+  = i2 $ App (trOp op) (untypeType tr i) []
+  | (R.Lambda (R.Var n s) e') <- e
+  , FunType b _ <- tr
+  = i2 $ Lambda (Var n (untypeType b (fst i)) s) $ toU e'
   | (f :@ a) <- e
   = i2 $ toApp f [toU a]
   where tr = typeRepF :: TypeRep a
@@ -123,7 +119,8 @@ toApp (R.Operator R.Car) [AIn _ (App (Drop n) (U.TupType (t:_)) es)]
 toApp (R.Operator R.Tup) [AIn _ e] = e
 toApp (R.Operator R.UnTup) [e] = App (Drop 0) (typeof e) [e]
 toApp (R.Operator (op :: R.Op b)) es
-  = App (trOp op) (unwind es $ toType (typeRepF :: TypeRep b)) es
+  | tr <- typeRepF :: TypeRep b
+  = App (trOp op) (unwind es $ untypeType tr (defaultSize tr)) es
 toApp (f :@ e) es = toApp f $ toU e : es
 
 unwind :: [AUntypedFeld a] -> U.Type -> U.Type
