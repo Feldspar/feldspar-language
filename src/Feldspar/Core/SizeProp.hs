@@ -41,7 +41,7 @@ import Feldspar.Range
 import Feldspar.Lattice (Lattice, top, bot, (\/), (/\))
 
 import Data.Typeable (Typeable)
-import qualified Data.Map as M (empty)
+import qualified Data.Map.Strict as M (empty)
 
 sizeProp :: AExpr a -> AExpr a
 sizeProp = spA M.empty

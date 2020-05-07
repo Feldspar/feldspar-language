@@ -85,7 +85,7 @@ module Feldspar.Core.UntypedRepresentation (
   where
 
 import Control.Monad.State
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Char8 as B
 import Data.List (nub, intercalate)
 import Data.Tree
