@@ -424,11 +424,11 @@ literal _ _ _ = error "Missing pattern: FromTyped.hs: literal"
 literalConst :: TypeRep a -> T.Size a -> a -> Lit
 literalConst UnitType        _  ()     = LTup []
 literalConst BoolType        _  a      = LBool a
-literalConst (IntType s n)   sz a      = LInt (convSign s) (convSize n) (toInteger a)
+literalConst (IntType s n)   _  a      = LInt (convSign s) (convSize n) (toInteger a)
 literalConst FloatType       _  a      = LFloat a
 literalConst DoubleType      _  a      = LDouble a
-literalConst (ArrayType t)   _  a      = LArray t' $ map (literalConst t (defaultSize t)) a
-  where t' = untypeType t (defaultSize t)
+literalConst (ArrayType t) (_ :> sz) a = LArray t' $ map (literalConst t sz) a
+  where t' = untypeType t sz
 literalConst (ComplexType t) _  (r:+i) = LComplex re ie
   where re = literalConst t (defaultSize t) r
         ie = literalConst t (defaultSize t) i
