@@ -31,7 +31,7 @@ module Feldspar.Core.Middleend.UniqueVars (uniqueVars) where
 import Feldspar.Core.UntypedRepresentation
 
 import qualified Data.Set as S
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Control.Monad.State
 
 type U a = State (S.Set VarId) a
