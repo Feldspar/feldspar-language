@@ -121,9 +121,7 @@ instance Show (Size a) => Show (Info a) where
 data AExpr a where
   (:&) :: TypeF a => {aeInfo :: Info a, aeExpr :: Expr (Full a)} -> AExpr a
 
--- | Equality for AExps
-instance Eq (AExpr a) where
-  (:&) il el == (:&) ir er = il == ir && el == er
+deriving instance Eq (AExpr a)
 
 instance Show (AExpr a) where
   show e = showAExpr 0 e ""
