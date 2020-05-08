@@ -123,21 +123,14 @@ toU es (((R.Info i) :: R.Info a) :& e)
               AIn _ e' -> e'
            R.Operator R.UnTup ->
              let e' = toU [] a in App (Drop 0) (typeof e') [e']
-           _ -> toApp f [toU [] a]
+           _ -> case go e [] of
+                 (op, es') ->
+                   App op (untypeType tr (defaultSize tr)) es'
   where tr = typeRepF :: TypeRep a
         i2 = AIn $ toValueInfo tr i
-
-toApp :: TypeF a => R.Expr a -> [AUntypedFeld ValueInfo] -> UntypedFeldF (AUntypedFeld ValueInfo)
-toApp (R.Operator (op :: R.Op b)) es
-  | tr <- typeRepF :: TypeRep b
-  = App (trOp op) (unwind es $ untypeType tr (defaultSize tr)) es
-toApp (f :@ e) es = toApp f $ toU [] e : es
-
-unwind :: [AUntypedFeld a] -> U.Type -> U.Type
-unwind (_:es) (U.FunType _ t) = unwind es t
-unwind []     t               = t
-unwind es     t               = error $ "FromTyped.unwind: fun tye mismatch between "
-                                         ++ show t ++ " and " ++ show es
+        go :: forall a . R.Expr a -> [AUntypedFeld ValueInfo] -> (Op, [AUntypedFeld ValueInfo])
+        go (R.Operator op) es = (trOp op, es)
+        go (f :@ e) es = go f $ toU [] e : es
 
 -- | Translate a Typed operator to the corresponding untyped one
 trOp :: R.Op a -> Op
