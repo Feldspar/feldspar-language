@@ -125,7 +125,7 @@ toU es (((R.Info i) :: R.Info a) :& e)
              let e' = toU [] a in App (Drop 0) (typeof e') [e']
            _ -> case go e [] of
                  (op, es') ->
-                   App op (untypeType tr (defaultSize tr)) es'
+                   App op (untypeType tr i) es'
   where tr = typeRepF :: TypeRep a
         i2 = AIn $ toValueInfo tr i
         go :: forall a . R.Expr a -> [AUntypedFeld ValueInfo] -> (Op, [AUntypedFeld ValueInfo])
