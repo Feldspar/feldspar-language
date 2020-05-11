@@ -84,7 +84,7 @@ untypeUnOpt opts = cleanUp opts
 
 -- | Only do the conversion to AUntypedFeld ValueInfo
 justUntype :: FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
-justUntype opts = renameExp . toU [] . sizeProp . adjustBindings . unASTF opts
+justUntype opts = renameExp . toU . sizeProp . adjustBindings . unASTF opts
 
 -- | Prepare the code for fromCore
 cleanUp :: FeldOpts -> AUntypedFeld ValueInfo -> UntypedFeld
@@ -93,8 +93,8 @@ cleanUp opts = createTasks opts . unAnnotate . uniqueVars
 renameExp :: AUntypedFeld a -> AUntypedFeld a
 renameExp e = evalState (rename e) 0
 
-toU :: [AUntypedFeld ValueInfo] -> R.AExpr a -> AUntypedFeld ValueInfo
-toU es (((R.Info i) :: R.Info a) :& e)
+toU :: R.AExpr a -> AUntypedFeld ValueInfo
+toU (((R.Info i) :: R.Info a) :& e)
   | (R.Variable (R.Var n s)) <- e
   = i2 $ Variable $ Var n (untypeType tr i) s
   | (R.Literal v) <- e
@@ -103,34 +103,34 @@ toU es (((R.Info i) :: R.Info a) :& e)
   = i2 $ App (trOp op) (untypeType tr i) []
   | (R.Lambda (R.Var n s) e') <- e
   , FunType b _ <- tr
-  = i2 $ Lambda (Var n (untypeType b (fst i)) s) $ toU [] e'
+  = i2 $ Lambda (Var n (untypeType b (fst i)) s) $ toU e'
   | (R.Operator R.Cons :@ a1 :@ a2) <- e
-  , e' <- toU [] a1
-  , AIn _ (App Tup (U.TupType ts) es') <- toU [] a2
-  = i2 $ App Tup (U.TupType $ typeof e' : ts) $ e' : es'
+  , e' <- toU a1
+  , AIn _ (App Tup (U.TupType ts) es) <- toU a2
+  = i2 $ App Tup (U.TupType $ typeof e' : ts) $ e' : es
   | (f :@ a) <- e
   = i2 $ case f of -- Avoid more pattern guards for GHC 8.4 performance reasons.
            R.Operator R.Car ->
-            case toU [] a of
-              AIn _ (App (Drop n) (U.TupType (t:_)) es') ->
-                App (Sel $ n + 1) t es'
+            case toU a of
+              AIn _ (App (Drop n) (U.TupType (t:_)) es) ->
+                App (Sel $ n + 1) t es
            R.Operator R.Cdr ->
-            case toU [] a of
-              AIn _ (App (Drop n) (U.TupType (_:ts)) es') ->
-                App (Drop $ n + 1) (U.TupType ts) es'
+            case toU a of
+              AIn _ (App (Drop n) (U.TupType (_:ts)) es) ->
+                App (Drop $ n + 1) (U.TupType ts) es
            R.Operator R.Tup ->
-             case toU [] a of
+             case toU a of
               AIn _ e' -> e'
            R.Operator R.UnTup ->
-             let e' = toU [] a in App (Drop 0) (typeof e') [e']
+             let e' = toU a in App (Drop 0) (typeof e') [e']
            _ -> case go e [] of
-                 (op, es') ->
-                   App op (untypeType tr i) es'
+                 (op, es) ->
+                   App op (untypeType tr i) es
   where tr = typeRepF :: TypeRep a
         i2 = AIn $ toValueInfo tr i
         go :: forall a . R.Expr a -> [AUntypedFeld ValueInfo] -> (Op, [AUntypedFeld ValueInfo])
         go (R.Operator op) es = (trOp op, es)
-        go (f :@ e) es = go f $ toU [] e : es
+        go (f :@ e) es = go f $ toU e : es
 
 -- | Translate a Typed operator to the corresponding untyped one
 trOp :: R.Op a -> Op
@@ -598,7 +598,7 @@ frontend ctrl opts = evalPasses 0
                    . pc FPOptimize         optimize
                    . pc FPSinkLets         (sinkLets opts)
                    . pc FPRename           renameExp
-                   . pt FPUntype           (toU [])
+                   . pt FPUntype           toU
                    . pc FPSizeProp         sizeProp
                    . pc FPAdjustBind       adjustBindings
                    . pt FPUnASTF           (unASTF opts)
