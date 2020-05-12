@@ -137,7 +137,7 @@ showAExpr n (i :& (e :: Expr (Full a))) r = '{':inf ++ "} " ++ showExpr n e r
 data Expr a where
   Literal  :: (Hashable a, Type a)   => a -> Expr (Full a)
   Operator :: Typeable a             => Op a -> Expr a
-  Variable ::                           Var a -> Expr (Full a)
+  Variable :: Typeable a             => Var a -> Expr (Full a)
   (:@)     :: Typeable a             => Expr (a -> b) -> AExpr a -> Expr b
   Lambda   :: TypeF a                => Var a -> AExpr b -> Expr (Full (a -> b))
 

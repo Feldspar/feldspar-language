@@ -286,16 +286,19 @@ catchBindings vs (m,e) = (m1, mkLets (bs,e))
 -}
 
 hashExpr :: AExpr a -> VarId
-hashExpr (_ :& (e :: Expr a)) = (hash2VarId $ hash (typeRepF :: T.TypeRep a)) `combineHash` hashExprR e
+hashExpr (_ :& e) = hashExprR e
 
 hashExprR :: Expr a -> VarId
-hashExprR (Variable v) = varNum v
-hashExprR (Literal c) = hash2VarId $ hash c
+hashExprR (Variable v) = (hashStr . show $ typeOf v) `combineHash` (varNum v)
+hashExprR (Literal c)
+  = (hashStr . show $ typeOf c) `combineHash` (hash2VarId $ hash c)
 hashExprR (Operator op) = hashOp op
 -- Hash value of rhs in let is equal to bound variable name which occurs in body
 hashExprR (Operator Let :@ _ :@ (_ :& Lambda _ e)) = hashExpr e
 hashExprR (f :@ e) = appHash `combineHash` hashExprR f `combineHash` hashExpr e
-hashExprR (Lambda v e) = absHash `combineHash` varNum v `combineHash` hashExpr e
+hashExprR (Lambda v e)
+  = absHash `combineHash` (hashStr . show $ typeOf v) `combineHash`
+    (varNum v) `combineHash` hashExpr e
 
 hashStr :: String -> VarId
 hashStr s = fromInteger $ foldr combineHash 5 $ map (toInteger . fromEnum) s
