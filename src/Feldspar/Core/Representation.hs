@@ -548,7 +548,7 @@ shOp _ = True
 
 -- | Expressions that are expensive enough to be worth sharing
 goodToShare :: AExpr a -> Bool
-goodToShare (_ :& Literal (l :: a)) = largeLit (typeRepF :: TypeRep a) l
+goodToShare (_ :& Literal (l :: a)) = largeLit (typeRep :: TypeRep a) l
 -- The case below avoids constructing a let-binding for an array stored
 -- in a tuple. This is beneficial because the select operator is order
 -- of magnitudes cheaper than the array copy generated for the let-binding.
