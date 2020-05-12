@@ -1,6 +1,6 @@
 Lambda v0 : 1xi32
  └╴Let
-    ├╴Var v2 : 1xi32 = 
+    ├╴Var v1 : 1xi32 = 
     │  └╴Add {1xi32 in VIInt32 [*,*]}
     │     ├╴v0 : 1xi32 in VIInt32 [*,*]
     │     └╴20 : 1xi32
@@ -11,7 +11,7 @@ Lambda v0 : 1xi32
           │  └╴5 : 1xi32
           ├╴Mul {1xi32 in VIInt32 [*,*]}
           │  ├╴3 : 1xi32
-          │  └╴v2 : 1xi32 in VIInt32 [*,*]
+          │  └╴v1 : 1xi32 in VIInt32 [*,*]
           └╴Mul {1xi32 in VIInt32 [*,*]}
              ├╴30 : 1xi32
-             └╴v2 : 1xi32 in VIInt32 [*,*]
+             └╴v1 : 1xi32 in VIInt32 [*,*]
