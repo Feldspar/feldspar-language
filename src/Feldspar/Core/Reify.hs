@@ -178,7 +178,7 @@ instance (Monad m, Applicative m) => Applicative (Mon m)
     (<*>) = ap
 
 -- | Convert an 'Op' to a function that builds the corresponding syntax tree
-sugarSym :: SugarF a => Op (SugarT a) -> a
+sugarSym :: (Typeable (SugarT a), SugarF a) => Op (SugarT a) -> a
 sugarSym op = sugarF ((M.empty, Operator op), 0)
 
 -- | Mark an application as full rather than partial
@@ -300,8 +300,10 @@ hashExprR (Lambda v e) = absHash `combineHash` varNum v `combineHash` hashExpr e
 hashStr :: String -> VarId
 hashStr s = fromInteger $ foldr combineHash 5 $ map (toInteger . fromEnum) s
 
-hashOp :: Op a -> VarId
-hashOp op = hashStr $ show op
+-- Hash the type into the hash value to avoid hashing different
+-- F2I/I2F type instantiations to the same value.
+hashOp :: Typeable a => Op a -> VarId
+hashOp op = (hashStr . show $ typeOf op) `combineHash` (hashStr $ show op)
 
 hash2VarId :: Hash -> VarId
 hash2VarId h = fromIntegral $ (fromIntegral $ asWord64 h) `mod` hashMod
