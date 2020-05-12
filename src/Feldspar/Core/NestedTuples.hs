@@ -6,7 +6,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -55,8 +54,6 @@ data TNil
 data RTuple a where
   (:*) :: a -> RTuple b -> RTuple (a :* b)
   TNil :: RTuple TNil
-
-deriving instance Typeable RTuple -- Not necessary with newer versions of GHC
 
 -- | Eq and Show instances
 
