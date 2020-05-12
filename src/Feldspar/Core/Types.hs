@@ -5,8 +5,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -229,8 +227,6 @@ instance MonadType Mut
 -- | Monad for parallel constructs
 type Par = MonadPar.Par
 
-deriving instance Typeable Par
-
 -- | Immutable references
 type IV = MonadPar.IVar
 
@@ -248,8 +244,6 @@ instance MonadType Par
 
 newtype Elements a = Elements { unE :: [(Index, a)] }
 
-deriving instance Typeable Elements
-
 instance Show a => Show (Elements a)
   where
     show (Elements a) = "Elements " ++ show a
@@ -263,9 +257,6 @@ instance Eq a => Eq (Elements a)
 --------------------------------------------------------------------------------
 
 newtype FVal a = FVal {unFVal :: a}
-
-deriving instance Typeable IV
-deriving instance Typeable FVal
 
 instance Show (FVal a)
   where

@@ -42,7 +42,6 @@ module Feldspar.Range where
 import qualified Data.Array.IO as IO
 import Data.Bits
 import Data.Int
-import Data.Typeable (Typeable)
 import Data.Word
 import Data.Default
 import Data.Hash
@@ -81,7 +80,7 @@ instance (Show a, Bounded a, Eq a) => Show (Range a)
 -- | Target-dependent unsigned integers
 newtype WordN = WordN Word32
   deriving
-    ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded, Typeable
+    ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded
     , Q.Arbitrary, Random, Storable, NFData, Default
     , FiniteBits, Hashable
     )
@@ -89,7 +88,7 @@ newtype WordN = WordN Word32
 -- | Target-dependent signed integers
 newtype IntN = IntN Int32
   deriving
-    ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded, Typeable
+    ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded
     , Q.Arbitrary, Random, Storable, NFData, Default
     , FiniteBits, Hashable
     )
