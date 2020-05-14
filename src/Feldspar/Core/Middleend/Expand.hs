@@ -119,39 +119,58 @@ legalLoops _  _ = []
 
 profitableLoops aais = reverse $ dropWhile (not . fst) $ reverse aais
 
+{-
+
+Lazy binding
+------------
+
+The eu function is intended to be used in a way where computing the second component of
+the return value depends indirectly on the first component. Hence it is important the
+the first component (a set of free variables) can be computed without reducing the
+second component to whnf. Therefore the pattern for the second component (which is itself
+a pair) can not be inlined into the outer pattern in the recursive invocations.
+
+-}
 
 eu :: [AbsInfo] -> VarMap -> RExp -> Rename (S.Set Var, ([BindInfo], RExp))
 eu ai vm (Variable v) = let (s,e) = vm M.! v in return (s, ([],e))
 eu ai vm (Literal l) = return (S.empty, ([], Literal l))
 eu ai vm (App Let t [eRhs, AIn r (Lambda v eBody)])
-  = do (fvsR, (bsR, eR)) <- expE ai vm eRhs
-       let inline = not (sharable eR) || simpleArrRef eR
+  = do (fvsR, bseR) <- expE ai vm eRhs
+       let (bsR, eR) = bseR -- Note [Lazy binding]
+           inline = not (sharable eR) || simpleArrRef eR
            eR1 = if inline then dropAnnotation eR else Variable v
            vmB = M.insert v (fvsR, eR1) vm
            aiB = if inline then ai else AbsI (S.singleton v) : ai
-       (fvsB, (bsB, eB)) <- expE aiB vmB eBody
-       let eNew = App Let t [eR, AIn r $ Lambda v eB]
+       (fvsB, bseB) <- expE aiB vmB eBody
+       let (bsB, eB) = bseB
+           eNew = App Let t [eR, AIn r $ Lambda v eB]
            bsB1 = if inline then bsB else shiftBIs bsB
        return (fvsB, (bsR ++ bsB1, if inline then dropAnnotation eB else eNew))
 eu ai vm (App op t [eLen, eInit, AIn r1 (Lambda vIx (AIn r2 (Lambda vSt eBody)))])
   | op `elem` [ForLoop, Sequential]
-  = do (fvsL, (bsL, eL)) <- expE ai vm eLen
-       (fvsI, (bsI, eI)) <- expE ai vm eInit
+  = do (fvsL, bseL) <- expE ai vm eLen
+       let (bsL, eL) = bseL
+       (fvsI, bseI) <- expE ai vm eInit
+       let (bsI, eI) = bseI
        -- Maybe the trip count should be bound to a variable
        let aiB = LoopI {trip = (fvsL,eL), ixVar = vIx, absVars = S.singleton vSt} : ai
            vmB = M.insert vIx (S.singleton vIx, Variable vIx) $
                  M.insert vSt (S.singleton vSt, Variable vSt) vm
-       (fvsB, (bsB, eB)) <- expE aiB vmB eBody
+       (fvsB, bseB) <- expE aiB vmB eBody
+       let (bsB, eB) = bseB
        return (fvsL `S.union` fvsI `S.union` (fvsB S.\\ S.fromList [vIx, vSt]),
                (bsL ++ bsI ++ shiftBIs bsB,
                 App op t [eL, eI, AIn r1 $ Lambda vIx $ AIn r2 $ Lambda vSt eB]))
 eu ai vm (App op t [eLen, AIn r1 (Lambda vIx eBody)])
   | op `elem` [Parallel, EparFor, For]
-  = do (fvsL, (bsL, eL)) <- expE ai vm eLen
+  = do (fvsL, bseL) <- expE ai vm eLen
+       let (bsL, eL) = bseL
        -- Maybe the trip count should be bound to a variable
        let aiB = LoopI {trip = (fvsL,eL), ixVar = vIx, absVars = S.empty} : ai
            vmB = M.insert vIx (S.singleton vIx, Variable vIx) vm
-       (fvsB, (bsB, eB)) <- expE aiB vmB eBody
+       (fvsB, bseB) <- expE aiB vmB eBody
+       let (bsB, eB) = bseB
        return (fvsL `S.union` (fvsB S.\\ S.singleton vIx),
                (bsL ++ shiftBIs bsB,
                 App op t [eL, AIn r1 $ Lambda vIx eB]))
