@@ -118,11 +118,6 @@ toU (((R.Info i) :: R.Info a) :& e)
             case toU a of
               AIn _ (App (Drop n) (U.TupType (_:ts)) es) ->
                 App (Drop $ n + 1) (U.TupType ts) es
-           R.Operator R.Tup ->
-             case toU a of
-              AIn _ e' -> e'
-           R.Operator R.UnTup ->
-             let e' = toU a in App (Drop 0) (typeof e') [e']
            _ -> case go e [] of
                  (op, es) ->
                    App op (untypeType tr i) es

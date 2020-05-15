@@ -817,9 +817,9 @@ instance (P.Eq (Tuple (InternalTup a)),
           Type (InternalTup a),
           SyntacticTup a)
       => Syntactic (Tuple a) where
-    type Internal (Tuple a) = Tuple (InternalTup a)
-    desugar (Tuple x) = sugarSym1 Tup x
-    sugar e = Tuple $ sugar $ sugarSym1 UnTup e
+    type Internal (Tuple a) = RTuple (InternalTup a)
+    desugar = desugarTup . unTup
+    sugar = Tuple . sugarTup
 
 --------------------------------------------------
 -- NoInline.hs
