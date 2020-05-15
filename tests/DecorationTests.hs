@@ -13,6 +13,11 @@ import Data.ByteString.Lazy.UTF8 (fromString)
 import Feldspar
 import Feldspar.Mutable
 import Examples.Simple.Basics
+import Feldspar.Applications.TFModel(tfModel)
+
+import Feldspar.Core.UntypedRepresentation (prettyExp)
+import Feldspar.Core.Middleend.FromTyped (FrontendPass(FPUnAnnotate), frontend)
+import Feldspar.Core.Middleend.PassManager (PassCtrl(..), defaultPassCtrl)
 
 
 
@@ -38,6 +43,14 @@ trickySharing x = (a+b+c) + (a+b) + (a+b+c)
     b = x*5
     c = x*7
 
+-- Compile an expression to untyped IL and show it as a string
+showUntyped :: Syntactic a => FeldOpts -> a -> String
+showUntyped opts = Prelude.head . Prelude.fst . frontend passCtrl opts . reifyFeld opts N32
+
+-- Pass control to get IL after optimization
+passCtrl :: PassCtrl FrontendPass
+passCtrl = defaultPassCtrl{wrBefore = [FPUnAnnotate], stopBefore = [FPUnAnnotate]}
+
 ref :: Prelude.String -> Prelude.String
 ref f = "tests/gold/" Prelude.++ f
 
@@ -46,6 +59,7 @@ tests = testGroup "DecorationTests"
     , goldenVsFile "topLevelConsts" (ref "topLevelConsts.txt") "tests/topLevelConsts.txt" $ writeFile "tests/topLevelConsts.txt" $ showDecor topLevelConsts
     , goldenVsFile "monadicSharing" (ref "monadicSharing.txt") "tests/monadicSharing.txt" $ writeFile "tests/monadicSharing.txt" $ showDecor monadicSharing
     , goldenVsFile "trickySharing" (ref "trickySharing.txt") "tests/trickySharing.txt" $ writeFile "tests/trickySharing.txt" $ showDecor trickySharing
+    , goldenVsFile "tfModel" (ref "tfModel.txt") "tests/tfModel.txt" $ writeFile "tests/tfModel.txt" $ showUntyped defaultFeldOpts tfModel
     ]
 
 main = defaultMain $ testGroup "Tests" [tests]

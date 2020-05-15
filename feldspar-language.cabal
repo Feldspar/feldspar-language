@@ -160,6 +160,8 @@ test-suite decoration
 
   other-modules:
     Examples.Simple.Basics
+    Feldspar.Applications.TFModel
+    Feldspar.Applications.TFLib
 
   default-language: Haskell2010
 
