@@ -368,9 +368,10 @@ spA vm (_ :& Operator             Cdr :@ a)
 spA vm (_ :& Operator             Tup :@ a)
   | a1@(Info ai1 :& _) <- spA vm a
   = Info ai1 :& Operator Tup :@ a1
-spA vm (_ :& Operator           UnTup :@ a)
-  | a1@(Info ai1 :& _) <- spA vm a
-  = Info ai1 :& Operator UnTup :@ a1
+spA vm (_ :& Operator             (Sel n) :@ a :@ b)
+  | a1@(_ :& _) <- spA vm a
+  , b1@(Info _ :& _) <- spA vm b
+  = Info top :& Operator (Sel n) :@ a1 :@ b1  -- FIXME: use the literal for tuple selection.
 
 -- | NoInline
 spA vm (_ :& Operator        NoInline :@ a)

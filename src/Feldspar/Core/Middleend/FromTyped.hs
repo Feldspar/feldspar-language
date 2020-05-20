@@ -121,8 +121,6 @@ toU (((R.Info i) :: R.Info a) :& e)
            R.Operator R.Tup ->
              case toU a of
               AIn _ e' -> e'
-           R.Operator R.UnTup ->
-             let e' = toU a in App (Drop 0) (typeof e') [e']
            _ -> case go e [] of
                  (op, es) ->
                    App op (untypeType tr i) es
@@ -261,6 +259,7 @@ trOp R.Save            = Save
 trOp (R.PropSize _)    = PropSize
 -- trOp R.SourceInfo      = SourceInfo
 trOp R.Switch          = Switch
+trOp (R.Sel n)         = Sel  (n  - 1)
 trOp R.Sel1            = Sel  0
 trOp R.Sel2            = Sel  1
 trOp R.Sel3            = Sel  2

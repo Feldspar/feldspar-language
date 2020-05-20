@@ -1,5 +1,5 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -79,28 +79,28 @@ deriving instance (Eq a, Eq (RTuple b)) => Eq (Tuple (a :* b))
 instance Show (RTuple a) => Show (Tuple a) where
   show t = "<" ++ show (unTup t) ++ ">"
 
-tuple :: RTuple a -> Tuple a
-tuple = Tuple
-
 -- | Selecting components of a tuple
 
 -- | Designating a tuple component
-newtype Skip a = Skip {unSkip :: a}
-data First = First
+data DSelD = FirstD | SkipD DSelD
+
+data DSel a where
+  First :: DSel 'FirstD
+  Skip :: DSel a -> DSel ('SkipD a)
+
+dSelToInt :: DSel s -> Int
+dSelToInt First    = 1
+dSelToInt (Skip n) = 1 + dSelToInt n
 
 -- | Type recursive selection based on designator
 class TSelect s t where
   type TSelResult s t
-  selR :: s -> RTuple t -> TSelResult s t
+  selR :: DSel s -> RTuple t -> TSelResult s t
 
-instance TSelect a t => TSelect (Skip a) (b :* t) where
-  type TSelResult (Skip a) (b :* t) = TSelResult a t
-  selR s (_ :* y) = selR (unSkip s) y
+instance TSelect a t => TSelect ('SkipD a) (b :* t) where
+  type TSelResult ('SkipD a) (b :* t) = TSelResult a t
+  selR (Skip s) (_ :* y) = selR s y
 
-instance TSelect First (b :* t) where
-  type TSelResult First (b :* t) = b
+instance TSelect 'FirstD (b :* t) where
+  type TSelResult 'FirstD (b :* t) = b
   selR _ (x :* _) = x
-
--- | Exposed select interface which extracts the raw tuple
-sel :: TSelect s t => s -> Tuple t -> TSelResult s t
-sel s (Tuple t) = selR s t

@@ -61,8 +61,10 @@ module Feldspar.Core.Representation
   , goodToShare
   ) where
 
-import Feldspar.Core.Types (Type(typeRep,sizeOf), TypeF(..), TypeRep(..), Length, Index, IntN,
-                            Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV, Tuple(..), RTuple, (:*), TNil)
+import Feldspar.Core.Types (Type(typeRep,sizeOf), TypeF(..), TypeRep(..),
+                            Length, Index, IntN, Size(..), Elements, FVal,
+                            Mut, AnySize, MArr, Par, IV, Tuple(..), RTuple,
+                            TSelect(..), DSel, (:*), TNil)
 import Feldspar.Range
 import Feldspar.Lattice (Lattice(..))
 
@@ -325,7 +327,7 @@ data Op a where
     Car   :: Type a => Op (RTuple (a :* b) :-> Full a)
     Cdr   ::           Op (RTuple (a :* b) :-> Full (RTuple b))
     Tup   ::           Op (RTuple a :-> Full (Tuple a))
-    UnTup ::           Op (Tuple a :-> Full (RTuple a))
+    Sel   :: TSelect s a => Int -> Op (DSel s :-> RTuple a :-> Full (TSelResult s a))
 
     -- | NoInline
     NoInline :: Type a => Op (a :-> Full a)
@@ -542,7 +544,6 @@ shOp ModRef    = False
 shOp Cons      = False
 shOp Nil       = False
 shOp Cdr       = False
-shOp UnTup     = False
 -- Everything else
 shOp _ = True
 

@@ -213,7 +213,8 @@ semantics Nil   = Sem "nil"   TNil
 semantics Car   = Sem "car"   (\ (x :* _) -> x)
 semantics Cdr   = Sem "cdr"   (\ (_ :* y) -> y)
 semantics Tup   = Sem "tup"   Tuple
-semantics UnTup = Sem "untup" unTup
+semantics Sel{} = Sem "sel" selR
+
 -- Feldspar.Core.Constructs.NoInline
 semantics NoInline  = Sem "NoInline" id
 -- Feldspar.Core.Constructs.Num
