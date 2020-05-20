@@ -89,18 +89,18 @@ newtype Skip a = Skip {unSkip :: a}
 data First = First
 
 -- | Type recursive selection based on designator
-class Select s t where
-  type SelResult s t
-  selR :: s -> RTuple t -> SelResult s t
+class TSelect s t where
+  type TSelResult s t
+  selR :: s -> RTuple t -> TSelResult s t
 
-instance Select a t => Select (Skip a) (b :* t) where
-  type SelResult (Skip a) (b :* t) = SelResult a t
+instance TSelect a t => TSelect (Skip a) (b :* t) where
+  type TSelResult (Skip a) (b :* t) = TSelResult a t
   selR s (_ :* y) = selR (unSkip s) y
 
-instance Select First (b :* t) where
-  type SelResult First (b :* t) = b
+instance TSelect First (b :* t) where
+  type TSelResult First (b :* t) = b
   selR _ (x :* _) = x
 
 -- | Exposed select interface which extracts the raw tuple
-sel :: Select s t => s -> Tuple t -> SelResult s t
+sel :: TSelect s t => s -> Tuple t -> TSelResult s t
 sel s (Tuple t) = selR s t
