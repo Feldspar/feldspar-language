@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -92,7 +91,6 @@ import Data.List (nub, intercalate)
 import Data.Tree
 import Data.Int
 import Data.Word
-import Language.Haskell.TH.Syntax (Lift(..))
 
 import Feldspar.Core.Representation (VarId(..))
 
@@ -158,10 +156,10 @@ dropAnnotation (AIn _ e) = e
 
 data Size = S8 | S16 | S32 | S40 | S64
           | S128 -- Used by SICS.
-    deriving (Eq,Show,Enum,Ord,Lift)
+    deriving (Eq,Show,Enum,Ord)
 
 data Signedness = Signed | Unsigned
-    deriving (Eq,Show,Enum,Lift)
+    deriving (Eq,Show,Enum)
 
 data Fork = None | Future | Par | Loop
     deriving (Eq,Show)
