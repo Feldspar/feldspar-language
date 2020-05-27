@@ -788,10 +788,10 @@ class SyntacticTup a where
     desugarTup :: RTuple a -> ASTF (RTuple (InternalTup a))
     sugarTup   :: ASTF (RTuple (InternalTup a)) -> RTuple a
 
-instance (Type (Internal a), Type (RTuple (InternalTup b)), Syntactic a, SyntacticTup b, Typeable (InternalTup b))
+instance (Syntax a, Type (RTuple (InternalTup b)), SyntacticTup b, Typeable (InternalTup b))
          => SyntacticTup (a :* b) where
     type InternalTup (a :* b) = Internal a :* InternalTup b
-    desugarTup (x :* xs) = sugarSym2 Cons x xs
+    desugarTup (x :* xs) = sugarSym2 Cons x (desugarTup xs)
     sugarTup e = sugar (sugarSym1 Car e) :* sugarTup (sugarSym1 Cdr e)
 
 instance SyntacticTup TNil where
@@ -799,27 +799,10 @@ instance SyntacticTup TNil where
     desugarTup TNil = sugarSym0 Nil
     sugarTup _ = TNil
 
-instance SyntacticTup a => Syntactic (RTuple a) where
-    type Internal (RTuple a) = RTuple (InternalTup a)
-    desugar = desugarTup
-    sugar = sugarTup
-
-car :: (Syntax a, SyntacticTup b, Type (RTuple (InternalTup b)), Typeable (InternalTup b))
-    => RTuple (a :* b) -> a
-car = sugarSym1 Car
-
-cdr :: (Syntax a, SyntacticTup b, Type (RTuple (InternalTup b)), Typeable (InternalTup b))
-    => RTuple (a :* b) -> RTuple b
-cdr = sugarSym1 Cdr
-
-instance (P.Eq (Tuple (InternalTup a)),
-          Type (RTuple (InternalTup a)),
-          Type (InternalTup a),
-          SyntacticTup a)
-      => Syntactic (Tuple a) where
-    type Internal (Tuple a) = Tuple (InternalTup a)
-    desugar (Tuple x) = sugarSym1 Tup x
-    sugar e = Tuple $ sugar $ sugarSym1 UnTup e
+instance SyntacticTup a => Syntactic (Tuple a) where
+    type Internal (Tuple a) = RTuple (InternalTup a)
+    desugar = desugarTup . unTup
+    sugar = Tuple . sugarTup
 
 --------------------------------------------------
 -- NoInline.hs

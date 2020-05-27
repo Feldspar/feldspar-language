@@ -325,7 +325,6 @@ data Op a where
     Car   :: Type a => Op (RTuple (a :* b) :-> Full a)
     Cdr   ::           Op (RTuple (a :* b) :-> Full (RTuple b))
     Tup   ::           Op (RTuple a :-> Full (Tuple a))
-    UnTup ::           Op (Tuple a :-> Full (RTuple a))
 
     -- | NoInline
     NoInline :: Type a => Op (a :-> Full a)
@@ -542,7 +541,6 @@ shOp ModRef    = False
 shOp Cons      = False
 shOp Nil       = False
 shOp Cdr       = False
-shOp UnTup     = False
 -- Everything else
 shOp _ = True
 
