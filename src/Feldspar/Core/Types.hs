@@ -803,7 +803,7 @@ instance (Type a, RealFloat a) => Type (Complex a)
   where
     typeRep             = ComplexType typeRep
     sizeOf _            = AnySize
-    toTarget _ (_ :+ _) = error "TODO" -- toTarget n r :+ toTarget n i
+    toTarget n (r :+ i) = toTarget n r :+ toTarget n i
 
 instance Type a => Type [a]
   where
