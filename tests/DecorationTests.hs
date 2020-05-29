@@ -45,7 +45,7 @@ trickySharing x = (a+b+c) + (a+b) + (a+b+c)
 
 -- Compile an expression to untyped IL and show it as a string
 showUntyped :: Syntactic a => FeldOpts -> a -> String
-showUntyped opts = Prelude.head . Prelude.fst . frontend passCtrl opts . reifyFeld opts N32
+showUntyped opts = Prelude.head . Prelude.fst . frontend passCtrl opts . reifyFeld
 
 -- Pass control to get IL after optimization
 passCtrl :: PassCtrl FrontendPass
