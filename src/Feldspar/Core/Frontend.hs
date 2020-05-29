@@ -62,7 +62,6 @@ module Feldspar.Core.Frontend
     , showDecor
     , drawDecor
     , eval
-    , evalTarget
     , desugar
     , sugar
     , resugar
@@ -95,7 +94,6 @@ import qualified Feldspar.Core.Reify as Syntactic
 import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
-import Feldspar.Range
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation (FeldOpts, defaultFeldOpts)
 import Feldspar.Core.Middleend.FromTyped (untype, untypeUnOpt, untypeDecor)
@@ -103,18 +101,10 @@ import Feldspar.Core.UntypedRepresentation (VarId, stringTree, stringTreeExp)
 import Feldspar.Core.Language
 import Feldspar.ValueInfo (ValueInfo)
 
-reifyFeld :: Syntactic a
-          => FeldOpts
-          -> BitWidth n
-          -> a
-          -> ASTF (Internal a)
-reifyFeld _ _ = Syntactic.desugar
+reifyFeld :: Syntactic a => a -> ASTF (Internal a)
+reifyFeld = Syntactic.desugar
 
-reifyFeldUnOpt :: Syntactic a
-                => FeldOpts
-                -> BitWidth n
-                -> a
-                -> ASTF (Internal a)
+reifyFeldUnOpt :: Syntactic a => a -> ASTF (Internal a)
 reifyFeldUnOpt = reifyFeld
 
 stringTreeASTF :: ASTF a -> Tree String
@@ -127,7 +117,7 @@ showDecorWith f = showTree . stringTreeExp g . untypeDecor defaultFeldOpts
   where g x = " in " ++ f x
 
 showExpr :: Syntactic a => a -> String
-showExpr = render . reifyFeld defaultFeldOpts N32
+showExpr = render . reifyFeld
 
 -- | Print an optimized untyped expression
 printExpr2 :: Syntactic a => a -> IO ()
@@ -139,63 +129,52 @@ drawUntyped = drawUntypedWith defaultFeldOpts
 
 -- | Draw the untyped syntax tree using unicode art
 drawUntypedWith :: Syntactic a => FeldOpts -> a -> IO ()
-drawUntypedWith opts = drawTree . stringTree . untype opts . reifyFeld opts N32
+drawUntypedWith opts = drawTree . stringTree . untype opts . reifyFeld
 
 -- | Print an optimized expression
 printExpr :: Syntactic a => a -> IO ()
-printExpr = print . reifyFeld defaultFeldOpts N32
+printExpr = print . reifyFeld
 
 -- | Print an optimized untyped expression with options
 printExpr2With :: Syntactic a => FeldOpts -> a -> IO ()
-printExpr2With opts = print . untype opts . reifyFeld opts N32
+printExpr2With opts = print . untype opts . reifyFeld
 
 -- | Print an optimized expression with options
 printExprWith :: Syntactic a => FeldOpts -> a -> IO ()
-printExprWith opts = print . reifyFeld opts N32
+printExprWith opts = print . reifyFeld
 
 -- | Print an unoptimized expression
 printExprUnOpt :: Syntactic a => a -> IO ()
-printExprUnOpt = print . reifyFeldUnOpt defaultFeldOpts N32
+printExprUnOpt = print . reifyFeldUnOpt
 
 -- | Show the syntax tree using Unicode art
 showAST :: Syntactic a => a -> String
-showAST = showTree . stringTreeASTF . reifyFeld defaultFeldOpts N32
+showAST = showTree . stringTreeASTF . reifyFeld
 
 -- | Draw the syntax tree on the terminal using Unicode art
 drawAST :: Syntactic a => a -> IO ()
-drawAST = putStrLn . showAST . reifyFeld defaultFeldOpts N32
+drawAST = putStrLn . showAST . reifyFeld
 
 drawASTUnOpt :: Syntactic a => a -> IO ()
-drawASTUnOpt = putStrLn . showAST . reifyFeldUnOpt defaultFeldOpts N32
+drawASTUnOpt = putStrLn . showAST . reifyFeldUnOpt
 
 -- | Write the syntax tree to an HTML file with foldable nodes
 writeHtmlAST :: Syntactic a => FilePath -> a -> IO ()
 writeHtmlAST file = writeHtmlTree Nothing file
                   . fmap (\n -> NodeInfo InitiallyExpanded n "")
                   . stringTreeASTF
-                  . reifyFeld defaultFeldOpts N32
+                  . reifyFeld
 
 -- | Draw a syntax tree decorated with type and size information
 showDecor :: Syntactic a => a -> String
-showDecor = showDecorWith show . reifyFeld defaultFeldOpts N32
+showDecor = showDecorWith show . reifyFeld
 
 -- | Draw a syntax tree decorated with type and size information
 drawDecor :: Syntactic a => a -> IO ()
-drawDecor = putStrLn . showDecorWith show . reifyFeld defaultFeldOpts N32
+drawDecor = putStrLn . showDecorWith show . reifyFeld
 
 eval :: Syntactic a => a -> Internal a
-eval = E.eval . unASTF defaultFeldOpts
-              . reifyFeld defaultFeldOpts N32
-
-evalTarget
-    :: ( Syntactic a
-       , BoundedInt (GenericInt U n)
-       , BoundedInt (GenericInt S n)
-       )
-    => BitWidth n -> a -> Internal a
-evalTarget n = E.eval . unASTF defaultFeldOpts
-                      . reifyFeld defaultFeldOpts n
-  -- TODO This doesn't work yet, because 'targetSpecialization' is not implemented
+eval = E.eval . unASTF defaultFeldOpts . reifyFeld
 
 desugar :: Syntactic a => a -> Data (Internal a)
 desugar = resugar
