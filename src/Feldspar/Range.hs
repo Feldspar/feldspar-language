@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -50,6 +51,7 @@ import System.Random (Random(..))
 
 import Control.DeepSeq (NFData(..))
 import Foreign.Storable (Storable)
+import Language.Haskell.TH.Syntax (Lift(..))
 
 import Feldspar.Lattice
 
@@ -62,7 +64,7 @@ data Range a = Range
   { lowerBound :: a
   , upperBound :: a
   }
-    deriving (Eq)
+    deriving (Eq, Lift)
 
 instance (Show a, Bounded a, Eq a) => Show (Range a)
   where
@@ -82,7 +84,7 @@ newtype WordN = WordN Word32
   deriving
     ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded
     , Q.Arbitrary, Random, Storable, NFData, Default
-    , FiniteBits, Hashable
+    , FiniteBits, Hashable, Lift
     )
 
 -- | Target-dependent signed integers
