@@ -95,6 +95,7 @@ library
     QuickCheck                  >= 2.7    && < 3,
     patch-combinators           >= 0.2    && < 0.3,
     prelude-edsl                             < 0.4,
+    template-haskell,
     tuple                       >= 0.2    && < 0.5,
     monad-par                   >= 0.3.4.5,
     deepseq,

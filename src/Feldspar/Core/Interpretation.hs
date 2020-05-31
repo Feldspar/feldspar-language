@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveLift #-}
+
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
@@ -31,14 +33,16 @@
 
 module Feldspar.Core.Interpretation where
 
+import Language.Haskell.TH.Syntax (Lift(..))
+
 -- | Possible compilation targets in a broad sense.
 data Target = RegionInf | Wool | CSE | SICS | BA
-  deriving Eq
+  deriving (Eq, Lift)
 
 -- | A record with options for explicit passing in rewrite rules.
 data FeldOpts = FeldOpts
     { targets    :: [Target]
-    }
+    } deriving Lift
 
 -- | Default options.
 defaultFeldOpts :: FeldOpts
