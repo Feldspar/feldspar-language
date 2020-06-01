@@ -144,29 +144,6 @@ type family GenericInt s n where
   GenericInt U NNative = WordN
   GenericInt S NNative = IntN
 
-fromWordN :: BitWidth n -> WordN -> GenericInt U n
-fromWordN N8      = fromInteger . toInteger
-fromWordN N16     = fromInteger . toInteger
-fromWordN N32     = fromInteger . toInteger
-fromWordN N64     = fromInteger . toInteger
-fromWordN NNative = id
-  -- TODO Check that the number fits
-
-fromIntN :: BitWidth n -> IntN -> GenericInt S n
-fromIntN N8      = fromInteger . toInteger
-fromIntN N16     = fromInteger . toInteger
-fromIntN N32     = fromInteger . toInteger
-fromIntN N64     = fromInteger . toInteger
-fromIntN NNative = id
-  -- TODO Check that the number fits
-
-genericLen :: BitWidth n -> [a] -> GenericInt U n
-genericLen N8      = genericLength
-genericLen N16     = genericLength
-genericLen N32     = genericLength
-genericLen N64     = genericLength
-genericLen NNative = genericLength
-
 type Length = WordN
 type Index  = WordN
 
@@ -782,34 +759,31 @@ class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a), TypeF a) => Ty
     -- | Gives the type representation a value.
     typeRep  :: TypeRep a
     sizeOf   :: a -> Size a
-    toTarget :: BitWidth n -> a -> TargetType n a
 
-instance Type ()      where typeRep = UnitType;          sizeOf _ = AnySize;      toTarget _ = id
-instance Type Bool    where typeRep = BoolType;          sizeOf = singletonRange; toTarget _ = id
-instance Type Word8   where typeRep = IntType U N8;      sizeOf = singletonRange; toTarget _ = id
-instance Type Int8    where typeRep = IntType S N8;      sizeOf = singletonRange; toTarget _ = id
-instance Type Word16  where typeRep = IntType U N16;     sizeOf = singletonRange; toTarget _ = id
-instance Type Int16   where typeRep = IntType S N16;     sizeOf = singletonRange; toTarget _ = id
-instance Type Word32  where typeRep = IntType U N32;     sizeOf = singletonRange; toTarget _ = id
-instance Type Int32   where typeRep = IntType S N32;     sizeOf = singletonRange; toTarget _ = id
-instance Type Word64  where typeRep = IntType U N64;     sizeOf = singletonRange; toTarget _ = id
-instance Type Int64   where typeRep = IntType S N64;     sizeOf = singletonRange; toTarget _ = id
-instance Type WordN   where typeRep = IntType U NNative; sizeOf = singletonRange; toTarget = fromWordN
-instance Type IntN    where typeRep = IntType S NNative; sizeOf = singletonRange; toTarget = fromIntN
-instance Type Float   where typeRep = FloatType;         sizeOf _ = AnySize;      toTarget _ = id
-instance Type Double  where typeRep = DoubleType;        sizeOf _ = AnySize;      toTarget _ = id
+instance Type ()      where typeRep = UnitType;          sizeOf _ = AnySize
+instance Type Bool    where typeRep = BoolType;          sizeOf = singletonRange
+instance Type Word8   where typeRep = IntType U N8;      sizeOf = singletonRange
+instance Type Int8    where typeRep = IntType S N8;      sizeOf = singletonRange
+instance Type Word16  where typeRep = IntType U N16;     sizeOf = singletonRange
+instance Type Int16   where typeRep = IntType S N16;     sizeOf = singletonRange
+instance Type Word32  where typeRep = IntType U N32;     sizeOf = singletonRange
+instance Type Int32   where typeRep = IntType S N32;     sizeOf = singletonRange
+instance Type Word64  where typeRep = IntType U N64;     sizeOf = singletonRange
+instance Type Int64   where typeRep = IntType S N64;     sizeOf = singletonRange
+instance Type WordN   where typeRep = IntType U NNative; sizeOf = singletonRange
+instance Type IntN    where typeRep = IntType S NNative; sizeOf = singletonRange
+instance Type Float   where typeRep = FloatType;         sizeOf _ = AnySize
+instance Type Double  where typeRep = DoubleType;        sizeOf _ = AnySize
 
 instance (Type a, RealFloat a) => Type (Complex a)
   where
     typeRep             = ComplexType typeRep
     sizeOf _            = AnySize
-    toTarget n (r :+ i) = toTarget n r :+ toTarget n i
 
 instance Type a => Type [a]
   where
     typeRep       = ArrayType typeRep
     sizeOf as     = singletonRange (genericLength as) :> unions (map sizeOf as)
-    toTarget n as = TargetArr (genericLen n as) $ map (toTarget n) as
 
 instance (Type a, Type b) => Type (a,b)
   where
@@ -818,11 +792,6 @@ instance (Type a, Type b) => Type (a,b)
     sizeOf (a,b) =
         ( sizeOf a
         , sizeOf b
-        )
-
-    toTarget n (a,b) =
-        ( toTarget n a
-        , toTarget n b
         )
 
 instance (Type a, Type b, Type c) => Type (a,b,c)
@@ -835,12 +804,6 @@ instance (Type a, Type b, Type c) => Type (a,b,c)
         , sizeOf c
         )
 
-    toTarget n (a,b,c) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        )
-
 instance (Type a, Type b, Type c, Type d) => Type (a,b,c,d)
   where
     typeRep = Tup4Type typeRep typeRep typeRep typeRep
@@ -850,13 +813,6 @@ instance (Type a, Type b, Type c, Type d) => Type (a,b,c,d)
         , sizeOf b
         , sizeOf c
         , sizeOf d
-        )
-
-    toTarget n (a,b,c,d) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
         )
 
 instance (Type a, Type b, Type c, Type d, Type e) => Type (a,b,c,d,e)
@@ -871,14 +827,6 @@ instance (Type a, Type b, Type c, Type d, Type e) => Type (a,b,c,d,e)
         , sizeOf e
         )
 
-    toTarget n (a,b,c,d,e) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        )
-
 instance (Type a, Type b, Type c, Type d, Type e, Type f) => Type (a,b,c,d,e,f)
   where
     typeRep = Tup6Type typeRep typeRep typeRep typeRep typeRep typeRep
@@ -890,15 +838,6 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f) => Type (a,b,c,d,e,f)
         , sizeOf d
         , sizeOf e
         , sizeOf f
-        )
-
-    toTarget n (a,b,c,d,e,f) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        , toTarget n f
         )
 
 instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g) => Type (a,b,c,d,e,f,g)
@@ -915,17 +854,6 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g) => Type (a,b,c
         , sizeOf g
         )
 
-    toTarget n (a,b,c,d,e,f,g) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        , toTarget n f
-        , toTarget n g
-        )
-
-
 instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h) => Type (a,b,c,d,e,f,g,h)
   where
     typeRep = Tup8Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
@@ -939,17 +867,6 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h) => Typ
         , sizeOf f
         , sizeOf g
         , sizeOf h
-        )
-
-    toTarget n (a,b,c,d,e,f,g,h) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        , toTarget n f
-        , toTarget n g
-        , toTarget n h
         )
 
 instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i) => Type (a,b,c,d,e,f,g,h,i)
@@ -968,18 +885,6 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i
         , sizeOf i
         )
 
-    toTarget n (a,b,c,d,e,f,g,h,i) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        , toTarget n f
-        , toTarget n g
-        , toTarget n h
-        , toTarget n i
-        )
-
 instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j) => Type (a,b,c,d,e,f,g,h,i,j)
   where
     typeRep = Tup10Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
@@ -995,19 +900,6 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i
         , sizeOf h
         , sizeOf i
         , sizeOf j
-        )
-
-    toTarget n (a,b,c,d,e,f,g,h,i,j) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        , toTarget n f
-        , toTarget n g
-        , toTarget n h
-        , toTarget n i
-        , toTarget n j
         )
 
 instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k) => Type (a,b,c,d,e,f,g,h,i,j,k)
@@ -1028,20 +920,6 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i
         , sizeOf k
         )
 
-    toTarget n (a,b,c,d,e,f,g,h,i,j,k) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        , toTarget n f
-        , toTarget n g
-        , toTarget n h
-        , toTarget n i
-        , toTarget n j
-        , toTarget n k
-        )
-
 instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l) => Type (a,b,c,d,e,f,g,h,i,j,k,l)
   where
     typeRep = Tup12Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
@@ -1059,21 +937,6 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i
         , sizeOf j
         , sizeOf k
         , sizeOf l
-        )
-
-    toTarget n (a,b,c,d,e,f,g,h,i,j,k,l) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        , toTarget n f
-        , toTarget n g
-        , toTarget n h
-        , toTarget n i
-        , toTarget n j
-        , toTarget n k
-        , toTarget n l
         )
 
 instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l, Type m) => Type (a,b,c,d,e,f,g,h,i,j,k,l,m)
@@ -1096,22 +959,6 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i
         , sizeOf m
         )
 
-    toTarget n (a,b,c,d,e,f,g,h,i,j,k,l,m) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        , toTarget n f
-        , toTarget n g
-        , toTarget n h
-        , toTarget n i
-        , toTarget n j
-        , toTarget n k
-        , toTarget n l
-        , toTarget n m
-        )
-
 instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l, Type m,Type n') => Type (a,b,c,d,e,f,g,h,i,j,k,l,m,n')
   where
     typeRep = Tup14Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
@@ -1131,23 +978,6 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i
         , sizeOf l
         , sizeOf m
         , sizeOf n'
-        )
-
-    toTarget n (a,b,c,d,e,f,g,h,i,j,k,l,m,n') =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        , toTarget n f
-        , toTarget n g
-        , toTarget n h
-        , toTarget n i
-        , toTarget n j
-        , toTarget n k
-        , toTarget n l
-        , toTarget n m
-        , toTarget n n'
         )
 
 instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l, Type m, Type n', Type o) => Type (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o)
@@ -1172,31 +1002,11 @@ instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i
         , sizeOf o
         )
 
-    toTarget n (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o) =
-        ( toTarget n a
-        , toTarget n b
-        , toTarget n c
-        , toTarget n d
-        , toTarget n e
-        , toTarget n f
-        , toTarget n g
-        , toTarget n h
-        , toTarget n i
-        , toTarget n j
-        , toTarget n k
-        , toTarget n l
-        , toTarget n m
-        , toTarget n n'
-        , toTarget n o
-        )
-
 instance Type a => Type (IORef a)
   where
     typeRep = RefType typeRep
 
     sizeOf _ = universal
-
-    toTarget = error "toTarget: IORef"  -- TODO Requires IO
 
 instance Type a => Type (MArr a)
   where
@@ -1204,15 +1014,11 @@ instance Type a => Type (MArr a)
 
     sizeOf _ = universal
 
-    toTarget = error "toTarget: MArr"  -- TODO Requires IO
-
 instance Type a => Type (Elements a)
   where
     typeRep = ElementsType typeRep
 
     sizeOf _ = universal
-
-    toTarget = error "toTarget: Elements"  -- TODO Requires IO
 
 instance (Type a, Type (RTuple a), Eq (Tuple a), Size (Tuple a) ~ Size (RTuple a))
   => Type (Tuple a)
@@ -1221,23 +1027,17 @@ instance (Type a, Type (RTuple a), Eq (Tuple a), Size (Tuple a) ~ Size (RTuple a
 
     sizeOf (Tuple xs) = sizeOf xs
 
-    toTarget = error "toTarget: Tuple"
-
 instance Type a => Type (IV a)
   where
     typeRep = IVarType typeRep
 
     sizeOf _ = universal
 
-    toTarget = error "toTarget: IVar" -- TODO Requires IO
-
 instance Type a => Type (FVal a)
   where
     typeRep = FValType typeRep
 
     sizeOf _ = universal
-
-    toTarget = error "toTarget: FVal" -- TODO
 
 -- | Extend the class Type to higher order types
 class (Typeable a, Show (Size a), Lattice (Size a)) => TypeF a where

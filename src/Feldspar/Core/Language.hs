@@ -732,7 +732,6 @@ instance Type a => Type (Mut a)
   where
     typeRep       = T.MutType typeRep
     sizeOf as     = P.error "sizeOf not implemented for Mut a"
-    toTarget n as = P.error "toTarget not implemented for Mut a"
 
 --------------------------------------------------
 -- MutableReference.hs
@@ -958,7 +957,6 @@ instance Type a => Type (Par a)
   where
     typeRep       = T.ParType typeRep
     sizeOf as     = P.error "sizeOf not implemented for Par a"
-    toTarget n as = P.error "toTarget not implemented for Par a"
 
 --------------------------------------------------
 -- RealFloat.hs
