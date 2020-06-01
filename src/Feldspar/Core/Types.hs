@@ -713,46 +713,6 @@ typeEq _ _ = Nothing
 showTup :: [String] -> String
 showTup as =  "(" ++ intercalate "," as ++ ")"
 
-type family TargetType n a where
-  TargetType n ()              = ()
-  TargetType n Bool            = Bool
-  TargetType n Word8           = Word8
-  TargetType n Int8            = Int8
-  TargetType n Word16          = Word16
-  TargetType n Int16           = Int16
-  TargetType n Word32          = Word32
-  TargetType n Int32           = Int32
-  TargetType n Word64          = Word64
-  TargetType n Int64           = Int64
-  TargetType n WordN           = GenericInt U n
-  TargetType n IntN            = GenericInt S n
-  TargetType n Float           = Float
-  TargetType n Double          = Double
-  TargetType n (Complex a)     = Complex (TargetType n a)
-  TargetType n [a]             = TargetArr n (TargetType n a)
-  TargetType n (a,b)           = (TargetType n a, TargetType n b)
-  TargetType n (a,b,c)         = (TargetType n a, TargetType n b, TargetType n c)
-  TargetType n (a,b,c,d)       = (TargetType n a, TargetType n b, TargetType n c, TargetType n d)
-  TargetType n (a,b,c,d,e)     = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e)
-  TargetType n (a,b,c,d,e,f)   = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f)
-  TargetType n (a,b,c,d,e,f,g) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g)
-  TargetType n (a,b,c,d,e,f,g,h) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h)
-  TargetType n (a,b,c,d,e,f,g,h,i) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i)
-  TargetType n (a,b,c,d,e,f,g,h,i,j) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j)
-  TargetType n (a,b,c,d,e,f,g,h,i,j,k) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k)
-  TargetType n (a,b,c,d,e,f,g,h,i,j,k,l) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l)
-  TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m)
-  TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m,n') = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m, TargetType n n')
-  TargetType n (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o) = (TargetType n a, TargetType n b, TargetType n c, TargetType n d, TargetType n e, TargetType n f, TargetType n g, TargetType n h, TargetType n i, TargetType n j, TargetType n k, TargetType n l, TargetType n m, TargetType n n', TargetType n o)
-  TargetType n (IORef a)       = IORef (TargetType n a)
-  TargetType n (MArr a)        = MArr (TargetType n a)
-  TargetType n (Elements a)    = Elements (TargetType n a)
-  TargetType n (RTuple (a:*b)) = RTuple (TargetType n a :* TargetType n b)
-  TargetType n (RTuple TNil)   = Tuple TNil
-  TargetType n (Tuple a)       = Tuple (TargetType n a)
-  TargetType n (IV a)          = IV (TargetType n a)
-  TargetType n (FVal a)        = FVal (TargetType n a)
-
 -- | The set of supported types
 class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a), TypeF a) => Type a
   where
