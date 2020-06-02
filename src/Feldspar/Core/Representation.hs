@@ -61,10 +61,9 @@ module Feldspar.Core.Representation
   , goodToShare
   ) where
 
-import Feldspar.Core.Types (Type(typeRep,sizeOf), TypeF(..), TypeRep(..), Length, Index, IntN,
+import Feldspar.Core.Types (Type(..), TypeF(..), TypeRep(..), Length, Index, IntN,
                             Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV, Tuple(..), RTuple, (:*), TNil)
-import Feldspar.Range
-import Feldspar.Lattice (Lattice(..))
+import Feldspar.Range (Range, BoundedInt)
 
 import qualified Data.ByteString.Char8 as B
 import Data.Typeable (Typeable, (:~:)(Refl), eqT)
