@@ -383,7 +383,6 @@ untypeType (TupleType t) sz            = untypeType t sz
 untypeType (IVarType a) sz             = U.IVarType $ untypeType a sz
 untypeType (FunType a b) (sa, sz)      = U.FunType (untypeType a sa) (untypeType b sz)
 untypeType (FValType a) sz             = U.FValType (untypeType a sz)
-untypeType _ _                       = error "untypeType: missing "
 
 untypeTup :: TypeRep (T.RTuple a) -> T.Size (T.RTuple a) -> [U.Type]
 untypeTup (ConsType a b) (sa,sb) = untypeType a sa : untypeTup b sb
@@ -542,8 +541,6 @@ toValueInfo (IVarType a) sz                 = toValueInfo a sz
 -- TODO: Maybe keep argument information for FunType.
 toValueInfo (FunType a b) (sa, _)           = toValueInfo a sa
 toValueInfo (FValType a) sz                 = toValueInfo a sz
-toValueInfo typ _
-  = error $ "toValueInfo: missing case for " ++ show typ
 
 -- The front-end driver.
 
