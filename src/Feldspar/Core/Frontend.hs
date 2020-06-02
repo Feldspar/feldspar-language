@@ -99,7 +99,7 @@ import Feldspar.Core.Interpretation (FeldOpts, defaultFeldOpts)
 import Feldspar.Core.Middleend.FromTyped (untype, untypeUnOpt, untypeDecor)
 import Feldspar.Core.UntypedRepresentation (VarId, stringTree, stringTreeExp)
 import Feldspar.Core.Language
-import Feldspar.ValueInfo (ValueInfo)
+import Feldspar.Core.ValueInfo (ValueInfo)
 
 reifyFeld :: Syntactic a => a -> ASTF (Internal a)
 reifyFeld = Syntactic.desugar
