@@ -98,7 +98,7 @@ import Feldspar.Core.Representation (VarId(..))
 
 import Feldspar.Range (Range(..), singletonRange, fullRange, emptyRange)
 import Feldspar.Core.Types (Length)
-import Feldspar.ValueInfo (ValueInfo(..), singletonVI, lubVI, boolBot, boolTop)
+import Feldspar.Core.ValueInfo (ValueInfo(..), singletonVI, lubVI, boolBot, boolTop)
 
 -- This file contains the UntypedFeld format and associated
 -- helper-formats and -functions that work on those formats, for

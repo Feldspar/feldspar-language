@@ -31,7 +31,7 @@ module Feldspar.Core.Middleend.OptimizeUntyped ( optimize ) where
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Feldspar.Core.UntypedRepresentation
-import Feldspar.ValueInfo (ValueInfo(..))
+import Feldspar.Core.ValueInfo (ValueInfo(..))
 import qualified Data.Bits as B
 import Feldspar.Core.Middleend.FromTypeUtil (convSize)
 import Feldspar.Core.Types (BitWidth(..))

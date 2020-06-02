@@ -38,7 +38,7 @@
      * a product (v1, ..., vk) of values denoting the cartesian product of the vi.
 -}
 
-module Feldspar.ValueInfo where
+module Feldspar.Core.ValueInfo where
 
 import Feldspar.Range
 import Feldspar.Lattice ((/\), (\/))

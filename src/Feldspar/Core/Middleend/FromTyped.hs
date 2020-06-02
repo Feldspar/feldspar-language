@@ -55,7 +55,7 @@ import Feldspar.Core.Types (TypeRep(..), typeRep, defaultSize, TypeF(..),
                             (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
-import Feldspar.ValueInfo (ValueInfo(..))
+import Feldspar.Core.ValueInfo (ValueInfo(..))
 import Feldspar.Range (Range(..))
 import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr((:&)), Expr((:@)))
