@@ -55,8 +55,8 @@ import Feldspar.Lattice
 
 import Debug.Trace
 
-tests = [ testGroup "Range Int"    $ typedTestsSigned   "Int"    (undefined :: Int)
-        , testGroup "Range Int8"   $ typedTestsSigned   "Int8"   (undefined :: Int8)
+tests = [ testGroup "Range Int8"   $ typedTestsSigned   "Int8"   (undefined :: Int8)
+        , testGroup "Range Int64"  $ typedTestsSigned   "Int64"  (undefined :: Int64)
         , testGroup "Range Word8"  $ typedTestsUnsigned "Word8"  (undefined :: Word8)
         , testGroup "Range Word32" $ typedTestsUnsigned "Word32" (undefined :: Word32)
         , testGroup "Range Bool"   $ typedTestsEnum     "Bool"   (undefined :: Bool)
