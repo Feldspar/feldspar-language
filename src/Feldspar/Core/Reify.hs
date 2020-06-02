@@ -341,7 +341,7 @@ instance Hashable (T.TypeRep a) where
   hash T.DoubleType                 = hashInt 5
   hash (T.ComplexType t)            = hashInt 6 # t
   hash (T.ArrayType t)              = hashInt 7 # t
-  hash (T.TargetArrType sz t)       = hashInt 8 # sz # t
+  -- Index 8 available.
   hash (T.Tup2Type a b)             = hashInt 9 # a # b
   hash (T.Tup3Type a b c)           = hashInt 10 # a # b # c
   hash (T.Tup4Type a b c d)         = hashInt 11 # a # b # c # d

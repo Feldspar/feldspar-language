@@ -147,16 +147,6 @@ type family GenericInt s n where
 type Length = WordN
 type Index  = WordN
 
-
-
---------------------------------------------------------------------------------
--- * Arrays
---------------------------------------------------------------------------------
-
--- | Array whose length is represented by an @n@-bit word
-data TargetArr n a = TargetArr (GenericInt U n) [a]
-
-
 --------------------------------------------------------------------------------
 -- * Monadic Types
 --------------------------------------------------------------------------------
@@ -260,7 +250,6 @@ data TypeRep a
     DoubleType    :: TypeRep Double
     ComplexType   :: RealFloat a => TypeRep a -> TypeRep (Complex a)
     ArrayType     :: TypeRep a -> TypeRep [a]
-    TargetArrType :: BitWidth n -> TypeRep a -> TypeRep (TargetArr n a)
     Tup2Type      :: TypeRep a -> TypeRep b -> TypeRep (a,b)
     Tup3Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep (a,b,c)
     Tup4Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep (a,b,c,d)
@@ -299,7 +288,6 @@ instance Show (TypeRep a)
     show DoubleType          = "Double"
     show (ComplexType t)     = "(Complex " ++ show t ++ ")"
     show (ArrayType t)       = "[" ++ show t ++ "]"
-    show (TargetArrType _ t) = "[" ++ show t ++ "]"
     show (Tup2Type ta tb)                = showTup [show ta, show tb]
     show (Tup3Type ta tb tc)             = showTup [show ta, show tb, show tc]
     show (Tup4Type ta tb tc td)          = showTup [show ta, show tb, show tc, show td]
@@ -339,7 +327,6 @@ defaultSize FloatType = universal
 defaultSize DoubleType = universal
 defaultSize (ComplexType _) = universal
 defaultSize (ArrayType t) = universal :> defaultSize t
---defaultSize (TargetArrType n t) = universal :> defaultSize t -- TODO
 defaultSize (Tup2Type ta tb) =  ( defaultSize ta
                                 , defaultSize tb
                                 )
@@ -522,10 +509,6 @@ typeEq (ComplexType t1) (ComplexType t2) = do
     TypeEq <- typeEq t1 t2
     return TypeEq
 typeEq (ArrayType t1) (ArrayType t2) = do
-    TypeEq <- typeEq t1 t2
-    return TypeEq
-typeEq (TargetArrType n1 t1) (TargetArrType n2 t2) = do
-    TypeEq <- widthEq n1 n2
     TypeEq <- typeEq t1 t2
     return TypeEq
 typeEq (Tup2Type a1 b1) (Tup2Type a2 b2) = do
@@ -1068,7 +1051,6 @@ type family Size a where
   Size Double          = AnySize
   Size (Complex a)     = AnySize
   Size [a]             = Range Length :> Size a
-  Size (TargetArr n a) = Range (GenericInt U n) :> Size a
   Size (a,b)           = (Size a, Size b)
   Size (a,b,c)         = (Size a, Size b, Size c)
   Size (a,b,c,d)       = (Size a, Size b, Size c, Size d)
