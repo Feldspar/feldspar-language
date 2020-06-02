@@ -81,8 +81,8 @@ resugar = sugar . desugar
 data ASTF a = ASTF (CExpr a) Int
 
 -- | Convert an ASTF to an expression
-unASTF :: b -> ASTF a -> AExpr a
-unASTF _ (ASTF ce _) = snd $ catchBindings [] ce
+unASTF :: ASTF a -> AExpr a
+unASTF (ASTF ce _) = snd $ catchBindings [] ce
 
 render :: ASTF a -> String
 render (ASTF (m,e) _) = unwords $ show e : "where" : map show (M.elems m)

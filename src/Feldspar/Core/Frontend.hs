@@ -174,7 +174,7 @@ drawDecor :: Syntactic a => a -> IO ()
 drawDecor = putStrLn . showDecorWith show . reifyFeld
 
 eval :: Syntactic a => a -> Internal a
-eval = E.eval . unASTF defaultFeldOpts . reifyFeld
+eval = E.eval . unASTF . reifyFeld
 
 desugar :: Syntactic a => a -> Data (Internal a)
 desugar = resugar
