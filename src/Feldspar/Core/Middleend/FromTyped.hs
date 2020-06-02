@@ -75,16 +75,16 @@ untypeDecor :: FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
 untypeDecor opts = pushLets
                  . optimize
                  . sinkLets opts
-                 . justUntype opts
+                 . justUntype
 
 -- | External module interface.
 untypeUnOpt :: FeldOpts -> ASTF a -> UntypedFeld
 untypeUnOpt opts = cleanUp opts
-                 . justUntype opts
+                 . justUntype
 
 -- | Only do the conversion to AUntypedFeld ValueInfo
-justUntype :: FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
-justUntype opts = renameExp . toU . sizeProp . adjustBindings . unASTF opts
+justUntype :: ASTF a -> AUntypedFeld ValueInfo
+justUntype = renameExp . toU . sizeProp . adjustBindings . unASTF
 
 -- | Prepare the code for fromCore
 cleanUp :: FeldOpts -> AUntypedFeld ValueInfo -> UntypedFeld
@@ -601,7 +601,7 @@ frontend ctrl opts = evalPasses 0
                    . pt FPUntype           toU
                    . pc FPSizeProp         sizeProp
                    . pc FPAdjustBind       adjustBindings
-                   . pt FPUnASTF           (unASTF opts)
+                   . pt FPUnASTF           unASTF
   where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
         pc = passC ctrl
         pt :: (Pretty a, Pretty b) => FrontendPass -> (a -> b) -> Prog a Int -> Prog b Int
