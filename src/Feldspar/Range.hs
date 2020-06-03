@@ -113,7 +113,7 @@ type family UnsignedRep a where
   UnsignedRep Word8  = Word8
   UnsignedRep Int16  = Word16
   UnsignedRep Word16 = Word16
-  UnsignedRep Int32  = Int32
+  UnsignedRep Int32  = Word32
   UnsignedRep Word32 = Word32
   UnsignedRep Int64  = Word64
   UnsignedRep Word64 = Word64
