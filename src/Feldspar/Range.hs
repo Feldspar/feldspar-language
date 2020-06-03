@@ -641,55 +641,55 @@ maxAndSigned a b c d =
 rangeOr :: forall a . (Integral a, Bits a, Integral (UnsignedRep a),
                        FiniteBits (UnsignedRep a))
                       => Range a -> Range a -> Range a
-rangeOr = handleSign rangeOrUnsignedAccurate rangeOrSignedAccurate
+rangeOr = handleSign rangeOrUnsigned rangeOrSigned
 
 -- | Accurate range propagation through '.|.' for unsigned types.
-rangeOrUnsignedAccurate :: (Integral a, Integral (UnsignedRep a),
-                            FiniteBits (UnsignedRep a))
-                        => Range a -> Range a -> Range a
-rangeOrUnsignedAccurate (Range l1 u1) (Range l2 u2) =
+rangeOrUnsigned :: (Integral a, Integral (UnsignedRep a),
+                    FiniteBits (UnsignedRep a))
+                => Range a -> Range a -> Range a
+rangeOrUnsigned (Range l1 u1) (Range l2 u2) =
     range (minOrUnsigned l1 u1 l2 u2) (maxOrUnsigned l1 u1 l2 u2)
 -- Code from Hacker's Delight.
 
-rangeOrSignedAccurate :: (Integral a, Integral (UnsignedRep a),
-                          FiniteBits (UnsignedRep a))
-                      => Range a -> Range a -> Range a
-rangeOrSignedAccurate (Range a b) (Range c d) =
+rangeOrSigned :: (Integral a, Integral (UnsignedRep a),
+                  FiniteBits (UnsignedRep a))
+              => Range a -> Range a -> Range a
+rangeOrSigned (Range a b) (Range c d) =
     range (minOrSigned a b c d) (maxOrSigned a b c d)
 
 -- | Propagating range information through '.&.'.
 rangeAnd :: forall a . (Integral a, Bits a,
                         Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
                        => Range a -> Range a -> Range a
-rangeAnd = handleSign rangeAndUnsignedAccurate rangeAndSignedAccurate
+rangeAnd = handleSign rangeAndUnsigned rangeAndSigned
 
 -- | Accurate range propagation through '.&.' for unsigned types
-rangeAndUnsignedAccurate :: (Integral a, Bits a,
-                             Integral (UnsignedRep a),
-                             FiniteBits (UnsignedRep a))
-                         => Range a -> Range a -> Range a
-rangeAndUnsignedAccurate (Range a b) (Range c d) =
+rangeAndUnsigned :: (Integral a, Bits a,
+                     Integral (UnsignedRep a),
+                     FiniteBits (UnsignedRep a))
+                 => Range a -> Range a -> Range a
+rangeAndUnsigned (Range a b) (Range c d) =
     range (minAndUnsigned a b c d) (maxAndUnsigned a b c d)
 
-rangeAndSignedAccurate :: (Integral a, Bits a,
-                           Integral (UnsignedRep a),
-                           FiniteBits (UnsignedRep a))
-                       => Range a -> Range a -> Range a
-rangeAndSignedAccurate (Range a b) (Range c d) =
+rangeAndSigned :: (Integral a, Bits a,
+                   Integral (UnsignedRep a),
+                   FiniteBits (UnsignedRep a))
+               => Range a -> Range a -> Range a
+rangeAndSigned (Range a b) (Range c d) =
     range (minAndSigned a b c d) (maxAndSigned a b c d)
 
 -- | Propagating range information through 'xor'.
 rangeXor :: forall a . (Bounded a, Integral a, Bits a,
                         Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
                        => Range a -> Range a -> Range a
-rangeXor = handleSign rangeXorUnsignedAccurate (\_ _ -> universal)
+rangeXor = handleSign rangeXorUnsigned (\_ _ -> universal)
 
 -- | Accurate range propagation through 'xor' for unsigned types
-rangeXorUnsignedAccurate :: (Integral a, Bits a,
-                             Integral (UnsignedRep a),
-                             FiniteBits (UnsignedRep a))
-                         => Range a -> Range a -> Range a
-rangeXorUnsignedAccurate (Range a b) (Range c d) =
+rangeXorUnsigned :: (Integral a, Bits a,
+                     Integral (UnsignedRep a),
+                     FiniteBits (UnsignedRep a))
+                 => Range a -> Range a -> Range a
+rangeXorUnsigned (Range a b) (Range c d) =
     range (minXorUnsigned a b c d) (maxXorUnsigned a b c d)
 
 -- |
