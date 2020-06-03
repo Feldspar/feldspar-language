@@ -120,11 +120,6 @@ type family UnsignedRep a where
   UnsignedRep WordN  = Word32
   UnsignedRep IntN   = Word32
 
--- | Convert an 'Integral' to its unsigned representation while preserving
--- bit width
-unsigned :: (Integral a, Num (UnsignedRep a)) => a -> UnsignedRep a
-unsigned = fromIntegral
-
 -- | A convenience function for defining range propagation.
 --   @handleSign propU propS@ chooses @propU@ for unsigned types and
 --   @propS@ for signed types.
@@ -514,14 +509,8 @@ maxPlus b d = if s < b then maxBound
   where s = b + d
 
 -- | Accurate lower bound for '.|.' on unsigned numbers.
-minOrUnsigned :: (Integral a, Integral (UnsignedRep a),
-                  FiniteBits (UnsignedRep a))
-              => a -> a -> a -> a -> a
-minOrUnsigned a b c d =
-    fromIntegral $ minOr (unsigned a) (unsigned b) (unsigned c) (unsigned d)
-
-minOr :: (Ord a, Num a, FiniteBits a) => a -> a -> a -> a -> a
-minOr a b c d = loop (bit (finiteBitSize a - 1))
+minOrUnsigned :: (Ord a, Num a, FiniteBits a) => a -> a -> a -> a -> a
+minOrUnsigned a b c d = loop (bit (finiteBitSize a - 1))
   where loop 0 = a .|. c
         loop m
             | complement a .&. c .&. m > 0 =
@@ -538,14 +527,8 @@ minOr a b c d = loop (bit (finiteBitSize a - 1))
 -- Code from Hacker's Delight.
 
 -- | Accurate upper bound for '.|.' on unsigned numbers.
-maxOrUnsigned :: (Integral a, Integral (UnsignedRep a),
-                  FiniteBits (UnsignedRep a))
-              => a -> a -> a -> a -> a
-maxOrUnsigned a b c d =
-    fromIntegral $ maxOr (unsigned a) (unsigned b) (unsigned c) (unsigned d)
-
-maxOr :: (Ord a, Num a, FiniteBits a) => a -> a -> a -> a -> a
-maxOr a b c d = loop (bit (finiteBitSize a - 1))
+maxOrUnsigned :: (Ord a, Num a, FiniteBits a) => a -> a -> a -> a -> a
+maxOrUnsigned a b c d = loop (bit (finiteBitSize a - 1))
   where loop 0 = b .|. d
         loop m
              | b .&. d .&. m > 0 =
@@ -560,68 +543,69 @@ maxOr a b c d = loop (bit (finiteBitSize a - 1))
 -- Code from Hacker's Delight.
 
 -- | Accurate lower bound for '.&.' on unsigned numbers
-minAndUnsigned :: (Integral a, Bits a,
-                   Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
-               => a -> a -> a -> a -> a
+minAndUnsigned :: (Ord a, Num a, FiniteBits a) => a -> a -> a -> a -> a
 minAndUnsigned a b c d =
   complement $ maxOrUnsigned (complement b) (complement a)
                              (complement d) (complement c)
 
 -- | Accurate upper bound for '.&.' on unsigned numbers
-maxAndUnsigned :: (Integral a, Bits a,
-                   Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
-               => a -> a -> a -> a -> a
+maxAndUnsigned :: (Ord a, Num a, FiniteBits a) => a -> a -> a -> a -> a
 maxAndUnsigned a b c d =
   complement $ minOrUnsigned (complement b) (complement a)
                              (complement d) (complement c)
 
 -- | Accurate lower bound for 'xor' on unsigned numbers
-minXorUnsigned :: (Integral a, Bits a,
-                   Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
-               => a -> a -> a -> a -> a
+minXorUnsigned :: (Ord a, Num a, FiniteBits a) => a -> a -> a -> a -> a
 minXorUnsigned a b c d = x .|. y
   where
     x = minAndUnsigned a b (complement d) (complement c)
     y = minAndUnsigned (complement b) (complement a) c d
 
 -- | Accurate upper bound for 'xor' on unsigned numbers
-maxXorUnsigned :: (Integral a, Bits a,
-                   Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
-               => a -> a -> a -> a -> a
+maxXorUnsigned :: (Ord a, Num a, FiniteBits a) => a -> a -> a -> a -> a
 maxXorUnsigned a b c d = maxOrUnsigned 0 x 0 y
   where
     x = maxAndUnsigned a b (complement d) (complement c)
     y = maxAndUnsigned (complement b) (complement a) c d
 
-minOrSigned :: (Integral a,
-                Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
+minOrSigned :: forall a . (Integral a,
+                           Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
             => a -> a -> a -> a -> a
 minOrSigned a b c d = case (a<0,b<0,c<0,d<0) of
-    (True ,True ,True ,True ) -> minOrUnsigned a b c d
+    (True ,True ,True ,True ) -> fromIntegral $ minOrUnsigned a' b' c' d'
     (True ,True ,True ,False) -> a
-    (True ,True ,False,False) -> minOrUnsigned a b c d
+    (True ,True ,False,False) -> fromIntegral $ minOrUnsigned a' b' c' d'
     (True ,False,True ,True ) -> c
     (True ,False,True ,False) -> min a c
-    (True ,False,False,False) -> minOrUnsigned a (-1) c d
-    (False,False,True ,True ) -> minOrUnsigned a b c d
-    (False,False,True ,False) -> minOrUnsigned a b c (-1)
-    (False,False,False,False) -> minOrUnsigned a b c d
+    (True ,False,False,False) -> fromIntegral $ minOrUnsigned a' negOne c' d'
+    (False,False,True ,True ) -> fromIntegral $ minOrUnsigned a' b' c' d'
+    (False,False,True ,False) -> fromIntegral $ minOrUnsigned a' b' c' negOne
+    (False,False,False,False) -> fromIntegral $ minOrUnsigned a' b' c' d'
     (_    ,_    ,_    ,_    ) -> error "Can't propagate over 'or'"
+  where a' = fromIntegral a :: UnsignedRep a
+        b' = fromIntegral b
+        c' = fromIntegral c
+        d' = fromIntegral d
+        negOne = fromIntegral ((-1) :: a)
 
-maxOrSigned :: (Integral a,
-                Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
+maxOrSigned :: forall a . (Integral a,
+                           Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
             => a -> a -> a -> a -> a
 maxOrSigned a b c d = case (a<0,b<0,c<0,d<0) of
-    (True ,True ,True ,True ) -> maxOrUnsigned a b c d
+    (True ,True ,True ,True ) -> fromIntegral $ maxOrUnsigned a' b' c' d'
     (True ,True ,True ,False) -> -1
-    (True ,True ,False,False) -> maxOrUnsigned a b c d
+    (True ,True ,False,False) -> fromIntegral $ maxOrUnsigned a' b' c' d'
     (True ,False,True ,True ) -> -1
-    (True ,False,True ,False) -> maxOrUnsigned 0 b 0 d
-    (True ,False,False,False) -> maxOrUnsigned 0 b c d
-    (False,False,True ,True ) -> maxOrUnsigned a b c d
-    (False,False,True ,False) -> maxOrUnsigned a b 0 d
-    (False,False,False,False) -> maxOrUnsigned a b c d
+    (True ,False,True ,False) -> fromIntegral $ maxOrUnsigned 0 b' 0 d'
+    (True ,False,False,False) -> fromIntegral $ maxOrUnsigned 0 b' c' d'
+    (False,False,True ,True ) -> fromIntegral $ maxOrUnsigned a' b' c' d'
+    (False,False,True ,False) -> fromIntegral $ maxOrUnsigned a' b' 0 d'
+    (False,False,False,False) -> fromIntegral $ maxOrUnsigned a' b' c' d'
     (_    ,_    ,_    ,_    ) -> error "Can't propagate over 'or'"
+  where a' = fromIntegral a :: UnsignedRep a
+        b' = fromIntegral b
+        c' = fromIntegral c
+        d' = fromIntegral d
 
 minAndSigned :: (Integral a, Bits a,
                 Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
@@ -638,15 +622,13 @@ maxAndSigned a b c d =
                              (complement d) (complement c)
 
 -- | Propagates range information through '.|.'.
-rangeOr :: forall a . (Integral a, Bits a, Integral (UnsignedRep a),
+rangeOr :: forall a . (Integral a, FiniteBits a, Integral (UnsignedRep a),
                        FiniteBits (UnsignedRep a))
                       => Range a -> Range a -> Range a
 rangeOr = handleSign rangeOrUnsigned rangeOrSigned
 
 -- | Accurate range propagation through '.|.' for unsigned types.
-rangeOrUnsigned :: (Integral a, Integral (UnsignedRep a),
-                    FiniteBits (UnsignedRep a))
-                => Range a -> Range a -> Range a
+rangeOrUnsigned :: (Ord a, Num a, FiniteBits a) => Range a -> Range a -> Range a
 rangeOrUnsigned (Range l1 u1) (Range l2 u2) =
     range (minOrUnsigned l1 u1 l2 u2) (maxOrUnsigned l1 u1 l2 u2)
 -- Code from Hacker's Delight.
@@ -658,16 +640,13 @@ rangeOrSigned (Range a b) (Range c d) =
     range (minOrSigned a b c d) (maxOrSigned a b c d)
 
 -- | Propagating range information through '.&.'.
-rangeAnd :: forall a . (Integral a, Bits a,
+rangeAnd :: forall a . (Integral a, FiniteBits a,
                         Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
                        => Range a -> Range a -> Range a
 rangeAnd = handleSign rangeAndUnsigned rangeAndSigned
 
 -- | Accurate range propagation through '.&.' for unsigned types
-rangeAndUnsigned :: (Integral a, Bits a,
-                     Integral (UnsignedRep a),
-                     FiniteBits (UnsignedRep a))
-                 => Range a -> Range a -> Range a
+rangeAndUnsigned :: (Ord a, Num a, FiniteBits a) => Range a -> Range a -> Range a
 rangeAndUnsigned (Range a b) (Range c d) =
     range (minAndUnsigned a b c d) (maxAndUnsigned a b c d)
 
@@ -679,20 +658,15 @@ rangeAndSigned (Range a b) (Range c d) =
     range (minAndSigned a b c d) (maxAndSigned a b c d)
 
 -- | Propagating range information through 'xor'.
-rangeXor :: forall a . (Bounded a, Integral a, Bits a,
-                        Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
+rangeXor :: forall a . (Bounded a, Ord a, Num a, FiniteBits a)
                        => Range a -> Range a -> Range a
 rangeXor = handleSign rangeXorUnsigned (\_ _ -> universal)
 
 -- | Accurate range propagation through 'xor' for unsigned types
-rangeXorUnsigned :: (Integral a, Bits a,
-                     Integral (UnsignedRep a),
-                     FiniteBits (UnsignedRep a))
-                 => Range a -> Range a -> Range a
+rangeXorUnsigned :: (Ord a, Num a, FiniteBits a) => Range a -> Range a -> Range a
 rangeXorUnsigned (Range a b) (Range c d) =
     range (minXorUnsigned a b c d) (maxXorUnsigned a b c d)
 
--- |
 -- | Propagating range information through 'shiftLU'.
 rangeShiftLU :: (Bounded a, Integral a, FiniteBits a, Integral b)
              => Range a -> Range b -> Range a
