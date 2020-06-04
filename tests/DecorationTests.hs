@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeOperators #-}
 module Main where
 
 -- To generate the golden files use a script similiar to this one
@@ -18,7 +19,7 @@ import Feldspar.Applications.TFModel(tfModel)
 import Feldspar.Core.UntypedRepresentation (prettyExp)
 import Feldspar.Core.Middleend.FromTyped (FrontendPass(FPUnAnnotate), frontend)
 import Feldspar.Core.Middleend.PassManager (PassCtrl(..), defaultPassCtrl)
-
+import Feldspar.Core.NestedTuples
 
 
 topLevelConsts :: Data Index -> Data Index -> Data Index
@@ -43,6 +44,19 @@ trickySharing x = (a+b+c) + (a+b) + (a+b+c)
     b = x*5
     c = x*7
 
+-- We want no sharing between the two tuples in the result although they have a common tail
+noshareT :: (Tuple (Data Length :* Data Length :* TNil)
+           , Tuple (Data Length :* Data Length :* TNil))
+noshareT = let two = 2 in (build $ tuple 1 two, build $ tuple 3 two)
+
+-- We want sharing between the two tuples in the result since they are identical
+shareT :: (Tuple (Data Length :* Data Length :* TNil)
+         , Tuple (Data Length :* Data Length :* TNil))
+shareT = (build $ tuple 1 2, build $ tuple 1 2)
+
+selectT :: Data Length
+selectT = sel First $ snd noshareT
+
 -- Compile an expression to untyped IL and show it as a string
 showUntyped :: Syntactic a => FeldOpts -> a -> String
 showUntyped opts = Prelude.head . Prelude.fst . frontend passCtrl opts . reifyFeld
@@ -59,6 +73,9 @@ tests = testGroup "DecorationTests"
     , goldenVsFile "topLevelConsts" (ref "topLevelConsts.txt") "tests/topLevelConsts.txt" $ writeFile "tests/topLevelConsts.txt" $ showDecor topLevelConsts
     , goldenVsFile "monadicSharing" (ref "monadicSharing.txt") "tests/monadicSharing.txt" $ writeFile "tests/monadicSharing.txt" $ showDecor monadicSharing
     , goldenVsFile "trickySharing" (ref "trickySharing.txt") "tests/trickySharing.txt" $ writeFile "tests/trickySharing.txt" $ showDecor trickySharing
+    , goldenVsFile "noshareT" (ref "noshareT.txt") "tests/noshareT.txt" $ writeFile "tests/noshareT.txt" $ showDecor noshareT
+    , goldenVsFile "shareT" (ref "shareT.txt") "tests/shareT.txt" $ writeFile "tests/shareT.txt" $ showDecor shareT
+    , goldenVsFile "selectT" (ref "selectT.txt") "tests/selectT.txt" $ writeFile "tests/selectT.txt" $ showDecor selectT
     , goldenVsFile "tfModel" (ref "tfModel.txt") "tests/tfModel.txt" $ writeFile "tests/tfModel.txt" $ showUntyped defaultFeldOpts tfModel
     ]
 

@@ -40,7 +40,7 @@
 module Feldspar.Core.Types
        ( module Feldspar.Core.Types
        , IntN(..), WordN(..)
-       , tuple, Tuple(), RTuple(..), TSelect(..), sel, Skip(..), First(..), (:*), TNil -- From NestedTuples
+       , Tuple(..), (:*), TNil -- From NestedTuples
        ) where
 
 
@@ -270,9 +270,8 @@ data TypeRep a
     MArrType      :: TypeRep a -> TypeRep (MArr a)
     ParType       :: TypeRep a -> TypeRep (Par a)
     ElementsType  :: TypeRep a -> TypeRep (Elements a)
-    ConsType      :: TypeRep a -> TypeRep (RTuple b) -> TypeRep (RTuple (a :* b))
-    NilType       :: TypeRep (RTuple TNil)
-    TupleType     :: TypeRep (RTuple a) -> TypeRep (Tuple a)
+    ConsType      :: TypeRep a -> TypeRep (Tuple b) -> TypeRep (Tuple (a :* b))
+    NilType       :: TypeRep (Tuple TNil)
     IVarType      :: TypeRep a -> TypeRep (IV a)
     FValType      :: TypeRep a -> TypeRep (FVal a)
       -- TODO `MArrType` Should have a target-specialized version. Or perhaps
@@ -310,7 +309,6 @@ instance Show (TypeRep a)
     show (ElementsType ta)               = unwords ["Elements", show ta]
     show (ConsType ta tb)                = unwords [show ta, ":*", show tb]
     show NilType                         = "TNil"
-    show (TupleType t)                   = "<" ++ show t ++ ">"
     show (IVarType ta)                   = unwords ["IVar", show ta]
     show (FValType ta)                   = unwords ["FVal", show ta]
 
@@ -471,7 +469,6 @@ defaultSize (ParType ta) = defaultSize ta
 defaultSize (ElementsType ta) = universal :> defaultSize ta
 defaultSize (ConsType ta tb) = (defaultSize ta, defaultSize tb)
 defaultSize NilType = universal
-defaultSize (TupleType t) = defaultSize t
 defaultSize (IVarType ta) = defaultSize ta
 defaultSize (FValType ta) = defaultSize ta
 
@@ -745,12 +742,15 @@ instance Type a => Type (Elements a)
 
     sizeOf _ = universal
 
-instance (Type a, Type (RTuple a), Eq (Tuple a), Size (Tuple a) ~ Size (RTuple a))
-  => Type (Tuple a)
+instance (Type a, Typeable b, Type (Tuple b)) => Type (Tuple (a :* b))
   where
-    typeRep = TupleType typeRep
+    typeRep = ConsType typeRep typeRep
+    sizeOf (x :* xs) = (sizeOf x, sizeOf xs)
 
-    sizeOf (Tuple xs) = sizeOf xs
+instance Type (Tuple TNil)
+  where
+    typeRep = NilType
+    sizeOf _ = universal
 
 instance Type a => Type (IV a)
   where
@@ -772,16 +772,6 @@ class (Typeable a, Show (Size a), Lattice (Size a)) => TypeF a where
 instance {-# OVERLAPPING #-} (TypeF a, TypeF b) => TypeF (a -> b) where
   typeRepF = FunType typeRepF typeRepF
   sizeOfF f = universal
-
-instance {-# OVERLAPPING #-} (Type a, Typeable b, TypeF (RTuple b)) => TypeF (RTuple (a :* b))
-  where
-    typeRepF = ConsType typeRep typeRepF
-    sizeOfF (x :* xs) = (sizeOf x, sizeOfF xs)
-
-instance {-# OVERLAPPING #-} TypeF (RTuple TNil)
-  where
-    typeRepF = NilType
-    sizeOfF _ = universal
 
 instance {-# OVERLAPPABLE #-} (Typeable a, Type a) => TypeF a where
   typeRepF = typeRep
@@ -853,9 +843,8 @@ type family Size a where
   Size (MArr a)        = Range Length :> Size a
   Size (Par a)         = Size a
   Size (Elements a)    = Range Length :> Size a
-  Size (RTuple (a :* b)) = (Size a, Size (RTuple b))
-  Size (RTuple TNil)   = Size ()
-  Size (Tuple a)       = Size (RTuple a)
+  Size (Tuple (a :* b)) = (Size a, Size (Tuple b))
+  Size (Tuple TNil)   = Size ()
   Size (IV a)          = Size a
   Size (FVal a)        = Size a
 
