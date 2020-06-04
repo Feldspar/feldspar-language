@@ -784,13 +784,16 @@ thawArray arr = do
 
 class SyntacticTup a where
     type InternalTup a
-    desugarTup :: RTuple a -> ASTF (RTuple (InternalTup a))
-    sugarTup   :: ASTF (RTuple (InternalTup a)) -> RTuple a
+    desugarTup :: Tuple a -> ASTF (Tuple (InternalTup a))
+    sugarTup   :: ASTF (Tuple (InternalTup a)) -> Tuple a
 
-instance (Type (Internal a), Type (RTuple (InternalTup b)), Syntactic a, SyntacticTup b, Typeable (InternalTup b))
+-- The desugarTup method below can not use sugarSym2 since it must apply desugarTup rather
+-- than desugar to the tail of the tuple to avoid inserting Tup and thus making the tail sharable.
+
+instance (Syntax a, Type (Tuple (InternalTup b)), SyntacticTup b, Typeable (InternalTup b))
          => SyntacticTup (a :* b) where
     type InternalTup (a :* b) = Internal a :* InternalTup b
-    desugarTup (x :* xs) = sugarSym2 Cons x xs
+    desugarTup (x :* xs) = astfFull $ astfOp Cons `astfApp` desugar x `astfApp` desugarTup xs
     sugarTup e = sugar (sugarSym1 Car e) :* sugarTup (sugarSym1 Cdr e)
 
 instance SyntacticTup TNil where
@@ -798,27 +801,10 @@ instance SyntacticTup TNil where
     desugarTup TNil = sugarSym0 Nil
     sugarTup _ = TNil
 
-instance SyntacticTup a => Syntactic (RTuple a) where
-    type Internal (RTuple a) = RTuple (InternalTup a)
-    desugar = desugarTup
-    sugar = sugarTup
-
-car :: (Syntax a, SyntacticTup b, Type (RTuple (InternalTup b)), Typeable (InternalTup b))
-    => RTuple (a :* b) -> a
-car = sugarSym1 Car
-
-cdr :: (Syntax a, SyntacticTup b, Type (RTuple (InternalTup b)), Typeable (InternalTup b))
-    => RTuple (a :* b) -> RTuple b
-cdr = sugarSym1 Cdr
-
-instance (P.Eq (Tuple (InternalTup a)),
-          Type (RTuple (InternalTup a)),
-          Type (InternalTup a),
-          SyntacticTup a)
-      => Syntactic (Tuple a) where
+instance (SyntacticTup a, Type (Tuple (InternalTup a))) => Syntactic (Tuple a) where
     type Internal (Tuple a) = Tuple (InternalTup a)
-    desugar (Tuple x) = sugarSym1 Tup x
-    sugar e = Tuple $ sugar $ sugarSym1 UnTup e
+    desugar = sugarSym1 Tup . desugarTup
+    sugar = sugarTup . unTup
 
 --------------------------------------------------
 -- NoInline.hs

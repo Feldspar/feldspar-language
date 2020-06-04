@@ -121,8 +121,6 @@ toU (((R.Info i) :: R.Info a) :& e)
            R.Operator R.Tup ->
              case toU a of
               AIn _ e' -> e'
-           R.Operator R.UnTup ->
-             let e' = toU a in App (Drop 0) (typeof e') [e']
            _ -> case go e [] of
                  (op, es) ->
                    App op (untypeType tr i) es
@@ -379,12 +377,11 @@ untypeType (ParType a) sz              = U.ParType (untypeType a sz)
 untypeType (ElementsType a) (rs :> es) = U.ElementsType (untypeType a es)
 untypeType (ConsType a b) (sa,sb)      = U.TupType $ untypeTup (ConsType a b) (sa,sb)
 untypeType NilType        _            = U.TupType []
-untypeType (TupleType t) sz            = untypeType t sz
 untypeType (IVarType a) sz             = U.IVarType $ untypeType a sz
 untypeType (FunType a b) (sa, sz)      = U.FunType (untypeType a sa) (untypeType b sz)
 untypeType (FValType a) sz             = U.FValType (untypeType a sz)
 
-untypeTup :: TypeRep (T.RTuple a) -> T.Size (T.RTuple a) -> [U.Type]
+untypeTup :: TypeRep (T.Tuple a) -> T.Size (T.Tuple a) -> [U.Type]
 untypeTup (ConsType a b) (sa,sb) = untypeType a sa : untypeTup b sb
 untypeTup NilType        _       = []
 
@@ -536,7 +533,6 @@ toValueInfo (ElementsType a) (Range (T.WordN l) (T.WordN r) :> es)
 toValueInfo (ConsType a b) (sa,sb) = VIProd $ toValueInfo a sa : ss
   where VIProd ss = toValueInfo b sb
 toValueInfo NilType _ = VIProd []
-toValueInfo (TupleType t) sz = toValueInfo t sz
 toValueInfo (IVarType a) sz                 = toValueInfo a sz
 -- TODO: Maybe keep argument information for FunType.
 toValueInfo (FunType a b) (sa, _)           = toValueInfo a sa

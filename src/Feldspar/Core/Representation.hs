@@ -62,7 +62,7 @@ module Feldspar.Core.Representation
   ) where
 
 import Feldspar.Core.Types (Type(..), TypeF(..), TypeRep(..), Length, Index, IntN,
-                            Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV, Tuple(..), RTuple, (:*), TNil)
+                            Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV, Tuple(..), (:*), TNil)
 import Feldspar.Range (Range, BoundedInt)
 
 import qualified Data.ByteString.Char8 as B
@@ -319,12 +319,11 @@ data Op a where
     ModRef :: Type a => Op (IORef a :-> (a -> a) :-> Full (Mut ()))
 
     -- | Nested tuples
-    Cons  :: Type a => Op (a :-> RTuple b :-> Full (RTuple (a :* b)))
-    Nil   ::           Op (Full (RTuple TNil))
-    Car   :: Type a => Op (RTuple (a :* b) :-> Full a)
-    Cdr   ::           Op (RTuple (a :* b) :-> Full (RTuple b))
-    Tup   ::           Op (RTuple a :-> Full (Tuple a))
-    UnTup ::           Op (Tuple a :-> Full (RTuple a))
+    Cons  :: Type a => Op (a :-> Tuple b :-> Full (Tuple (a :* b)))
+    Nil   ::           Op (Full (Tuple TNil))
+    Car   :: Type a => Op (Tuple (a :* b) :-> Full a)
+    Cdr   ::           Op (Tuple (a :* b) :-> Full (Tuple b))
+    Tup   ::           Op (Tuple a :-> Full (Tuple a))
 
     -- | NoInline
     NoInline :: Type a => Op (a :-> Full a)
@@ -541,7 +540,6 @@ shOp ModRef    = False
 shOp Cons      = False
 shOp Nil       = False
 shOp Cdr       = False
-shOp UnTup     = False
 -- Everything else
 shOp _ = True
 

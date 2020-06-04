@@ -7,6 +7,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeOperators #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -43,11 +44,15 @@ module Feldspar.Core.Reify
        , unASTF
        , render
        , resugar
+       , unTup
        , Data(..)
        , Mon(..)
        , SugarF
        , sugarSym
        , unFull
+       , astfOp
+       , astfApp
+       , astfFull
        , value
        ) where
 
@@ -56,6 +61,7 @@ import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..),
                                      bvId, mkLets, sharable)
 import qualified Feldspar.Core.Types as T
 import Feldspar.Lattice (top)
+import Feldspar.Core.NestedTuples
 
 import Control.Applicative
 import Control.Monad.Cont
@@ -116,6 +122,11 @@ instance (Syntactic a, T.Type (Internal a)) => Syntax a
   --
   -- The type error is not very readable now either, but at least it fits on the
   -- screen.
+
+-- | Convenience function to peel off a Tup constructor
+unTup :: ASTF (T.Tuple a) -> ASTF (T.Tuple a)
+unTup (ASTF (m, _ :& Operator Tup :@ e) i) = ASTF (m, e) i
+unTup (ASTF (_, e) _) = error $ "Reify.unTup: Tup not outermost constructor in " ++ show e
 
 --------------------------------------------------------------------------------
 -- * Front end
@@ -190,6 +201,15 @@ unFull :: FFF a -> a
 unFull (FFF x) = x
 
 type RCSExpr a = CSEExpr (Expr a)
+
+astfApp :: (RCSExpr (a -> b), Int) -> ASTF a -> (RCSExpr b, Int)
+astfApp (cf,jf) (ASTF ca ja) = (applyCSE cf ca, max jf ja)
+
+astfOp :: Typeable a => Op a -> (RCSExpr a, Int)
+astfOp op = ((M.empty, Operator op), 0)
+
+astfFull :: TypeF a => (RCSExpr a, Int) -> ASTF a
+astfFull = full
 
 -- | Support for the overloaded sugarSym function
 class SugarF a where
@@ -329,6 +349,19 @@ instance Hashable (T.BitWidth a) where
   hash T.N64     = hashInt 4
   hash T.NNative = hashInt 5
 
+-- This instance is needed to allow nested tuples as literals (by the value function)
+instance HashTup a => Hashable (Tuple a) where
+  hash = hashTup
+
+class HashTup a where
+  hashTup :: Tuple a -> Hash
+
+instance HashTup TNil where
+  hashTup _ = hashInt 1
+
+instance (Hashable h, HashTup t) => HashTup (h :* t) where
+  hashTup (x :* xs) = hashInt 2 # x # xs
+
 infixl 5 #
 (#) :: Hashable a => Hash -> a -> Hash
 h # x = h `combine` hash x
@@ -371,7 +404,7 @@ instance Hashable (T.TypeRep a) where
   hash (T.ElementsType t) = hashInt 28 # t
   hash (T.ConsType a b)   = hashInt 31 # a # b
   hash  T.NilType         = hashInt 32
-  hash (T.TupleType t)    = hashInt 33 # t
+  -- Index 33 avalable.
   hash (T.IVarType t)     = hashInt 29 # t
   hash (T.FValType t)     = hashInt 30 # t
 
