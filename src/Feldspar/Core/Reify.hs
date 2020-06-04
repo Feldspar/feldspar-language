@@ -44,15 +44,11 @@ module Feldspar.Core.Reify
        , unASTF
        , render
        , resugar
-       , unTup
        , Data(..)
        , Mon(..)
        , SugarF
        , sugarSym
        , unFull
-       , astfOp
-       , astfApp
-       , astfFull
        , value
        ) where
 
@@ -122,11 +118,6 @@ instance (Syntactic a, T.Type (Internal a)) => Syntax a
   --
   -- The type error is not very readable now either, but at least it fits on the
   -- screen.
-
--- | Convenience function to peel off a Tup constructor
-unTup :: ASTF (T.Tuple a) -> ASTF (T.Tuple a)
-unTup (ASTF (m, _ :& Operator Tup :@ e) i) = ASTF (m, e) i
-unTup (ASTF (_, e) _) = error $ "Reify.unTup: Tup not outermost constructor in " ++ show e
 
 --------------------------------------------------------------------------------
 -- * Front end
@@ -201,15 +192,6 @@ unFull :: FFF a -> a
 unFull (FFF x) = x
 
 type RCSExpr a = CSEExpr (Expr a)
-
-astfApp :: (RCSExpr (a -> b), Int) -> ASTF a -> (RCSExpr b, Int)
-astfApp (cf,jf) (ASTF ca ja) = (applyCSE cf ca, max jf ja)
-
-astfOp :: Typeable a => Op a -> (RCSExpr a, Int)
-astfOp op = ((M.empty, Operator op), 0)
-
-astfFull :: TypeF a => (RCSExpr a, Int) -> ASTF a
-astfFull = full
 
 -- | Support for the overloaded sugarSym function
 class SugarF a where
