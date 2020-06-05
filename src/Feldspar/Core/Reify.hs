@@ -203,7 +203,7 @@ instance (Syntactic b, SugarF c) => SugarF (b -> c) where
   sugarF f@(cf,i) = sugarF . go . desugar
     where go (ASTF ce j) = (applyCSE cf ce, max i j)
 
-instance (Syntactic b, TypeF (Internal b)) => SugarF (FFF b) where
+instance Syntax b => SugarF (FFF b) where
   type SugarT (FFF b) = Internal b
   sugarF = FFF . sugar . full
 
@@ -222,7 +222,7 @@ type CSEExpr e = (CSEMap, e)
 type CExpr a = CSEExpr (AExpr a)
 
 -- | Convert a CSE map, an Expr and an Int to an ASTF
-full :: TypeF b => (CSEExpr (Expr b), Int) -> ASTF b
+full :: T.Type b => (CSEExpr (Expr b), Int) -> ASTF b
 full (~(m, e), i) = ASTF (flattenCSE (m, Info top :& e)) i
 
 flattenCSE :: CExpr a -> CExpr a
