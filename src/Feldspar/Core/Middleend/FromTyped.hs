@@ -103,7 +103,7 @@ toU (((R.Info i) :: R.Info a) :& e)
   = i2 $ Literal $ literal tr i v
   | (R.Operator op) <- e
   = i2 $ App (trOp op) (untypeType tr i) []
-  | (R.Lambda (R.Var n s) e') <- e
+  | (R.Operator (R.Lambda (R.Var n s)) :@ e') <- e
   , FunType b _ <- tr
   = i2 $ Lambda (Var n (untypeType b (fst i)) s) $ toU e'
   | (R.Operator R.Cons :@ a1 :@ a2) <- e

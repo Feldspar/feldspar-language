@@ -140,7 +140,6 @@ data Expr a where
   Operator :: Typeable a             => Op a -> Expr a
   Variable :: Typeable a             => Var a -> Expr (Full a)
   (:@)     :: Typeable a             => Expr (a -> b) -> AExpr a -> Expr b
-  Lambda   :: Type a                 => Var a -> AExpr b -> Expr (Full (a -> b))
 
 instance Show (Expr a) where
   show e = showExpr 0 e ""
@@ -151,7 +150,6 @@ showExpr _ (Variable v)   r = "v" ++ show (varNum v) ++ r
 showExpr n (f :@ e)       r = showExpr n f
                             $ "\n" ++ replicate (n+2) ' ' ++
                               showAExpr (n+2) e r
-showExpr n (Lambda v e) r = "\\ " ++ show v ++ " ->\n" ++ replicate (n+2) ' ' ++ showAExpr (n+2) e r
 
 instance Typeable a => Eq (Expr a) where
   Operator op1 == Operator op2 = op1 == op2
@@ -160,7 +158,6 @@ instance Typeable a => Eq (Expr a) where
         = case eqT :: Maybe ((a1,b1) :~: (a2,b2)) of
             Nothing -> False
             Just Refl -> f1 == f2 && e1 == e2
-  Lambda v1 e1 == Lambda v2 e2 = v1 == v2 && e1 == e2
   _ == _ = False
 
 -- | A box which makes its contents equal to everything else with the same type
@@ -186,6 +183,7 @@ data Op a where
     SetLength  :: Type a => Op (Length :-> [a] :-> Full [a])
 
     -- | Binding
+    Lambda  :: Type a => Var a -> Op (b :-> Full (a -> b))
     Let :: Op (a :-> (a -> b) :-> Full b)
 
     -- | Bits
@@ -389,8 +387,8 @@ fvi (_ :& e) = fviR e
 
 fviR :: Expr a -> S.Set VarId
 fviR (Variable v) = viSet v
+fviR (Operator (Lambda v) :@ e) = fvi e S.\\ viSet v
 fviR (f :@ e) = fviR f `S.union` fvi e
-fviR (Lambda v e) = fvi e S.\\ viSet v
 fviR _ = S.empty
 
 viSet :: Var a -> S.Set VarId
@@ -414,7 +412,7 @@ bvId (CBind v _) = varNum v
 
 mkLets :: ([CBind], AExpr a) -> AExpr a
 mkLets (CBind v e1@(Info i1 :& _) : bs, e@(Info i2 :& _))
-  = Info i2 :& Operator Let :@ e1 :@ (Info (i1, i2) :& Lambda v (mkLets (bs, e)))
+  = Info i2 :& Operator Let :@ e1 :@ (Info (i1, i2) :& Operator (Lambda v) :@ (mkLets (bs, e)))
 mkLets ([], e) = e
 
 -- | Functions for bind environments
@@ -440,7 +438,6 @@ sharable e = legalToShare e && goodToShare e
 legalToShare :: AExpr a -> Bool
 legalToShare (_ :& Operator op) = shOp op
 legalToShare (_ :& f :@ _)      = shApp f
-legalToShare (_ :& Lambda _ _)  = False
 legalToShare _                  = True
 
 shApp :: Expr a -> Bool
@@ -448,6 +445,8 @@ shApp (f :@ _) = shApp f
 shApp (Operator op) = shOp op
 
 shOp :: Op a -> Bool
+-- Binding
+shOp Lambda{}  = False
 -- Elements
 shOp ESkip     = False
 shOp EWrite    = False
