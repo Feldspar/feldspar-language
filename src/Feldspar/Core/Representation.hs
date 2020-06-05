@@ -138,7 +138,7 @@ data Expr a where
   Operator :: Typeable a             => Op a -> Expr a
   Variable :: Typeable a             => Var a -> Expr (Full a)
   (:@)     :: Typeable a             => Expr (a -> b) -> AExpr a -> Expr b
-  Lambda   :: TypeF a                => Var a -> AExpr b -> Expr (Full (a -> b))
+  Lambda   :: Type a                 => Var a -> AExpr b -> Expr (Full (a -> b))
 
 instance Show (Expr a) where
   show e = showExpr 0 e ""
@@ -462,7 +462,7 @@ viSet v = S.singleton $ varNum v
 
 
 data CBind where
-  CBind :: Typeable a => Var a -> AExpr a -> CBind
+  CBind :: Type a => Var a -> AExpr a -> CBind
 
 instance Eq CBind where
   CBind (v1@Var{} :: Var a) e1 == CBind (v2@Var{} :: Var b) e2
