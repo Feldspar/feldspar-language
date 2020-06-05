@@ -99,7 +99,7 @@ toU :: R.AExpr a -> AUntypedFeld ValueInfo
 toU (((R.Info i) :: R.Info a) :& e)
   | (R.Variable (R.Var n s)) <- e
   = i2 $ Variable $ Var n (untypeType tr i) s
-  | (R.Literal v) <- e
+  | (R.Operator (R.Literal v)) <- e
   = i2 $ Literal $ literal tr i v
   | (R.Operator op) <- e
   = i2 $ App (trOp op) (untypeType tr i) []

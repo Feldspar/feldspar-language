@@ -65,7 +65,7 @@ import Feldspar.Core.NestedTuples
 import Control.Monad.Cont (Cont, ap)
 import Data.Complex (Complex(..))
 import Data.Typeable (Typeable, typeOf)
-import Data.Hash (Hashable(..), asWord64, combine, hashInt, Hash)
+import Data.Hash (Hashable(..), combine, hashInt, Hash)
 
 import qualified Data.ByteString.Char8 as B
 import Data.Array (Array, accumArray, (!), bounds, elems)
@@ -128,7 +128,7 @@ instance (Syntactic a, T.Type (Internal a)) => Syntax a
 instance Syntactic ()
   where
     type Internal () = ()
-    desugar _ = ASTF (M.empty, Info (T.sizeOf ()) :& Literal ()) 0
+    desugar = value
     sugar _ = ()
 
 newtype Data a = Data { unData :: ASTF a }
@@ -212,7 +212,7 @@ instance Syntax b => SugarF (FFF b) where
 -------------------------------------------------
 
 value :: (Syntax a, Hashable (Internal a)) => Internal a -> a
-value v = sugar $ full ((M.empty, Literal v), 0)
+value v = unFull $ sugarSym (Literal v)
 
 {- | Functions for incremental common subexpression elimination.
 -}
@@ -287,8 +287,6 @@ hashExpr (_ :& e) = hashExprR e
 
 hashExprR :: Expr a -> VarId
 hashExprR (Variable v) = (hashStr . show $ typeOf v) `combineHash` (varNum v)
-hashExprR (Literal c)
-  = (hashStr . show $ typeOf c) `combineHash` (hash2VarId $ hash c)
 hashExprR (Operator op) = hashOp op
 -- Hash value of rhs in let is equal to bound variable name which occurs in body
 hashExprR (Operator Let :@ _ :@ (_ :& Lambda _ e)) = hashExpr e
@@ -304,9 +302,6 @@ hashStr s = fromInteger $ foldr combineHash 5 $ map (toInteger . fromEnum) s
 -- F2I/I2F type instantiations to the same value.
 hashOp :: Typeable a => Op a -> VarId
 hashOp op = (hashStr . show $ typeOf op) `combineHash` (hashStr $ show op)
-
-hash2VarId :: Hash -> VarId
-hash2VarId h = fromIntegral $ (fromIntegral $ asWord64 h) `mod` hashMod
 
 --------------------------------------------------------------------------------
 -- * Hashing
