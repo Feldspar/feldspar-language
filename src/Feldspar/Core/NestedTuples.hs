@@ -1,12 +1,11 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -40,8 +39,7 @@
 --
 
 module Feldspar.Core.NestedTuples
-  ( (:*), TNil
-  , Tuple(..)
+  ( Tuple(..)
   , Skip(..)
   , First(..)
   , sel
@@ -54,27 +52,23 @@ import Data.Typeable
 -- | Data and type constructor for nested tuples
 infixr 5 :*
 
--- | Types for nonempty and empty nested tuples
-data a :* b
-data TNil
-
--- | GADT for tuples that ensure that they are build only with TNil and :*
+-- | GADT for tuples that ensure that they are only built with TNil and :*
 data Tuple a where
-  (:*) :: a -> Tuple b -> Tuple (a :* b)
-  TNil :: Tuple TNil
+  TNil :: Tuple '[]
+  (:*) :: a -> Tuple b -> Tuple (a ': b)
 
 -- | Eq and Show instances
 
-instance (Eq a, Eq (Tuple b)) => Eq (Tuple (a :* b)) where
+instance (Eq a, Eq (Tuple b)) => Eq (Tuple (a ': b)) where
   (a1 :* b1) == (a2 :* b2) = a1 == a2 && b1 == b2
 
-instance Eq (Tuple TNil) where
+instance Eq (Tuple '[]) where
   TNil == TNil = True
 
-instance (Show a, Show (Tuple b)) => Show (Tuple (a :* b)) where
+instance (Show a, Show (Tuple b)) => Show (Tuple (a ': b)) where
   show (x :* xs) = show x ++ " :* " ++ show xs
 
-instance Show (Tuple TNil) where
+instance Show (Tuple '[]) where
   show TNil = "TNil"
 
 -- | Selecting components of a tuple
@@ -88,12 +82,12 @@ class TSelect s t where
   type TSelResult s t
   selR :: s -> Tuple t -> TSelResult s t
 
-instance TSelect a t => TSelect (Skip a) (b :* t) where
-  type TSelResult (Skip a) (b :* t) = TSelResult a t
+instance TSelect a t => TSelect (Skip a) (b ': t) where
+  type TSelResult (Skip a) (b ': t) = TSelResult a t
   selR s (_ :* y) = selR (unSkip s) y
 
-instance TSelect First (b :* t) where
-  type TSelResult First (b :* t) = b
+instance TSelect First (b ': t) where
+  type TSelResult First (b ': t) = b
   selR _ (x :* _) = x
 
 -- | Exposed select interface
@@ -105,26 +99,26 @@ sel = selR
 class TupleReverse a b c where
   tupleReverse :: Tuple a -> Tuple b -> Tuple c
 
-instance TupleReverse (h :* a) t c => TupleReverse a (h :* t) c where
+instance TupleReverse (h ': a) t c => TupleReverse a (h ': t) c where
   tupleReverse xs (h :* t) = tupleReverse (h :* xs) t
 
-instance a ~ c => TupleReverse a TNil c where
+instance a ~ c => TupleReverse a '[] c where
   tupleReverse xs TNil = xs
 
 -- | Varargs class for building tuples
 class TupleBuild a b where
   stuple :: Tuple a -> b
 
-instance TupleBuild (b :* a) c => TupleBuild a (b -> c) where
+instance TupleBuild (b ': a) c => TupleBuild a (b -> c) where
   stuple xs x = stuple (x :* xs)
 
 instance Tuple a ~ b => TupleBuild a (TT b) where
-  stuple x = TT x
+  stuple = TT
 
 newtype TT a = TT a
 
-tuple :: TupleBuild TNil b => b
+tuple :: TupleBuild '[] b => b
 tuple = stuple TNil
 
-build :: TupleReverse TNil a b => TT (Tuple a) -> (Tuple b)
+build :: TupleReverse '[] a b => TT (Tuple a) -> (Tuple b)
 build (TT x) = tupleReverse TNil x

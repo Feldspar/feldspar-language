@@ -8,6 +8,7 @@
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 
 --
@@ -62,7 +63,8 @@ module Feldspar.Core.Representation
   ) where
 
 import Feldspar.Core.Types (Type(..), TypeF(..), TypeRep(..), Length, Index, IntN,
-                            Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV, Tuple(..), (:*), TNil)
+                            Size(..), Elements, FVal, Mut, AnySize, MArr, Par,
+                            IV, Tuple(..))
 import Feldspar.Range (Range, BoundedInt)
 
 import qualified Data.ByteString.Char8 as B
@@ -319,10 +321,10 @@ data Op a where
     ModRef :: Type a => Op (IORef a :-> (a -> a) :-> Full (Mut ()))
 
     -- | Nested tuples
-    Cons  :: Type a => Op (a :-> Tuple b :-> Full (Tuple (a :* b)))
-    Nil   ::           Op (Full (Tuple TNil))
-    Car   :: Type a => Op (Tuple (a :* b) :-> Full a)
-    Cdr   ::           Op (Tuple (a :* b) :-> Full (Tuple b))
+    Cons  :: Type a => Op (a :-> Tuple b :-> Full (Tuple (a ': b)))
+    Nil   ::           Op (Full (Tuple '[]))
+    Car   :: Type a => Op (Tuple (a ': b) :-> Full a)
+    Cdr   ::           Op (Tuple (a ': b) :-> Full (Tuple b))
     Tup   ::           Op (Tuple a :-> Full (Tuple a))
 
     -- | NoInline

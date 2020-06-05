@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -338,10 +339,10 @@ instance HashTup a => Hashable (Tuple a) where
 class HashTup a where
   hashTup :: Tuple a -> Hash
 
-instance HashTup TNil where
+instance HashTup '[] where
   hashTup _ = hashInt 1
 
-instance (Hashable h, HashTup t) => HashTup (h :* t) where
+instance (Hashable h, HashTup t) => HashTup (h ': t) where
   hashTup (x :* xs) = hashInt 2 # x # xs
 
 infixl 5 #
