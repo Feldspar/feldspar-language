@@ -154,7 +154,7 @@ instance Show (Data a) where
 instance (Syntax a, Syntactic b, TypeF (Internal b)) => Syntactic (a -> b) where
   type Internal (a -> b) = Internal a -> Internal b
   sugar _ = error "sugar not implemented for a -> b"
-  desugar f = ASTF (m1, Info top :& Lambda v e1) $ i + 1
+  desugar f = ASTF (m1, Info top :& Operator (Lambda v) :@ e1) $ i + 1
     where ASTF ce i = desugar $ f (sugar $ ASTF (M.empty, Info top :& Variable v) 0)
           (m1, e1) = catchBindings [varNum v] ce
           v = Var (fromIntegral i + hashBase) B.empty
@@ -289,11 +289,8 @@ hashExprR :: Expr a -> VarId
 hashExprR (Variable v) = (hashStr . show $ typeOf v) `combineHash` (varNum v)
 hashExprR (Operator op) = hashOp op
 -- Hash value of rhs in let is equal to bound variable name which occurs in body
-hashExprR (Operator Let :@ _ :@ (_ :& Lambda _ e)) = hashExpr e
+hashExprR (Operator Let :@ _ :@ (_ :& Operator (Lambda _) :@ e)) = hashExpr e
 hashExprR (f :@ e) = appHash `combineHash` hashExprR f `combineHash` hashExpr e
-hashExprR (Lambda v e)
-  = absHash `combineHash` (hashStr . show $ typeOf v) `combineHash`
-    (varNum v) `combineHash` hashExpr e
 
 hashStr :: String -> VarId
 hashStr s = fromInteger $ foldr combineHash 5 $ map (toInteger . fromEnum) s
@@ -380,9 +377,8 @@ instance Hashable (T.TypeRep a) where
   hash (T.IVarType t)     = hashInt 29 # t
   hash (T.FValType t)     = hashInt 30 # t
 
-appHash, absHash :: VarId
+appHash :: VarId
 appHash = 655360 + 40960 + 2560 + 160 + 10 + 17
-absHash = 327680 + 20480 + 1280 +  80 +  5
 
 combineHash :: Integral a => a -> a -> a
 combineHash l r = fromInteger $ mod (toInteger l + 127 * toInteger r) hashMod
