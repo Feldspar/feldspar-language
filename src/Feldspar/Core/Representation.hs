@@ -138,7 +138,6 @@ showAExpr n (i :& (e :: Expr (Full a))) r = '{':inf ++ "} " ++ showExpr n e r
 -}
 data Expr a where
   Operator :: Typeable a             => Op a -> Expr a
-  Variable :: Typeable a             => Var a -> Expr (Full a)
   (:@)     :: Typeable a             => Expr (a -> b) -> AExpr a -> Expr b
 
 instance Show (Expr a) where
@@ -146,14 +145,12 @@ instance Show (Expr a) where
 
 showExpr :: Int -> Expr a -> String -> String
 showExpr _ (Operator op)  r = show op ++ r
-showExpr _ (Variable v)   r = "v" ++ show (varNum v) ++ r
 showExpr n (f :@ e)       r = showExpr n f
                             $ "\n" ++ replicate (n+2) ' ' ++
                               showAExpr (n+2) e r
 
 instance Typeable a => Eq (Expr a) where
   Operator op1 == Operator op2 = op1 == op2
-  Variable v1 == Variable v2 = v1 == v2
   ((f1 :: Expr (a1 -> b1)) :@ e1) == ((f2 :: Expr (a2 -> b2)) :@ e2)
         = case eqT :: Maybe ((a1,b1) :~: (a2,b2)) of
             Nothing -> False
@@ -183,6 +180,7 @@ data Op a where
     SetLength  :: Type a => Op (Length :-> [a] :-> Full [a])
 
     -- | Binding
+    Variable :: Typeable a => Var a -> Op (Full a)
     Lambda  :: Type a => Var a -> Op (b :-> Full (a -> b))
     Let :: Op (a :-> (a -> b) :-> Full b)
 
@@ -386,7 +384,7 @@ fvi :: AExpr a -> S.Set VarId
 fvi (_ :& e) = fviR e
 
 fviR :: Expr a -> S.Set VarId
-fviR (Variable v) = viSet v
+fviR (Operator (Variable v)) = viSet v
 fviR (Operator (Lambda v) :@ e) = fvi e S.\\ viSet v
 fviR (f :@ e) = fviR f `S.union` fvi e
 fviR _ = S.empty
@@ -438,7 +436,6 @@ sharable e = legalToShare e && goodToShare e
 legalToShare :: AExpr a -> Bool
 legalToShare (_ :& Operator op) = shOp op
 legalToShare (_ :& f :@ _)      = shApp f
-legalToShare _                  = True
 
 shApp :: Expr a -> Bool
 shApp (f :@ _) = shApp f

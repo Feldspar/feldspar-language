@@ -97,7 +97,7 @@ renameExp e = evalState (rename e) 0
 
 toU :: R.AExpr a -> AUntypedFeld ValueInfo
 toU (((R.Info i) :: R.Info a) :& e)
-  | (R.Variable (R.Var n s)) <- e
+  | (R.Operator (R.Variable (R.Var n s))) <- e
   = i2 $ Variable $ Var n (untypeType tr i) s
   | (R.Operator (R.Literal v)) <- e
   = i2 $ Literal $ literal tr i v
