@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -39,14 +40,12 @@
 --
 
 module Feldspar.Core.NestedTuples
-  ( (:*), TNil
-  , Tuple(..)
+  ( Tuple(..)
   , Skip(..)
   , First(..)
   , sel
   , tuple
   , build
-  , NPair
   , nfst
   , nsnd
   -- * Building tuples
@@ -62,27 +61,23 @@ module Feldspar.Core.NestedTuples
 -- | Data and type constructor for nested tuples
 infixr 5 :*
 
--- | Types for nonempty and empty nested tuples
-data a :* b
-data TNil
-
--- | GADT for tuples that ensure that they are build only with TNil and :*
+-- | GADT for tuples that ensure that they are only built with TNil and :*
 data Tuple a where
-  (:*) :: a -> Tuple b -> Tuple (a :* b)
-  TNil :: Tuple TNil
+  TNil :: Tuple '[]
+  (:*) :: a -> Tuple b -> Tuple (a ': b)
 
 -- | Eq and Show instances
 
-instance (Eq a, Eq (Tuple b)) => Eq (Tuple (a :* b)) where
+instance (Eq a, Eq (Tuple b)) => Eq (Tuple (a ': b)) where
   (a1 :* b1) == (a2 :* b2) = a1 == a2 && b1 == b2
 
-instance Eq (Tuple TNil) where
+instance Eq (Tuple '[]) where
   TNil == TNil = True
 
-instance (Show a, Show (Tuple b)) => Show (Tuple (a :* b)) where
+instance (Show a, Show (Tuple b)) => Show (Tuple (a ': b)) where
   show (x :* xs) = show x ++ " :* " ++ show xs
 
-instance Show (Tuple TNil) where
+instance Show (Tuple '[]) where
   show TNil = "TNil"
 
 -- | Selecting components of a tuple
@@ -100,12 +95,12 @@ class TSelect s t where
   type TSelResult s t
   selR :: s -> Tuple t -> TSelResult s t
 
-instance TSelect a t => TSelect (Skip a) (b :* t) where
-  type TSelResult (Skip a) (b :* t) = TSelResult a t
+instance TSelect a t => TSelect (Skip a) (b ': t) where
+  type TSelResult (Skip a) (b ': t) = TSelResult a t
   selR s (_ :* y) = selR (unSkip s) y
 
-instance TSelect First (b :* t) where
-  type TSelResult First (b :* t) = b
+instance TSelect First (b ': t) where
+  type TSelResult First (b ': t) = b
   selR _ (x :* _) = x
 
 -- | Exposed select interface
@@ -116,17 +111,17 @@ sel = selR
 class TupleReverse a b c where
   tupleReverse :: Tuple a -> Tuple b -> Tuple c
 
-instance TupleReverse (h :* a) t c => TupleReverse a (h :* t) c where
+instance TupleReverse (h ': a) t c => TupleReverse a (h ': t) c where
   tupleReverse xs (h :* t) = tupleReverse (h :* xs) t
 
-instance a ~ c => TupleReverse a TNil c where
+instance a ~ c => TupleReverse a '[] c where
   tupleReverse xs TNil = xs
 
 -- | Varargs class for building tuples
 class TupleBuild a b where
   stuple :: Tuple a -> b
 
-instance TupleBuild (b :* a) c => TupleBuild a (b -> c) where
+instance TupleBuild (b ': a) c => TupleBuild a (b -> c) where
   stuple xs x = stuple (x :* xs)
 
 instance Tuple a ~ b => TupleBuild a (TT b) where
@@ -139,11 +134,11 @@ newtype TT a = TT a
 --   builds the nested tuple (e1 :* ... :* ek :* TNil).
 
 -- | Variadic function for building a nested tuple.
-tuple :: TupleBuild TNil b => b
+tuple :: TupleBuild '[] b => b
 tuple = stuple TNil
 
 -- | Function for marking the end of the application of 'tuple'.
-build :: TupleReverse TNil a b => TT (Tuple a) -> Tuple b
+build :: TupleReverse '[] a b => TT (Tuple a) -> Tuple b
 build (TT x) = tupleReverse TNil x
 
 -- * Non-variadic tuples
@@ -151,47 +146,42 @@ build (TT x) = tupleReverse TNil x
 -- | Convenience functions for short fixed tuples.
 --   Since ordinary tuples are desugared to nested tuples, desugared
 --   contexts of pairs, e.g. in the Sequential AST operator, need types
---   of the form Tuple (a :* b :* TNil) for which we provide support here.
+--   of the form Tuple '[a, b] for which we provide support here.
 --   A second reason to provide these functions is that the variable arity
 --   of build does not interact well with <$> and <*> in instances.
 
--- | The type of pairs implemented as nested tuples, corresponds to (,).
-type NPair a b = Tuple (a :* b :* TNil)
-
--- | Extract the first component of an NPair.
-nfst :: NPair a b -> a
+-- | Extract the first component of a tuple.
+nfst :: Tuple (a ': b) -> a
 nfst = sel First
 
--- | Extract the second component of an NPair.
-nsnd :: NPair a b -> b
+-- | Extract the second component of a tuple.
+nsnd :: Tuple (a ': b ': c) -> b
 nsnd = sel $ Skip First
 
 -- | Function for constructing a one-tuple from its components.
-onetup :: a -> Tuple (a :* TNil)
+onetup :: a -> Tuple '[a]
 onetup a = build $ tuple a
 
--- | Function for constructing an NPair from its components.
-twotup :: a -> b -> NPair a b
+-- | Function for constructing a two-tuple from its components.
+twotup :: a -> b -> Tuple '[a, b]
 twotup a b = build $ tuple a b
 
 -- | Function for constructing a three-tuple from its components.
-threetup :: a -> b -> c -> Tuple (a :* b :* c :* TNil)
+threetup :: a -> b -> c -> Tuple '[a, b, c]
 threetup a b c = build $ tuple a b c
 
 -- | Function for constructing a four-tuple from its components.
-fourtup :: a -> b -> c -> d -> Tuple (a :* b :* c :* d :* TNil)
+fourtup :: a -> b -> c -> d -> Tuple '[a, b, c, d]
 fourtup a b c d = build $ tuple a b c d
 
 -- | Function for constructing a five-tuple from its components.
-fivetup :: a -> b -> c -> d -> e -> Tuple (a :* b :* c :* d :* e :* TNil)
+fivetup :: a -> b -> c -> d -> e -> Tuple '[a, b, c, d, e]
 fivetup a b c d e = build $ tuple a b c d e
 
 -- | Function for constructing a six-tuple from its components.
-sixtup :: a -> b -> c -> d -> e -> f
-       -> Tuple (a :* b :* c :* d :* e :* f :* TNil)
+sixtup :: a -> b -> c -> d -> e -> f -> Tuple '[a, b, c, d, e, f]
 sixtup a b c d e f = build $ tuple a b c d e f
 
 -- | Function for constructing a seven-tuple from its components.
-seventup :: a -> b -> c -> d -> e -> f -> g
-         -> Tuple (a :* b :* c :* d :* e :* f :* g :* TNil)
+seventup :: a -> b -> c -> d -> e -> f -> g -> Tuple '[a, b, c, d, e, f, g]
 seventup a b c d e f g = build $ tuple a b c d e f g

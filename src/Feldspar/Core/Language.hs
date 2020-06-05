@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -780,7 +781,7 @@ thawArray arr = do
 --------------------------------------------------
 
 class Type (Tuple (InternalTup a)) => SyntacticTup a where
-    type InternalTup a
+    type InternalTup a :: [*]
     desugarTup :: Tuple a -> ASTF (Tuple (InternalTup a))
     sugarTup   :: ASTF (Tuple (InternalTup a)) -> Tuple a
 
@@ -788,13 +789,14 @@ class Type (Tuple (InternalTup a)) => SyntacticTup a where
 -- 'Tuple a' which would add 'Tup' around each tail of the tuple, making it sharable.
 -- The test case 'noshare' in the 'decoration' suite checks that tails are not shared.
 
-instance (Syntax a, SyntacticTup b, Typeable (InternalTup b)) => SyntacticTup (a :* b) where
-    type InternalTup (a :* b) = Internal a :* InternalTup b
+instance (Syntax a, SyntacticTup b, Typeable (InternalTup b))
+         => SyntacticTup (a ': b) where
+    type InternalTup (a ': b) = Internal a ': InternalTup b
     desugarTup (x :* xs) = sugarSym2 Cons x (desugarTup xs)
     sugarTup e = sugar (sugarSym1 Car e) :* sugarTup (sugarSym1 Cdr e)
 
-instance SyntacticTup TNil where
-    type InternalTup TNil = TNil
+instance SyntacticTup '[] where
+    type InternalTup '[] = '[]
     desugarTup TNil = sugarSym0 Nil
     sugarTup _ = TNil
 
@@ -1042,19 +1044,17 @@ switch def cs s = let s' = resugar s
 --------------------------------------------------
 
 -- | Helper function
-cdr :: (Type a, Typeable b, Type (Tuple b)) => ASTF (Tuple (a :* b)) -> ASTF (Tuple b)
+cdr :: (Type a, Typeable b, Type (Tuple b))
+    => ASTF (Tuple (a ': b)) -> ASTF (Tuple b)
 cdr = sugarSym1 Cdr
 
 instance (Syntax a, Syntax b) => Syntactic (a, b) where
-  type Internal (a, b) = Tuple (Internal a :* Internal b :* TNil)
+  type Internal (a, b) = Tuple '[Internal a, Internal b]
   sugar e = (sugar $ sugarSym1 Car e, sugar $ sugarSym1 Car $ cdr e)
   desugar (x, y) = desugar $ build $ tuple x y
 
-instance ( Syntax a, Syntax b, Syntax c )
-      => Syntactic (a, b, c)
-  where
-    type Internal (a, b, c) =
-                  Tuple (Internal a :* Internal b :* Internal c :* TNil)
+instance (Syntax a, Syntax b, Syntax c) => Syntactic (a, b, c) where
+    type Internal (a, b, c) = Tuple '[Internal a, Internal b, Internal c]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1063,11 +1063,9 @@ instance ( Syntax a, Syntax b, Syntax c )
           = desugar $ build $ tuple a b c
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d )
-      => Syntactic (a, b, c, d)
-  where
+      => Syntactic (a, b, c, d) where
     type Internal (a, b, c, d) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1079,12 +1077,10 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d )
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e
          )
-      => Syntactic (a, b, c, d, e)
-  where
+      => Syntactic (a, b, c, d, e) where
     type Internal (a, b, c, d, e) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1097,12 +1093,10 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f
          )
-      => Syntactic (a, b, c, d, e, f)
-  where
+      => Syntactic (a, b, c, d, e, f) where
     type Internal (a, b, c, d, e, f) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e :* Internal f
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e, Internal f ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1116,12 +1110,10 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g
          )
-      => Syntactic (a, b, c, d, e, f, g)
-  where
+      => Syntactic (a, b, c, d, e, f, g) where
     type Internal (a, b, c, d, e, f, g) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e :* Internal f :* Internal g
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e, Internal f, Internal g ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1136,12 +1128,10 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
          )
-      => Syntactic (a, b, c, d, e, f, g, h)
-  where
+      => Syntactic (a, b, c, d, e, f, g, h) where
     type Internal (a, b, c, d, e, f, g, h) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e :* Internal f :* Internal g :* Internal h
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e, Internal f, Internal g, Internal h ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1158,13 +1148,11 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
          , Syntax i
          )
-      => Syntactic (a, b, c, d, e, f, g, h, i)
-  where
+      => Syntactic (a, b, c, d, e, f, g, h, i) where
     type Internal (a, b, c, d, e, f, g, h, i) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e :* Internal f :* Internal g :* Internal h
-                        :* Internal i
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e, Internal f, Internal g, Internal h
+                         , Internal i ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1182,13 +1170,11 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
          , Syntax i, Syntax j
          )
-      => Syntactic (a, b, c, d, e, f, g, h, i, j)
-  where
+      => Syntactic (a, b, c, d, e, f, g, h, i, j) where
     type Internal (a, b, c, d, e, f, g, h, i, j) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e :* Internal f :* Internal g :* Internal h
-                        :* Internal i :* Internal j
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e, Internal f, Internal g, Internal h
+                         , Internal i, Internal j ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1207,13 +1193,11 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
          , Syntax i, Syntax j, Syntax k
          )
-      => Syntactic (a, b, c, d, e, f, g, h, i, j, k)
-  where
+      => Syntactic (a, b, c, d, e, f, g, h, i, j, k) where
     type Internal (a, b, c, d, e, f, g, h, i, j, k) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e :* Internal f :* Internal g :* Internal h
-                        :* Internal i :* Internal j :* Internal k
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e, Internal f, Internal g, Internal h
+                         , Internal i, Internal j, Internal k ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1233,13 +1217,11 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
          , Syntax i, Syntax j, Syntax k, Syntax l
          )
-      => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l)
-  where
+      => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l) where
     type Internal (a, b, c, d, e, f, g, h, i, j, k, l) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e :* Internal f :* Internal g :* Internal h
-                        :* Internal i :* Internal j :* Internal k :* Internal l
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e, Internal f, Internal g, Internal h
+                         , Internal i, Internal j, Internal k, Internal l ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1261,14 +1243,12 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax i, Syntax j, Syntax k, Syntax l
          , Syntax m
          )
-      => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l, m)
-  where
+      => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l, m) where
     type Internal (a, b, c, d, e, f, g, h, i, j, k, l, m) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e :* Internal f :* Internal g :* Internal h
-                        :* Internal i :* Internal j :* Internal k :* Internal l
-                        :* Internal m
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e, Internal f, Internal g, Internal h
+                         , Internal i, Internal j, Internal k, Internal l
+                         , Internal m ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1291,14 +1271,12 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax i, Syntax j, Syntax k, Syntax l
          , Syntax m, Syntax n
          )
-      => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
-  where
+      => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l, m, n) where
     type Internal (a, b, c, d, e, f, g, h, i, j, k, l, m, n) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e :* Internal f :* Internal g :* Internal h
-                        :* Internal i :* Internal j :* Internal k :* Internal l
-                        :* Internal m :* Internal n
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e, Internal f, Internal g, Internal h
+                         , Internal i, Internal j, Internal k, Internal l
+                         , Internal m, Internal n ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e
@@ -1322,14 +1300,12 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax i, Syntax j, Syntax k, Syntax l
          , Syntax m, Syntax n, Syntax o
          )
-      => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
-  where
+      => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) where
     type Internal (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) =
-                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
-                        :* Internal e :* Internal f :* Internal g :* Internal h
-                        :* Internal i :* Internal j :* Internal k :* Internal l
-                        :* Internal m :* Internal n :* Internal o
-                        :* TNil )
+                  Tuple '[ Internal a, Internal b, Internal c, Internal d
+                         , Internal e, Internal f, Internal g, Internal h
+                         , Internal i, Internal j, Internal k, Internal l
+                         , Internal m, Internal n, Internal o ]
     sugar e = ( sugar $ sugarSym1 Car e
               , sugar $ sugarSym1 Car $ cdr e
               , sugar $ sugarSym1 Car $ cdr $ cdr e

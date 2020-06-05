@@ -1,4 +1,6 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -24,10 +26,10 @@ import Feldspar.Core.NestedTuples
 import Control.Applicative
 
 -- | Arbitrary instances for nested tuples
-instance Arbitrary (Tuple TNil) where
+instance Arbitrary (Tuple '[]) where
   arbitrary = return TNil
 
-instance (Arbitrary a, Arbitrary (Tuple b)) => Arbitrary (Tuple (a :* b)) where
+instance (Arbitrary a, Arbitrary (Tuple b)) => Arbitrary (Tuple (a ': b)) where
   arbitrary = do a <- arbitrary
                  b <- arbitrary
                  return (a :* b)
@@ -59,7 +61,7 @@ shTest n = runMutable $ do
              c <- newArr n 2
              let d = n<5 ? a $ c
              setArr d 0 n
-             b <- getArr a $ 0
+             b <- getArr a 0
              return b
 
 arrayInStructR :: Data [Length] -> Data [Length]

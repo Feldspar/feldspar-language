@@ -1,4 +1,6 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -76,6 +78,34 @@ import Data.Char (chr)
 import Data.List (partition)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
+
+{-
+
+Debugging test output differences
+---------------------------------
+
+The variables in the test outputs can sometimes vary between
+GHC versions. Feldspar should be deterministic so this is usually
+caused by differences in the Show instance for TypeRep.
+
+Debug the difference by inserting #define DEBUG_NORMALIZATION,
+starting ghci on the affected test code and run "icompile expr".
+Before the code is output there are a number of lines on the form:
+
+Normalized: Op Int32
+
+which shows the normalized output. Start a ghci from the version
+of GHC that does not pass the tests and do the same. Look for differences
+and add a substitution for the differences you find to normalizeTypeRep.
+The usual culprit is some infix type constructor that gets additional
+parentheses, since we only need a unique thing to hash we can just
+strip the parentheses.
+
+-}
+
+#ifdef DEBUG_NORMALIZATION
+import Debug.Trace
+#endif
 
 resugar :: (Syntactic a, Syntactic b, Internal a ~ Internal b) => a -> b
 resugar = sugar . desugar
@@ -316,9 +346,15 @@ hashExprR (f :@ e) = hashInt appHash `combine` hashExprR f `combine` hashExpr' e
 --   patch up the output in the simplest way possible to get stable
 --   variable names in our tests. One GHC bug relating to this is #15236.
 normalizeTypeRep :: String -> String
-normalizeTypeRep s = map (chr . fromEnum) (LB.unpack out)
-  where out = LB.replace (B.pack "(:*)") (B.pack ":*") s01
+#ifdef DEBUG_NORMALIZATION
+normalizeTypeRep s = trace ("Normalized: " ++ out ++ "\n") out
+#else
+normalizeTypeRep s = out -- Note [Debugging test output differences].
+#endif
+  where out = map (chr . fromEnum) (LB.unpack out')
+        out' = LB.replace (B.pack "(:*)") (B.pack ":*") s02
         s01 = LB.replace (B.pack "(->)") (B.pack "->") (LB.pack s)
+        s02 = LB.replace (B.pack "('[] *)") (B.pack "'[]") s01
 
 --------------------------------------------------------------------------------
 -- * Hashing
@@ -345,10 +381,10 @@ instance HashTup a => Hashable (Tuple a) where
 class HashTup a where
   hashTup :: Tuple a -> Hash
 
-instance HashTup TNil where
+instance HashTup '[] where
   hashTup _ = hashInt 1
 
-instance (Hashable h, HashTup t) => HashTup (h :* t) where
+instance (Hashable h, HashTup t) => HashTup (h ': t) where
   hashTup (x :* xs) = hashInt 2 # x # xs
 
 infixl 5 #

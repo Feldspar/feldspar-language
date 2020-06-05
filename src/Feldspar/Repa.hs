@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -150,7 +151,7 @@ type DVector sh a = Vector sh (Data a)
 
 instance (Shape sh, Syntax a) => Syntactic (Vector sh a)
   where
-    type Internal (Vector sh a) = NPair [Length] [Internal a]
+    type Internal (Vector sh a) = Tuple '[[Length], [Internal a]]
     desugar = desugar . freezeVector . map resugar
     sugar   = map resugar . thawVector . sugar
 
@@ -182,7 +183,8 @@ fromVector vec = parallel (size ext) (\ix -> vec !: fromIndex ext ix)
 toVector :: (Shape sh, Type a) => sh -> Data [a] -> DVector sh a
 toVector sh arr = Vector sh (\ix -> arr ! toIndex ix sh)
 
-freezeVector :: (Shape sh, Type a) => DVector sh a -> NPair (Data [Length]) (Data [a])
+freezeVector :: (Shape sh, Type a)
+             => DVector sh a -> Tuple '[Data [Length], Data [a]]
 freezeVector v   = twotup shapeArr $ fromVector v
   where shapeArr = fromList (toList $ extent v)
 

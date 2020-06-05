@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -43,7 +44,7 @@
 module Feldspar.Core.Types
        ( module Feldspar.Core.Types
        , IntN(..), WordN(..)
-       , Tuple(..), (:*), TNil, build, tuple -- From NestedTuples
+       , Tuple(..), build, tuple -- From NestedTuples
        ) where
 
 
@@ -268,8 +269,8 @@ data TypeRep a
     MArrType      :: TypeRep a -> TypeRep (MArr a)
     ParType       :: TypeRep a -> TypeRep (Par a)
     ElementsType  :: TypeRep a -> TypeRep (Elements a)
-    ConsType      :: TypeRep a -> TypeRep (Tuple b) -> TypeRep (Tuple (a :* b))
-    NilType       :: TypeRep (Tuple TNil)
+    ConsType      :: TypeRep a -> TypeRep (Tuple b) -> TypeRep (Tuple (a ': b))
+    NilType       :: TypeRep (Tuple '[])
     IVarType      :: TypeRep a -> TypeRep (IV a)
     FValType      :: TypeRep a -> TypeRep (FVal a)
       -- TODO `MArrType` Should have a target-specialized version. Or perhaps
@@ -740,13 +741,11 @@ instance Type a => Type (Elements a)
 
     sizeOf _ = universal
 
-instance (Type a, Typeable b, Type (Tuple b)) => Type (Tuple (a :* b))
-  where
+instance (Type a, Typeable b, Type (Tuple b)) => Type (Tuple (a ': b)) where
     typeRep = ConsType typeRep typeRep
     sizeOf (x :* xs) = (sizeOf x, sizeOf xs)
 
-instance Type (Tuple TNil)
-  where
+instance Type (Tuple '[]) where
     typeRep = NilType
     sizeOf _ = universal
 
@@ -841,8 +840,8 @@ type family Size a where
   Size (MArr a)        = Range Length :> Size a
   Size (Par a)         = Size a
   Size (Elements a)    = Range Length :> Size a
-  Size (Tuple (a :* b)) = (Size a, Size (Tuple b))
-  Size (Tuple TNil)   = Size ()
+  Size (Tuple (a ': b)) = (Size a, Size (Tuple b))
+  Size (Tuple '[])     = Size ()
   Size (IV a)          = Size a
   Size (FVal a)        = Size a
 
