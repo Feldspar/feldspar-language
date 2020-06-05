@@ -49,7 +49,6 @@ evalA :: CloEnv -> AExpr a -> a
 evalA bm (_ :& e) = evalE bm e
 
 evalE :: Typeable a => CloEnv -> Expr a -> a
-evalE bm (Literal l) = l
 evalE bm (Variable v) = lookupCE "Eval.evalE" bm v
 evalE bm (Operator op) = semSem $ semantics op
 evalE bm (f :@ e) = evalE bm f $ evalA bm e

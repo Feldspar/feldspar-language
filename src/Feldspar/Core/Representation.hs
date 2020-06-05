@@ -137,7 +137,6 @@ showAExpr n (i :& (e :: Expr (Full a))) r = '{':inf ++ "} " ++ showExpr n e r
      the form 'Full t' for some 't'.
 -}
 data Expr a where
-  Literal  :: (Hashable a, Type a)   => a -> Expr (Full a)
   Operator :: Typeable a             => Op a -> Expr a
   Variable :: Typeable a             => Var a -> Expr (Full a)
   (:@)     :: Typeable a             => Expr (a -> b) -> AExpr a -> Expr b
@@ -147,7 +146,6 @@ instance Show (Expr a) where
   show e = showExpr 0 e ""
 
 showExpr :: Int -> Expr a -> String -> String
-showExpr _ (Literal l)    r = show l ++ r
 showExpr _ (Operator op)  r = show op ++ r
 showExpr _ (Variable v)   r = "v" ++ show (varNum v) ++ r
 showExpr n (f :@ e)       r = showExpr n f
@@ -156,7 +154,6 @@ showExpr n (f :@ e)       r = showExpr n f
 showExpr n (Lambda v e) r = "\\ " ++ show v ++ " ->\n" ++ replicate (n+2) ' ' ++ showAExpr (n+2) e r
 
 instance Typeable a => Eq (Expr a) where
-  Literal l == Literal r = l == r
   Operator op1 == Operator op2 = op1 == op2
   Variable v1 == Variable v2 = v1 == v2
   ((f1 :: Expr (a1 -> b1)) :@ e1) == ((f2 :: Expr (a2 -> b2)) :@ e2)
@@ -291,6 +288,9 @@ data Op a where
     Div  :: (Type a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
     Mod  :: (Type a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
     IExp :: (Type a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+
+    -- | Literal
+    Literal :: (Type a, Hashable a) => a -> Op (Full a)
 
     -- | Logic
     And :: Op (Bool :-> Bool :-> Full Bool)
@@ -548,7 +548,7 @@ shOp _ = True
 
 -- | Expressions that are expensive enough to be worth sharing
 goodToShare :: AExpr a -> Bool
-goodToShare (_ :& Literal (l :: a)) = largeLit (typeRep :: TypeRep a) l
+goodToShare (_ :& Operator (Literal (l :: a))) = largeLit (typeRep :: TypeRep a) l
 -- The case below avoids constructing a let-binding for an array stored
 -- in a tuple. This is beneficial because the select operator is order
 -- of magnitudes cheaper than the array copy generated for the let-binding.

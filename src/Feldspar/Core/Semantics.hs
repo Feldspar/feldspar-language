@@ -163,6 +163,7 @@ semantics Div  = Sem "div"  div
 semantics Mod  = Sem "mod"  mod
 semantics IExp = Sem "(^)"  (^)
 -- Feldspar.Core.Constructs.Literal
+semantics (Literal l) = Sem "lit" l
 -- Feldspar.Core.Constructs.Logic
 semantics And = Sem "(&&)" (&&)
 semantics Or  = Sem "(||)" (||)

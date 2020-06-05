@@ -51,7 +51,7 @@ sizeProp = spA M.empty
 spA :: BindEnv -> AExpr a -> AExpr a
 -- | Variables and literals
 spA vm (_ :& Variable v) = lookupBE "SizeProp.look" vm v
-spA _ (_ :& Literal  l) = Info (T.sizeOf l) :& Literal l
+spA _ (_ :& Operator l'@(Literal l)) = Info (T.sizeOf l) :& Operator l'
 -- Top level lambda
 spA vm (_ :& Lambda v e)
   | e1@(Info i1 :& _) <- spA (extendBE vm (CBind v $ Info top :& Variable v)) e
