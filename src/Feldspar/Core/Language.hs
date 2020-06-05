@@ -1397,21 +1397,17 @@ instance ( Syntactic a
 -------------------------------------------------
 
 -- | Convenience wrappers for sugarSym
-sugarSym0 :: (Syntactic a, TypeF (Internal a)) => Op (Internal a) -> a
+sugarSym0 :: Syntax a => Op (Internal a) -> a
 sugarSym0 op         = unFull $ sugarSym op
-sugarSym1
-  :: (TypeF (Internal a), TypeF (Internal b), Syntactic a, Syntactic b)
-  => Op (Internal a -> Internal b) -> a -> b
+sugarSym1 :: (TypeF (Internal a), Syntactic a, Syntax b)
+          => Op (Internal a -> Internal b) -> a -> b
 sugarSym1 op a       = unFull $ sugarSym op a
-sugarSym2
-  :: (TypeF (Internal a), TypeF (Internal b), TypeF (Internal c),
-      Syntactic a, Syntactic b, Syntactic c) =>
-     Op (Internal a -> Internal b -> Internal c) -> a -> b -> c
+sugarSym2 :: (TypeF (Internal a), TypeF (Internal b),
+              Syntactic a, Syntactic b, Syntax c)
+          => Op (Internal a -> Internal b -> Internal c) -> a -> b -> c
 sugarSym2 op a b     = unFull $ sugarSym op a b
-sugarSym3
-  :: (TypeF (Internal a), TypeF (Internal b), TypeF (Internal c),
-      TypeF (Internal d), Syntactic a, Syntactic b, Syntactic c,
-      Syntactic d) =>
-     Op (Internal a -> Internal b -> Internal c -> Internal d)
-     -> a -> b -> c -> d
+sugarSym3 :: (TypeF (Internal a), TypeF (Internal b), TypeF (Internal c),
+              Syntactic a, Syntactic b, Syntactic c, Syntax d)
+          => Op (Internal a -> Internal b -> Internal c -> Internal d)
+             -> a -> b -> c -> d
 sugarSym3 op a b c   = unFull $ sugarSym op a b c
