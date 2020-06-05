@@ -52,23 +52,23 @@ sizeProp = spA M.empty
 
 spA :: BindEnv -> AExpr a -> AExpr a
 -- | Variables and literals
-spA vm (_ :& Variable v) = lookupBE "SizeProp.look" vm v
+spA vm (_ :& Operator (Variable v)) = lookupBE "SizeProp.look" vm v
 spA _ (_ :& Operator l'@(Literal l)) = Info (T.sizeOf l) :& Operator l'
 -- Top level lambda
 spA vm (_ :& Operator (Lambda v) :@ e)
-  | e1@(Info i1 :& _) <- spA (extendBE vm (CBind v $ Info top :& Variable v)) e
+  | e1@(Info i1 :& _) <- spA (extendBE vm (CBind v $ Info top :& Operator (Variable v))) e
   = Info (top, i1) :& Operator (Lambda v) :@ e1
 -- | Applications and lambdas based on head operator
 -- | Array
 spA vm (_ :& Operator        Parallel :@ a :@ (_ :& Operator (Lambda v) :@ e))
   | a1@(i1@(Info ai1) :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Variable v)) e
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Operator (Variable v))) e
   = Info (ai1 :> ei1) :& Operator Parallel :@ a1 :@ (Info (ai1, ei1) :& Operator (Lambda v) :@ e1)
 spA vm (_ :& Operator      Sequential :@ a :@ b :@ (_ :& Operator (Lambda v) :@ (_ :& Operator (Lambda w) :@ e)))
   | a1@(Info ai1 :& _) <- spA vm a
   , b1 <- spA vm b
-  , vm' <- extendBE vm (CBind v $ Info ai1 :& Variable v)
-  , e1@(Info ei1@(s, _) :& _) <- spA (extendBE vm' (CBind w $ Info top :& Variable w)) e
+  , vm' <- extendBE vm (CBind v $ Info ai1 :& Operator (Variable v))
+  , e1@(Info ei1@(s, _) :& _) <- spA (extendBE vm' (CBind w $ Info top :& Operator (Variable w))) e
   = Info (ai1 :> s) :& Operator Sequential :@ a1 :@ b1 :@ (Info (ai1, (top, ei1)) :& Operator (Lambda v) :@ (Info (top, ei1) :& Operator (Lambda w) :@ e1))
 spA vm (_ :& Operator          Append :@ a :@ b)
   | a1@(Info (alen :> aelem) :& _) <- spA vm a
@@ -92,7 +92,7 @@ spA vm (_ :& Operator       SetLength :@ a :@ b)
 -- | Binding
 spA vm (_ :& Operator             Let :@ a :@ (_ :& Operator (Lambda v) :@ e))
   | a1@(Info ai1 :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Operator (Variable v))) e
   = Info ei1 :& Operator Let :@ a1 :@ (Info (ai1, ei1) :& Operator (Lambda v) :@ e1)
 
 -- | Bits
@@ -204,7 +204,7 @@ spA vm (_ :& Operator            EPar :@ a :@ b)
   = Info (ai1 \/ bi1) :& Operator EPar :@ a1 :@ b1
 spA vm (_ :& Operator         EparFor :@ a :@ (_ :& Operator (Lambda v) :@ e))
   | a1@(i1@(Info ai1) :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Variable v)) e
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Operator (Variable v))) e
   = Info ei1 :& Operator EparFor :@ a1 :@ (Info (ai1, ei1) :& Operator (Lambda v) :@ e1)
 
 -- | Eq
@@ -304,15 +304,15 @@ spA vm (_ :& Operator             Not :@ a)
 spA vm (_ :& Operator ForLoop :@ a :@ b :@ (_ :& Operator (Lambda v) :@ (_ :& Operator (Lambda w) :@ e)))
   | a1@(Info ai1 :& _) <- spA vm a
   , b1@(Info bi1 :& _) <- spA vm b
-  , vm' <- extendBE vm (CBind v $ Info ai1 :& Variable v)
-  , e1@(Info ei1 :& _) <- spA (extendBE vm' (CBind w $ Info top :& Variable w)) e
+  , vm' <- extendBE vm (CBind v $ Info ai1 :& Operator (Variable v))
+  , e1@(Info ei1 :& _) <- spA (extendBE vm' (CBind w $ Info top :& Operator (Variable w))) e
   , r1 <- Info (ai1, (top, ei1)) :& Operator (Lambda v) :@ (Info (top, ei1) :& Operator (Lambda w) :@ e1)
   = Info (bi1 \/ ei1):& Operator ForLoop :@ a1 :@ b1 :@ r1
 
 spA vm (_ :& Operator  WhileLoop :@ a :@ (_ :& Operator (Lambda v1) :@ e1) :@ (_ :& Operator (Lambda v2) :@ e2))
   | a1@(Info ai1 :& _) <- spA vm a
-  , e1'@(Info ei1' :& _) <- spA (extendBE vm (CBind v1 $ Info top :& Variable v1)) e1
-  , e2'@(Info ei2' :& _) <- spA (extendBE vm (CBind v2 $ Info top :& Variable v2)) e2
+  , e1'@(Info ei1' :& _) <- spA (extendBE vm (CBind v1 $ Info top :& Operator (Variable v1))) e1
+  , e2'@(Info ei2' :& _) <- spA (extendBE vm (CBind v2 $ Info top :& Operator (Variable v2))) e2
   , b1 <- Info (top, ei1') :& Operator (Lambda v1) :@ e1'
   , c1 <- Info (top, ei2') :& Operator (Lambda v2) :@ e2'
   = Info (ai1 \/ ei2') :& Operator WhileLoop :@ a1 :@ b1 :@ c1
@@ -343,7 +343,7 @@ spA vm (_ :& Operator RunMutableArray :@ a)
   = Info ai1 :& Operator RunMutableArray :@ a1
 spA vm (_ :& Operator       WithArray :@ a :@ (_ :& Operator (Lambda v) :@ e))
   | a1@(Info ai1 :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Operator (Variable v))) e
   = Info ei1:& Operator WithArray :@ a1 :@ (Info (ai1, ei1) :& Operator (Lambda v) :@ e1)
 
 -- | MutableReference
@@ -469,7 +469,7 @@ spA vm (_ :& Operator          Return :@ a)
   = Info ai1 :& Operator Return :@ a1
 spA vm (_ :& Operator            Bind :@ a :@ (_ :& Operator (Lambda v) :@ e))
   | a1@(Info ai1 :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Operator (Variable v))) e
   = Info ei1 :& Operator Bind :@ a1 :@ (Info (ai1, ei1) :& Operator (Lambda v) :@ e1)
 spA vm (_ :& Operator            Then :@ a :@ b)
   | b1@(Info bi1 :& _) <- spA vm b

@@ -155,7 +155,7 @@ instance (Syntax a, Syntactic b, TypeF (Internal b)) => Syntactic (a -> b) where
   type Internal (a -> b) = Internal a -> Internal b
   sugar _ = error "sugar not implemented for a -> b"
   desugar f = ASTF (m1, Info top :& Operator (Lambda v) :@ e1) $ i + 1
-    where ASTF ce i = desugar $ f (sugar $ ASTF (M.empty, Info top :& Variable v) 0)
+    where ASTF ce i = desugar $ f (sugar $ ASTF (M.empty, Info top :& Operator (Variable v)) 0)
           (m1, e1) = catchBindings [varNum v] ce
           v = Var (fromIntegral i + hashBase) B.empty
 
@@ -228,7 +228,7 @@ full (~(m, e), i) = ASTF (flattenCSE (m, Info top :& e)) i
 flattenCSE :: T.Type a => CExpr a -> CExpr a
 flattenCSE (m,e) | not $ sharable e = (m, e)
 flattenCSE (m,e@(i :& _))
-  = mergeMapCExpr (M.singleton (varNum v) (CBind v e)) (m, i :& Variable v)
+  = mergeMapCExpr (M.singleton (varNum v) (CBind v e)) (m, i :& Operator (Variable v))
    where v = Var (hashExpr e) B.empty
 
 applyCSE :: CSEExpr (Expr (a -> b)) -> CSEExpr (AExpr a) -> CSEExpr (Expr b)
@@ -286,7 +286,7 @@ hashExpr :: AExpr a -> VarId
 hashExpr (_ :& e) = hashExprR e
 
 hashExprR :: Expr a -> VarId
-hashExprR (Variable v) = (hashStr . show $ typeOf v) `combineHash` (varNum v)
+hashExprR (Operator (Variable v)) = (hashStr . show $ typeOf v) `combineHash` (varNum v)
 hashExprR (Operator op) = hashOp op
 -- Hash value of rhs in let is equal to bound variable name which occurs in body
 hashExprR (Operator Let :@ _ :@ (_ :& Operator (Lambda _) :@ e)) = hashExpr e
