@@ -1,7 +1,7 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -48,9 +48,8 @@ import Feldspar.Mutable
 
 data Option a = Option { isSome :: Data Bool, fromSome :: a }
 
-instance Syntax a => Syntactic (Option a)
-  where
-    type Internal (Option a) = NPair Bool (Internal a)
+instance Syntax a => Syntactic (Option a) where
+    type Internal (Option a) = Tuple '[Bool, Internal a]
     desugar = desugar . desugarOption . fmap resugar
     sugar   = fmap resugar . sugarOption . sugar
 
@@ -73,12 +72,17 @@ instance Monad Option
 
 
 -- | One-layer desugaring of 'Option'
-desugarOption :: Type a => Option (Data a) -> Data (NPair Bool a)
+desugarOption :: Type a => Option (Data a) -> Data (Tuple '[Bool, a])
 desugarOption a = resugar $ twotup (isSome a) (fromSome a)
 
 -- | One-layer sugaring of 'Option'
-sugarOption :: Type a => Data (NPair Bool a) -> Option (Data a)
-sugarOption (resugar -> t) = Option (nfst t) (nsnd t)
+sugarOption :: Type a => Data (Tuple '[Bool, a]) -> Option (Data a)
+sugarOption (resugar -> t) = Option (nfst t) (nsnd' t)
+  where -- Workaround for loss of type information with resugar. Should
+        -- be possible to add a type signature instead but I couldn't get
+        -- that to work.
+        nsnd' :: Tuple '[a, b] -> b
+        nsnd' = sel (Skip First)
 
 some :: a -> Option a
 some = Option true

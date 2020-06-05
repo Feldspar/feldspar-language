@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+
 module Main where
 
 -- To generate the golden files use a script similiar to this one
@@ -38,11 +40,13 @@ trickySharing x = (a+b+c) + (a+b) + (a+b+c)
     c = x*7
 
 -- We want no sharing between the two tuples in the result although they have a common tail
-noshareT :: (NPair (Data Length) (Data Length), NPair (Data Length) (Data Length))
+noshareT :: (Tuple '[Data Length, Data Length]
+           , Tuple '[Data Length, Data Length])
 noshareT = let two = 2 in (build $ tuple 1 two, build $ tuple 3 two)
 
 -- We want sharing between the two tuples in the result since they are identical
-shareT :: (NPair (Data Length) (Data Length), NPair (Data Length) (Data Length))
+shareT :: (Tuple '[Data Length, Data Length]
+         , Tuple '[Data Length, Data Length])
 shareT = (build $ tuple 1 2, build $ tuple 1 2)
 
 selectT :: Data Length

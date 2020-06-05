@@ -35,6 +35,7 @@
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# OPTIONS_GHC -Wall -Werror #-}
 
@@ -63,7 +64,8 @@ module Feldspar.Core.Representation
 
 import Feldspar.Compiler.Options (Pretty(..))
 import Feldspar.Core.Types (Type(..), TypeF(..), TypeRep(..), Length, Index, IntN,
-                            Size, Elements, FVal, Mut, AnySize, MArr, Par, IV)
+                            Size, Elements, FVal, Mut, AnySize, MArr, Par, IV,
+                            Tuple(..))
 import Feldspar.Range (Range, BoundedInt)
 
 import qualified Data.ByteString.Char8 as B
@@ -76,8 +78,6 @@ import Data.Bits (Bits)
 import Data.Complex (Complex)
 import Data.Ix
 import Data.IORef (IORef)
-
-import Feldspar.Core.NestedTuples
 
 infixr :->
 infixl 5 :@
@@ -175,7 +175,7 @@ data Op a where
     -- | Array
     Parallel   :: Type a => Op (Length :-> (Index -> a) :-> Full [a])
     Sequential :: (Type a, Type st) =>
-                  Op (Length :-> st :-> (Index -> st -> NPair a st) :-> Full [a])
+                  Op (Length :-> st :-> (Index -> st -> Tuple '[a, st]) :-> Full [a])
     Append     :: Type a => Op ([a] :-> [a] :-> Full [a])
     GetIx      :: Type a => Op ([a] :-> Index :-> Full a)
     SetIx      :: Type a => Op ([a] :-> Index :-> a :-> Full [a])
@@ -319,10 +319,10 @@ data Op a where
     ModRef :: Type a => Op (IORef a :-> (a -> a) :-> Full (Mut ()))
 
     -- | Nested tuples
-    Cons  :: Type a => Op (a :-> Tuple b :-> Full (Tuple (a :* b)))
-    Nil   ::           Op (Full (Tuple TNil))
-    Car   :: Type a => Op (Tuple (a :* b) :-> Full a)
-    Cdr   ::           Op (Tuple (a :* b) :-> Full (Tuple b))
+    Cons  :: Type a => Op (a :-> Tuple b :-> Full (Tuple (a ': b)))
+    Nil   ::           Op (Full (Tuple '[]))
+    Car   :: Type a => Op (Tuple (a ': b) :-> Full a)
+    Cdr   ::           Op (Tuple (a ': b) :-> Full (Tuple b))
     Tup   ::           Op (Tuple a :-> Full (Tuple a))
 
     -- | NoInline
