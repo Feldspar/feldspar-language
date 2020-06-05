@@ -225,7 +225,7 @@ type CExpr a = CSEExpr (AExpr a)
 full :: T.Type b => (CSEExpr (Expr b), Int) -> ASTF b
 full (~(m, e), i) = ASTF (flattenCSE (m, Info top :& e)) i
 
-flattenCSE :: CExpr a -> CExpr a
+flattenCSE :: T.Type a => CExpr a -> CExpr a
 flattenCSE (m,e) | not $ sharable e = (m, e)
 flattenCSE (m,e@(i :& _))
   = mergeMapCExpr (M.singleton (varNum v) (CBind v e)) (m, i :& Variable v)
