@@ -4,6 +4,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -Wall #-}
+-- Orphans from the QuickCheck instances.
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -97,7 +100,7 @@ import qualified Feldspar.Core.Eval as E
 import Feldspar.Core.Types
 import Feldspar.Core.Interpretation (FeldOpts, defaultFeldOpts)
 import Feldspar.Core.Middleend.FromTyped (untype, untypeUnOpt, untypeDecor)
-import Feldspar.Core.UntypedRepresentation (VarId, stringTree, stringTreeExp)
+import Feldspar.Core.UntypedRepresentation (stringTree, stringTreeExp)
 import Feldspar.Core.Language
 import Feldspar.Core.ValueInfo (ValueInfo)
 
@@ -109,8 +112,6 @@ reifyFeldUnOpt = reifyFeld
 
 stringTreeASTF :: ASTF a -> Tree String
 stringTreeASTF = stringTree . untypeUnOpt defaultFeldOpts
-
-class StringTree (a :: * -> *) where
 
 showDecorWith :: (ValueInfo -> String) -> ASTF a -> String
 showDecorWith f = showTree . stringTreeExp g . untypeDecor defaultFeldOpts
@@ -141,7 +142,7 @@ printExpr2With opts = print . untype opts . reifyFeld
 
 -- | Print an optimized expression with options
 printExprWith :: Syntactic a => FeldOpts -> a -> IO ()
-printExprWith opts = print . reifyFeld
+printExprWith _ = print . reifyFeld
 
 -- | Print an unoptimized expression
 printExprUnOpt :: Syntactic a => a -> IO ()

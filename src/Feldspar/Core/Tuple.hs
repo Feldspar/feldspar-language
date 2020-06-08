@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# OPTIONS_GHC -Wall #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB

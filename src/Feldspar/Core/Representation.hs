@@ -9,6 +9,9 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GADTs #-}
+{-# OPTIONS_GHC -Wall #-}
+-- FIXME: shApp is partial, refactoring should make it complete.
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -52,7 +55,7 @@ module Feldspar.Core.Representation
   , fviR
   , CBind(..)
   , bvId
-  , BindEnv(..)
+  , BindEnv
   , lookupBE
   , extendBE
   , mkLets
@@ -62,7 +65,7 @@ module Feldspar.Core.Representation
   ) where
 
 import Feldspar.Core.Types (Type(..), TypeF(..), TypeRep(..), Length, Index, IntN,
-                            Size(..), Elements, FVal, Mut, AnySize, MArr, Par, IV, Tuple(..), (:*), TNil)
+                            Size, Elements, FVal, Mut, AnySize, MArr, Par, IV, Tuple(..), (:*), TNil)
 import Feldspar.Range (Range, BoundedInt)
 
 import qualified Data.ByteString.Char8 as B
@@ -167,10 +170,10 @@ instance Typeable a => Eq (Expr a) where
 newtype EqBox a = EqBox {unEqBox :: a}
 
 instance Eq (EqBox a) where
-  x == y = True
+  _ == _ = True
 
 instance Show (EqBox a) where
-  show x = "Box"
+  show _ = "Box"
 
 type SelCtx w uw sw usw = (Tuply w, Unpack w ~ uw, Size w ~ sw, Tuply sw, Unpack sw ~ usw)
 
@@ -488,7 +491,7 @@ lookupBE :: Typeable a => String -> BindEnv -> Var a -> AExpr a
 lookupBE msg bm (v@(Var n _) :: Var a)
                = case M.lookup n bm of
                       Nothing -> error $ msg ++ ": lookupBE does not find variable " ++ show v
-                      Just (CBind (u@Var{} :: Var b) e)
+                      Just (CBind (Var{} :: Var b) e)
                            -> case eqT :: Maybe (a :~: b) of
                                    Nothing -> error $ msg ++ ": lookupBE finds conflicing types for " ++ show v
                                    Just Refl -> e
@@ -559,11 +562,11 @@ goodToShare (_ :& _ :@ _) = True
 goodToShare _                   = False
 
 largeLit :: TypeRep a -> a -> Bool
-largeLit UnitType l = False
-largeLit BoolType l = False
-largeLit (IntType _ _) l = False
-largeLit FloatType l = False
-largeLit DoubleType l = False
-largeLit (ArrayType t) l = not $ null l
-largeLit (ElementsType t) l = False
-largeLit _ _ = True
+largeLit UnitType       _ = False
+largeLit BoolType       _ = False
+largeLit IntType{}      _ = False
+largeLit FloatType      _ = False
+largeLit DoubleType     _ = False
+largeLit ArrayType{}    l = not $ null l
+largeLit ElementsType{} _ = False
+largeLit _              _ = True

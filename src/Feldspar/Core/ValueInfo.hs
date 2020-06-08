@@ -1,6 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# OPTIONS_GHC -Wall #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -41,7 +42,6 @@
 module Feldspar.Core.ValueInfo where
 
 import Feldspar.Range
-import Feldspar.Lattice ((/\), (\/))
 
 import Data.Bits
 import Data.Int
@@ -120,10 +120,10 @@ instance RangeVI WordN where
   rangeVI l h = VIWordN $ Range l h
 
 instance RangeVI Float where
-  rangeVI l h = VIFloat
+  rangeVI _ _ = VIFloat
 
 instance RangeVI Double where
-  rangeVI l h = VIDouble
+  rangeVI _ _ = VIDouble
 
 instance RangeVI a => RangeVI [a] where
   rangeVI ls hs = VIProd $ zipWith rangeVI ls hs

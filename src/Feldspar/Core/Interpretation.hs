@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveLift #-}
+{-# OPTIONS_GHC -Wall #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB

@@ -1,6 +1,9 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wall #-}
+-- FIXME: PropSize and Switch not matched by semantics.
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -43,8 +46,6 @@ import Data.Complex
 import Data.Function (on)
 import Data.IORef
 import Data.List
-import Data.Maybe
-import Data.Typeable
 import Feldspar.Core.Representation
 import Feldspar.Core.Tuple
 import Feldspar.Core.NestedTuples
@@ -270,6 +271,7 @@ semantics Sel14 = Sem "sel14" sel14
 semantics Sel15 = Sem "sel15" sel15
 
 -- | Support for Array
+evalGetIx :: (Integral a, Show a) => [p] -> a -> p
 evalGetIx as i
     | 0 <= i && i < len = genericIndex as i
     | otherwise = error $ unwords
@@ -281,6 +283,7 @@ evalGetIx as i
     where
       len = genericLength as
 
+evalSetIx :: (Integral b, Show b) => [a] -> b -> a -> [a]
 evalSetIx as i v
     | 0 <= i && i < len = genericTake i as ++ [v] ++ genericDrop (i+1) as
     | otherwise = error $ unwords

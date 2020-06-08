@@ -6,6 +6,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wall #-}
+-- Names shadow in this module, not a big deal.
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+-- FIXME: Partial functions.
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+-- Unknown severity.
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -79,13 +86,13 @@ module Feldspar.Core.UntypedRepresentation (
   , legalToShare
   , goodToShare
   , legalToInline
-  , Rename(..)
+  , Rename
   , rename
   , newVar
   )
   where
 
-import Control.Monad.State
+import Control.Monad.State hiding (join)
 import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Char8 as B
 import Data.List (nub, intercalate)
@@ -288,24 +295,24 @@ topInfo (FValType t)     = topInfo t
 
 -- | Pretty printing a value info given a type
 prettyVI :: Type -> ValueInfo -> String
-prettyVI t (VIBool r)   = show r
-prettyVI t (VIInt8 r)   = show r
-prettyVI t (VIInt16 r)  = show r
-prettyVI t (VIInt32 r)  = show r
-prettyVI t (VIInt64 r)  = show r
-prettyVI t (VIIntN r)   = show r
-prettyVI t (VIWord8 r)  = show r
-prettyVI t (VIWord16 r) = show r
-prettyVI t (VIWord32 r) = show r
-prettyVI t (VIWord64 r) = show r
-prettyVI t (VIWordN r)  = show r
-prettyVI t (VIFloat)    = "[*,*]"
-prettyVI t (VIDouble)   = "[*,*]"
-prettyVI t (VIProd vs)  = pr t vs
+prettyVI _ (VIBool r)   = show r
+prettyVI _ (VIInt8 r)   = show r
+prettyVI _ (VIInt16 r)  = show r
+prettyVI _ (VIInt32 r)  = show r
+prettyVI _ (VIInt64 r)  = show r
+prettyVI _ (VIIntN r)   = show r
+prettyVI _ (VIWord8 r)  = show r
+prettyVI _ (VIWord16 r) = show r
+prettyVI _ (VIWord32 r) = show r
+prettyVI _ (VIWord64 r) = show r
+prettyVI _ (VIWordN r)  = show r
+prettyVI _ VIFloat{}    = "[*,*]"
+prettyVI _ VIDouble{}   = "[*,*]"
+prettyVI t' (VIProd vs')  = pr t' vs'
   where pr (ArrayType _ t)  [v1,v2] = prettyVI indexType v1 ++ " :> " ++ prettyVI t v2
         pr (ElementsType t) [v1,v2] = prettyVI indexType v1 ++ " :>> " ++ prettyVI t v2
         pr (TupType ts)     vs      = "(" ++ intercalate ", " (zipWith prettyVI ts vs) ++ ")"
-        pr t                vs      = "VIProd " ++ show vs
+        pr _                vs      = "VIProd " ++ show vs
 
 -- | The Type used to represent indexes, to which Index is mapped.
 indexType :: Type
@@ -605,19 +612,19 @@ stringTreeExp prA = go
 prettyExp :: (Type -> a -> String) -> AUntypedFeld a -> String
 prettyExp prA e = render (pr 0 0 e)
   where pr p i (AIn r e) = pe p i r e
-        pe p i r (Variable v) = line i $ show v
-        pe p i _ (Literal l) = line i $ show l
+        pe _ i _ (Variable v) = line i $ show v
+        pe _ i _ (Literal l) = line i $ show l
         pe p i _ (Lambda v e) = par p 0 $ join $ line i ("\\ " ++ pv Nothing v ++ " ->") ++ pr 0 (i+2) e
         pe p i r (App Let t es) = par p 0 $ line i "let" ++ pLet i (AIn r $ App Let t es)
         pe p i r (App f t es) = par p 10 $ join $ line i (show f ++ prP t r) ++ pArgs p (i+2) es
-        pe p i r (LetFun (s,k,body) e) = line i ("letfun " ++ show k ++ " " ++ s)
+        pe _ i _ (LetFun (s,k,body) e) = line i ("letfun " ++ show k ++ " " ++ s)
                                          ++ pr 0 (i+2) body
                                          ++ line i "in"
                                          ++ pr 0 (i+2) e
 
+        pArgs _ _ [] = []
         pArgs p i [e@(AIn _ (Lambda _ _))] = pr p i e
         pArgs p i (e:es) = pr 11 i e ++ pArgs p i es
-        pArgs p i [] = []
 
         pLet i (AIn _ (App Let _ [eRhs, AIn _ (Lambda v e)]))
                = join (line (i+2) (pv Nothing v ++ " =") ++ pr 0 (i+4) eRhs) ++ pLet i e
@@ -628,7 +635,7 @@ prettyExp prA e = render (pr 0 0 e)
         prP t r = " {" ++ prType t ++ prA t r ++ "}"
         prC t   = " : " ++ prType t
 
-        par p i [] = error "UntypedRepresentation.prettyExp: parethesisizing empty text"
+        par _ _ [] = error "UntypedRepresentation.prettyExp: parethesisizing empty text"
         par p i ls = if p <= i then ls else prepend "(" $ append ")" ls
         prepend s ((i,n,v) : ls) = (i, n + length s, s ++ v) : ls
         append s [(i,n,v)] = [(i, n + length s, v ++ s)]
@@ -807,9 +814,10 @@ renameR env (App f t es) = do es1 <- mapM (renameA env) es
 renameR env (Lambda v e) = do v1 <- newVar v
                               e1 <- renameA (M.insert (varNum v) (Variable v1) env) e
                               return $ Lambda v1 e1
-renameR env (Literal l) = return $ Literal l
-renameR env e = error $ "FromTyped.renameR: unexpected expression " ++ show e
+renameR _   (Literal l) = return $ Literal l
+renameR _   e = error $ "FromTyped.renameR: unexpected expression " ++ show e
 
+newVar :: MonadState VarId m => Var -> m Var
 newVar v = do j <- get
               put (j+1)
               return $ v{varNum = j}

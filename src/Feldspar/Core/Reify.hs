@@ -8,6 +8,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
+{-# OPTIONS_GHC -Wall #-}
+-- Hashable instances give orphan warnings.
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -39,7 +42,7 @@
 
 module Feldspar.Core.Reify
        ( Syntactic(..)
-       , Syntax(..)
+       , Syntax
        , ASTF
        , unASTF
        , render
@@ -59,10 +62,9 @@ import qualified Feldspar.Core.Types as T
 import Feldspar.Lattice (top)
 import Feldspar.Core.NestedTuples
 
-import Control.Applicative
-import Control.Monad.Cont
+import Control.Monad.Cont (Cont, ap)
 import Data.Complex (Complex(..))
-import Data.Typeable
+import Data.Typeable (Typeable, typeOf)
 import Data.Hash (Hashable(..), asWord64, combine, hashInt, Hash)
 
 import qualified Data.ByteString.Char8 as B
@@ -151,7 +153,7 @@ instance Show (Data a) where
 
 instance (Syntax a, Syntactic b, TypeF (Internal b)) => Syntactic (a -> b) where
   type Internal (a -> b) = Internal a -> Internal b
-  sugar e = error "sugar not implemented for a -> b"
+  sugar _ = error "sugar not implemented for a -> b"
   desugar f = ASTF (m1, Info top :& Lambda v e1) $ i + 1
     where ASTF ce i = desugar $ f (sugar $ ASTF (M.empty, Info top :& Variable v) 0)
           (m1, e1) = catchBindings [varNum v] ce
@@ -200,7 +202,7 @@ class SugarF a where
 
 instance (Syntactic b, SugarF c) => SugarF (b -> c) where
   type SugarT (b -> c) = Internal b -> SugarT c
-  sugarF f@(cf,i) = sugarF . go . desugar
+  sugarF (cf, i) = sugarF . go . desugar
     where go (ASTF ce j) = (applyCSE cf ce, max i j)
 
 instance Syntax b => SugarF (FFF b) where
@@ -241,12 +243,6 @@ mergeMapCExpr lm (rm,e) = (M.union lm rm1, e1)
          (rm1,e1) = if null colls then (rm,e) else catchBindings (map fst colls) (rm,e)
          colls = filter (uncurry (/=) . snd) $ M.toList sect
 
-hashError :: M.Map VarId (CBind,CBind) -> a
-hashError sect = error $ "CSE.mergeCSE: hash conflict, diff is" ++ concatMap showDiff diffs
-  where diffs = filter (uncurry (/=)) $ M.elems sect
-        showDiff (b1,b2) = "\nDiff for " ++ show (bvId b1) ++ "\n"
---                                    ++ showRhs b1 ++ "\n--\n" ++ showRhs b2
-
 {- | Functions for floating bindings out of lambdas whenever possible.
 -}
 
@@ -254,17 +250,17 @@ floatBindings :: [VarId] -> CSEMap -> (CSEMap, [CBind])
 floatBindings vs bm = (M.fromAscList [(bvId b, b) | b <- fbs], concat nfBss)
    where arr = accumArray f [] (0, fromIntegral $ len-1)
              $ map toPair
-             $ [(v, bindThreshold) | v <- vs] ++ map (depthBind arr) bs
+             $ [(v, bindThreshold) | v <- vs] ++ map (depthBind arr) bs'
          arr :: Array VarId [(VarId,Int)]
-         toPair vx@(v,x) = (v `mod` len, vx)
+         toPair vx@(v, _) = (v `mod` len, vx)
          m = fromIntegral $ n + n `div` 8
          len = head $ filter (>= m) $ iterate (*2) 2 :: VarId
          f xs x = x:xs
          n = M.size bm
-         bs = M.elems bm
+         bs' = M.elems bm
          (fbs, nfbs)
-           | null vs   = ([], bs)
-           | otherwise = partition ((< bindThreshold) . hashLook arr . bvId) bs
+           | null vs   = ([], bs')
+           | otherwise = partition ((< bindThreshold) . hashLook arr . bvId) bs'
          nfArr = accumArray
                     (flip (:))
                     []
@@ -278,6 +274,7 @@ hashLook m i = maximum $ 0 : [d | (v,d) <- m ! (i `mod` (snd (bounds m) + 1)), v
 depthBind :: Array VarId [(VarId,Int)] -> CBind -> (VarId, Int)
 depthBind arr (CBind v e) = (varNum v, maximum (0 : map (hashLook arr) (S.toList $ fvi e)) + 1)
 
+bindThreshold :: Int
 bindThreshold = 1000000
 
 catchBindings :: [VarId] -> CExpr a -> CExpr a
