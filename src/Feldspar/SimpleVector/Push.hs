@@ -116,7 +116,7 @@ class Ixmap arr where
   ixmap :: Syntax a => (Data Index -> Data Index) -> arr a -> arr a
 
 instance Ixmap V.Vector where
-  ixmap f vec = V.indexed (length vec) (\i -> vec ! (f i))
+  ixmap f vec = V.indexed (length vec) (\i -> vec ! f i)
 
 instance Ixmap PushVector where
   ixmap f (Push g l) = Push (\k -> g (\i a -> k (f i) a)) l
