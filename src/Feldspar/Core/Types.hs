@@ -8,6 +8,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -Wall #-}
+-- Show and Eq instances gives warnings.
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -44,21 +47,16 @@ module Feldspar.Core.Types
        ) where
 
 
-import Data.Array.IO (IOArray(..))
-import Data.Bits
+import Data.Array.IO (IOArray)
 import Data.Complex
 import Data.Int
 import Data.IORef
 import Data.List
 import Data.Typeable (Typeable)
-import Data.Orphans
 import Data.Word
-import Test.QuickCheck
-import System.Random (Random(..))
 import qualified Control.Monad.Par as MonadPar
 
 import Data.Patch
-import Data.Proxy
 
 import Feldspar.Lattice
 import Feldspar.Range
@@ -771,7 +769,7 @@ class (Typeable a, Show (Size a), Lattice (Size a)) => TypeF a where
 
 instance {-# OVERLAPPING #-} (TypeF a, TypeF b) => TypeF (a -> b) where
   typeRepF = FunType typeRepF typeRepF
-  sizeOfF f = universal
+  sizeOfF _ = universal
 
 instance {-# OVERLAPPABLE #-} (Typeable a, Type a) => TypeF a where
   typeRepF = typeRep

@@ -1,6 +1,11 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wall #-}
+-- Pattern matches over TypeRep are partial due to calling context.
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+-- FIXME: Remove when moving Pretty instances to their right place.
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -39,7 +44,6 @@ module Feldspar.Core.Middleend.FromTyped
   )
   where
 
-import qualified Data.ByteString.Char8 as B
 import Feldspar.Core.Middleend.FromTypeUtil
 import Feldspar.Core.Interpretation (FeldOpts)
 import Feldspar.Core.Middleend.CreateTasks
@@ -51,8 +55,7 @@ import Feldspar.Core.Middleend.UniqueVars
 import Feldspar.Core.Middleend.PassManager
 import qualified Feldspar.Core.UntypedRepresentation as U
 import Feldspar.Core.Reify (ASTF, unASTF, render)
-import Feldspar.Core.Types (TypeRep(..), typeRep, defaultSize, TypeF(..),
-                            (:>)(..))
+import Feldspar.Core.Types (TypeRep(..), defaultSize, TypeF(..), (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
 import Feldspar.Core.ValueInfo (ValueInfo(..))
@@ -63,7 +66,6 @@ import Feldspar.Core.SizeProp
 import Feldspar.Core.AdjustBindings
 import Control.Monad.State (evalState)
 import Data.Complex (Complex(..))
-import Data.Typeable (Typeable)
 
 -- | External module interface. Untype, optimize and unannotate.
 untype :: FeldOpts -> ASTF a -> UntypedFeld
@@ -126,9 +128,9 @@ toU (((R.Info i) :: R.Info a) :& e)
                    App op (untypeType tr i) es
   where tr = typeRepF :: TypeRep a
         i2 = AIn $ toValueInfo tr i
-        go :: forall a . R.Expr a -> [AUntypedFeld ValueInfo] -> (Op, [AUntypedFeld ValueInfo])
+        go :: forall a' . R.Expr a' -> [AUntypedFeld ValueInfo] -> (Op, [AUntypedFeld ValueInfo])
         go (R.Operator op) es = (trOp op, es)
-        go (f :@ e) es = go f $ toU e : es
+        go (f :@ e') es = go f $ toU e' : es
 
 -- | Translate a Typed operator to the corresponding untyped one
 trOp :: R.Op a -> Op
@@ -374,8 +376,8 @@ untypeType (RefType a) sz              = U.RefType (untypeType a sz)
 untypeType (ArrayType a) (rs :> es)    = U.ArrayType rs (untypeType a es)
 untypeType (MArrType a) (rs :> es)     = U.MArrType rs (untypeType a es)
 untypeType (ParType a) sz              = U.ParType (untypeType a sz)
-untypeType (ElementsType a) (rs :> es) = U.ElementsType (untypeType a es)
-untypeType (ConsType a b) (sa,sb)      = U.TupType $ untypeTup (ConsType a b) (sa,sb)
+untypeType (ElementsType a) (_ :> es)  = U.ElementsType (untypeType a es)
+untypeType c@ConsType{} sz             = U.TupType $ untypeTup c sz
 untypeType NilType        _            = U.TupType []
 untypeType (IVarType a) sz             = U.IVarType $ untypeType a sz
 untypeType (FunType a b) (sa, sz)      = U.FunType (untypeType a sa) (untypeType b sz)
@@ -535,7 +537,7 @@ toValueInfo (ConsType a b) (sa,sb) = VIProd $ toValueInfo a sa : ss
 toValueInfo NilType _ = VIProd []
 toValueInfo (IVarType a) sz                 = toValueInfo a sz
 -- TODO: Maybe keep argument information for FunType.
-toValueInfo (FunType a b) (sa, _)           = toValueInfo a sa
+toValueInfo (FunType a _) (sa, _)           = toValueInfo a sa
 toValueInfo (FValType a) sz                 = toValueInfo a sz
 
 -- The front-end driver.

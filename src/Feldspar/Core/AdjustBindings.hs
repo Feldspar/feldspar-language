@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GADTs #-}
+{-# OPTIONS_GHC -Wall #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB

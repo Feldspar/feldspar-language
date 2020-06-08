@@ -6,10 +6,10 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -Wall #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -48,8 +48,6 @@ module Feldspar.Core.NestedTuples
   , tuple
   , build
   ) where
-
-import Data.Typeable
 
 -- | Data and type constructor for nested tuples
 infixr 5 :*

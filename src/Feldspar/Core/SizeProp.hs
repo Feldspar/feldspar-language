@@ -2,6 +2,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -Wall #-}
+-- FIXME: Current data structures make incomplete checking impossible.
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -40,7 +43,6 @@ import Feldspar.Core.Tuple
 import Feldspar.Range
 import Feldspar.Lattice (Lattice, top, bot, (\/), (/\))
 
-import Data.Typeable (Typeable)
 import qualified Data.Map.Strict as M (empty)
 
 sizeProp :: AExpr a -> AExpr a
@@ -49,7 +51,7 @@ sizeProp = spA M.empty
 spA :: BindEnv -> AExpr a -> AExpr a
 -- | Variables and literals
 spA vm (_ :& Variable v) = lookupBE "SizeProp.look" vm v
-spA vm (_ :& Literal  l) = Info (T.sizeOf l) :& Literal l
+spA _ (_ :& Literal  l) = Info (T.sizeOf l) :& Literal l
 -- Top level lambda
 spA vm (_ :& Lambda v e)
   | e1@(Info i1 :& _) <- spA (extendBE vm (CBind v $ Info top :& Variable v)) e
@@ -86,7 +88,7 @@ spA vm (_ :& Operator       SetLength :@ a :@ b)
   = Info (ai1 :> bi) :& Operator SetLength :@ a1 :@ b1
 
 -- | Binding
-spA vm (_ :& Operator             Let :@ a :@ b@(_ :& Lambda v e))
+spA vm (_ :& Operator             Let :@ a :@ (_ :& Lambda v e))
   | a1@(Info ai1 :& _) <- spA vm a
   , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
   = Info ei1 :& Operator Let :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
@@ -192,7 +194,7 @@ spA vm (_ :& Operator          EWrite :@ a :@ b)
   | a1@(Info ai1 :& _) <- spA vm a
   , b1@(Info bi1 :& _) <- spA vm b
   = Info (ai1 :> bi1) :& Operator EWrite :@ a1 :@ b1
-spA vm (_ :& Operator           ESkip)
+spA _ (_ :& Operator           ESkip)
   = Info bot :& Operator ESkip
 spA vm (_ :& Operator            EPar :@ a :@ b)
   | a1@(Info ai1 :& _) <- spA vm a
@@ -210,14 +212,14 @@ spA vm (_ :& Operator        NotEqual :@ a :@ b)
   = Info top :& Operator NotEqual :@ spA vm a :@ spA vm b
 
 -- | Error
-spA vm (_ :& Operator       Undefined)
+spA _ (_ :& Operator       Undefined)
   = Info bot :& Operator Undefined
 spA vm (_ :& Operator      (Assert s) :@ a :@ b)
   | b1@(Info bi1 :& _) <- spA vm b
   = Info bi1 :& Operator (Assert s) :@ spA vm a :@ b1
 
 -- | Floating
-spA vm (_ :& Operator              Pi)
+spA _ (_ :& Operator              Pi)
   = Info top :& Operator Pi
 spA vm (_ :& Operator             Exp :@ a)
   = Info top :& Operator Exp :@ spA vm a
@@ -305,7 +307,7 @@ spA vm (_ :& Operator ForLoop :@ a :@ b :@ (_ :& Lambda v (_ :& Lambda w e)))
   , r1 <- Info (ai1, (top, ei1)) :& Lambda v (Info (top, ei1) :& Lambda w e1)
   = Info (bi1 \/ ei1):& Operator ForLoop :@ a1 :@ b1 :@ r1
 
-spA vm (_ :& Operator  WhileLoop :@ a :@ b@(_ :& Lambda v1 e1) :@ c@(_ :& Lambda v2 e2))
+spA vm (_ :& Operator  WhileLoop :@ a :@ (_ :& Lambda v1 e1) :@ (_ :& Lambda v2 e2))
   | a1@(Info ai1 :& _) <- spA vm a
   , e1'@(Info ei1' :& _) <- spA (extendBE vm (CBind v1 $ Info top :& Variable v1)) e1
   , e2'@(Info ei2' :& _) <- spA (extendBE vm (CBind v2 $ Info top :& Variable v2)) e2
@@ -337,7 +339,7 @@ spA vm (_ :& Operator       ArrLength :@ a)
 spA vm (_ :& Operator RunMutableArray :@ a)
   | a1@(Info ai1 :& _) <- spA vm a
   = Info ai1 :& Operator RunMutableArray :@ a1
-spA vm (_ :& Operator       WithArray :@ a :@ f@(_ :& Lambda v e))
+spA vm (_ :& Operator       WithArray :@ a :@ (_ :& Lambda v e))
   | a1@(Info ai1 :& _) <- spA vm a
   , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
   = Info ei1:& Operator WithArray :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)
@@ -357,7 +359,7 @@ spA vm (_ :& Operator            Cons :@ a :@ b)
   | a1@(Info ai1 :& _) <- spA vm a
   , b1@(Info bi1 :& _) <- spA vm b
   = Info (ai1, bi1) :& Operator Cons :@ a1 :@ b1
-spA vm (_ :& Operator             Nil)
+spA _ (_ :& Operator             Nil)
   = Info top :& Operator Nil
 spA vm (_ :& Operator             Car :@ a)
   | a1@(Info (ai1, _) :& _) <- spA vm a
@@ -416,7 +418,7 @@ spA vm (_ :& Operator             Max :@ a :@ b)
 spA vm (_ :& Operator          ParRun :@ a)
   | a1@(Info ai1 :& _) <- spA vm a
   = Info ai1 :& Operator ParRun :@ a1
-spA vm (_ :& Operator          ParNew)
+spA _ (_ :& Operator          ParNew)
   = Info top :& Operator ParNew
 spA vm (_ :& Operator          ParGet :@ a)
   = Info top :& Operator ParGet :@ spA vm a
@@ -424,7 +426,7 @@ spA vm (_ :& Operator          ParPut :@ a :@ b)
   = Info top :& Operator ParPut :@ spA vm a :@ spA vm b
 spA vm (_ :& Operator         ParFork :@ a)
   = Info top :& Operator ParFork :@ spA vm a
-spA vm (_ :& Operator        ParYield)
+spA _ (_ :& Operator        ParYield)
   = Info top :& Operator ParYield
 
 -- | RealFloat
@@ -448,7 +450,7 @@ spA vm (_ :& Operator          Switch :@ a)
   = Info ai1 :& Operator Switch :@ a1
 
 -- | Tuple
-spA vm (_ :& Operator Tup0)
+spA _ (_ :& Operator Tup0)
   = Info bot :& Operator Tup0
 
 spA vm (_ :& Operator Tup2 :@ a :@ b)
@@ -688,7 +690,7 @@ spA vm (_ :& Operator             For :@ a :@ b)
 spA vm (_ :& Operator          Return :@ a)
   | a1@(Info ai1 :& _) <- spA vm a
   = Info ai1 :& Operator Return :@ a1
-spA vm (_ :& Operator            Bind :@ a :@ f@(_ :& Lambda v e))
+spA vm (_ :& Operator            Bind :@ a :@ (_ :& Lambda v e))
   | a1@(Info ai1 :& _) <- spA vm a
   , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Variable v)) e
   = Info ei1 :& Operator Bind :@ a1 :@ (Info (ai1, ei1) :& Lambda v e1)

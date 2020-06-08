@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -Wall #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -33,8 +34,6 @@
 
 module Feldspar.Core.Collection where
 
-
-
 -- | Collection element type
 type family Elem a
 
@@ -61,4 +60,3 @@ class Sized a
 class CollMap a b
   where
     collMap :: (Elem a -> Elem b) -> a -> b
-
