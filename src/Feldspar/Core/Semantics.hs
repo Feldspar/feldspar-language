@@ -209,7 +209,7 @@ semantics ModRef = Sem "modRef" (\r f -> readIORef r >>= writeIORef r . f)
 semantics RunMutableArray = Sem "runMutableArray" runMutableArrayEval
 semantics WithArray       = Sem "withArray"       withArrayEval
 -- Nested tuples
-semantics Cons  = Sem "cons"  (\ x y -> x :* y)
+semantics Cons  = Sem "cons"  (:*)
 semantics Nil   = Sem "nil"   TNil
 semantics Car   = Sem "car"   (\ (x :* _) -> x)
 semantics Cdr   = Sem "cdr"   (\ (_ :* y) -> y)

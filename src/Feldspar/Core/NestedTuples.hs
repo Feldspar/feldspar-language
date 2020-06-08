@@ -117,12 +117,12 @@ instance TupleBuild (b :* a) c => TupleBuild a (b -> c) where
   stuple xs x = stuple (x :* xs)
 
 instance Tuple a ~ b => TupleBuild a (TT b) where
-  stuple x = TT x
+  stuple = TT
 
 newtype TT a = TT a
 
 tuple :: TupleBuild TNil b => b
 tuple = stuple TNil
 
-build :: TupleReverse TNil a b => TT (Tuple a) -> (Tuple b)
+build :: TupleReverse TNil a b => TT (Tuple a) -> Tuple b
 build (TT x) = tupleReverse TNil x
