@@ -96,6 +96,7 @@ idxLenExpr ai = ixTop $ reverse ai
         add x y = AIn (addVI (getAnnotation x) (getAnnotation y)) $ App Add (typeof x) [x, y]
         mul x y = AIn (mulVI (getAnnotation x) (getAnnotation y)) $ App Mul (typeof x) [x, y]
 
+mkBinds :: ([BindInfo], AUntypedFeld ValueInfo) -> AbsInfo -> ([BindInfo], UExp)
 mkBinds (bs, e) LoopI{trip = (_,eTrip), ixVar = v} = catch (shiftBIs bs) loopE
   where loopE = AIn r $ App EparFor (typeof e) [eTrip, AIn r $ Lambda v e]
         r = getAnnotation e
@@ -110,6 +111,7 @@ catch :: [BindInfo] -> UExp -> ([BindInfo], UExp)
 catch bs e = (fbs ++ concatMap biBindIs pbs, mkLets (map biBind pbs, e))
   where (pbs,fbs) = partition (null . biAbsI) bs
 
+legalLoops :: S.Set Var -> [AbsInfo] -> [(Bool, AbsInfo)]
 legalLoops vs (a@AbsI{absVars = avs} : ais)
     | disjoint vs avs = (False, a) : legalLoops vs ais
 legalLoops vs (a@LoopI{absVars = avs, ixVar = ixv, trip = (trvs,_)} : ais)
@@ -117,6 +119,7 @@ legalLoops vs (a@LoopI{absVars = avs, ixVar = ixv, trip = (trvs,_)} : ais)
   where vs1 = S.union trvs (vs S.\\ S.singleton ixv)
 legalLoops _  _ = []
 
+profitableLoops :: [(Bool, b)] -> [(Bool, b)]
 profitableLoops aais = reverse $ dropWhile (not . fst) $ reverse aais
 
 {-
@@ -133,8 +136,8 @@ a pair) can not be inlined into the outer pattern in the recursive invocations.
 -}
 
 eu :: [AbsInfo] -> VarMap -> RExp -> Rename (S.Set Var, ([BindInfo], RExp))
-eu ai vm (Variable v) = let (s,e) = vm M.! v in return (s, ([],e))
-eu ai vm (Literal l) = return (S.empty, ([], Literal l))
+eu _ vm (Variable v) = let (s,e) = vm M.! v in return (s, ([],e))
+eu _ _ (Literal l) = return (S.empty, ([], Literal l))
 eu ai vm (App Let t [eRhs, AIn r (Lambda v eBody)])
   = do (fvsR, bseR) <- expE ai vm eRhs
        let (bsR, eR) = bseR -- Note [Lazy binding]
@@ -191,6 +194,7 @@ eu ai vm (Lambda v e)
        (fvs,bse) <- expE (AbsI{absVars = vs} : ai) (M.insert v (vs, Variable v) vm) e
        return (fvs S.\\ vs, (shiftBIs $ fst bse, Lambda v $ snd bse))
 
+simpleExp :: [AbsInfo] -> VarMap -> UExp -> Bool
 simpleExp ai vm e = simpleArrRef e || expCost ai vm e <= 2
 
 expCost :: [AbsInfo] -> VarMap -> UExp -> Int

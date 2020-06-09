@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+
 --
 -- Copyright (c) 2019, ERICSSON AB
 -- All rights reserved.
@@ -76,7 +79,7 @@ runPassC _ _ _ prog = prog
 
 runPassT :: (a -> b) -> Prog a c -> Prog b c
 runPassT f (Prog (Just p) ss s) = Prog (Just $ f p) ss s
-runPassT f (Prog Nothing ss s) = Prog Nothing ss s
+runPassT _ (Prog Nothing ss s)  = Prog Nothing ss s
 
 runPassS :: Eq b => [b] -> b -> ((c,a) -> (c,a)) -> Prog a c -> Prog a c
 runPassS skips pass f (Prog (Just p) ss s)
@@ -101,4 +104,3 @@ passS ctrl pass f = prOrStop "After" (wrAfter ctrl) (stopAfter ctrl) pass
 evalPasses :: c -> (Prog a c -> Prog b c) -> a -> ([String], Maybe b)
 evalPasses s f p = case f $ Prog (Just p) [] s of
                      Prog prg ss _ -> (ss, prg)
-
