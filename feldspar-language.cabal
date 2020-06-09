@@ -88,7 +88,6 @@ library
     base                        >= 4.9.1  && < 5.9,
     bytestring                  >= 0.10   && < 0.11,
     containers                  >= 0.4    && < 0.7,
-    comonad                     >= 4.2    && < 6.0,
     mtl                         >= 2.0    && < 2.3,
     patch-combinators           >= 0.2    && < 0.3,
     prelude-edsl                             < 0.4,
