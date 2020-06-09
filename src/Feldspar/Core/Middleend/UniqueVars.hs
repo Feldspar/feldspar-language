@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wall #-}
+
 --
 -- Copyright (c) 2019, ERICSSON AB
 -- All rights reserved.
@@ -53,11 +55,11 @@ uniq :: M.Map VarId (RRExp a) -> RRExp a -> U (RRExp a)
 uniq vm (Variable v) = return $ vm M.! varNum v
 uniq vm (App op t es) = do es1 <- mapM (uniqA vm) es
                            return $ App op t es1
-uniq vm (Literal l) = return $ Literal l
+uniq _ (Literal l) = return $ Literal l
 uniq vm (Lambda v e) = do v1 <- record v
                           e1 <- uniqA (M.insert (varNum v) (Variable v1) vm) e
                           return $ Lambda v1 e1
-uniq vm e = error $ "UniqueVars.uniq: unimplemented expression: " ++ show e
+uniq _ e = error $ "UniqueVars.uniq: unimplemented expression: " ++ show e
 
 record :: Var -> U Var
 record v = do s <- get

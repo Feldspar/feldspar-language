@@ -45,21 +45,21 @@ type UExp = UntypedFeldF AExp -- ^ Unannotated expressions
 type SM = M.Map VarId AExp -- ^ Associate a let bound variable with its value
 
 simplify :: SM -> AExp -> AExp
-simplify env (AIn r e) = simp env e
+simplify env' (AIn r e') = simp env' e'
   where simp env (Variable v) = AIn r $ derefToA env v
         simp env (Lambda v e) = AIn r $ Lambda v $ simplify env e -- Or use mkLam
-        simp env (Literal l) = AIn r $ Literal l
+        simp _   (Literal l) = AIn r $ Literal l
         simp env (App Let _ [eRhs, eLam]) = simpLet env (simplify env eRhs) (unwrap eLam)
         -- Transform Bind to Then for values of type Unit
-        simp env (App Bind t [e1, AIn r2 (Lambda v e2)])
+        simp env (App Bind t [e1, AIn _ (Lambda v e2)])
            | typeof v == TupType []
            = simpApp env r Then t [simplify env e1, simplify (extend env v eUnit) e2]
         simp env (App Condition t [ec, et, ee]) = simpCond env r t (simplify env ec) et ee
         simp env (App p t es) | p `elem` [For, EparFor]
                               = simpLoop env r p t es
         simp env (App op t es) = simpApp env r op t $ map (simplify env) es
-        simp env (LetFun (s,_,_) _) = error $ "OptimizeUntyped.simplify: LetFun "
-                                              ++ s ++ " not allowed"
+        simp _ (LetFun (s,_,_) _) = error $ "OptimizeUntyped.simplify: LetFun "
+                                             ++ s ++ " not allowed"
 
 simpLet :: SM -> AExp -> UExp -> AExp
 simpLet env rhs (Lambda v eBody)
@@ -68,7 +68,7 @@ simpLet env rhs (Lambda v eBody)
   = mkLet rv rRhs $ simpLet (extend env rv rRhs) rBody $ Lambda v eBody
   | sharable rhs = mkLet v rhs $ simplify (extend env v rhs) eBody
   | otherwise = simplify (extend env v rhs) eBody
-simpLet env rhs eLam
+simpLet _ _ eLam
   = error $ "OptimizeUntyped.simpLet: malformed lambda in let: " ++ show eLam
 
 simpCond :: SM -> ValueInfo -> Type -> AExp -> AExp -> AExp -> AExp
@@ -96,8 +96,8 @@ simpLoop env r op t (eTC:es) = go op (simplify env eTC) es
         go op tc es = AIn r $ App op t (tc : map (simplify env) es)
 
 simpApp :: SM -> ValueInfo -> Op -> Type -> [AExp] -> AExp
-simpApp env r op t es = go op t es
-  where eOrig = AIn r $ App op t es
+simpApp env r op' t es = go op' t es
+  where eOrig = AIn r $ App op' t es
         go :: Op -> Type -> [AExp] -> AExp
         go Add _ [e1, e2]
          | zero e1 = e2
@@ -140,12 +140,12 @@ simpApp env r op t es = go op t es
          = e1
 
         -- Basic constant folder
-        go op t [e1, e2]
+        go op _ [e1, e2]
          | Literal l1 <- examine env e1 -- Some literals are large and not always inlined
          , Literal l2 <- examine env e2
          = constFold eOrig op l1 l2
 
-        go op t [e1]
+        go op _ [e1]
          | Literal l1 <- examine env e1 -- Some literals are large and not always inlined
          = constFold1 eOrig op l1
 
@@ -212,27 +212,30 @@ uLogOf (_ :# IntType sgn sz) (Literal (LInt sgn' sz' n))
   = Just (sgn, aLit $ LInt sgn sz m)
 uLogOf _ _ = Nothing
 
+intLog2 :: Integer -> Maybe Integer
 intLog2 = il 0
   where il m 1 = Just m
         il m n | n `mod` 2 == 0 = il (m+1) (n `div` 2)
                | otherwise = Nothing
 
+lshift :: Signedness -> Op
 lshift Unsigned = ShiftLU
 lshift Signed   = ShiftL
 
+rshift :: Signedness -> Op
 rshift Unsigned = ShiftRU
 rshift Signed   = ShiftR
 
 convert :: Lit -> Type -> Maybe AExp
-convert (LInt s1 sz1 n) (1 :# IntType s2 sz2) = Just $ aLit $ LInt s2 sz2 n
-convert (LInt s1 sz1 n) (1 :# FloatType)
+convert (LInt _ _ n) (1 :# IntType s2 sz2) = Just $ aLit $ LInt s2 sz2 n
+convert (LInt _ _ n) (1 :# FloatType)
   = Just $ aLit $ LFloat $ fromIntegral n
-convert (LInt s1 sz1 n) (1 :# DoubleType)
+convert (LInt _ _ n) (1 :# DoubleType)
   = Just $ aLit $ LDouble $ fromIntegral n
 convert _ _ = Nothing
 
 compatible :: Type -> Type -> Type -> Bool
-compatible (n1 :# IntType s1 sz1) (n2 :# IntType s2 sz2) (n3 :# IntType s3 sz3)
+compatible (n1 :# IntType s1 sz1) (n2 :# IntType s2 sz2) (n3 :# IntType _ sz3)
   | n1 == n2 && n2 == n3 = sz2 >= sz3 || s1 == s2 && sz1 <= sz2
 compatible _ _ _ = False
 
@@ -244,16 +247,16 @@ deref env v = maybe (Variable v) (examine env) $ M.lookup (varNum v) env
 
 derefToA :: SM -> Var -> UExp
 derefToA env v = case M.lookup (varNum v) env of
-                   Just (AIn _ (Variable v)) -> derefToA env v
+                   Just (AIn _ (Variable v')) -> derefToA env v'
                    Just e@(AIn _ ue) | not $ sharable e -> ue
                    _ -> Variable v
 
 examine :: SM -> AExp -> UExp
 examine env (AIn _ (Variable v)) = deref env v
-examine env (AIn _ e)            = e
+examine _   (AIn _ e)            = e
 
 unwrap :: AExp -> UExp
-unwrap (AIn r e) = e
+unwrap (AIn _ e) = e
 
 -- | Is this a literal zero.
 zero :: AUntypedFeld a -> Bool
@@ -277,12 +280,12 @@ constFold _ Sub (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (n1 - n2))
 constFold _ Mul (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (n1 * n2))
 constFold _ Min (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (min n1 n2))
 constFold _ Max (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (max n1 n2))
-constFold _ LTH (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 < n2)
-constFold _ LTE (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 <= n2)
-constFold _ GTH (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 > n2)
-constFold _ GTE (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 >= n2)
-constFold _ Equal (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 == n2)
-constFold _ NotEqual (LInt sz n n1) (LInt _ _ n2) = aLit (LBool $ n1 /= n2)
+constFold _ LTH (LInt _  _ n1) (LInt _ _ n2) = aLit (LBool $ n1 < n2)
+constFold _ LTE (LInt _  _ n1) (LInt _ _ n2) = aLit (LBool $ n1 <= n2)
+constFold _ GTH (LInt _  _ n1) (LInt _ _ n2) = aLit (LBool $ n1 > n2)
+constFold _ GTE (LInt _  _ n1) (LInt _ _ n2) = aLit (LBool $ n1 >= n2)
+constFold _ Equal (LInt _ _ n1) (LInt _ _ n2) = aLit (LBool $ n1 == n2)
+constFold _ NotEqual (LInt _ _ n1) (LInt _ _ n2) = aLit (LBool $ n1 /= n2)
 
 constFold _ Add (LFloat x) (LFloat y) = aLit (LFloat $ x + y)
 constFold _ Sub (LFloat x) (LFloat y) = aLit (LFloat $ x - y)
@@ -313,7 +316,7 @@ constFold _ BAnd (LInt sgn1 sz1 n1) (LInt _ _ n2) = aLit (LInt sgn1 sz1 $ n1 B..
 constFold _ BOr  (LInt sgn1 sz1 n1) (LInt _ _ n2) = aLit (LInt sgn1 sz1 $ n1 B..|. n2)
 constFold _ BXor (LInt sgn1 sz1 n1) (LInt _ _ n2) = aLit (LInt sgn1 sz1 $ B.xor n1 n2)
 
-constFold _ GetIx (LArray t ls) (LInt _ _ n)
+constFold _ GetIx (LArray _ ls) (LInt _ _ n)
   | n >= 0
   , fromInteger n < length ls
   = aLit $ ls !! fromInteger n
@@ -338,6 +341,7 @@ grabWrite _ _ = Nothing
 mkLet :: Var -> AExp -> AExp -> AExp
 mkLet v rhs body = mkLets ([(v,rhs)], body)
 
+eUnit :: AUntypedFeld ValueInfo
 eUnit = aLit $ LTup []
 
 -- We need to eliminate dead bindings

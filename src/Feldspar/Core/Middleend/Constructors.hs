@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wall #-}
+
 --
 -- Copyright (c) 2019, ERICSSON AB
 -- All rights reserved.
@@ -106,4 +108,3 @@ mkBinds :: ([(Var, AExpB a)], AExpB a) -> AExpB a
 mkBinds (bs,(b,e)) = (foldr appendBag (appendBag (Item $ zip vs es1) b) bs1, e)
   where (vs,bes) = unzip bs
         (bs1,es1) = unzip bes
-

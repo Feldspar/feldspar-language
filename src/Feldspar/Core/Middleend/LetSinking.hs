@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wall #-}
+
 module Feldspar.Core.Middleend.LetSinking ( sinkLets ) where
 
 import Feldspar.Core.UntypedRepresentation

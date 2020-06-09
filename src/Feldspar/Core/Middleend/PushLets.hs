@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wall #-}
+
 --
 -- Copyright (c) 2019, ERICSSON AB
 -- All rights reserved.
@@ -33,8 +35,8 @@ import Feldspar.Core.Middleend.Constructors
 
 pushLets :: AUntypedFeld a -> AUntypedFeld a
 pushLets = toExpr . go
-  where go (AIn r (App Let t [rhs, AIn r1 (Lambda v body)]))
-           | legalToInline rhs = push v (go rhs) r1 (toExpr $ go body)
+  where go (AIn _ (App Let _ [rhs, AIn _ (Lambda v body)]))
+           | legalToInline rhs = push v (go rhs) (toExpr $ go body)
            | otherwise = mkBinds ([(v, go rhs)], go body)
         go (AIn r (App op t es)) = aIn r $ app op t $ map go es
         go (AIn r (Lambda v e)) = aIn r $ lambda v $ go e
@@ -46,29 +48,30 @@ data OCount = OC {low, high :: Int}
 data DSCount = DS {dynamic :: OCount, static :: Int}
   deriving (Eq, Show)
 
-push :: Var -> AExpB a -> a -> AUntypedFeld a -> AExpB a
-push v rhs r = snd . goA False False
+push :: Var -> AExpB a -> AUntypedFeld a -> AExpB a
+push v rhs = snd . goA False False
   where goA lo pa (AIn r1 e) = (norm n1, aIn r1 $ if ph then eB else e1)
            where (n1,e1) = go lo (pa || ph) e
                  d1 = dynamic n1
                  ph = not pa && (high d1 > 1 || low d1 > 0 && static n1 > 1)
                  eB = unAnnotateB $ mkBinds ([(v, rhs)], aIn r1 e1)
 
-        go lo pa e@(Variable u) = if u /= v then (zeroDS, fromRExpr e)
-                                            else (oneDS, if pa then fromRExpr e else unAnnotateB rhs)
-        go lo pa e@(Literal _) = (zeroDS, fromRExpr e)
-        go lo pa (App Condition t [ec, et, ee]) = (n, app Condition t [ec1, et1, ee1])
+        go _ pa e@(Variable u) = if u /= v then (zeroDS, fromRExpr e)
+                                           else (oneDS, if pa then fromRExpr e else unAnnotateB rhs)
+        go _ _ e@(Literal _) = (zeroDS, fromRExpr e)
+        go _ pa (App Condition t [ec, et, ee]) = (n, app Condition t [ec1, et1, ee1])
            where (nc,ec1) = goA False pa ec
                  (nt,et1) = goA False pa et
                  (ne,ee1) = goA False pa ee
                  n = liftDS both nc (liftDS oneOf nt ne)
-        go lo pa (App op t es) = (n, app op t es1)
+        go _ pa (App op t es) = (n, app op t es1)
            where (ns,es1) = unzip $ map (goA lo1 pa) es
                  n = foldr (liftDS both) zeroDS ns
                  lo1 = op `elem` [Parallel, Sequential, EparFor, ForLoop, WhileLoop, For, While]
-        go lo pa e@(Lambda u _) | u == v = (zeroDS, fromRExpr e)
+        go _ _ e@(Lambda u _) | u == v = (zeroDS, fromRExpr e)
         go lo pa (Lambda u e) = (lamDS lo n1, lambda u e1)
            where (n1,e1) = goA False pa e
+        go _ _ LetFun{} = error "Pushing let is not supported for LetFun."
 
 lamDS :: Bool -> DSCount -> DSCount
 lamDS lo (DS d s) = if lo then DS (both d d) (s+s) else DS d s -- A loop body may be run several times
@@ -85,4 +88,4 @@ both (OC ll hl) (OC lr hr) = OC (ll+lr) (hl+hr)
 oneOf (OC ll hl) (OC lr hr) = OC (min ll lr) (max hl hr)
 
 norm :: DSCount -> DSCount
-norm ds@(DS (OC l h) s) = DS (OC (min 1 l) (min 1 h)) (min s 1)
+norm (DS (OC l h) s) = DS (OC (min 1 l) (min 1 h)) (min s 1)
