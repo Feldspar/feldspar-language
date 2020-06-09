@@ -46,10 +46,7 @@ import Data.Int
 import Data.Word
 import Data.Default
 import Data.Hash
-import qualified Test.QuickCheck as Q
-import System.Random (Random(..))
 
-import Control.DeepSeq (NFData(..))
 import Foreign.Storable (Storable)
 import Language.Haskell.TH.Syntax (Lift(..))
 
@@ -83,16 +80,14 @@ instance (Show a, Bounded a, Eq a) => Show (Range a)
 newtype WordN = WordN Word32
   deriving
     ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded
-    , Q.Arbitrary, Random, Storable, NFData, Default
-    , FiniteBits, Hashable, Lift
+    , Storable, Default, FiniteBits, Hashable, Lift
     )
 
 -- | Target-dependent signed integers
 newtype IntN = IntN Int32
   deriving
     ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded
-    , Q.Arbitrary, Random, Storable, NFData, Default
-    , FiniteBits, Hashable
+    , Storable, Default, FiniteBits, Hashable
     )
 
 instance Show WordN

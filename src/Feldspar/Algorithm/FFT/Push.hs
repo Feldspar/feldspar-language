@@ -22,10 +22,6 @@ import Feldspar.Vector
 import Feldspar.Algorithm.FFT.Utils
 import Feldspar.Algorithm.FFT.Twids
 
-import Test.QuickCheck
-
-
-
 -- | Utilities that should go into Feldspar.Vector
 chnk :: forall arr1 a b . (Pushy arr1, VecShape arr1 ~ DIM1, Syntax b)
       => Data Length          -- ^ Number of chunks
@@ -68,4 +64,3 @@ fft ws vs = forLoop (ilog2 len) vs stage
             $ toPull
             . store
             . chnk (1 .<<. s) (len .>>. s) (butterfly dft2 (ixmap (.<<. s) ws))
-

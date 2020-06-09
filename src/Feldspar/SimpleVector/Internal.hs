@@ -40,7 +40,6 @@ module Feldspar.SimpleVector.Internal where
 
 import qualified Prelude
 import Control.Applicative
-import Test.QuickCheck
 
 import Feldspar.Core.Reify (Syntactic(..), resugar)
 import Feldspar.Core.Tuple
@@ -410,7 +409,3 @@ tVec1 _ = id
 
 tVec2 :: Patch a a -> Patch (Vector (Vector (Data a))) (Vector (Vector (Data a)))
 tVec2 _ = id
-
-instance (Arbitrary (Internal a), Syntax a, Hashable (Internal a)) => Arbitrary (Vector a)
-  where
-    arbitrary = fmap value arbitrary

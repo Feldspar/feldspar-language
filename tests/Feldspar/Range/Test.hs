@@ -39,6 +39,7 @@
 module Feldspar.Range.Test where
 
 import Feldspar.Range
+import Feldspar.Core.TestUtils
 import System.Random -- Should maybe be exported from QuickCheck
 import Test.QuickCheck hiding ((.&.))
 import qualified Test.QuickCheck as QC

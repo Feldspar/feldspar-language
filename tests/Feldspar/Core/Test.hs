@@ -12,6 +12,7 @@ import qualified Data.List as DL
 
 import Feldspar
 import Feldspar.Mutable
+import Feldspar.Core.TestUtils
 
 tests = $(testGroupGenerator)
 
