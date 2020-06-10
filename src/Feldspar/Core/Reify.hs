@@ -193,12 +193,10 @@ newtype FFF a = FFF a
 unFull :: FFF a -> a
 unFull (FFF x) = x
 
-type RCSExpr a = CSEExpr (Expr a)
-
 -- | Support for the overloaded sugarSym function
 class SugarF a where
   type SugarT a
-  sugarF :: (RCSExpr (SugarT a), Int) -> a
+  sugarF :: (CSEExpr (Expr (SugarT a)), Int) -> a
 
 instance (Syntactic b, SugarF c) => SugarF (b -> c) where
   type SugarT (b -> c) = Internal b -> SugarT c
