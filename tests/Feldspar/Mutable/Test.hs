@@ -7,7 +7,6 @@ module Feldspar.Mutable.Test where
 import Feldspar
 import qualified Feldspar.Vector as V
 import Feldspar.Mutable
-import Feldspar.Core.TestUtils
 
 import Test.Tasty
 import Test.Tasty.TH
@@ -52,3 +51,4 @@ prop_withBuf =
         withBuf buf $ \b -> return (b V.!! i)
 
 tests = $(testGroupGenerator)
+

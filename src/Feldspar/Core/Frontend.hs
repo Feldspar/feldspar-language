@@ -70,6 +70,10 @@ module Feldspar.Core.Frontend
     , resugar
     , value
 
+    -- * QuickCheck
+    , (===>)
+    , (====)
+
     -- * Type constraints
     , tData
     , tArr1
@@ -82,9 +86,12 @@ module Feldspar.Core.Frontend
 
 import Prelude as P
 
+import Test.QuickCheck
+
 import Data.Patch
 import Data.Tree (Tree)
 import Data.Tree.View
+import Data.Hash (Hashable)
 
 import qualified Feldspar.Core.Reify as Syntactic
 import Feldspar.Core.Reify hiding (desugar, sugar)
@@ -175,6 +182,36 @@ desugar = resugar
 
 sugar :: Syntactic a => Data (Internal a) -> a
 sugar = resugar
+
+--------------------------------------------------------------------------------
+-- * QuickCheck
+--------------------------------------------------------------------------------
+
+instance (Type a, Arbitrary a, Hashable a) => Arbitrary (Data a)
+  where
+    arbitrary = fmap value arbitrary
+
+instance Testable (Data Bool)
+  where
+    property = property . eval
+
+(===>) :: Testable prop => Data Bool -> prop -> Property
+a ===> b = eval a ==> b
+
+
+-- | Test that two function of the same arity have the same semantics
+class Equal a
+  where
+    (====) :: a -> a -> Property
+
+instance {-# OVERLAPPABLE #-} (P.Eq a, Show a) => Equal a
+  where
+    x ==== y = x === y
+
+instance (Show a, Arbitrary a, Equal b) => Equal (a -> b)
+  where
+    f ==== g = property (\x -> f x ==== g x)
+
 
 --------------------------------------------------------------------------------
 -- * Type annotations
