@@ -19,7 +19,7 @@ license-file:   LICENSE
 stability:      experimental
 homepage:       http://feldspar.github.com
 bug-reports:    https://github.com/feldspar/feldspar-language/issues
-build-type:     Simple
+build-type:     Custom
 cabal-version:  >= 1.14
 tested-with:    GHC==8.0.2, GHC==8.4.4
 
@@ -81,18 +81,56 @@ library
     Feldspar.Algorithm.FFT.Push
     Feldspar.Algorithm.FFT.Twids
     Feldspar.Algorithm.FFT.Utils
+    -- Compiler
+    Feldspar.Compiler
+    Feldspar.Compiler.Imperative.ArrayOps
+    Feldspar.Compiler.Imperative.Representation
+    Feldspar.Compiler.Imperative.ExternalProgram
+    Feldspar.Compiler.Imperative.FromCore
+    Feldspar.Compiler.Imperative.FromCore.Interpretation
+    Feldspar.Compiler.Imperative.Frontend
+    Feldspar.Compiler.Backend.C.CodeGeneration
+    Feldspar.Compiler.Backend.C.Library
+    Feldspar.Compiler.Backend.C.MachineLowering
+    Feldspar.Compiler.Backend.C.Tic64x
+    Feldspar.Compiler.Backend.C.Options
+    Feldspar.Compiler.Backend.C.Platforms
+    Feldspar.Compiler.Backend.C.RuntimeLibrary
+    Feldspar.Compiler.Frontend.Interactive.Interface
+    Feldspar.Compiler.Plugin
+    Feldspar.Compiler.Marshal
+    Feldspar.Compiler.CallConv
+    Feldspar.Compiler.Compiler
+    Feldspar.Compiler.Error
+    Feldspar.Compiler.ExternalProgram
+    Feldspar.Runtime
 
   default-language: Haskell2010
 
   build-depends:
     array,
     base                        >= 4.9.1  && < 5.9,
+    base-compat                 >= 0.8,
     bytestring                  >= 0.10   && < 0.11,
+    Cabal,
     containers                  >= 0.4    && < 0.7,
+    data-default                >= 0.5,
+    directory                   >= 1.1,
+    filepath,
+    ghc,
+    ghci,
+    ghc-paths,
+    language-c-quote            >= 0.12  && < 0.13,
     mtl                         >= 2.0    && < 2.3,
     QuickCheck                  >= 2.7    && < 3,
     patch-combinators           >= 0.2    && < 0.3,
+    plugins-multistage          >= 0.6.3 && < 0.7,
     prelude-edsl                             < 0.4,
+    pretty,
+    process,
+    srcloc,
+    storable-tuple              >= 0.0.2,
+    storable-record             >= 0.0.2.5,
     template-haskell,
     tuple                       >= 0.2    && < 0.5,
     monad-par                   >= 0.3.4.5,
@@ -101,6 +139,35 @@ library
     data-default                >= 0.5.3  && < 0.8,
     data-hash                   >= 0.2.0.1 && < 100,
     tree-view
+
+  cpp-options: -DCABAL_IS_USED
+
+  c-sources:
+    clib/feldspar_c99.c
+    clib/taskpool.c
+    clib/ivar.c
+
+  cc-options: -std=c99 -Wall -fPIC
+
+  if os(linux)
+    extra-libraries: gcc_s pthread
+      -- pthread needed on Emil's Ubuntu (15.04), but apparently not on Travis
+
+  include-dirs:
+    ./clib
+
+  install-includes:
+    feldspar_array.h
+    feldspar_c99.h
+    feldspar_c99.c
+    feldspar_tic64x.h
+    feldspar_tic64x.c
+    feldspar_future.h
+    log.h
+    ivar.h
+    ivar.c
+    taskpool.h
+    taskpool.c
 
   hs-source-dirs: src examples
 
@@ -202,3 +269,48 @@ test-suite tutorial
     bytestring         >= 0.9 && < 0.11
 
   ghc-options: -threaded -with-rtsopts=-maxN4
+
+test-suite regression
+  type: exitcode-stdio-1.0
+
+  hs-source-dirs: tests
+
+  main-is: RegressionTests.hs
+
+  default-language: Haskell2010
+
+  build-depends:
+    feldspar-language,
+    mtl,
+    base,
+    Cabal,
+    process,
+    bytestring       >= 0.9 && < 0.11,
+    stringsearch     >= 0.3,
+    tasty            >= 0.3,
+    tasty-golden     >= 2.3.0.1,
+    tasty-quickcheck >= 0.3,
+    QuickCheck       >= 2.7.1 && < 3.0
+
+test-suite callconv
+  type: exitcode-stdio-1.0
+
+  hs-source-dirs: tests
+
+  main-is: CallingConvention.hs
+
+  default-language: Haskell2010
+
+  build-depends:
+    feldspar-language,
+    base,
+    tasty            >= 0.3,
+    tasty-quickcheck >= 0.3,
+    QuickCheck       >= 2.7.1 && < 3.0
+
+custom-setup
+  setup-depends:
+    base,
+    Cabal,
+    filepath,
+    process
