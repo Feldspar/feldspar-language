@@ -46,6 +46,7 @@ extra-deps:
   ,prelude-edsl-0.3.1
   ,data-hash-0.2.0.1
   ,tree-view-0.5
+  ,plugins-multistage-0.6.3
   ]
 
 # Override default flag values for local packages and extra-deps
