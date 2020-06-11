@@ -1,0 +1,4 @@
+The files in src/Onnx and its subdirectories are generated from the ONNX
+protobuf specification file 'onnx.proto' located in src/Feldspar/Onnx using
+the command 'hprotoc Feldspar/Onnx/onnx.proto' given from the src directory.
+The 'hprotoc' command comes from the 'protocol-buffers' package on Hackage.
