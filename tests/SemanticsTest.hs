@@ -6,8 +6,7 @@ import Test.Tasty
 import Test.Tasty.TH
 import Test.Tasty.QuickCheck
 
-import Feldspar (eval)
-import Feldspar.Core.TestUtils ((====))
+import Feldspar ((====), eval)
 import Examples.Simple.Basics
 import qualified Feldspar.Core.Test
 import qualified Feldspar.Mutable.Test
@@ -25,3 +24,4 @@ main = defaultMain $ testGroup "Tests"
     , Feldspar.Vector.Test.tests
     , Feldspar.Stream.Test.tests
     ]
+

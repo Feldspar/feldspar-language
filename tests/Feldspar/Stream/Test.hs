@@ -10,7 +10,6 @@ import qualified Data.List as List
 import Feldspar
 import Feldspar.Stream
 import Feldspar.Vector
-import Feldspar.Core.TestUtils
 
 import Test.Tasty
 import Test.Tasty.TH
@@ -76,3 +75,4 @@ prop_iir (NonEmpty as) (NonEmpty bs) = iirRef as bs ==== iirFeld as bs
 
 
 tests = $(testGroupGenerator)
+
