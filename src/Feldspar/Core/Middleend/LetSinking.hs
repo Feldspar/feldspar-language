@@ -22,6 +22,8 @@ sinkLets opts = collectAtTop opts . go
          = AIn r (App Let t [go e1, AIn r' (Lambda x $ go e2)])
         go (AIn r (App p t es)) = AIn r (App p t $ map go es)
 
+-- | Converts let x = .. in .. \x2 -> e to \x2 -> let x = .. in e
+--   for the top level expression when BA is a target.
 collectAtTop :: FeldOpts -> AUntypedFeld a -> AUntypedFeld a
 collectAtTop opts e
   | BA `inTarget` opts
