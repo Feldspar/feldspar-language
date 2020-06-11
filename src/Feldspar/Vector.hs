@@ -63,6 +63,8 @@ module Feldspar.Vector (
   Shaped(..),ShapeMap(..),
   -- * Patches
   tVec,tVec1,tPull,tPull1,
+  -- * Vector concatenation
+  Select(..), conc,
   -- * Semiquestionable things
   scan,
   -- * Ugly hacks
