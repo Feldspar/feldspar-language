@@ -204,7 +204,7 @@ onnxBatchNormalization :: Floating a
                        -> DPull DIM1 a -- ^ var
                        -> DPull DIM4 a
 onnxBatchNormalization attrs xs gamma beta mean var = ys
-  where invDev = map (\ v -> 1.0 / (sqrt $ v + epsilon)) var <! 1 <! 1
+  where invDev = map (\ v -> 1.0 / sqrt (v + epsilon)) var <! 1 <! 1
         xsHat = bcMul invDev $ bcSub xs $ mean <! 1 <! 1
         ys = bcAdd (bcMul xsHat $ gamma <! 1 <! 1) $ beta <! 1 <! 1
         epsilon = value $ P.realToFrac $ getAttr attrs aaFloat 1e-5 "epsilon"
@@ -228,7 +228,7 @@ idxExp ext idx = f (P.reverse ext) (P.reverse idx)
 
 -- | Split a shape
 takeDropShape :: Int -> Shape sh -> ([Data Length], [Data Length])
-takeDropShape i sh = (P.take j es, P.drop j es)
+takeDropShape i sh = P.splitAt j es
   where es = P.reverse $ toList sh     -- Leftmost index first
         j = if i P.< 0 then i + P.length es else i
 
@@ -246,7 +246,7 @@ onnxGemm3 attrs vA vB vC = bcZipWith (+) (mmT vAT vBnT) $ toPull vC
 
 -- | Matrix multiplication that transposes its second argument
 mmT :: forall a . (Syntax a, Num a) => Pull DIM2 a -> Pull DIM2 a -> Pull DIM2 a
-mmT vecA vecBT = vvmap dim1 (\ rowA -> vvmap dim1 (\ rowB -> (sum $ zipWith (*) rowA rowB)) vecBT) vecA
+mmT vecA vecBT = vvmap dim1 (\ rowA -> vvmap dim1 (sum . zipWith (*) rowA) vecBT) vecA
 
 -- | Summing over the three rightmost dimensions
 sum3D :: (Num a, Syntax a, Shapely sh) => Pull (sh :. Data Length :. Data Length :. Data Length) a -> Pull sh a
@@ -266,7 +266,7 @@ Pull ixf ext <! n = Pull (\ (ix :. _) -> ixf ix) (ext :. n)
 
 -- | Implementation of ONNX convolution operator
 onnxConv :: (Num a, Syntax a) => [Attribute] -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM1 a -> Pull DIM4 a
-onnxConv attrs xs ws bs = onnxConvNP (value $ map fromInteger strides) pXs ws bs
+onnxConv attrs xs = onnxConvNP (value $ map fromInteger strides) pXs
   where dilations    = getAttr  attrs aaInts [1, 1]    "dilations" -- Currently unused
         group        = getAttr  attrs aaInt  1         "group"     -- Currently unused
         kernel_shape = getAttrM attrs aaInts           "kernel_shape" -- Currently unused
@@ -290,7 +290,7 @@ onnxConvNP ss xs ws bs = Pull ixf (Z :. nLen :. mLen :. h1 :. w1) `bcAdd` (bs <!
 
 -- | Implementation of ONNX global average pooling
 onnxGlobalAveragePool :: (Fraction a) => [Attribute] -> Pull DIM4 (Data a) -> Pull DIM4 (Data a)
-onnxGlobalAveragePool _ xs = vvmap dim2 avgF xs
+onnxGlobalAveragePool _  = vvmap dim2 avgF
   where avgF vec = map (/ (i2n $ size $ extent vec)) (sum $ sum vec) <! 1 <! 1 
 
 -- | Padding a multi dimensional vector
@@ -348,7 +348,7 @@ vvmap :: (PrefShape sh (AppendShape sh sh2), PrefShape sh (AppendShape sh sh3),
 vvmap d f vec = Pull ixfN (appendShape ext1 $ extent $ f $ fromExt ext2)
   where Pull ixf ext = toPull vec
         (ext1,ext2) = spShape d ext
-        ixfN ix = f (Pull (\ ix' -> ixf (appendShape ix1 ix')) ext2) ! ix2
+        ixfN ix = f (Pull (ixf . appendShape ix1) ext2) ! ix2
           where (ix1,ix2) = spShape d ix
 
 -- | Map av n-dimensional function
@@ -357,7 +357,7 @@ vmap :: (Pully vec, VecShape vec ~ sh', SplitShape sh1 sh', SplitShape sh2 sh'',
 vmap f vec = Pull ixfN (appShape ext1 $ extent $ f $ fromExt ext2)
   where Pull ixf ext = toPull vec
         (ext1,ext2) = splitShape ext
-        ixfN ix = f (Pull (\ ix' -> ixf (appShape ix1 ix')) ext2) ! ix2
+        ixfN ix = f (Pull (ixf . appShape ix1) ext2) ! ix2
           where (ix1,ix2) = splitShape ix
 
 -- | zipWith an n-dimensional function
@@ -370,8 +370,8 @@ vZipWith f vec1 vec2 = Pull ixfN (appShape ext1' $ extent $ f (fromExt ext1'') (
         Pull ixf2 ext2 = toPull vec2
         (ext1',ext1'') = splitShape ext1 -- ext1' and ext2' should be equal
         (ext2',ext2'') = splitShape ext2
-        ixfN ix = f (Pull (\ ixR' -> ixf1 $ appShape ixL ixR') ext1'')
-                    (Pull (\ ixR' -> ixf2 $ appShape ixL ixR') ext2'')
+        ixfN ix = f (Pull (ixf1 . appShape ixL) ext1'')
+                    (Pull (ixf2 . appShape ixL) ext2'')
                 ! ixR
           where (ixL,ixR) = splitShape ix
         
@@ -379,5 +379,3 @@ vZipWith f vec1 vec2 = Pull ixfN (appShape ext1' $ extent $ f (fromExt ext1'') (
 -- | Construct a Pull vector with an undefined index function and a given extent
 fromExt :: Shape sh -> Pull sh a
 fromExt = Pull (P.error "Extent of result depends on index function of argument.")
-
-
