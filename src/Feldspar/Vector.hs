@@ -231,8 +231,8 @@ instance CollMap (Pull sh a) (Pull sh b) where
 -- Functions
 
 -- | Store a vector to memory.
-fromPull :: (Type a, Shapely sh) => DPull sh a -> Data [a]
-fromPull = fromVector'
+fromPull :: Type a => DPull sh a -> Data [a]
+fromPull (Pull ixf sh) = parShape sh ixf
 
 -- | Restore a vector from memory
 arrToPull :: (Type a) => Shape sh -> Data [a] -> DPull sh a
@@ -262,15 +262,11 @@ thawPull1 :: Type a => Data [a] -> DPull DIM1 a
 thawPull1 arr = arrToPull (Z :. getLength arr) arr
 
 -- | A shape-aware version of parallel.
-parShape :: (Type a) => Shape sh -> (Shape sh -> Data a) -> Data [a]
+parShape :: Type a => Shape sh -> (Shape sh -> Data a) -> Data [a]
 parShape sh ixf = materialize (size sh) $ toLoops (\ ix -> write (toIndex sh ix) (ixf ix)) sh
   where toLoops :: Type a => (Shape sh -> Data (Elements a)) -> Shape sh -> Data (Elements a)
         toLoops f Z = f Z
         toLoops f (bnds :. n) = toLoops (\ ix -> parFor n $ \ i -> f (ix :. i)) bnds
-
--- | An alternative version of 'fromVector' which uses 'parShape'
-fromVector' :: (Type a) => DPull sh a -> Data [a]
-fromVector' (Pull ixf sh) = parShape sh ixf
 
 -- | Change the extent of the vector to the supplied value. If the supplied
 -- extent will contain more elements than the old extent, the new elements
