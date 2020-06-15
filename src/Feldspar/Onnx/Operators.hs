@@ -65,11 +65,11 @@ data AttrArg = AAInt     {aaInt     :: Integer}
 
 -- | Get the value of an attribute from a list of attributes and a default value.
 getAttr :: [Attribute] -> (AttrArg -> a) -> a -> AttrName -> a
-getAttr attrs unpack def name = P.maybe def unpack $ P.lookup name attrs
+getAttr attrs unpack def n = P.maybe def unpack $ P.lookup n attrs
 
 -- | Get the Maybe value of an attribute from a list of attributes.
 getAttrM :: [Attribute] -> (AttrArg -> a) -> AttrName -> Maybe a
-getAttrM attrs unpack name = P.fmap unpack $ P.lookup name attrs
+getAttrM attrs unpack n = P.fmap unpack $ P.lookup n attrs
 
 {-
    The broadcast functionality here is slightly more general than in ONNX
@@ -83,8 +83,8 @@ type family UnionShape sh1 sh2 where
 
 -- | Map an index in a broadcasted shape to an index into the shape before broadcasting
 bcIx :: Shape sh1 -> Shape sh2 -> Shape sh1 -> Shape sh2
-bcIx (ext1 :. n1) (ext2 :. n2) (ix :. i) = bcIx ext1 ext2 ix :. (n2 == 1 ? 0 $ i)
-bcIx sh           Z            ix        = Z
+bcIx _           Z            _         = Z
+bcIx (ext1 :. _) (ext2 :. n2) (ix :. i) = bcIx ext1 ext2 ix :. (n2 == 1 ? 0 $ i)
 
 -- | Unidirectional broadcast
 uniBCast :: Shape sh1 -> Pull sh2 a -> Pull sh1 a
@@ -324,9 +324,14 @@ instance SplitShape b c => SplitShape (b :. Data Length) (c :. Data Length) wher
     where (sh1,sh2) = splitShape sh
   appShape sh1 (sh2 :. n) = appShape sh1 sh2 :. n
 
-dim0 = Z :: Shape DIM0
-dim1 = dim0 :. 0 :: Shape DIM1
-dim2 = dim1 :. 0 :: Shape DIM2
+dim0 :: Shape DIM0
+dim0 = Z
+
+dim1 :: Shape DIM1
+dim1 = dim0 :. 0
+
+dim2 :: Shape DIM2
+dim2 = dim1 :. 0
 
 class PrefShape sh1 sh2 where
   type RestShape sh1 sh2
@@ -369,7 +374,7 @@ vZipWith f vec1 vec2 = Pull ixfN (appShape ext1' $ extent $ f (fromExt ext1'') (
   where Pull ixf1 ext1 = toPull vec1
         Pull ixf2 ext2 = toPull vec2
         (ext1',ext1'') = splitShape ext1 -- ext1' and ext2' should be equal
-        (ext2',ext2'') = splitShape ext2
+        (_, ext2'')    = splitShape ext2
         ixfN ix = f (Pull (ixf1 . appShape ixL) ext1'')
                     (Pull (ixf2 . appShape ixL) ext2'')
                 ! ixR
