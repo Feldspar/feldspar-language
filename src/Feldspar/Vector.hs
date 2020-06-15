@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -274,14 +275,14 @@ traverse vec shf elemf
   where Pull ixf sh = toPull vec
 
 -- | Duplicates part of a vector along a new dimension.
-replicate :: (Pully vec, VecShape vec ~ (SliceShape ss), Shapely (SliceShape ss)) =>
+replicate :: (Pully vec, VecShape vec ~ SliceShape ss, Shapely (SliceShape ss)) =>
              Slice ss -> vec a -> Pull (FullShape ss) a
 replicate sl vec
  = backpermute (fullOfSlice sl (extent vec))
                (sliceOfFull sl) (toPull vec)
 
 -- | Extracts a slice from a vector.
-slice :: (Pully vec, VecShape vec ~ (FullShape ss), Shapely (FullShape ss)) =>
+slice :: (Pully vec, VecShape vec ~ FullShape ss, Shapely (FullShape ss)) =>
          vec a -> Slice ss -> Pull (SliceShape ss) a
 slice vec sl
  = backpermute (sliceOfFull sl (extent vec))
@@ -291,7 +292,7 @@ slice vec sl
 --- length is greater than the old length, the new elements will have undefined
 --- value. Useful function for patches.
 newLen1 :: Data Length -> Pull DIM1 a -> Pull DIM1 a
-newLen1 l vec = reshape (Z :. l) vec
+newLen1 l = reshape (Z :. l)
 
 -- | Change the shape of a vector. This function is potentially unsafe, the
 --   new shape need to have fewer or equal number of elements compared to
@@ -577,8 +578,8 @@ rightMap :: forall sh1a sh1b sh2 a b . Shape sh1a -> Shape sh2 ->
                    (Pull sh1a a -> Pull sh1b b) ->
                    Pull (AppendShape sh2 sh1a) a ->
                    Pull (AppendShape sh2 sh1b) b
-rightMap fake s f v = rightFlatten' $ fmap f $
-                     (rightNest' fake v :: Pull sh2 (Pull sh1a a))
+rightMap fake s f v = rightFlatten' $
+                       fmap f (rightNest' fake v :: Pull sh2 (Pull sh1a a))
 
 outerProd :: (Pully vec1, Pully vec2) =>
              (a -> b -> c) -> vec1 a -> vec2 b ->
@@ -741,11 +742,13 @@ eye2Push n m = ifPush (n > m)
 expandL :: (Pully vec, VecShape vec ~ (sh :. Data Length)) =>
            Data Length -> vec a ->
            Pull (sh :. Data Length :. Data Length) a
-expandL n v = Pull ixf' (insLeft n $ insLeft p $ ext')
+expandL n v = Pull ixf' (insLeft n $ insLeft p ext')
   where (Pull ixf ext) = toPull v
         (m, ext') = peelLeft ext
         p = m `div` n
-        ixf' ix = let (i,ix') = peelLeft ix; (j,ix'') = peelLeft ix' in ixf $ insLeft (i*p + j) ix''
+        ixf' ix = let (i, ix')  = peelLeft ix
+                      (j, ix'') = peelLeft ix'
+                  in ixf $ insLeft (i*p + j) ix''
 
 -- | Flatten the two innermost dimensions into a single dimension
 contractL :: (Pully vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
@@ -754,16 +757,18 @@ contractL :: (Pully vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
 contractL v = Pull ixf' (insLeft (m*n) ext')
   where (Pull ixf ext) = toPull v
         (m, n, ext') = peelLeft2 ext
-        ixf' ix = let (i,ix') = peelLeft ix in ixf $ insLeft (i `div` n) $ insLeft (i `mod` n) $ ix'
+        ixf' ix = let (i, ix') = peelLeft ix
+                  in ixf $ insLeft (i `div` n) $ insLeft (i `mod` n) ix'
 
 -- | Swap the two innermmost dimensions
 transL :: (Pully vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
           vec a ->
           Pull (sh :. Data Length :. Data Length) a
-transL v = Pull ixf' (insLeft n $ insLeft m $ ext')
+transL v = Pull ixf' (insLeft n $ insLeft m ext')
   where (Pull ixf ext) = toPull v
         (m, n, ext') = peelLeft2 ext
-        ixf' ix = let (i, j, ix') = peelLeft2 ix in ixf $ insLeft j $ insLeft i $ ix'
+        ixf' ix = let (i, j, ix') = peelLeft2 ix
+                  in ixf $ insLeft j $ insLeft i ix'
 
 -- | Abstract over the innermost dimension in a vector
 curryL :: Pull (sh :. Data Length) a -> (Data Length, Data Length -> Pull sh a)
@@ -808,12 +813,12 @@ dmap' f a = uncurry' n $ f . g
 expandLT :: (Pully vec, VecShape vec ~ (sh :. Data Length)) =>
             Data Length -> vec a ->
             Pull (sh :. Data Length :. Data Length) a
-expandLT n a = transL $ expandL n $ a
+expandLT n a = transL $ expandL n a
 
 contractLT :: (Pully vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
               vec a ->
               Pull (sh :. Data Length) a
-contractLT a = contractL $ transL $ a
+contractLT a = contractL $ transL a
 
 -- | Transform a pull vector to a push vector, but preserve the innermost
 --   dimension
@@ -843,7 +848,7 @@ type Vector1 a = Pull1 a
 {-# DEPRECATED Vector1 "Use Pull1 instead" #-}
 
 value1 :: (Syntax a, Hashable (Internal a)) => [Internal a] -> Manifest DIM1 a
-value1 ls = value ls
+value1 = value
 
 -- | Create a one-dimensional Pull vector
 indexed1 :: Data Length -> (Data Index -> a) -> Pull DIM1 a
@@ -861,7 +866,7 @@ length vec = l
 --   elements of @vec@.
 take :: (Pully vec, VecShape vec ~ (sh :. Data Length)) =>
         Data Length -> vec a -> Pull (sh :. Data Length) a
-take n vec = Pull ixf (shr :. (min n l))
+take n vec = Pull ixf (shr :. min n l)
   where Pull ixf sh = toPull vec
         (shr,l)     = uncons sh
 
@@ -981,11 +986,11 @@ fold1 f a = fromZero $ fold f (head a) (tail a)
 
 
 -- | Get the maximum element from a vector
-maximum :: (Ord a, Pully vec, VecShape vec ~ DIM1) => vec (Data a) -> (Data a)
+maximum :: (Ord a, Pully vec, VecShape vec ~ DIM1) => vec (Data a) -> Data a
 maximum = fold1 max
 
 -- | Get the minimum element from a vector
-minimum :: (Ord a, Pully vec, VecShape vec ~ DIM1) => vec (Data a) -> (Data a)
+minimum :: (Ord a, Pully vec, VecShape vec ~ DIM1) => vec (Data a) -> Data a
 minimum = fold1 min
 
 -- TODO: Generalize or and and to arbitrary dimensions and Pushy vectors
@@ -1075,10 +1080,13 @@ type PushK sh a = forall b . Type b => (Shape sh -> a -> Data (Elements b)) -> D
 type DPush sh a = Push sh (Data a)
 
 instance Functor (Push sh) where
-   fmap f (Push k ext) = Push (\ w -> k (\ ix d -> w ix (f d))) ext
+  fmap :: forall a b. (a -> b) -> Push sh a -> Push sh b
+  fmap f (Push k l) = Push k' l
+   where k' :: PushK sh b
+         k' func   = k (\sh a -> func sh (f a))
 
 -- | The empty push vector.
-empty :: (Shapely sh, Syntax a) => Push sh a
+empty :: Shapely sh => Push sh a
 empty = Push (const skip) zeroDim
 
 -- | Concatenation along the the outmost dimension
@@ -1194,7 +1202,7 @@ reversePush (Push f (sh :. l)) =
 ifPush :: forall sh a . Data Bool -> Push sh a -> Push sh a -> Push sh a
 ifPush cond (Push ixf1 sh1) (Push ixf2 sh2) = Push ixf sh
   where ixf :: PushK sh a
-        ixf wf = cond ? (ixf1 wf) $ (ixf2 wf)
+        ixf wf = cond ? ixf1 wf $ ixf2 wf
         sh     = zipShape (cond ?) sh1 sh2
 
 -- Pinpointing one particular dimension
@@ -1255,8 +1263,7 @@ instance Pushy (Pull sh) where
                              l
 
 -- | Store a vector in memory as a flat array
-fromPush :: Type a
-         => Push sh (Data a) -> Data [a]
+fromPush :: Type a => Push sh (Data a) -> Data [a]
 fromPush (Push ixf l) = materialize (size l) $
                           ixf (\ix a -> write (toIndex l ix) a)
 
@@ -1265,10 +1272,8 @@ freezePush :: (Type a, Shapely sh) =>
 freezePush v   = (shapeArr, fromPush v)
   where shapeArr = fromList (toList $ extent v)
 
-freezePush1 :: (Type a) =>
-               Push DIM1 (Data a) -> Data [a]
-freezePush1 v = fromPush v
-
+freezePush1 :: Type a => Push DIM1 (Data a) -> Data [a]
+freezePush1 = fromPush
 
 thawPush :: forall a sh . (Type a, Shapely sh) =>
               (Data [Length], Data [a]) -> Push sh (Data a)
@@ -1276,9 +1281,9 @@ thawPush (l,arr) = Push f sh
   where sh = toShape 0 l
         f :: PushK sh (Data a)
         f k = parForShape sh $ \i ->
-                k i (arr ! (toIndex sh i))
+                k i (arr ! toIndex sh i)
 
-thawPush1 :: (Type a) => Data [a] -> Push DIM1 (Data a)
+thawPush1 :: Type a => Data [a] -> Push DIM1 (Data a)
 thawPush1 = toPush . thawPull1
 
 instance (Syntax a, Shapely sh) => Syntactic (Push sh a)
@@ -1300,7 +1305,7 @@ flattenList :: forall sh a . Shapely sh => Pull sh [a] -> Push (sh :. Data Lengt
 flattenList (Pull ixf sh) = Push f sz
   where f :: PushK (sh :. Data Length) a
         f k = parForShape sh $ \i ->
-                 let indices = fmap (\j -> i :. j) $
+                 let indices = fmap (i :.) $
                                  fmap value [0..l-1]
                   in P.foldr (\ (i,a) e -> k i a `par` e) skip $ P.zip indices (ixf i)
         sz  = sh :. value l
@@ -1314,37 +1319,41 @@ flattenList (Pull ixf sh) = Push f sz
 expandS :: forall vec sh a . (Pushy vec, VecShape vec ~ (sh :. Data Length)) =>
            Data Length -> vec a ->
            Push (sh :. Data Length :. Data Length) a
-expandS n v = Push g $ insLeft n $ insLeft p $ ext'
+expandS n v = Push g $ insLeft n $ insLeft p ext'
   where (Push f ext) = toPush v
         (m, ext') = peelLeft ext
         p = m `div` n
         g :: PushK (sh :. Data Length :. Data Length) a
-        g k = f $ \ ix v -> let (i,ix') = peelLeft ix in k (insLeft (i `div` p) $ insLeft (i `Feldspar.mod` p) $ ix') v
+        g k = f $ \ix v -> let (i, ix') = peelLeft ix
+                           in k (insLeft (i `div` p) $ insLeft (i `Feldspar.mod` p) ix') v
 
 contractS :: forall vec sh a . (Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
              vec a ->
              Push (sh :. Data Length) a
-contractS v = Push g $ insLeft (m*n) $ ext'
+contractS v = Push g $ insLeft (m*n) ext'
   where (Push f ext) = toPush v
         (m, n, ext') = peelLeft2 ext
         g :: PushK (sh :. Data Length) a
-        g k = f $ \ ix v -> let (i, j, ix') = peelLeft2 ix in k (insLeft (i*n + j) ix') v
+        g k = f $ \ix v -> let (i, j, ix') = peelLeft2 ix
+                           in k (insLeft (i*n + j) ix') v
 
 transS :: forall vec sh a . (Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
           vec a ->
           Push (sh :. Data Length :. Data Length) a
-transS v = Push g $ insLeft n $ insLeft m $ ext'
+transS v = Push g $ insLeft n $ insLeft m ext'
   where (Push f ext) = toPush v
         (m, n, ext') = peelLeft2 ext
         g :: PushK (sh :. Data Length :. Data Length) a
-        g k = f $ \ ix v -> let (i, j, ix') = peelLeft2 ix in k (insLeft j $ insLeft i $ ix') v
+        g k = f $ \ix v -> let (i, j, ix') = peelLeft2 ix
+                           in k (insLeft j $ insLeft i ix') v
 
 -- | Instantiate the innermost dimension from an abstracted push vector
 uncurryS :: forall sh a . Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
 uncurryS m f = Push g (insLeft m ext)
   where Push _ ext = f (undefined :: Data Length)
         g :: PushK (sh :. Data Length) a
-        g k = parFor m $ \ i -> let Push h _ = f i in h (\ ix v -> k (insLeft i ix) v)
+        g k = parFor m $ \i -> let Push h _ = f i
+                               in h (\ix v -> k (insLeft i ix) v)
 
 uncurryS' :: forall sh a . Data Length -> (Data Length -> Push sh a) -> Push (sh :. Data Length) a
 uncurryS' m f = Push g (ext :. m)
@@ -1355,12 +1364,12 @@ uncurryS' m f = Push g (ext :. m)
 expandST :: (Pushy vec, VecShape vec ~ (sh :. Data Length)) =>
             Data Length -> vec a ->
             Push (sh :. Data Length :. Data Length) a
-expandST n a = transS $ expandS n $ a
+expandST n a = transS $ expandS n a
 
 contractST :: (Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length)) =>
               vec a ->
               Push (sh :. Data Length) a
-contractST a = contractS $ transS $ a
+contractST a = contractS $ transS a
 
 -- | Manifest vectors live in memory. Pull- and Push vectors can be allocated
 --   as Manifest using the 'store' function.
@@ -1369,7 +1378,7 @@ data Manifest sh a = Syntax a => Manifest (Data [Internal a]) (Shape sh)
 -- | A class for memory allocation. All vectors are instances of this class.
 class Shaped vec => Storable vec where
   -- | Allocates a vector to memory.
-  store :: (Syntax a) => vec a -> Manifest (VecShape vec) a
+  store :: Syntax a => vec a -> Manifest (VecShape vec) a
 
 instance Storable (Manifest sh) where
   store m = m
@@ -1436,7 +1445,7 @@ storeFlat vec = aos2soa $ toPush vec
 
 -- | This class captures all vectors which can be turned into a 'Pull' vector
 --   without allocating memory.
-class (Shaped vec) => Pully vec where
+class Shaped vec => Pully vec where
   toPull :: vec a -> Pull (VecShape vec) a
 
 instance Shapely sh => Pully (Manifest sh) where
@@ -1500,7 +1509,7 @@ zeros sh = constant sh 0
 ones  sh = constant sh 1
 
 constant :: Shape sh -> t -> Pull sh t
-constant sh c = Pull (\_ -> c) sh
+constant sh c = Pull (const c) sh
 
 -- | Find all the indexes which are True in the input vector. The
 --   result is a vector containing all the indexes which are true
