@@ -65,6 +65,7 @@ library
     Feldspar.Future
     Feldspar.Memoize
     Feldspar.Mutable
+    Feldspar.Onnx.Operators
     Feldspar.Option
     Feldspar.Repa
     Feldspar.Seq
