@@ -78,8 +78,8 @@ getAttrM attrs unpack n = P.fmap unpack $ P.lookup n attrs
 -}
 
 type family UnionShape sh1 sh2 where
+  UnionShape Z                    sh                   = sh
   UnionShape sh                   Z                    = sh
-  UnionShape Z                    (sh  :. Data Length) = sh :. Data Length
   UnionShape (sh1 :. Data Length) (sh2 :. Data Length) = UnionShape sh1 sh2 :. Data Length
 
 -- | Map an index in a broadcasted shape to an index into the shape before broadcasting
@@ -91,11 +91,11 @@ bcIx (ext1 :. _) (ext2 :. n2) (ix :. i) = bcIx ext1 ext2 ix :. (n2 == 1 ? 0 $ i)
 uniBCast :: Shape sh1 -> Pull sh2 a -> Pull sh1 a
 uniBCast extN (Pull ixf extO) = Pull (ixf . bcIx extN extO) extN
 
--- | Computing the union of two extents
+-- | Compute the union of two shapes with the max index in each dimension
 unionExt :: Shape sh1 -> Shape sh2 -> Shape (UnionShape sh1 sh2)
+unionExt Z           sh          = sh
+unionExt sh          Z           = sh
 unionExt (sh1 :. n1) (sh2 :. n2) = unionExt sh1 sh2 :. max n1 n2
-unionExt (sh1 :. n1) Z           = sh1 :. n1
-unionExt Z           (sh2 :. n2) = sh2 :. n2
 
 {- |
   Slices
