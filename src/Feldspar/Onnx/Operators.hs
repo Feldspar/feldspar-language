@@ -256,8 +256,6 @@ sum3D = sum . sum . sum
 slidePull :: Shape sh -> Pull sh a -> Pull sh a
 slidePull d (Pull ixf ext) = Pull (ixf . zipShape (+) d) $ zipShape (-) ext d
 
-type DIM4 = DIM3 :. Data Length
-
 infixl 5 <!
 
 -- | Replicate a pull vector along a new rightmost dimension

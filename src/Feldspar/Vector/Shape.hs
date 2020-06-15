@@ -17,6 +17,7 @@ type DIM0 = Z
 type DIM1 = DIM0 :. Data Length
 type DIM2 = DIM1 :. Data Length
 type DIM3 = DIM2 :. Data Length
+type DIM4 = DIM3 :. Data Length
 
 data Shape sh where
   Z :: Shape Z
@@ -126,6 +127,3 @@ peelLeft2 sh = (m, n, sh'')
 insLeft :: Data Length -> Shape sh -> Shape (sh :. Data Length)
 insLeft m Z = Z :. m
 insLeft m (sh :. n) = insLeft m sh :. n
-
-
-
