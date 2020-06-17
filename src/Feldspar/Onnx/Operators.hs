@@ -48,8 +48,10 @@ import Feldspar
 import Feldspar.Vector hiding (splitShape)
 import qualified Feldspar.Vector as V
 
-type Attribute = (AttrName, AttrArg)
+-- | A list of attributes (key-value pair)
+type Attrs = [(AttrName, AttrArg)]
 
+-- | The name of an attribute
 type AttrName = String
 
 -- | Values of node attributes.
@@ -63,11 +65,11 @@ data AttrArg = AAInt     {aaInt     :: Integer}
              deriving (P.Eq, P.Show)
 
 -- | Get the value of an attribute from a list of attributes and a default value.
-getAttr :: [Attribute] -> (AttrArg -> a) -> a -> AttrName -> a
+getAttr :: Attrs -> (AttrArg -> a) -> a -> AttrName -> a
 getAttr attrs unpack def n = P.maybe def unpack $ P.lookup n attrs
 
 -- | Get the Maybe value of an attribute from a list of attributes.
-getAttrM :: [Attribute] -> (AttrArg -> a) -> AttrName -> Maybe a
+getAttrM :: Attrs -> (AttrArg -> a) -> AttrName -> Maybe a
 getAttrM attrs unpack n = P.fmap unpack $ P.lookup n attrs
 
 {-
@@ -152,40 +154,48 @@ bcZipWith f xs ys = zipWith f (uniBCast ext xs) (uniBCast ext ys)
   where ext = unionExt (extent xs) (extent ys) 
 
 -- | Implementation of ONNX tensor addition
-onnxAdd :: (Num a, ShapelyU sh1 sh2) => [Attribute] -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
+onnxAdd :: (Num a, ShapelyU sh1 sh2)
+        => Attrs -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
 onnxAdd _ = bcAdd
 
 -- | Implementation of ONNX tensor subtraction
-onnxSub :: (Num a, ShapelyU sh1 sh2) => [Attribute] -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
+onnxSub :: (Num a, ShapelyU sh1 sh2)
+        => Attrs -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
 onnxSub _ = bcSub
 
 -- | Implementation of ONNX tensor multiplication
-onnxMul :: (Num a, ShapelyU sh1 sh2) => [Attribute] -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
+onnxMul :: (Num a, ShapelyU sh1 sh2)
+        => Attrs -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
 onnxMul _ = bcMul
 
 -- | Implementation of ONNX tensor fractional division
-onnxDivF :: (Fractional a, ShapelyU sh1 sh2) => [Attribute] -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
+onnxDivF :: (Fractional a, ShapelyU sh1 sh2)
+         => Attrs -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
 onnxDivF _ = bcDivF
 
 -- | Implementation of ONNX tensor integral division
 onnxDivI :: (Integral a, ShapelyU sh1 sh2) 
-         => [Attribute] -> DPull sh1 a -> DPull sh2 a -> DPull (UnionShape sh1 sh2) a
+         => Attrs -> DPull sh1 a -> DPull sh2 a -> DPull (UnionShape sh1 sh2) a
 onnxDivI _ = bcDivI
 
 -- | Elementwise add with broadcasting
-bcAdd :: (Num a, ShapelyU sh1 sh2) => Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
+bcAdd :: (Num a, ShapelyU sh1 sh2)
+      => Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
 bcAdd = bcZipWith (+)
 
 -- | Elementwise sub with broadcasting
-bcSub :: (Num a, ShapelyU sh1 sh2) => Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
+bcSub :: (Num a, ShapelyU sh1 sh2)
+      => Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
 bcSub = bcZipWith (-)
 
 -- | Elementwise mul with broadcasting
-bcMul :: (Num a, ShapelyU sh1 sh2) => Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
+bcMul :: (Num a, ShapelyU sh1 sh2)
+      => Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
 bcMul = bcZipWith (*)
 
 -- | Elementwise fractional division with broadcasting
-bcDivF :: (Fractional a, ShapelyU sh1 sh2) => Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
+bcDivF :: (Fractional a, ShapelyU sh1 sh2)
+       => Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
 bcDivF = bcZipWith (/)
 
 -- | Elementwise integral division with broadcasting
@@ -195,7 +205,7 @@ bcDivI = bcZipWith div -- Or quot???
 
 -- | Implementation of ONNX batch normalization
 onnxBatchNormalization :: Floating a
-                       => [Attribute]  -- ^ attributes (including epsilon)
+                       => Attrs  -- ^ attributes (including epsilon)
                        -> DPull DIM4 a -- ^ data
                        -> DPull DIM1 a -- ^ gamma
                        -> DPull DIM1 a -- ^ beta
@@ -209,7 +219,7 @@ onnxBatchNormalization attrs xs gamma beta mean var = ys
         epsilon = value $ P.realToFrac $ getAttr attrs aaFloat 1e-5 "epsilon"
 
 -- Flattening a tensor to a matrix
-onnxFlatten :: Pushy vec => [Attribute] -> vec a -> Push DIM2 a
+onnxFlatten :: Pushy vec => Attrs -> vec a -> Push DIM2 a
 onnxFlatten attrs vec = flatPush (P.fromIntegral $ getAttr attrs aaInt 1 "axis") $ toPush vec
 
 -- Flattening a Push vector to two dimensions
@@ -233,7 +243,7 @@ takeDropShape i sh = P.splitAt j es
 
 -- | Matrix multiplication of two dimensional temsors
 onnxGemm3 :: (RealFloat a, Numeric a, Pully vec, VecShape vec ~ DIM2)
-          => [Attribute] -> vec (Data a) -> vec (Data a) -> vec (Data a) -> Pull DIM2 (Data a)
+          => Attrs -> vec (Data a) -> vec (Data a) -> vec (Data a) -> DPull DIM2 a
 onnxGemm3 attrs vA vB vC = bcZipWith (+) (mmT vAT vBnT) $ toPull vC
   where vA' = if alpha P.== 1.0 then toPull vA else map (* value alpha) $ toPull vA
         vAT = if transA P.== 1 then transpose vA' else vA'
@@ -244,11 +254,12 @@ onnxGemm3 attrs vA vB vC = bcZipWith (+) (mmT vAT vBnT) $ toPull vC
         transB = getAttr attrs aaInt 0 "transB"
 
 -- | Matrix multiplication that transposes its second argument
-mmT :: forall a . (Syntax a, Num a) => Pull DIM2 a -> Pull DIM2 a -> Pull DIM2 a
+mmT :: (Syntax a, Num a) => Pull DIM2 a -> Pull DIM2 a -> Pull DIM2 a
 mmT vecA vecBT = vvmap dim1 (\ rowA -> vvmap dim1 (sum . zipWith (*) rowA) vecBT) vecA
 
 -- | Summing over the three rightmost dimensions
-sum3D :: (Num a, Syntax a, Shapely sh) => Pull (sh :. Data Length :. Data Length :. Data Length) a -> Pull sh a
+sum3D :: (Num a, Syntax a, Shapely sh)
+      => Pull (sh :. Data Length :. Data Length :. Data Length) a -> Pull sh a
 sum3D = sum . sum . sum
 
 -- | Slide a Pull vector
@@ -262,7 +273,8 @@ infixl 5 <!
 Pull ixf ext <! n = Pull (\ (ix :. _) -> ixf ix) (ext :. n)
 
 -- | Implementation of ONNX convolution operator
-onnxConv :: (Num a, Syntax a) => [Attribute] -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM1 a -> Pull DIM4 a
+onnxConv :: (Num a, Syntax a)
+         => Attrs -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM1 a -> Pull DIM4 a
 onnxConv attrs xs = onnxConvNP (value $ map fromInteger strides) pXs
   where dilations    = getAttr  attrs aaInts [1, 1]    "dilations" -- Currently unused
         group        = getAttr  attrs aaInt  1         "group"     -- Currently unused
@@ -274,7 +286,8 @@ onnxConv attrs xs = onnxConvNP (value $ map fromInteger strides) pXs
         pXs = if doPad then toPull $ store $ pad dPads xs else xs
 
 -- | Convolution with no padding
-onnxConvNP :: (Num a, Syntax a) => Data [Length] -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM1 a -> Pull DIM4 a
+onnxConvNP :: (Num a, Syntax a)
+           => Data [Length] -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM1 a -> Pull DIM4 a
 onnxConvNP ss xs ws bs = Pull ixf (Z :. nLen :. mLen :. h1 :. w1) `bcAdd` (bs <! 1 <! 1)
   where ixf (Z :. n :. m :. y :. x) 
             = fromZero $ sum3D $ zipWith (*) (xs !# (ZZ :! n :.. (0,c) :.. (y*sY, kH) :.. (x*sX, kW)))
@@ -286,24 +299,26 @@ onnxConvNP ss xs ws bs = Pull ixf (Z :. nLen :. mLen :. h1 :. w1) `bcAdd` (bs <!
         w1 = (w - kW) `div` sX + 1
 
 -- | Implementation of ONNX global average pooling
-onnxGlobalAveragePool :: (Fraction a) => [Attribute] -> Pull DIM4 (Data a) -> Pull DIM4 (Data a)
+onnxGlobalAveragePool :: Fraction a => Attrs -> DPull DIM4 a -> DPull DIM4 a
 onnxGlobalAveragePool _ = vvmap dim2 avgF
   where avgF vec = map (/ (i2n $ size $ extent vec)) (sum $ sum vec) <! 1 <! 1 
 
 -- | Padding a multi dimensional vector
-pad :: forall a vec sh . (Syntax a, Num a, Pushy vec, VecShape vec ~ (sh :. Data Length :. Data Length))
+pad :: forall a vec sh . (Syntax a, Num a, Pushy vec,
+                          VecShape vec ~ (sh :. Data Length :. Data Length))
     => Data [Length] -> vec a -> Push (sh :. Data Length :. Data Length) a
-pad ps vec = bpadding `vconc` (lpadding `hconc` pvec `hconc` rpadding) `vconc` tpadding
-  where pvec = toPush vec
-        (ext,m,n) = case extent pvec of sh :. m :. n -> (sh, m, n)
-        bpadding = toPush $ Pull (const 0) (ext :. pB :. n1)
-        tpadding = toPush $ Pull (const 0) (ext :. pT :. n1)
-        lpadding = toPush $ Pull (const 0) (ext :. m :. pL)
-        rpadding = toPush $ Pull (const 0) (ext :. m :. pR)
-        (pB,pT,pL,pR) = (ps!0, ps!1, ps!2, ps!3)
-        n1 = n + pL + pR
-        vconc = V.conc (V.NotThis V.This)
-        hconc = V.conc V.This
+pad ps vec
+  = bpadding `vconc` (lpadding `hconc` pvec `hconc` rpadding) `vconc` tpadding
+    where pvec = toPush vec
+          (ext,m,n) = case extent pvec of sh :. m :. n -> (sh, m, n)
+          bpadding = toPush $ zeros (ext :. pB :. n1)
+          tpadding = toPush $ zeros (ext :. pT :. n1)
+          lpadding = toPush $ zeros (ext :. m :. pL)
+          rpadding = toPush $ zeros (ext :. m :. pR)
+          (pB,pT,pL,pR) = (ps!0, ps!1, ps!2, ps!3)
+          n1 = n + pL + pR
+          vconc = V.conc (V.NotThis V.This)
+          hconc = V.conc V.This
 
 class SplitShape b c where
   type Peel b c
@@ -345,7 +360,8 @@ instance PrefShape sh1 sh2 => PrefShape (sh1 :. Data Length) (sh2 :. Data Length
 
 -- | Map an n-dimensional function over the n rightmost dimensions of a mult dimensional vector
 vvmap :: (PrefShape sh (AppendShape sh sh2), PrefShape sh (AppendShape sh sh3),
-          sh2 ~ RestShape sh (AppendShape sh sh2), sh3 ~ RestShape sh (AppendShape sh sh3))
+          sh2 ~ RestShape sh (AppendShape sh sh2),
+          sh3 ~ RestShape sh (AppendShape sh sh3))
       => Shape sh -> (Pull sh2 a -> Pull sh3 b) -> Pull (AppendShape sh sh2) a -> Pull (AppendShape sh sh3) b
 vvmap d f vec = Pull ixfN (appendShape ext1 $ extent $ f $ fromExt ext2)
   where Pull ixf ext = toPull vec
@@ -354,7 +370,8 @@ vvmap d f vec = Pull ixfN (appendShape ext1 $ extent $ f $ fromExt ext2)
           where (ix1,ix2) = spShape d ix
 
 -- | Map av n-dimensional function
-vmap :: (Pully vec, VecShape vec ~ sh', SplitShape sh1 sh', SplitShape sh2 sh'', Peel sh1 sh' ~ Peel sh2 sh'')
+vmap :: (Pully vec, VecShape vec ~ sh', SplitShape sh1 sh',
+         SplitShape sh2 sh'', Peel sh1 sh' ~ Peel sh2 sh'')
      => (Pull sh1 a -> Pull sh2 b) -> vec a -> Pull sh'' b
 vmap f vec = Pull ixfN (appShape ext1 $ extent $ f $ fromExt ext2)
   where Pull ixf ext = toPull vec
@@ -363,20 +380,21 @@ vmap f vec = Pull ixfN (appShape ext1 $ extent $ f $ fromExt ext2)
           where (ix1,ix2) = splitShape ix
 
 -- | zipWith an n-dimensional function
-vZipWith :: (Pully vec1, VecShape vec1 ~ sh1', SplitShape sh1 sh1', Peel sh1 sh1' ~ Peel sh sh',
-             Pully vec2, VecShape vec2 ~ sh2', SplitShape sh2 sh2', Peel sh2 sh2' ~ Peel sh sh',
-             SplitShape sh sh')
+vZipWith :: (Pully vec1, VecShape vec1 ~ sh1', SplitShape sh1 sh1',
+             Peel sh1 sh1' ~ Peel sh sh',
+             Pully vec2, VecShape vec2 ~ sh2', SplitShape sh2 sh2',
+             Peel sh2 sh2' ~ Peel sh sh', SplitShape sh sh')
          => (Pull sh1 a1 -> Pull sh2 a2 -> Pull sh a) -> vec1 a1 -> vec2 a2 -> Pull sh' a
-vZipWith f vec1 vec2 = Pull ixfN (appShape ext1' $ extent $ f (fromExt ext1'') (fromExt ext2''))
-  where Pull ixf1 ext1 = toPull vec1
-        Pull ixf2 ext2 = toPull vec2
-        (ext1',ext1'') = splitShape ext1 -- ext1' and ext2' should be equal
-        (_, ext2'')    = splitShape ext2
-        ixfN ix = f (Pull (ixf1 . appShape ixL) ext1'')
-                    (Pull (ixf2 . appShape ixL) ext2'')
-                ! ixR
-          where (ixL,ixR) = splitShape ix
-        
+vZipWith f vec1 vec2
+  = Pull ixfN (appShape ext1' $ extent $ f (fromExt ext1'') (fromExt ext2''))
+    where Pull ixf1 ext1  = toPull vec1
+          Pull ixf2 ext2  = toPull vec2
+          (ext1', ext1'') = splitShape ext1 -- ext1' and ext2' should be equal
+          (_, ext2'')     = splitShape ext2
+          ixfN ix = f (Pull (ixf1 . appShape ixL) ext1'')
+                      (Pull (ixf2 . appShape ixL) ext2'')
+                  ! ixR
+            where (ixL, ixR) = splitShape ix
 
 -- | Construct a Pull vector with an undefined index function and a given extent
 fromExt :: Shape sh -> Pull sh a
