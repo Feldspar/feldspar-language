@@ -62,10 +62,6 @@ forShape :: Shape sh -> (Shape sh -> M ()) -> M ()
 forShape Z k = k Z
 forShape (sh :. l) k = forM l (\i -> forShape sh (\sh -> k (sh :. i)))
 
-forShapeR :: Shape sh -> (Shape sh -> M ()) -> M ()
-forShapeR Z k = k Z
-forShapeR (sh :. l) k = forShapeR sh (\sh -> forM l (\i -> k (sh :. i)))
-
 -- | Walk the shape, using $k$ to generate an Elements set at each index
 parForShape :: Type a => Shape sh -> (Shape sh -> Data (Elements a)) -> Data (Elements a)
 parForShape Z k = k Z
