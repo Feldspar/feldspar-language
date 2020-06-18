@@ -782,7 +782,7 @@ thawArray arr = do
 -- Nested tuples
 --------------------------------------------------
 
-class SyntacticTup a where
+class Type (Tuple (InternalTup a)) => SyntacticTup a where
     type InternalTup a
     desugarTup :: Tuple a -> ASTF (Tuple (InternalTup a))
     sugarTup   :: ASTF (Tuple (InternalTup a)) -> Tuple a
@@ -791,8 +791,7 @@ class SyntacticTup a where
 -- 'Tuple a' which would add 'Tup' around each tail of the tuple, making it sharable.
 -- The test case 'noshare' in the 'decoration' suite checks that tails are not shared.
 
-instance (Syntax a, Type (Tuple (InternalTup b)), SyntacticTup b, Typeable (InternalTup b))
-         => SyntacticTup (a :* b) where
+instance (Syntax a, SyntacticTup b, Typeable (InternalTup b)) => SyntacticTup (a :* b) where
     type InternalTup (a :* b) = Internal a :* InternalTup b
     desugarTup (x :* xs) = sugarSym2 Cons x (desugarTup xs)
     sugarTup e = sugar (sugarSym1 Car e) :* sugarTup (sugarSym1 Cdr e)
@@ -802,7 +801,7 @@ instance SyntacticTup TNil where
     desugarTup TNil = sugarSym0 Nil
     sugarTup _ = TNil
 
-instance (SyntacticTup a, Type (Tuple (InternalTup a))) => Syntactic (Tuple a) where
+instance SyntacticTup a => Syntactic (Tuple a) where
     type Internal (Tuple a) = Tuple (InternalTup a)
     desugar = sugarSym1 Tup . desugarTup
     sugar = sugarTup
