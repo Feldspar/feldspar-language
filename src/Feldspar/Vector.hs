@@ -7,6 +7,7 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Feldspar.Vector (
   -- $intro
@@ -180,9 +181,25 @@ instance Functor (Pull sh)
 type family InternalShape sh a where
     InternalShape Z         a = Internal a
     InternalShape (Z  :. l) a = [Internal a]
-    InternalShape (sh :. l) a = ([Length], [Internal a])
+    InternalShape (sh :. l) a = (Internal (Tuple (ShapeTupT (sh :. l))), [Internal a])
 
-instance (Syntax a, Shapely sh) => Syntactic (Pull sh a)
+class ShapeTup a where
+  type ShapeTupT a
+  toTup :: Shape a -> Tuple (ShapeTupT a)
+  fromTup :: Tuple (ShapeTupT a) -> Shape a
+
+instance ShapeTup Z where
+  type ShapeTupT Z = TNil
+  toTup _ = TNil
+  fromTup _ = Z
+
+instance ShapeTup sh => ShapeTup (sh :. Data Length) where
+  type ShapeTupT (sh :. Data Length) = Data Length :* ShapeTupT sh
+  toTup (sh :. n) = n :* toTup sh
+  fromTup (n :* t) = fromTup t :. n
+
+instance (Syntax a, Shapely sh, ShapeTup sh, SyntacticTup (ShapeTupT sh))
+      => Syntactic (Pull sh a)
   where
     type Internal (Pull sh a) = InternalShape sh a
 
@@ -222,9 +239,9 @@ arrToPull :: (Type a) => Shape sh -> Data [a] -> DPull sh a
 arrToPull sh arr = Pull (\ix -> arr ! toIndex sh ix) sh
 
 -- | Store a vector and its shape to memory
-freezePull :: (Type a, Shapely sh) => DPull sh a -> (Data [Length], Data [a])
-freezePull v   = (shapeArr, fromPull v) -- TODO should be fromPull' to remove div and mod
-  where shapeArr = fromList (toList $ extent v)
+freezePull :: (Type a, Shapely sh, ShapeTup sh, SyntacticTup (ShapeTupT sh))
+           => DPull sh a -> (Tuple (ShapeTupT sh), Data [a])
+freezePull v = (toTup $ extent v, fromPull v)
 
 freezePull1 :: (Type a) => DPull DIM1 a -> Data [a]
 freezePull1 = fromPull
@@ -236,8 +253,9 @@ fromList ls = materialize (value $ genericLength ls)
                         $ P.zip [0..] ls
 
 -- | Restore a vector and its shape from memory
-thawPull :: (Type a, Shapely sh) => (Data [Length], Data [a]) -> DPull sh a
-thawPull (l,arr) = arrToPull (toShape 0 l) arr
+thawPull :: (Type a, Shapely sh, ShapeTup sh)
+         => (Tuple (ShapeTupT sh), Data [a]) -> DPull sh a
+thawPull (t,arr) = arrToPull (fromTup t) arr
 
 -- | Restore a vector and its shape from memory
 thawPull1 :: Type a => Data [a] -> DPull DIM1 a
@@ -969,7 +987,7 @@ enumFrom m = enumFromTo m (value maxBound)
 (...) = enumFromTo
 
 scan :: (Syntax a, Syntax b) => (a -> b -> a) -> a -> Pull DIM1 b -> Pull DIM1 a
-scan f init bs = toPull $ arrToManifest (fromList [length bs],
+scan f init bs = toPull $ arrToManifest (build $ tuple (length bs),
   F.sugar $ sequential (length bs) (F.desugar init) $ \i s ->
     let s' = F.desugar $ f (F.sugar s) (bs!!i)
     in  (s',s'))
@@ -1267,18 +1285,17 @@ fromPush :: Type a => Push sh (Data a) -> Data [a]
 fromPush (Push ixf l) = materialize (size l) $
                           ixf (\ix a -> write (toIndex l ix) a)
 
-freezePush :: (Type a, Shapely sh) =>
-              Push sh (Data a) -> (Data [Length], Data [a])
-freezePush v   = (shapeArr, fromPush v)
-  where shapeArr = fromList (toList $ extent v)
+freezePush :: (Type a, Shapely sh, ShapeTup sh) =>
+              Push sh (Data a) -> (Tuple (ShapeTupT sh), Data [a])
+freezePush v = (toTup $ extent v, fromPush v)
 
 freezePush1 :: Type a => Push DIM1 (Data a) -> Data [a]
 freezePush1 = fromPush
 
-thawPush :: forall a sh . (Type a, Shapely sh) =>
-              (Data [Length], Data [a]) -> Push sh (Data a)
+thawPush :: forall a sh . (Type a, Shapely sh, ShapeTup sh) =>
+              (Tuple (ShapeTupT sh), Data [a]) -> Push sh (Data a)
 thawPush (l,arr) = Push f sh
-  where sh = toShape 0 l
+  where sh = fromTup l
         f :: PushK sh (Data a)
         f k = parForShape sh $ \i ->
                 k i (arr ! toIndex sh i)
@@ -1286,7 +1303,7 @@ thawPush (l,arr) = Push f sh
 thawPush1 :: Type a => Data [a] -> Push DIM1 (Data a)
 thawPush1 = toPush . thawPull1
 
-instance (Syntax a, Shapely sh) => Syntactic (Push sh a)
+instance (Syntax a, Shapely sh, ShapeTup sh, SyntacticTup (ShapeTupT sh)) => Syntactic (Push sh a)
   where
     type Internal (Push sh a) = InternalShape sh a
 
@@ -1389,7 +1406,8 @@ instance Shapely sh => Storable (Pull sh) where
 instance Storable (Push sh) where
   store vec@(Push f sh) = Manifest (save $ fromPush (fmap F.desugar vec)) sh
 
-instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where
+instance (Syntax a, Shapely sh, ShapeTup sh, SyntacticTup (ShapeTupT sh))
+      => Syntactic (Manifest sh a) where
   type Internal (Manifest sh a) = InternalShape sh a
   desugar v@(Manifest _ sh) = case sh of
       Z           -> desugar $ fromZero v
@@ -1404,14 +1422,16 @@ instance (Syntax a, Shapely sh) => Syntactic (Manifest sh a) where
 manifestToArr1 :: Syntax a => Manifest DIM1 a -> Data [Internal a]
 manifestToArr1 (Manifest arr _) = arr
 
-manifestToArr :: Syntax a => Manifest sh a -> (Data [Length],Data [Internal a])
-manifestToArr (Manifest arr sh) = (fromList $ toList sh,arr)
+manifestToArr :: (Syntax a, ShapeTup sh)
+              => Manifest sh a -> (Tuple (ShapeTupT sh), Data [Internal a])
+manifestToArr (Manifest arr sh) = (toTup sh, arr)
 
 arrToManifest1 :: Syntax a => Data [Internal a] -> Manifest DIM1 a
 arrToManifest1 arr = Manifest arr (Z:.getLength arr)
 
-arrToManifest :: (Syntax a, Shapely sh) => (Data [Length], Data [Internal a]) -> Manifest sh a
-arrToManifest (ls,arr) = Manifest arr (toShape 0 ls)
+arrToManifest :: (Syntax a, Shapely sh, ShapeTup sh)
+              => (Tuple (ShapeTupT sh), Data [Internal a]) -> Manifest sh a
+arrToManifest (ls,arr) = Manifest arr (fromTup ls)
 
 -- | A typeclass for types of array elements which can be flattened. An example
 --   is an array of pairs, which can be flattened into a pair of arrays.
