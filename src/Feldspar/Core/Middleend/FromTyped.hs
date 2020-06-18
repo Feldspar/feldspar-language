@@ -113,11 +113,11 @@ toU (((R.Info i) :: R.Info a) :& e)
   | (f :@ a) <- e
   = i2 $ case f of -- Avoid more pattern guards for GHC 8.4 performance reasons.
            R.Operator R.Car ->
-            case toU a of
+            case addDrop $ toU a of
               AIn _ (App (Drop n) (U.TupType (t:_)) es) ->
                 App (Sel $ n + 1) t es
            R.Operator R.Cdr ->
-            case toU a of
+            case addDrop $ toU a of
               AIn _ (App (Drop n) (U.TupType (_:ts)) es) ->
                 App (Drop $ n + 1) (U.TupType ts) es
            R.Operator R.Tup ->
@@ -131,6 +131,9 @@ toU (((R.Info i) :: R.Info a) :& e)
         go :: forall a' . R.Expr a' -> [AUntypedFeld ValueInfo] -> (Op, [AUntypedFeld ValueInfo])
         go (R.Operator op) es = (trOp op, es)
         go (f :@ e') es = go f $ toU e' : es
+        addDrop e'@(AIn _ (App (Drop _) _ _)) = e'
+        addDrop e' = AIn (error "FromTyped: temporary drop")
+                         (App (Drop 0) (typeof e') [e'])
 
 -- | Translate a Typed operator to the corresponding untyped one
 trOp :: R.Op a -> Op
