@@ -4,6 +4,8 @@
 {-# OPTIONS_GHC -Wall #-}
 -- FIXME: PropSize and Switch not matched by semantics.
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeOperators #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -47,7 +49,6 @@ import Data.Function (on)
 import Data.IORef
 import Data.List
 import Feldspar.Core.Representation
-import Feldspar.Core.Tuple
 import Feldspar.Core.NestedTuples
 import Feldspar.Core.Types
 import qualified Control.Exception as C
@@ -69,8 +70,9 @@ semantics Parallel = Sem "parallel"
         (\len ixf -> genericTake len $ map ixf [0..])
 semantics Sequential = Sem "sequential"
         (\len i step -> genericTake len $
-                        snd $ mapAccumL (\a ix -> swap (step ix a)) i [0..])
+                        snd $ mapAccumL (\a ix -> swap (unnestPair $ step ix a)) i [0..])
       where swap (a,b) = (b,a)
+            unnestPair t = (nfst t, nsnd t)
 semantics SetIx = Sem "setIx" evalSetIx
 -- Feldspar.Core.Constructs.Binding
 semantics Let = Sem "let" (flip ($))
@@ -241,35 +243,6 @@ semantics ParYield  = Sem "yield" yield
 semantics Atan2   = Sem "atan2" Prelude.atan2
 -- Feldspar.Core.Constructs.Save
 semantics Save = Sem "save" id
-semantics Tup2 = Sem "(,)" (,)
-semantics Tup3 = Sem "(,,)" (,,)
-semantics Tup4 = Sem "(,,,)" (,,,)
-semantics Tup5 = Sem "(,,,,)" (,,,,)
-semantics Tup6 = Sem "(,,,,,)" (,,,,,)
-semantics Tup7 = Sem "(,,,,,,)" (,,,,,,)
-semantics Tup8 = Sem "(,,,,,,,)" (,,,,,,,)
-semantics Tup9 = Sem "(,,,,,,,,)" (,,,,,,,,)
-semantics Tup10 = Sem "(,,,,,,,,,)" (,,,,,,,,,)
-semantics Tup11 = Sem "(,,,,,,,,,,)" (,,,,,,,,,,)
-semantics Tup12 = Sem "(,,,,,,,,,,,)" (,,,,,,,,,,,)
-semantics Tup13 = Sem "(,,,,,,,,,,,,)" (,,,,,,,,,,,,)
-semantics Tup14 = Sem "(,,,,,,,,,,,,,)" (,,,,,,,,,,,,,)
-semantics Tup15 = Sem "(,,,,,,,,,,,,,,)" (,,,,,,,,,,,,,,)
-semantics Sel1 = Sem "sel1" sel1
-semantics Sel2 = Sem "sel2" sel2
-semantics Sel3 = Sem "sel3" sel3
-semantics Sel4 = Sem "sel4" sel4
-semantics Sel5 = Sem "sel5" sel5
-semantics Sel6 = Sem "sel6" sel6
-semantics Sel7 = Sem "sel7" sel7
-semantics Sel8 = Sem "sel8" sel8
-semantics Sel9 = Sem "sel9" sel9
-semantics Sel10 = Sem "sel10" sel10
-semantics Sel11 = Sem "sel11" sel11
-semantics Sel12 = Sem "sel12" sel12
-semantics Sel13 = Sem "sel13" sel13
-semantics Sel14 = Sem "sel14" sel14
-semantics Sel15 = Sem "sel15" sel15
 
 -- | Support for Array
 evalGetIx :: (Integral a, Show a) => [p] -> a -> p

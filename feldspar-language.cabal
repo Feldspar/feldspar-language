@@ -140,6 +140,7 @@ test-suite semantics
     Feldspar.Stream.Test
     Feldspar.Vector.Test
     Feldspar.Mutable.Test
+    Feldspar.Tuple.Test
     Examples.Simple.Basics
 
   default-language: Haskell2010

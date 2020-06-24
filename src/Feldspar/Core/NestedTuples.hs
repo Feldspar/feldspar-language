@@ -47,6 +47,10 @@ module Feldspar.Core.NestedTuples
   , sel
   , tuple
   , build
+  , NPair
+  , npair
+  , nfst
+  , nsnd
   ) where
 
 -- | Data and type constructor for nested tuples
@@ -126,3 +130,15 @@ tuple = stuple TNil
 
 build :: TupleReverse TNil a b => TT (Tuple a) -> Tuple b
 build (TT x) = tupleReverse TNil x
+
+-- | Convenience functions
+type NPair a b = Tuple (a :* b :* TNil)
+
+npair :: a -> b -> NPair a b
+npair x y = build $ tuple x y
+
+nfst :: NPair a b -> a
+nfst = sel First
+
+nsnd :: NPair a b -> b
+nsnd = sel $ Skip First

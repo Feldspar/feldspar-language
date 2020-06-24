@@ -44,6 +44,7 @@ import Test.QuickCheck
 
 import Feldspar.Core.Reify (Syntactic(..), resugar)
 import Feldspar.Core.Tuple
+import Feldspar.Core.NestedTuples
 
 import Feldspar.Range (rangeSubSat)
 import qualified Feldspar
@@ -168,19 +169,22 @@ Indexed l ixf cont ++ v     = Indexed l ixf (cont ++ v)
 
 infixr 5 ++
 
+nuncurry :: (a -> b -> c) -> (a, (b, d)) -> c
+nuncurry f (x, (y,_)) = f x y
+
 take :: Data Length -> Vector a -> Vector a
 take _ Empty                = Empty
 take n (Indexed l ixf cont) = indexed nHead ixf ++ take nCont cont
   where
     nHead = min l n
-    nCont = sizeProp (uncurry rangeSubSat) (n,l) $ n - min l n
+    nCont = sizeProp (nuncurry rangeSubSat) (n,l) $ n - min l n
 
 drop :: Data Length -> Vector a -> Vector a
 drop _ Empty = Empty
 drop n (Indexed l ixf cont) = indexed nHead (ixf . (+n)) ++ drop nCont cont
   where
-    nHead = sizeProp (uncurry rangeSubSat) (l,n) $ l - min l n
-    nCont = sizeProp (uncurry rangeSubSat) (n,l) $ n - min l n
+    nHead = sizeProp (nuncurry rangeSubSat) (l,n) $ l - min l n
+    nCont = sizeProp (nuncurry rangeSubSat) (n,l) $ n - min l n
 
 splitAt :: Data Index -> Vector a -> (Vector a, Vector a)
 splitAt n vec = (take n vec, drop n vec)
