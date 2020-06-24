@@ -1049,10 +1049,6 @@ cdr :: (Type a, Typeable b, Type (Tuple b)) => ASTF (Tuple (a :* b)) -> ASTF (Tu
 cdr = sugarSym1 Cdr
 
 instance (Syntax a, Syntax b) => Syntactic (a, b) where
-  -- type Internal (a, b) = (Internal a, Internal b)
-  -- sugar e = (sugar $ sugarSym1 Sel1 e,
-  --            sugar $ sugarSym1 Sel2 e)
-  -- desugar (x,y) = unFull $ sugarSym Tup2 x y
   type Internal (a, b) = Tuple (Internal a :* Internal b :* TNil)
   sugar e = (sugar $ sugarSym1 Car e, sugar $ sugarSym1 Car $ cdr e)
   desugar (x, y) = desugar $ build $ tuple x y

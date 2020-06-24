@@ -489,8 +489,7 @@ goodToShare (_ :& Operator (Literal (l :: a))) = largeLit (typeRep :: TypeRep a)
 -- special case goes away.
 goodToShare (_ :& Operator Car :@ e :: AExpr a)
   | ArrayType{} <- typeRepF :: TypeRep a
-  , not (goodToShare e)
-  = False
+  = goodToShare e
 goodToShare (_ :& _ :@ _) = True
 goodToShare _                   = False
 

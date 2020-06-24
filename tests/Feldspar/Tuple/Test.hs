@@ -6,8 +6,6 @@ import Feldspar
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
-import Data.Word
-
 -- | Test that we can build and take apart tuples correctly.
 --   In particular, the Syntactic instances for tuples are tested.
 
