@@ -490,6 +490,9 @@ goodToShare (_ :& Operator (Literal (l :: a))) = largeLit (typeRep :: TypeRep a)
 goodToShare (_ :& Operator Car :@ e :: AExpr a)
   | ArrayType{} <- typeRepF :: TypeRep a
   = goodToShare e
+goodToShare (_ :& Operator Cdr :@ _)       = False
+goodToShare (_ :& Operator Cons :@ _ :@ _) = False
+goodToShare (_ :& Operator Nil)            = False
 goodToShare (_ :& _ :@ _) = True
 goodToShare _                   = False
 
