@@ -4,8 +4,6 @@
 {-# OPTIONS_GHC -Wall #-}
 -- FIXME: PropSize and Switch not matched by semantics.
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeOperators #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -70,9 +68,8 @@ semantics Parallel = Sem "parallel"
         (\len ixf -> genericTake len $ map ixf [0..])
 semantics Sequential = Sem "sequential"
         (\len i step -> genericTake len $
-                        snd $ mapAccumL (\a ix -> swap (unnestPair $ step ix a)) i [0..])
-      where swap (a,b) = (b,a)
-            unnestPair t = (nfst t, nsnd t)
+                        snd $ mapAccumL (\a ix -> swap (step ix a)) i [0..])
+      where swap t = (nsnd t, nfst t)
 semantics SetIx = Sem "setIx" evalSetIx
 -- Feldspar.Core.Constructs.Binding
 semantics Let = Sem "let" (flip ($))
