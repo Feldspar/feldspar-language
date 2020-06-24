@@ -80,6 +80,10 @@ instance Show (Tuple TNil) where
   show TNil = "TNil"
 
 -- | Selecting components of a tuple
+--     selR First
+--   selects the first component of any nonempty nested tuple while
+--     selR (Skip First)
+--   selects the second component of any tuple with arity at least two.
 
 -- | Designating a tuple component
 newtype Skip a = Skip {unSkip :: a}
@@ -102,8 +106,7 @@ instance TSelect First (b :* t) where
 sel :: TSelect s t => s -> Tuple t -> TSelResult s t
 sel = selR
 
--- | Reverse a tuple
-
+-- | Reverse a nested tuple
 class TupleReverse a b c where
   tupleReverse :: Tuple a -> Tuple b -> Tuple c
 
@@ -125,20 +128,34 @@ instance Tuple a ~ b => TupleBuild a (TT b) where
 
 newtype TT a = TT a
 
+-- | The functions below are intended to be used to build nested tuples.
+--     build $ tuple e1 ... ek
+--   builds the nested tuple (e1 :* ... :* ek :* TNil).
+
+-- | Variadic function for building a nested tuple.
 tuple :: TupleBuild TNil b => b
 tuple = stuple TNil
 
+-- | Function for marking the end of the application of 'tuple'.
 build :: TupleReverse TNil a b => TT (Tuple a) -> Tuple b
 build (TT x) = tupleReverse TNil x
 
--- | Convenience functions
+-- | Convenience functions for pairs implemented as nested tuples.
+--   Since ordinary tuples are desugared to nested tuples, desugared
+--   contexts of pairs, e.g. in the Sequential AST operator, need types
+--   of the form Tuple (a :* b :* TNil) for which we provide support here.
+
+-- | The type of pairs implemented as nested tuples, corresponds to (,).
 type NPair a b = Tuple (a :* b :* TNil)
 
+-- | Function for constructing an NPair from its components.
 npair :: a -> b -> NPair a b
 npair x y = build $ tuple x y
 
+-- | Extract the first component of an NPair.
 nfst :: NPair a b -> a
 nfst = sel First
 
+-- | Extract the second component of an NPair.
 nsnd :: NPair a b -> b
 nsnd = sel $ Skip First
