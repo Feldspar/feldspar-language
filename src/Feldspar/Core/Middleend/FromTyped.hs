@@ -115,7 +115,7 @@ toU (((R.Info i) :: R.Info a) :& e)
            R.Operator R.Car ->
             case addDrop $ toU a of
               AIn _ (App (Drop n) (U.TupType (t:_)) es) ->
-                App (Sel $ n + 1) t es
+                App (Sel n) t es
            R.Operator R.Cdr ->
             case addDrop $ toU a of
               AIn _ (App (Drop n) (U.TupType (_:ts)) es) ->
@@ -264,37 +264,7 @@ trOp R.Save            = Save
 trOp (R.PropSize _)    = PropSize
 -- trOp R.SourceInfo      = SourceInfo
 trOp R.Switch          = Switch
-trOp R.Sel1            = Sel  0
-trOp R.Sel2            = Sel  1
-trOp R.Sel3            = Sel  2
-trOp R.Sel4            = Sel  3
-trOp R.Sel5            = Sel  4
-trOp R.Sel6            = Sel  5
-trOp R.Sel7            = Sel  6
-trOp R.Sel8            = Sel  7
-trOp R.Sel9            = Sel  8
-trOp R.Sel10           = Sel  9
-trOp R.Sel11           = Sel 10
-trOp R.Sel12           = Sel 11
-trOp R.Sel13           = Sel 12
-trOp R.Sel14           = Sel 13
-trOp R.Sel15           = Sel 14
 -- trOp R.Call            = Call
-trOp R.Tup0            = Tup
-trOp R.Tup2            = Tup
-trOp R.Tup3            = Tup
-trOp R.Tup4            = Tup
-trOp R.Tup5            = Tup
-trOp R.Tup6            = Tup
-trOp R.Tup7            = Tup
-trOp R.Tup8            = Tup
-trOp R.Tup9            = Tup
-trOp R.Tup10           = Tup
-trOp R.Tup11           = Tup
-trOp R.Tup12           = Tup
-trOp R.Tup13           = Tup
-trOp R.Tup14           = Tup
-trOp R.Tup15           = Tup
 trOp op                = error $ "FromTyped.trOp: unknown op: " ++ show op
 
 untypeType :: TypeRep a -> T.Size a -> U.Type

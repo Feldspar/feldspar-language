@@ -81,6 +81,7 @@ import Feldspar hiding (desugar,sugar,resugar)
 import qualified Feldspar as F
 import Feldspar.Core.Language
 import Feldspar.Core.Tuple
+import Feldspar.Core.NestedTuples
 import Feldspar.Vector.Shape
 
 import Control.Monad (zipWithM_)
@@ -181,7 +182,7 @@ instance Functor (Pull sh)
 type family InternalShape sh a where
     InternalShape Z         a = Internal a
     InternalShape (Z  :. l) a = [Internal a]
-    InternalShape (sh :. l) a = (Internal (Tuple (ShapeTupT (sh :. l))), [Internal a])
+    InternalShape (sh :. l) a = NPair (Internal (Tuple (ShapeTupT (sh :. l)))) [Internal a]
 
 class ShapeTup a where
   type ShapeTupT a
@@ -240,8 +241,8 @@ arrToPull sh arr = Pull (\ix -> arr ! toIndex sh ix) sh
 
 -- | Store a vector and its shape to memory
 freezePull :: (Type a, Shapely sh, ShapeTup sh, SyntacticTup (ShapeTupT sh))
-           => DPull sh a -> (Tuple (ShapeTupT sh), Data [a])
-freezePull v = (toTup $ extent v, fromPull v)
+           => DPull sh a -> NPair (Tuple (ShapeTupT sh)) (Data [a])
+freezePull v = npair (toTup $ extent v) (fromPull v)
 
 freezePull1 :: (Type a) => DPull DIM1 a -> Data [a]
 freezePull1 = fromPull
@@ -254,8 +255,8 @@ fromList ls = materialize (value $ genericLength ls)
 
 -- | Restore a vector and its shape from memory
 thawPull :: (Type a, Shapely sh, ShapeTup sh)
-         => (Tuple (ShapeTupT sh), Data [a]) -> DPull sh a
-thawPull (t,arr) = arrToPull (fromTup t) arr
+         => NPair (Tuple (ShapeTupT sh)) (Data [a]) -> DPull sh a
+thawPull tarr = arrToPull (fromTup $ nfst tarr) (nsnd tarr)
 
 -- | Restore a vector and its shape from memory
 thawPull1 :: Type a => Data [a] -> DPull DIM1 a
@@ -1282,16 +1283,18 @@ fromPush (Push ixf l) = materialize (size l) $
                           ixf (\ix a -> write (toIndex l ix) a)
 
 freezePush :: (Type a, Shapely sh, ShapeTup sh) =>
-              Push sh (Data a) -> (Tuple (ShapeTupT sh), Data [a])
-freezePush v = (toTup $ extent v, fromPush v)
+              Push sh (Data a) -> NPair (Tuple (ShapeTupT sh)) (Data [a])
+freezePush v = npair (toTup $ extent v) (fromPush v)
 
 freezePush1 :: Type a => Push DIM1 (Data a) -> Data [a]
 freezePush1 = fromPush
 
 thawPush :: forall a sh . (Type a, Shapely sh, ShapeTup sh) =>
-              (Tuple (ShapeTupT sh), Data [a]) -> Push sh (Data a)
-thawPush (l,arr) = Push f sh
-  where sh = fromTup l
+              NPair (Tuple (ShapeTupT sh)) (Data [a]) -> Push sh (Data a)
+thawPush larr = Push f sh
+  where l = nfst larr
+        arr = nsnd larr
+        sh = fromTup l
         f :: PushK sh (Data a)
         f k = parForShape sh $ \i ->
                 k i (arr ! toIndex sh i)

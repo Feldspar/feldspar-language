@@ -45,13 +45,11 @@ trickySharing x = (a+b+c) + (a+b) + (a+b+c)
     c = x*7
 
 -- We want no sharing between the two tuples in the result although they have a common tail
-noshareT :: (Tuple (Data Length :* Data Length :* TNil)
-           , Tuple (Data Length :* Data Length :* TNil))
+noshareT :: (NPair (Data Length) (Data Length), NPair (Data Length) (Data Length))
 noshareT = let two = 2 in (build $ tuple 1 two, build $ tuple 3 two)
 
 -- We want sharing between the two tuples in the result since they are identical
-shareT :: (Tuple (Data Length :* Data Length :* TNil)
-         , Tuple (Data Length :* Data Length :* TNil))
+shareT :: (NPair (Data Length) (Data Length), NPair (Data Length) (Data Length))
 shareT = (build $ tuple 1 2, build $ tuple 1 2)
 
 selectT :: Data Length

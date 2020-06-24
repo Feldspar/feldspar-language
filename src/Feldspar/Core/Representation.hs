@@ -79,7 +79,7 @@ import Data.Complex (Complex)
 import Data.Ix
 import Data.IORef (IORef)
 
-import Feldspar.Core.Tuple
+import Feldspar.Core.NestedTuples
 
 infixr :->
 infixl 5 :@
@@ -172,15 +172,13 @@ instance Eq (EqBox a) where
 instance Show (EqBox a) where
   show _ = "Box"
 
-type SelCtx w uw sw usw = (Tuply w, Unpack w ~ uw, Size w ~ sw, Tuply sw, Unpack sw ~ usw)
-
 -- | The main data type for built-in operators as well as let and conditional
 --   constructs.
 data Op a where
     -- | Array
     Parallel   :: Type a => Op (Length :-> (Index -> a) :-> Full [a])
     Sequential :: (Type a, Type st) =>
-                  Op (Length :-> st :-> (Index -> st -> (a,st)) :-> Full [a])
+                  Op (Length :-> st :-> (Index -> st -> NPair a st) :-> Full [a])
     Append     :: Type a => Op ([a] :-> [a] :-> Full [a])
     GetIx      :: Type a => Op ([a] :-> Index :-> Full a)
     SetIx      :: Type a => Op ([a] :-> Index :-> a :-> Full [a])
@@ -368,53 +366,6 @@ data Op a where
     -- | Switch
     Switch :: Type b => Op (b :-> Full b)
 
-    -- Tuple
-    Tup0  :: Op (Full ())
-    Tup2  :: Op (a :-> b :-> Full (a,b))
-    Tup3  :: Op (a :-> b :-> c :-> Full (a,b,c))
-    Tup4  :: Op (a :-> b :-> c :-> d :-> Full (a,b,c,d))
-    Tup5  :: Op (a :-> b :-> c :-> d :-> e :-> Full (a,b,c,d,e))
-    Tup6  :: Op (a :-> b :-> c :-> d :-> e :-> f :-> Full (a,b,c,d,e,f))
-    Tup7  :: Op (a :-> b :-> c :-> d :-> e :-> f :-> g :->
-                 Full (a,b,c,d,e,f,g))
-    Tup8  :: Op (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :->
-                 Full (a,b,c,d,e,f,g,h))
-    Tup9  :: Op (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> i :->
-                 Full (a,b,c,d,e,f,g,h,i))
-    Tup10 :: Op (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> i :-> j :->
-                 Full (a,b,c,d,e,f,g,h,i,j))
-    Tup11 :: Op (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> i :-> j :->
-                 k :->
-                 Full (a,b,c,d,e,f,g,h,i,j,k))
-    Tup12 :: Op (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> i :-> j :->
-                 k :-> l :->
-                 Full (a,b,c,d,e,f,g,h,i,j,k,l))
-    Tup13 :: Op (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> i :-> j :->
-                 k :-> l :-> m :->
-                 Full (a,b,c,d,e,f,g,h,i,j,k,l,m))
-    Tup14 :: Op (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> i :-> j :->
-                 k :-> l :-> m :-> n :->
-                 Full (a,b,c,d,e,f,g,h,i,j,k,l,m,n))
-    Tup15 :: Op (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> i :-> j :->
-                 k :-> l :-> m :-> n :-> o :->
-                 Full (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o))
-
-    Sel1  :: (SelCtx w uw sw usw, Sel1C  uw, Sel1C  usw, Sel1T  usw ~ Size (Sel1T uw))  => Op (w :-> Full (Sel1T  uw))
-    Sel2  :: (SelCtx w uw sw usw, Sel2C  uw, Sel2C  usw, Sel2T  usw ~ Size (Sel2T uw))  => Op (w :-> Full (Sel2T  uw))
-    Sel3  :: (SelCtx w uw sw usw, Sel3C  uw, Sel3C  usw, Sel3T  usw ~ Size (Sel3T uw))  => Op (w :-> Full (Sel3T  uw))
-    Sel4  :: (SelCtx w uw sw usw, Sel4C  uw, Sel4C  usw, Sel4T  usw ~ Size (Sel4T uw))  => Op (w :-> Full (Sel4T  uw))
-    Sel5  :: (SelCtx w uw sw usw, Sel5C  uw, Sel5C  usw, Sel5T  usw ~ Size (Sel5T uw))  => Op (w :-> Full (Sel5T  uw))
-    Sel6  :: (SelCtx w uw sw usw, Sel6C  uw, Sel6C  usw, Sel6T  usw ~ Size (Sel6T uw))  => Op (w :-> Full (Sel6T  uw))
-    Sel7  :: (SelCtx w uw sw usw, Sel7C  uw, Sel7C  usw, Sel7T  usw ~ Size (Sel7T uw))  => Op (w :-> Full (Sel7T  uw))
-    Sel8  :: (SelCtx w uw sw usw, Sel8C  uw, Sel8C  usw, Sel8T  usw ~ Size (Sel8T uw))  => Op (w :-> Full (Sel8T  uw))
-    Sel9  :: (SelCtx w uw sw usw, Sel9C  uw, Sel9C  usw, Sel9T  usw ~ Size (Sel9T uw))  => Op (w :-> Full (Sel9T  uw))
-    Sel10 :: (SelCtx w uw sw usw, Sel10C uw, Sel10C usw, Sel10T usw ~ Size (Sel10T uw)) => Op (w :-> Full (Sel10T uw))
-    Sel11 :: (SelCtx w uw sw usw, Sel11C uw, Sel11C usw, Sel11T usw ~ Size (Sel11T uw)) => Op (w :-> Full (Sel11T uw))
-    Sel12 :: (SelCtx w uw sw usw, Sel12C uw, Sel12C usw, Sel12T usw ~ Size (Sel12T uw)) => Op (w :-> Full (Sel12T uw))
-    Sel13 :: (SelCtx w uw sw usw, Sel13C uw, Sel13C usw, Sel13T usw ~ Size (Sel13T uw)) => Op (w :-> Full (Sel13T uw))
-    Sel14 :: (SelCtx w uw sw usw, Sel14C uw, Sel14C usw, Sel14T usw ~ Size (Sel14T uw)) => Op (w :-> Full (Sel14T uw))
-    Sel15 :: (SelCtx w uw sw usw, Sel15C uw, Sel15C usw, Sel15T usw ~ Size (Sel15T uw)) => Op (w :-> Full (Sel15T uw))
-
     -- | ConditionM
     ConditionM :: (Monad m, Type a) => Op (Bool :-> m a :-> m a :-> Full (m a))
 
@@ -430,24 +381,6 @@ data Op a where
 
 deriving instance Eq (Op a)
 deriving instance Show (Op a)
-
-isSelOp :: Op a -> Bool
-isSelOp Sel1  = True
-isSelOp Sel2  = True
-isSelOp Sel3  = True
-isSelOp Sel4  = True
-isSelOp Sel5  = True
-isSelOp Sel6  = True
-isSelOp Sel7  = True
-isSelOp Sel8  = True
-isSelOp Sel9  = True
-isSelOp Sel10 = True
-isSelOp Sel11 = True
-isSelOp Sel12 = True
-isSelOp Sel13 = True
-isSelOp Sel14 = True
-isSelOp Sel15 = True
-isSelOp _     = False
 
 -- | Utility functions
 
@@ -554,9 +487,9 @@ goodToShare (_ :& Operator (Literal (l :: a))) = largeLit (typeRep :: TypeRep a)
 -- of magnitudes cheaper than the array copy generated for the let-binding.
 -- With a better compilation of array assignments, the need for this
 -- special case goes away.
-goodToShare (_ :& Operator op :@ e :: AExpr a)
+goodToShare (_ :& Operator Car :@ e :: AExpr a)
   | ArrayType{} <- typeRepF :: TypeRep a
-  , isSelOp op && not (goodToShare e)
+  , not (goodToShare e)
   = False
 goodToShare (_ :& _ :@ _) = True
 goodToShare _                   = False

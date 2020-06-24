@@ -40,6 +40,7 @@ import Control.Applicative (Applicative(..))
 import Control.Monad
 
 import Feldspar.Core.Reify (Syntactic(..), resugar)
+import Feldspar.Core.NestedTuples
 
 import Feldspar hiding (sugar,desugar,resugar)
 import Feldspar.Mutable
@@ -49,7 +50,7 @@ data Option a = Option { isSome :: Data Bool, fromSome :: a }
 
 instance Syntax a => Syntactic (Option a)
   where
-    type Internal (Option a) = (Bool, Internal a)
+    type Internal (Option a) = NPair Bool (Internal a)
     desugar = desugar . desugarOption . fmap resugar
     sugar   = fmap resugar . sugarOption . sugar
 
@@ -72,12 +73,12 @@ instance Monad Option
 
 
 -- | One-layer desugaring of 'Option'
-desugarOption :: Type a => Option (Data a) -> Data (Bool,a)
-desugarOption a = resugar (isSome a, fromSome a)
+desugarOption :: Type a => Option (Data a) -> Data (NPair Bool a)
+desugarOption a = resugar $ npair (isSome a) (fromSome a)
 
 -- | One-layer sugaring of 'Option'
-sugarOption :: Type a => Data (Bool,a) -> Option (Data a)
-sugarOption (resugar -> (valid,a)) = Option valid a
+sugarOption :: Type a => Data (NPair Bool a) -> Option (Data a)
+sugarOption (resugar -> t) = Option (nfst t) (nsnd t)
 
 some :: a -> Option a
 some = Option true

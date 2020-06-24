@@ -73,8 +73,8 @@ parallel :: Type a => Data Length -> (Data Index -> Data a) -> Data [a]
 parallel = sugarSym2 Parallel
 
 
-sequential :: (Type a, Syntax s) =>
-              Data Length -> s -> (Data Index -> s -> (Data a,s)) -> Data [a]
+sequential :: (Syntax a, Syntax s) =>
+              Data Length -> s -> (Data Index -> s -> (a,s)) -> Data [Internal a]
 sequential = sugarSym3 Sequential
 
 
@@ -1044,36 +1044,44 @@ switch def cs s = let s' = resugar s
 -- Tuple.hs
 --------------------------------------------------
 
+-- | Helper function
+cdr :: (Type a, Typeable b, Type (Tuple b)) => ASTF (Tuple (a :* b)) -> ASTF (Tuple b)
+cdr = sugarSym1 Cdr
+
 instance (Syntax a, Syntax b) => Syntactic (a, b) where
-  type Internal (a, b) = (Internal a, Internal b)
-  sugar e = (sugar $ sugarSym1 Sel1 e,
-             sugar $ sugarSym1 Sel2 e)
-  desugar (x,y) = unFull $ sugarSym Tup2 x y
+  -- type Internal (a, b) = (Internal a, Internal b)
+  -- sugar e = (sugar $ sugarSym1 Sel1 e,
+  --            sugar $ sugarSym1 Sel2 e)
+  -- desugar (x,y) = unFull $ sugarSym Tup2 x y
+  type Internal (a, b) = Tuple (Internal a :* Internal b :* TNil)
+  sugar e = (sugar $ sugarSym1 Car e, sugar $ sugarSym1 Car $ cdr e)
+  desugar (x, y) = desugar $ build $ tuple x y
 
 instance ( Syntax a, Syntax b, Syntax c )
       => Syntactic (a, b, c)
   where
     type Internal (a, b, c) =
-                  ( Internal a, Internal b, Internal c )
-    sugar e = ( sugar $ sugarSym1 Sel1 e
-              , sugar $ sugarSym1 Sel2 e
-              , sugar $ sugarSym1 Sel3 e
+                  Tuple (Internal a :* Internal b :* Internal c :* TNil)
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
               )
     desugar (a, b, c)
-          = unFull $ sugarSym Tup3 a b c
+          = desugar $ build $ tuple a b c
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d )
       => Syntactic (a, b, c, d)
   where
     type Internal (a, b, c, d) =
-                  ( Internal a, Internal b, Internal c, Internal d )
-    sugar e = ( sugar $ sugarSym1 Sel1 e
-              , sugar $ sugarSym1 Sel2 e
-              , sugar $ sugarSym1 Sel3 e
-              , sugar $ sugarSym1 Sel4 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d)
-          = unFull $ sugarSym Tup4 a b c d
+          = desugar $ build $ tuple a b c d
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e
@@ -1081,17 +1089,17 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e)
   where
     type Internal (a, b, c, d, e) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1 e
-              , sugar $ sugarSym1 Sel2 e
-              , sugar $ sugarSym1 Sel3 e
-              , sugar $ sugarSym1 Sel4 e
-              , sugar $ sugarSym1 Sel5 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e)
-          = unFull $ sugarSym Tup5 a b c d e
+          = desugar $ build $ tuple a b c d e
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f
@@ -1099,18 +1107,18 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e, f)
   where
     type Internal (a, b, c, d, e, f) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e, Internal f
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1 e
-              , sugar $ sugarSym1 Sel2 e
-              , sugar $ sugarSym1 Sel3 e
-              , sugar $ sugarSym1 Sel4 e
-              , sugar $ sugarSym1 Sel5 e
-              , sugar $ sugarSym1 Sel6 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e :* Internal f
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e, f)
-          = unFull $ sugarSym Tup6 a b c d e f
+          = desugar $ build $ tuple a b c d e f
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g
@@ -1118,19 +1126,19 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e, f, g)
   where
     type Internal (a, b, c, d, e, f, g) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e, Internal f, Internal g
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1 e
-              , sugar $ sugarSym1 Sel2 e
-              , sugar $ sugarSym1 Sel3 e
-              , sugar $ sugarSym1 Sel4 e
-              , sugar $ sugarSym1 Sel5 e
-              , sugar $ sugarSym1 Sel6 e
-              , sugar $ sugarSym1 Sel7 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e :* Internal f :* Internal g
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e, f, g)
-          = unFull $ sugarSym Tup7 a b c d e f g
+          = desugar $ build $ tuple a b c d e f g
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1138,20 +1146,20 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e, f, g, h)
   where
     type Internal (a, b, c, d, e, f, g, h) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e, Internal f, Internal g, Internal h
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1 e
-              , sugar $ sugarSym1 Sel2 e
-              , sugar $ sugarSym1 Sel3 e
-              , sugar $ sugarSym1 Sel4 e
-              , sugar $ sugarSym1 Sel5 e
-              , sugar $ sugarSym1 Sel6 e
-              , sugar $ sugarSym1 Sel7 e
-              , sugar $ sugarSym1 Sel8 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e :* Internal f :* Internal g :* Internal h
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e, f, g, h)
-          = unFull $ sugarSym Tup8 a b c d e f g h
+          = desugar $ build $ tuple a b c d e f g h
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1160,22 +1168,22 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e, f, g, h, i)
   where
     type Internal (a, b, c, d, e, f, g, h, i) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e, Internal f, Internal g, Internal h
-                  , Internal i
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1 e
-              , sugar $ sugarSym1 Sel2 e
-              , sugar $ sugarSym1 Sel3 e
-              , sugar $ sugarSym1 Sel4 e
-              , sugar $ sugarSym1 Sel5 e
-              , sugar $ sugarSym1 Sel6 e
-              , sugar $ sugarSym1 Sel7 e
-              , sugar $ sugarSym1 Sel8 e
-              , sugar $ sugarSym1 Sel9 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e :* Internal f :* Internal g :* Internal h
+                        :* Internal i
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e, f, g, h, i)
-          = unFull $ sugarSym Tup9 a b c d e f g h i
+          = desugar $ build $ tuple a b c d e f g h i
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1184,23 +1192,23 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e, f, g, h, i, j)
   where
     type Internal (a, b, c, d, e, f, g, h, i, j) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e, Internal f, Internal g, Internal h
-                  , Internal i, Internal j
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1  e
-              , sugar $ sugarSym1 Sel2  e
-              , sugar $ sugarSym1 Sel3  e
-              , sugar $ sugarSym1 Sel4  e
-              , sugar $ sugarSym1 Sel5  e
-              , sugar $ sugarSym1 Sel6  e
-              , sugar $ sugarSym1 Sel7  e
-              , sugar $ sugarSym1 Sel8  e
-              , sugar $ sugarSym1 Sel9  e
-              , sugar $ sugarSym1 Sel10 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e :* Internal f :* Internal g :* Internal h
+                        :* Internal i :* Internal j
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e, f, g, h, i, j)
-          = unFull $ sugarSym Tup10 a b c d e f g h i j
+          = desugar $ build $ tuple a b c d e f g h i j
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1209,24 +1217,24 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e, f, g, h, i, j, k)
   where
     type Internal (a, b, c, d, e, f, g, h, i, j, k) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e, Internal f, Internal g, Internal h
-                  , Internal i, Internal j, Internal k
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1  e
-              , sugar $ sugarSym1 Sel2  e
-              , sugar $ sugarSym1 Sel3  e
-              , sugar $ sugarSym1 Sel4  e
-              , sugar $ sugarSym1 Sel5  e
-              , sugar $ sugarSym1 Sel6  e
-              , sugar $ sugarSym1 Sel7  e
-              , sugar $ sugarSym1 Sel8  e
-              , sugar $ sugarSym1 Sel9  e
-              , sugar $ sugarSym1 Sel10 e
-              , sugar $ sugarSym1 Sel11 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e :* Internal f :* Internal g :* Internal h
+                        :* Internal i :* Internal j :* Internal k
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k)
-          = unFull $ sugarSym Tup11 a b c d e f g h i j k
+          = desugar $ build $ tuple a b c d e f g h i j k
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1235,25 +1243,25 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l)
   where
     type Internal (a, b, c, d, e, f, g, h, i, j, k, l) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e, Internal f, Internal g, Internal h
-                  , Internal i, Internal j, Internal k, Internal l
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1  e
-              , sugar $ sugarSym1 Sel2  e
-              , sugar $ sugarSym1 Sel3  e
-              , sugar $ sugarSym1 Sel4  e
-              , sugar $ sugarSym1 Sel5  e
-              , sugar $ sugarSym1 Sel6  e
-              , sugar $ sugarSym1 Sel7  e
-              , sugar $ sugarSym1 Sel8  e
-              , sugar $ sugarSym1 Sel9  e
-              , sugar $ sugarSym1 Sel10 e
-              , sugar $ sugarSym1 Sel11 e
-              , sugar $ sugarSym1 Sel12 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e :* Internal f :* Internal g :* Internal h
+                        :* Internal i :* Internal j :* Internal k :* Internal l
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l)
-          = unFull $ sugarSym Tup12 a b c d e f g h i j k l
+          = desugar $ build $ tuple a b c d e f g h i j k l
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1263,27 +1271,27 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l, m)
   where
     type Internal (a, b, c, d, e, f, g, h, i, j, k, l, m) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e, Internal f, Internal g, Internal h
-                  , Internal i, Internal j, Internal k, Internal l
-                  , Internal m
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1  e
-              , sugar $ sugarSym1 Sel2  e
-              , sugar $ sugarSym1 Sel3  e
-              , sugar $ sugarSym1 Sel4  e
-              , sugar $ sugarSym1 Sel5  e
-              , sugar $ sugarSym1 Sel6  e
-              , sugar $ sugarSym1 Sel7  e
-              , sugar $ sugarSym1 Sel8  e
-              , sugar $ sugarSym1 Sel9  e
-              , sugar $ sugarSym1 Sel10 e
-              , sugar $ sugarSym1 Sel11 e
-              , sugar $ sugarSym1 Sel12 e
-              , sugar $ sugarSym1 Sel13 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e :* Internal f :* Internal g :* Internal h
+                        :* Internal i :* Internal j :* Internal k :* Internal l
+                        :* Internal m
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l, m)
-          = unFull $ sugarSym Tup13 a b c d e f g h i j k l m
+          = desugar $ build $ tuple a b c d e f g h i j k l m
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1293,28 +1301,28 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
   where
     type Internal (a, b, c, d, e, f, g, h, i, j, k, l, m, n) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e, Internal f, Internal g, Internal h
-                  , Internal i, Internal j, Internal k, Internal l
-                  , Internal m, Internal n
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1  e
-              , sugar $ sugarSym1 Sel2  e
-              , sugar $ sugarSym1 Sel3  e
-              , sugar $ sugarSym1 Sel4  e
-              , sugar $ sugarSym1 Sel5  e
-              , sugar $ sugarSym1 Sel6  e
-              , sugar $ sugarSym1 Sel7  e
-              , sugar $ sugarSym1 Sel8  e
-              , sugar $ sugarSym1 Sel9  e
-              , sugar $ sugarSym1 Sel10 e
-              , sugar $ sugarSym1 Sel11 e
-              , sugar $ sugarSym1 Sel12 e
-              , sugar $ sugarSym1 Sel13 e
-              , sugar $ sugarSym1 Sel14 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e :* Internal f :* Internal g :* Internal h
+                        :* Internal i :* Internal j :* Internal k :* Internal l
+                        :* Internal m :* Internal n
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
-          = unFull $ sugarSym Tup14 a b c d e f g h i j k l m n
+          = desugar $ build $ tuple a b c d e f g h i j k l m n
 
 instance ( Syntax a, Syntax b, Syntax c, Syntax d
          , Syntax e, Syntax f, Syntax g, Syntax h
@@ -1324,29 +1332,29 @@ instance ( Syntax a, Syntax b, Syntax c, Syntax d
       => Syntactic (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
   where
     type Internal (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) =
-                  ( Internal a, Internal b, Internal c, Internal d
-                  , Internal e, Internal f, Internal g, Internal h
-                  , Internal i, Internal j, Internal k, Internal l
-                  , Internal m, Internal n, Internal o
-                  )
-    sugar e = ( sugar $ sugarSym1 Sel1  e
-              , sugar $ sugarSym1 Sel2  e
-              , sugar $ sugarSym1 Sel3  e
-              , sugar $ sugarSym1 Sel4  e
-              , sugar $ sugarSym1 Sel5  e
-              , sugar $ sugarSym1 Sel6  e
-              , sugar $ sugarSym1 Sel7  e
-              , sugar $ sugarSym1 Sel8  e
-              , sugar $ sugarSym1 Sel9  e
-              , sugar $ sugarSym1 Sel10 e
-              , sugar $ sugarSym1 Sel11 e
-              , sugar $ sugarSym1 Sel12 e
-              , sugar $ sugarSym1 Sel13 e
-              , sugar $ sugarSym1 Sel14 e
-              , sugar $ sugarSym1 Sel15 e
+                  Tuple (  Internal a :* Internal b :* Internal c :* Internal d
+                        :* Internal e :* Internal f :* Internal g :* Internal h
+                        :* Internal i :* Internal j :* Internal k :* Internal l
+                        :* Internal m :* Internal n :* Internal o
+                        :* TNil )
+    sugar e = ( sugar $ sugarSym1 Car e
+              , sugar $ sugarSym1 Car $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
+              , sugar $ sugarSym1 Car $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr $ cdr e
               )
     desugar (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
-          = unFull $ sugarSym Tup15 a b c d e f g h i j k l m n o
+          = desugar $ build $ tuple a b c d e f g h i j k l m n o
 
 -------------------------------------------------
 -- Support functions for monads
