@@ -69,11 +69,6 @@ c99 = Platform {
         , (1 :# ComplexType (1 :# FloatType),  "float complex")
         , (1 :# ComplexType (1 :# DoubleType), "double complex")
         ] ,
-    values =
-        [ (1 :# ComplexType (1 :# FloatType), \cx -> "(" ++ showRe cx ++ "+" ++ showIm cx ++ "i)")
-        , (1 :# ComplexType (1 :# DoubleType), \cx -> "(" ++ showRe cx ++ "+" ++ showIm cx ++ "i)")
-        , (1 :# BoolType, \b -> if boolValue b then "true" else "false")
-        ] ,
     includes =
         [ "feldspar_c99.h"
         , "feldspar_array.h"
@@ -125,25 +120,11 @@ tic64x = Platform {
         , (1 :# ComplexType (1 :# FloatType),  "complexOf_float")
         , (1 :# ComplexType (1 :# DoubleType), "complexOf_double")
         ] ,
-    values =
-        [ (1 :# ComplexType (1 :# FloatType), \cx -> "complex_fun_float(" ++ showRe cx ++ "," ++ showIm cx ++ ")")
-        , (1 :# ComplexType (1 :# DoubleType), \cx -> "complex_fun_double(" ++ showRe cx ++ "," ++ showIm cx ++ ")")
-        , (1 :# BoolType, \b -> if boolValue b then "1" else "0")
-        ] ,
     includes = [ "feldspar_tic64x.h", "feldspar_array.h", "<c6x.h>", "<string.h>"
                , "<math.h>"],
     varFloating = True,
     codeGenerator = "c"
 }
-
-showRe, showIm :: Constant t -> String
-showRe = showConstant . realPartComplexValue
-showIm = showConstant . imagPartComplexValue
-
-showConstant :: Constant t -> String
-showConstant (DoubleConst c) = show c ++ "f"
-showConstant (FloatConst c)  = show c ++ "f"
-showConstant c               = show c
 
 extend :: Platform -> String -> Type -> String
 extend Platform{..} s t = s ++ "_fun_" ++ fromMaybe (show t) (lookup t types)
