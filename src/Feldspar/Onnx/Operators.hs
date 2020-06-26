@@ -75,6 +75,12 @@ getAttrM attrs unpack n = P.fmap unpack $ P.lookup n attrs
 {-
    The broadcast functionality here is slightly more general than in ONNX
    since it will accept broadcasting from dimensions whose size is not 1.
+
+   Broadcasting is a generalization of scalar promotion, as when a scalar
+   is multiplied with a matrix with the intention of scaling every element
+   of the matrix. With broadcasting, tensors of different dimensionality
+   can be combined using pointwise operations by extending one or both
+   operands.
 -}
 
 type family UnionShape sh1 sh2 where
@@ -82,16 +88,21 @@ type family UnionShape sh1 sh2 where
   UnionShape sh                   Z                    = sh
   UnionShape (sh1 :. Data Length) (sh2 :. Data Length) = UnionShape sh1 sh2 :. Data Length
 
--- | Map an index in a broadcasted shape to an index into the shape before broadcasting
+-- | Map an index in a broadcasted shape to an index into the shape before broadcasting.
+--   First argument is target extent which must not have less dimensions than source extent.
+--   Second argument is source extent.
+--   Third argument is index which must have as many dimensions as target extent.
 bcIx :: Shape sh1 -> Shape sh2 -> Shape sh1 -> Shape sh2
 bcIx _           Z            _         = Z
 bcIx (ext1 :. _) (ext2 :. n2) (ix :. i) = bcIx ext1 ext2 ix :. (n2 == 1 ? 0 $ i)
+bcIx _           _            _         = P.error "Operators.bcIx: target extent narrower than source extent"
 
 -- | Unidirectional broadcast
 uniBCast :: Shape sh1 -> Pull sh2 a -> Pull sh1 a
 uniBCast extN (Pull ixf extO) = Pull (ixf . bcIx extN extO) extN
 
--- | Compute the union of two shapes with the max index in each dimension
+-- | Compute the union of two extents with the max size in each dimension
+--   and the maximum number of dimensions.
 unionExt :: Shape sh1 -> Shape sh2 -> Shape (UnionShape sh1 sh2)
 unionExt Z           sh          = sh
 unionExt sh          Z           = sh
@@ -100,7 +111,7 @@ unionExt (sh1 :. n1) (sh2 :. n2) = unionExt sh1 sh2 :. max n1 n2
 {- |
   Slices
   A slice is a (possibly lower dimensional) part of a multidimensional vector.
-  For instance, a sun range of a one dimensional vector is a slice, a row or
+  For instance, a range of a one dimensional vector is a slice, a row or
   column of a (two-dimensional) matrix is a one-dimensional slice as is the first
   five elements of a row or column. A sub block of a matrix is a two-dimensional
   slice.
@@ -110,6 +121,35 @@ unionExt (sh1 :. n1) (sh2 :. n2) = unionExt sh1 sh2 :. max n1 n2
   slice has one dimension for each dimension where the slice index has a dimension
   and a length.
 
+  Note that 'xs !# (ZZ :! 3)' means the same as 'xs ! (Z :. 3)' namely the fourth 
+  element of the one dimensional vector xs, whereas 'xs !# (ZZ :.. (3,1))' is a 
+  one dimensional vector of length one containing the same value as its only element.
+-}
+
+{- The slices in Feldspar.Vector corresponds to the SliceIndex GADT defined in this
+   module as follows:
+     SZ  corresponds to ZZ
+     ::.  coresponds to :!
+     ::: corresponds to :.., but :.. uses an explicit range in (start, length) format
+                             wheras ::: always includes all elements
+     SAny has no counterpart in this module
+
+   Further, the type families mapping slices to shapes correspond as follows:
+     FullShape  corresponds to ToArg
+     SliceShape corresponds to ToRes
+
+   The other slice functions correspond as follows:
+     sliceOfFull  corresponds to  sliceExt
+     fullOfSlize  corresponds to  sliceIdx
+
+   The two slice implementations could be unified by generalizing the implementation
+   in Feldspar.Vector by adding functionality corresponding to the :.. constructor.
+   This can be done in at least two ways:
+   - Add the :.. constructor to the Slice GADT and extend type families and slice functions
+   - Add a second constructor to the data type All, e.g. 
+       data All = All
+                | Part (Data Length) (Data Length)
+     and extend slice functions
 -}
 
 data (:..) a b
@@ -218,11 +258,11 @@ onnxBatchNormalization attrs xs gamma beta mean var = ys
         ys = bcAdd (bcMul xsHat $ gamma <! 1 <! 1) $ beta <! 1 <! 1
         epsilon = value $ P.realToFrac $ getAttr attrs aaFloat 1e-5 "epsilon"
 
--- Flattening a tensor to a matrix
+-- | Flatten a tensor to a matrix
 onnxFlatten :: Pushy vec => Attrs -> vec a -> Push DIM2 a
 onnxFlatten attrs vec = flatPush (P.fromIntegral $ getAttr attrs aaInt 1 "axis") $ toPush vec
 
--- Flattening a Push vector to two dimensions
+-- | Flattening a Push vector to two dimensions
 flatPush :: forall sh a . Int -> Push sh a -> Push DIM2 a
 flatPush i (Push ixf ext) = Push ixf' $ Z :. P.product ls :. P.product rs
   where ixf' :: PushK DIM2 a
@@ -230,10 +270,12 @@ flatPush i (Push ixf ext) = Push ixf' $ Z :. P.product ls :. P.product rs
                                   in wf (Z :. idxExp ls ils :. idxExp rs irs) d)
         (ls,rs) = takeDropShape i ext
 
--- | Linearizing an index
+-- | Linearizing an index where both intex and extent are represented as lists
 idxExp :: [Data Length] -> [Data Length] -> Data Length
 idxExp ext idx = f (P.reverse ext) (P.reverse idx)
   where f (n:ns) (i:is) = f ns is * n + i
+        f []     []     = 0
+        f _      _      = P.error "Operators.idxExp: extent and index differ in length"
 
 -- | Split a shape
 takeDropShape :: Int -> Shape sh -> ([Data Length], [Data Length])
@@ -248,7 +290,7 @@ onnxGemm3 attrs vA vB vC = bcZipWith (+) (mmT vAT vBnT) $ toPull vC
   where vA' = if alpha P.== 1.0 then toPull vA else map (* value alpha) $ toPull vA
         vAT = if transA P.== 1 then transpose vA' else vA'
         vB' = toPull vB
-        vBnT = if transA P.== 0 then transpose vB' else vB' -- The mmT routine wants its argument transposed
+        vBnT = if transA P.== transB then transpose vB' else vB' -- The mmT routine wants its second argument transposed
         alpha = P.realToFrac $ getAttr attrs aaFloat 1.0 "alpha"
         transA = getAttr attrs aaInt 0 "transA"
         transB = getAttr attrs aaInt 0 "transB"
@@ -276,9 +318,10 @@ Pull ixf ext <! n = Pull (\ (ix :. _) -> ixf ix) (ext :. n)
 onnxConv :: (Num a, Syntax a)
          => Attrs -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM1 a -> Pull DIM4 a
 onnxConv attrs xs = onnxConvNP (value $ map fromInteger strides) pXs
-  where dilations    = getAttr  attrs aaInts [1, 1]    "dilations" -- Currently unused
-        group        = getAttr  attrs aaInt  1         "group"     -- Currently unused
-        kernel_shape = getAttrM attrs aaInts           "kernel_shape" -- Currently unused
+  where -- dilations    = getAttr  attrs aaInts [1, 1]    "dilations" -- Currently unused
+        -- group        = getAttr  attrs aaInt  1         "group"     -- Currently unused
+        -- kernel_shape = getAttrM attrs aaInts           "kernel_shape" -- Currently unused
+        -- FIXME: Extend the implementation to take the remaining attributes into account
         pads         = getAttr  attrs aaInts [0,0,0,0] "pads"
         strides      = getAttr  attrs aaInts [1,1]     "strides"
         doPad = P.any (P./= 0) pads
@@ -310,7 +353,7 @@ pad :: forall a vec sh . (Syntax a, Num a, Pushy vec,
 pad ps vec
   = bpadding `vconc` (lpadding `hconc` pvec `hconc` rpadding) `vconc` tpadding
     where pvec = toPush vec
-          (ext,m,n) = case extent pvec of sh :. m :. n -> (sh, m, n)
+          (ext,m,n) = case extent pvec of sh :. i :. j -> (sh, i, j)
           bpadding = toPush $ zeros (ext :. pB :. n1)
           tpadding = toPush $ zeros (ext :. pT :. n1)
           lpadding = toPush $ zeros (ext :. m :. pL)
@@ -358,7 +401,7 @@ instance PrefShape sh1 sh2 => PrefShape (sh1 :. Data Length) (sh2 :. Data Length
   spShape (sh1 :. _) (sh2 :. n) = (sh1' :. n, sh2')
     where (sh1',sh2') = spShape sh1 sh2
 
--- | Map an n-dimensional function over the n rightmost dimensions of a mult dimensional vector
+-- | Map an n-dimensional function over the n rightmost dimensions of a multi dimensional vector
 vvmap :: (PrefShape sh (AppendShape sh sh2), PrefShape sh (AppendShape sh sh3),
           sh2 ~ RestShape sh (AppendShape sh sh2),
           sh3 ~ RestShape sh (AppendShape sh sh3))
