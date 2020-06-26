@@ -5,8 +5,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# OPTIONS_GHC -Wall #-}
--- FIXME: Remove this when removing the Lift instances.
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | Dynamically load a compiled Feldspar function as a Haskell function
 module Feldspar.Compiler.Plugin
@@ -50,7 +48,6 @@ import Control.Exception (handle)
 import Control.Monad (join, (>=>), when, unless)
 
 import Language.Haskell.TH hiding (Type, Range)
-import Language.Haskell.TH.Syntax (Lift(..))
 
 import System.Directory (doesFileExist, removeFile, createDirectoryIfMissing)
 import System.Exit (ExitCode(..))
@@ -62,8 +59,7 @@ import System.IO.Unsafe (unsafePerformIO)
 -- Feldspar specific
 import Feldspar.Runtime
 import Feldspar.Compiler (compile, defaultOptions)
-import Feldspar.Compiler.Imperative.Representation (Constant)
-import Feldspar.Compiler.Backend.C.Options (Options(..), Platform(..))
+import Feldspar.Compiler.Backend.C.Options (Options(..))
 import Feldspar.Compiler.Backend.C.Library (encodeFunctionName)
 import Feldspar.Compiler.Marshal ()
 
@@ -213,14 +209,3 @@ lookupSymbol symbol = do
 
 foreign import ccall safe "lookupSymbol"
     _lookupSymbol :: CString -> IO (Ptr a)
-
-
---- Boring TH instances for Lifting Options -------
--- TODO: Derive Lift for these.
-
-instance Lift Options where
-    lift (Options platform ph una unr frontopts sl ns) =
-        [| Options platform ph una unr frontopts sl ns |]
-
-instance Lift Platform where
-    lift (Platform n t is vf be) = [| Platform n t is vf be |]

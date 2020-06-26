@@ -25,13 +25,15 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
-
+{-# LANGUAGE DeriveLift #-}
 {-# OPTIONS_GHC -Wall #-}
 
 module Feldspar.Compiler.Backend.C.Options where
 
+import Language.Haskell.TH.Syntax (Lift(..))
+
 import Feldspar.Core.Interpretation (FeldOpts)
-import Feldspar.Compiler.Imperative.Representation (Type, Constant)
+import Feldspar.Compiler.Imperative.Representation (Type)
 
 data Options = Options
     { platform          :: Platform
@@ -43,7 +45,7 @@ data Options = Options
     , frontendOpts      :: FeldOpts -- ^ Options for the front end optimization chain
     , safetyLimit       :: Integer  -- ^ Threshold to stop when the size information gets lost.
     , nestSize          :: Int      -- ^ Indentation size for PrettyPrinting
-    }
+    } deriving Lift
 
 data Platform = Platform {
     name            :: String,
@@ -51,7 +53,7 @@ data Platform = Platform {
     includes        :: [String],
     varFloating     :: Bool,
     codeGenerator   :: String
-} deriving Show
+} deriving (Lift, Show)
 
 -- * Renamer data types to avoid cyclic imports.
 
