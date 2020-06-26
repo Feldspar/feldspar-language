@@ -110,7 +110,6 @@ library
   build-depends:
     array,
     base                        >= 4.9.1  && < 5.9,
-    base-compat                 >= 0.8,
     bytestring                  >= 0.10   && < 0.11,
     Cabal,
     containers                  >= 0.4    && < 0.7,
