@@ -16,4 +16,8 @@ cabal.sandbox.config
 *.hp
 .stack-work/
 
+tests/*.[hc]
 tests/*.txt
+tests/gold/ep-*.[hc]
+tests/gold/*_build_test.[hc]
+tmp
