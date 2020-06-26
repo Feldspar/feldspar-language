@@ -48,13 +48,10 @@ data Options = Options
 data Platform = Platform {
     name            :: String,
     types           :: [(Type, String)],
-    values          :: [(Type, ShowValue)],
     includes        :: [String],
     varFloating     :: Bool,
     codeGenerator   :: String
 } deriving Show
-
-type ShowValue = Constant () -> String
 
 -- * Renamer data types to avoid cyclic imports.
 

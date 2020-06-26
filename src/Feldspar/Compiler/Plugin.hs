@@ -223,7 +223,4 @@ instance Lift Options where
         [| Options platform ph una unr frontopts sl ns |]
 
 instance Lift Platform where
-    lift (Platform n t vs is vf be) = [| Platform n t vs is vf be |]
-
-instance Lift (Constant () -> String) where
-    lift _ = [| error "No TH instance for ShowValue" |]
+    lift (Platform n t is vf be) = [| Platform n t is vf be |]

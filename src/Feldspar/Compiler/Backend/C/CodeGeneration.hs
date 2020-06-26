@@ -221,17 +221,17 @@ instance CodeGen (Variable t)
 
 instance CodeGen (Constant ())
   where
-    cgen env cnst@(IntConst c _)     = maybe (integer c) text $ transformConst env cnst
-    cgen env cnst@(DoubleConst c)    = maybe (double c)  text $ transformConst env cnst
-    cgen env cnst@(FloatConst c)     = maybe (float c)   text $ transformConst env cnst
-    cgen env cnst@(BoolConst False)  = maybe (int 0)     text $ transformConst env cnst
-    cgen env cnst@(BoolConst True)   = maybe (int 1)     text $ transformConst env cnst
-    cgen env      (ArrayConst cs _)  = braces (cgenList env cs)
-    cgen env      (StructConst cs t) = printStruct env cs ts
+    cgen _   (IntConst c _)     = integer c
+    cgen _   (DoubleConst c)    = double c
+    cgen _   (FloatConst c)     = float c
+    cgen _   (BoolConst False)  = text "false"
+    cgen _   (BoolConst True)   = text "true"
+    cgen env (ArrayConst cs _)  = braces (cgenList env cs)
+    cgen env (StructConst cs t) = printStruct env cs ts
       where StructType _ ts = t
-    cgen env cnst@ComplexConst{..}  = maybe cmplxCnst   text $ transformConst env cnst
-      where
-        cmplxCnst = text "complex" <> parens (cgenList env [realPartComplexValue, imagPartComplexValue])
+    cgen env ComplexConst{..}   = parens cmplxCnst
+      where cmplxCnst = cgen env realPartComplexValue <+> char '+' <+>
+                        cgen env imagPartComplexValue <> char 'i'
     cgenList env = sep . punctuate comma . map (cgen env)
 
 instance CodeGen (Maybe String, Constant ())
@@ -252,11 +252,6 @@ printStructMember env e@(n, e') (_, t)
  , isArray t || isPointer t
  = maybe empty (\s -> char '.' <> text s <+> equals) n <+> text "NULL"
  | otherwise = cgen env e
-
-transformConst :: PrintEnv -> Constant () -> Maybe String
-transformConst PEnv{..} cnst = do
-    f <- lookup (typeof cnst) $ values $ platform options
-    return $ f cnst
 
 instance CodeGen Type
   where
