@@ -37,7 +37,7 @@ import Distribution.PackageDescription.Configuration (flattenPackageDescription)
 
 import Feldspar.Compiler.CallConv (rewriteType, buildCType, buildHaskellType)
 
-import Data.Default -- FIXME: Not required any longer?
+import Data.Default
 import Foreign.Ptr
 import Foreign.Marshal (with)
 import Foreign.Marshal.Unsafe (unsafeLocalState)
