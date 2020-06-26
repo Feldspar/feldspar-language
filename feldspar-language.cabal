@@ -173,6 +173,46 @@ library
 
   ghc-options: -freduction-depth=100
 
+executable onnxToFeld
+
+  main-is: onnxToFeld.hs
+
+  hs-source-dirs: src src/Feldspar/Onnx
+
+  other-modules:
+    Onnx.AttributeProto
+    Onnx.AttributeProto.AttributeType
+    Onnx.GraphProto
+    Onnx.ModelProto
+    Onnx.NodeProto
+    Onnx.OperatorSetIdProto
+    Onnx.SparseTensorProto
+    Onnx.StringStringEntryProto
+    Onnx.TensorAnnotation
+    Onnx.TensorProto
+    Onnx.TensorProto.DataLocation
+    Onnx.TensorProto.DataType
+    Onnx.TensorProto.Segment
+    Onnx.TensorShapeProto
+    Onnx.TensorShapeProto.Dimension
+    Onnx.TensorShapeProto.Dimension.Value
+    Onnx.TypeProto
+    Onnx.TypeProto.Map
+    Onnx.TypeProto.Sequence
+    Onnx.TypeProto.Tensor
+    Onnx.TypeProto.Value
+    Onnx.ValueInfoProto
+    Onnx.Version
+
+  default-language: Haskell2010
+
+  build-depends:
+    base                        >= 4.9.1  && < 5.9,
+    protocol-buffers            >= 2,
+    bytestring                  >= 0.10,
+    utf8-string                 >= 0.3.7
+
+
 test-suite range
   type: exitcode-stdio-1.0
 
