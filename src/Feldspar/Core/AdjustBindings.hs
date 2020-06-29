@@ -45,11 +45,11 @@ adjA :: AExpr a -> AExpr a
 adjA (i :& e) = i :& adj e
 
 adj :: Expr a -> Expr a
-adj (Operator l@Lambda{} :@ e) = Operator l :@ adjB [] e
+adj (Sym l@Lambda{} :@ e) = Sym l :@ adjB [] e
 adj (f :@ e) = adj f :@ adjA e
 adj e = e
 
 adjB :: [CBind] -> AExpr a -> AExpr a
-adjB bs (_ :& Operator Let :@ a :@ (_ :& Operator (Lambda v) :@ e)) = adjB (CBind v (adjA a) : bs) e
-adjB bs (i :& Operator l@Lambda{} :@ e) = i :& Operator l :@ adjB bs e
+adjB bs (_ :& Sym Let :@ a :@ (_ :& Sym (Lambda v) :@ e)) = adjB (CBind v (adjA a) : bs) e
+adjB bs (i :& Sym l@Lambda{} :@ e) = i :& Sym l :@ adjB bs e
 adjB bs e = mkLets (reverse bs, adjA e)

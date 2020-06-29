@@ -134,20 +134,19 @@ showAExpr n (i :& (e :: Expr (Full a))) r = '{':inf ++ "} " ++ showExpr n e r
      the form 'Full t' for some 't'.
 -}
 data Expr a where
-  Operator :: Typeable a             => Op a -> Expr a
+  Sym      :: Typeable a             => Op a -> Expr a
   (:@)     :: Typeable a             => Expr (a -> b) -> AExpr a -> Expr b
 
 instance Show (Expr a) where
   show e = showExpr 0 e ""
 
 showExpr :: Int -> Expr a -> String -> String
-showExpr _ (Operator op)  r = show op ++ r
-showExpr n (f :@ e)       r = showExpr n f
-                            $ "\n" ++ replicate (n+2) ' ' ++
-                              showAExpr (n+2) e r
+showExpr _ (Sym op) r = show op ++ r
+showExpr n (f :@ e) r
+  = showExpr n f $ "\n" ++ replicate (n + 2) ' ' ++ showAExpr (n + 2) e r
 
 instance Typeable a => Eq (Expr a) where
-  Operator op1 == Operator op2 = op1 == op2
+  Sym op1 == Sym op2 = op1 == op2
   ((f1 :: Expr (a1 -> b1)) :@ e1) == ((f2 :: Expr (a2 -> b2)) :@ e2)
         = case eqT :: Maybe ((a1,b1) :~: (a2,b2)) of
             Nothing -> False
@@ -381,8 +380,8 @@ fvi :: AExpr a -> S.Set VarId
 fvi (_ :& e) = fviR e
 
 fviR :: Expr a -> S.Set VarId
-fviR (Operator (Variable v)) = viSet v
-fviR (Operator (Lambda v) :@ e) = fvi e S.\\ viSet v
+fviR (Sym (Variable v)) = viSet v
+fviR (Sym (Lambda v) :@ e) = fvi e S.\\ viSet v
 fviR (f :@ e) = fviR f `S.union` fvi e
 fviR _ = S.empty
 
@@ -407,7 +406,7 @@ bvId (CBind v _) = varNum v
 
 mkLets :: ([CBind], AExpr a) -> AExpr a
 mkLets (CBind v e1@(Info i1 :& _) : bs, e@(Info i2 :& _))
-  = Info i2 :& Operator Let :@ e1 :@ (Info (i1, i2) :& Operator (Lambda v) :@ mkLets (bs, e))
+  = Info i2 :& Sym Let :@ e1 :@ (Info (i1, i2) :& Sym (Lambda v) :@ mkLets (bs, e))
 mkLets ([], e) = e
 
 -- | Functions for bind environments
@@ -431,12 +430,12 @@ sharable e = legalToShare e && goodToShare e
 
 -- | Expressions that can be shared without breaking fromCore
 legalToShare :: AExpr a -> Bool
-legalToShare (_ :& Operator op) = shOp op
+legalToShare (_ :& Sym op) = shOp op
 legalToShare (_ :& f :@ _)      = shApp f
 
 shApp :: Expr a -> Bool
 shApp (f :@ _) = shApp f
-shApp (Operator op) = shOp op
+shApp (Sym op) = shOp op
 
 shOp :: Op a -> Bool
 -- Binding
@@ -474,13 +473,13 @@ shOp _ = True
 
 -- | Expressions that are expensive enough to be worth sharing
 goodToShare :: AExpr a -> Bool
-goodToShare (_ :& Operator (Literal (l :: a))) = largeLit (typeRep :: TypeRep a) l
+goodToShare (_ :& Sym (Literal (l :: a))) = largeLit (typeRep :: TypeRep a) l
 -- The case below avoids constructing a let-binding for an array stored
 -- in a tuple. This is beneficial because the select operator is order
 -- of magnitudes cheaper than the array copy generated for the let-binding.
 -- With a better compilation of array assignments, the need for this
 -- special case goes away.
-goodToShare (_ :& Operator Car :@ _ :: AExpr a)
+goodToShare (_ :& Sym Car :@ _ :: AExpr a)
   | ArrayType{} <- typeRepF :: TypeRep a
   = False
 goodToShare (_ :& _ :@ _) = True
