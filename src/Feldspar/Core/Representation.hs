@@ -1,18 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE PatternGuards #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE GADTs #-}
-{-# OPTIONS_GHC -Wall #-}
--- FIXME: shApp is partial, refactoring should make it complete.
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
-
 --
 -- Copyright (c) 2019, ERICSSON AB
 -- All rights reserved.
@@ -40,6 +25,18 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GADTs #-}
+{-# OPTIONS_GHC -Wall -Werror #-}
 
 module Feldspar.Core.Representation
   ( Var(..)
@@ -410,7 +407,7 @@ bvId (CBind v _) = varNum v
 
 mkLets :: ([CBind], AExpr a) -> AExpr a
 mkLets (CBind v e1@(Info i1 :& _) : bs, e@(Info i2 :& _))
-  = Info i2 :& Operator Let :@ e1 :@ (Info (i1, i2) :& Operator (Lambda v) :@ (mkLets (bs, e)))
+  = Info i2 :& Operator Let :@ e1 :@ (Info (i1, i2) :& Operator (Lambda v) :@ mkLets (bs, e))
 mkLets ([], e) = e
 
 -- | Functions for bind environments
