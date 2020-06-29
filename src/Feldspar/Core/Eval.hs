@@ -49,9 +49,9 @@ evalA :: CloEnv -> AExpr a -> a
 evalA bm (_ :& e) = evalE bm e
 
 evalE :: Typeable a => CloEnv -> Expr a -> a
-evalE bm (Operator (Variable v)) = lookupCE "Eval.evalE" bm v
-evalE bm (Operator (Lambda (Var n _)) :@ e) = \x -> evalA (M.insert n (Clo x) bm) e
-evalE bm (Operator op) = semSem $ semantics op
+evalE bm (Sym (Variable v)) = lookupCE "Eval.evalE" bm v
+evalE bm (Sym (Lambda (Var n _)) :@ e) = \x -> evalA (M.insert n (Clo x) bm) e
+evalE bm (Sym op) = semSem $ semantics op
 evalE bm (f :@ e) = evalE bm f $ evalA bm e
 
 type CloEnv = M.Map VarId Closure
