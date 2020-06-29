@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, OverloadedStrings #-}
-{-# OPTIONS_GHC  -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC  -w #-}
 module Onnx.TensorProto.DataType (DataType(..)) where
 import Prelude ((+), (/), (.))
 import qualified Prelude as Prelude'

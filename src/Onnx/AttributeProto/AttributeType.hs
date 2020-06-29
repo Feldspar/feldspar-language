@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, OverloadedStrings #-}
-{-# OPTIONS_GHC  -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC  -w #-}
 module Onnx.AttributeProto.AttributeType (AttributeType(..)) where
 import Prelude ((+), (/), (.))
 import qualified Prelude as Prelude'
