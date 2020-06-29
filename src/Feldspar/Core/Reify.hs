@@ -225,12 +225,14 @@ type CExpr a = CSEExpr (AExpr a)
 full :: T.Type b => (CSEExpr (Expr b), Int) -> ASTF b
 full (~(m, e), i) = ASTF (flattenCSE (m, Info top :& e)) i
 
+-- TODO: Document in what sense this flattens CSE.
 flattenCSE :: T.Type a => CExpr a -> CExpr a
 flattenCSE (m,e) | not $ sharable e = (m, e)
 flattenCSE (m,e@(i :& _))
   = mergeMapCExpr (M.singleton (varNum v) (CBind v e)) (m, i :& Sym (Variable v))
    where v = Var (hashExpr e) B.empty
 
+-- TODO: Document in what sense this applies CSE.
 applyCSE :: CSEExpr (Expr (a -> b)) -> CSEExpr (AExpr a) -> CSEExpr (Expr b)
 applyCSE (lm, f) s@(_, (_ :& _)) = (m, f :@ e1)
    where (m, e1) = mergeMapCExpr lm s
@@ -244,40 +246,44 @@ mergeMapCExpr lm (rm,e) = (M.union lm rm1, e1)
 {- | Functions for floating bindings out of lambdas whenever possible.
 -}
 
+-- TODO: Document this function, the logic is not trivial.
 floatBindings :: [VarId] -> CSEMap -> (CSEMap, [CBind])
 floatBindings vs bm = (M.fromAscList [(bvId b, b) | b <- fbs], concat nfBss)
-   where arr = accumArray f [] (0, fromIntegral $ len-1)
-             $ map toPair
-             $ [(v, bindThreshold) | v <- vs] ++ map (depthBind arr) bs'
-         arr :: Array VarId [(VarId,Int)]
-         toPair vx@(v, _) = (v `mod` len, vx)
-         m = fromIntegral $ n + n `div` 8
-         len = head $ filter (>= m) $ iterate (*2) 2 :: VarId
-         f xs x = x:xs
-         n = M.size bm
-         bs' = M.elems bm
-         (fbs, nfbs)
-           | null vs   = ([], bs')
-           | otherwise = partition ((< bindThreshold) . hashLook arr . bvId) bs'
-         nfArr = accumArray
-                    (flip (:))
-                    []
-                    (0,n)
-                    [(hashLook arr (fromIntegral $ bvId b) `mod` bindThreshold, b) | b <- nfbs]
-         nfBss = [reverse bs | bs <- elems nfArr, not $ null bs]
+  where arr :: Array VarId [(VarId, Int)]
+        arr = accumArray (flip (:)) [] (0, fromIntegral $ len - 1)
+            $ map toPair
+            $ [(v, bindThreshold) | v <- vs] ++ map (depthBind arr) bs'
+        -- TODO Rename toPair, it is some kind of cap+nest.
+        toPair vx@(v, _) = (v `mod` len, vx)
+        m = fromIntegral $ n + n `div` 8
+        len = head $ filter (>= m) $ iterate (*2) 2 :: VarId
+        n = M.size bm
+        bs' = M.elems bm
+        (fbs, nfbs)
+          | null vs   = ([], bs')
+          | otherwise = partition ((< bindThreshold) . hashLook arr . bvId) bs'
+        nfArr = accumArray (flip (:)) [] (0, n)
+                 [(hashLook arr (fromIntegral $ bvId b) `mod` bindThreshold, b)
+                 | b <- nfbs]
+        nfBss = [reverse bs | bs <- elems nfArr, not $ null bs]
 
-hashLook :: Array VarId [(VarId,Int)] -> VarId -> Int
-hashLook m i = maximum $ 0 : [d | (v,d) <- m ! (i `mod` (snd (bounds m) + 1)), v == i]
+-- TODO: Document (is this some kind of lookup on arrays?).
+hashLook :: Array VarId [(VarId, Int)] -> VarId -> Int
+hashLook m i
+  = maximum $ 0:[d | (v, d) <- m ! (i `mod` (snd (bounds m) + 1)), v == i]
 
-depthBind :: Array VarId [(VarId,Int)] -> CBind -> (VarId, Int)
-depthBind arr (CBind v e) = (varNum v, maximum (0 : map (hashLook arr) (S.toList $ fvi e)) + 1)
+-- TODO: Document what this computes.
+depthBind :: Array VarId [(VarId, Int)] -> CBind -> (VarId, Int)
+depthBind arr (CBind v e) -- TODO: is the second component S.findMax?
+  = (varNum v, maximum (0:map (hashLook arr) (S.toList $ fvi e)) + 1)
 
 bindThreshold :: Int
 bindThreshold = 1000000
 
+-- TODO: In what sense does this catch bindings?
 catchBindings :: [VarId] -> CExpr a -> CExpr a
-catchBindings vs (m,e) = (m1, mkLets (bs,e))
-  where (m1,bs) = floatBindings vs m
+catchBindings vs (m, e) = (m1, mkLets (bs,e))
+  where (m1, bs) = floatBindings vs m
 
 {- | Functions for constructing hash values.
 -}
@@ -292,6 +298,7 @@ hashExprR (Sym op) = hashOp op
 hashExprR (Sym Let :@ _ :@ (_ :& Sym (Lambda _) :@ e)) = hashExpr e
 hashExprR (f :@ e) = appHash `combineHash` hashExprR f `combineHash` hashExpr e
 
+-- TODO: Document. Can this use the Hash instance for string instead?
 hashStr :: String -> VarId
 hashStr s = fromInteger $ foldr combineHash 5 $ map (toInteger . fromEnum) s
 
