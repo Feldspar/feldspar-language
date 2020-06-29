@@ -380,14 +380,10 @@ fvi :: AExpr a -> S.Set VarId
 fvi (_ :& e) = fviR e
 
 fviR :: Expr a -> S.Set VarId
-fviR (Sym (Variable v)) = viSet v
-fviR (Sym (Lambda v) :@ e) = fvi e S.\\ viSet v
+fviR (Sym (Variable v)) = S.singleton $ varNum v
+fviR (Sym (Lambda v) :@ e) = fvi e S.\\ S.singleton (varNum v)
 fviR (f :@ e) = fviR f `S.union` fvi e
 fviR _ = S.empty
-
-viSet :: Var a -> S.Set VarId
-viSet v = S.singleton $ varNum v
-
 
 data CBind where
   CBind :: Type a => Var a -> AExpr a -> CBind
