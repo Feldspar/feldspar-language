@@ -207,10 +207,9 @@ executable onnxToFeld
 
   build-depends:
     base                        >= 4.9.1  && < 5.9,
-    protocol-buffers            >= 2,
     bytestring                  >= 0.10,
+    protocol-buffers            >= 2,
     utf8-string                 >= 0.3.7
-
 
 test-suite range
   type: exitcode-stdio-1.0
