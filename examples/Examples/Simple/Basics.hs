@@ -36,7 +36,7 @@ example8 b = not b
 -- Examples on using conditionals:
 
 example9 :: Data Int32 -> Data Int32
-example9 a = condition (a<5) (3*(a+20)) (30*(a+20))
+example9 a = a < 5 ? (3 * (a + 20)) $ 30 * (a + 20)
 
 example10 :: Data Int32 -> Data Int32
-example10 a = condition (a<5) (3*(a+a)) (30*(a+a))
+example10 a = a < 5 ? (3 * (a + a)) $ 30 * (a + a)

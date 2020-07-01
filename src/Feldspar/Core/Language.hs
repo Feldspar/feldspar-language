@@ -287,16 +287,13 @@ iunit = 0 +. 1
 -- Condition.hs
 --------------------------------------------------
 
-condition :: Syntax a => Data Bool -> a -> a -> a
-condition = sugarSym3 Condition
-
 -- | Condition operator. Use as follows:
 -- > cond1 ? ex1 $
 -- > cond2 ? ex2 $
 -- > cond3 ? ex3 $
 -- >   exDefault
 (?) :: Syntax a => Data Bool -> a -> a -> a
-(?) = condition
+(?) = sugarSym3 Condition
 
 infixl 1 ?
 

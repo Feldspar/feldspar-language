@@ -40,13 +40,13 @@ vgReadFiles :: String -> IO LB.ByteString
 vgReadFiles base = liftM LB.concat $ mapM (LB.readFile . (base<>)) [".h",".c"]
 
 example9 :: Data Int32 -> Data Int32
-example9 a = condition (a<5) (3*(a+20)) (30*(a+20))
+example9 a = a < 5 ? (3 * (a + 20)) $ 30 * (a + 20)
 
 -- Compile and load example9 as c_example9 (using plugins)
 loadFun ['example9]
 
 topLevelConsts :: Data Index -> Data Index -> Data Index
-topLevelConsts a b = condition (a<5) (d ! (b+5)) (c ! (b+5))
+topLevelConsts a b = a < 5 ? (d ! (b + 5)) $ c ! (b + 5)
   where
     c = value [1,2,3,4,5] :: Data [Index]
     d = value [2,3,4,5,6] :: Data [Index]

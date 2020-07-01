@@ -520,7 +520,7 @@ fir3 b (Stream ini) = Stream $ do
       modifyRef y $ \x -> x + r * b!(Z:.n)
       setRef nref (n+1)
       modifyRef k (\x -> x-1)
-    setRef top $ condition (t+1> i2n (length b)) 0 (t+1)
+    setRef top (t + 1 > i2n (length b) ? 0 $ t + 1)
     getRef y
 
 -- | An iir filter on streams
