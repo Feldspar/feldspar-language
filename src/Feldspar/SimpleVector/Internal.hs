@@ -238,20 +238,9 @@ replicate n a = Indexed n (const a) Empty
 --
 enumFromTo :: forall a. (Integral a)
            => Data a -> Data a -> Vector (Data a)
-enumFromTo 1 n
-    | IntType U _ <- typeRep :: TypeRep a
-    = indexed (i2n n) ((+1) . i2n)
 enumFromTo m n = indexed (i2n l) ((+m) . i2n)
   where
-    l = (n<m) ? 0 $ (n-m+1)
-  -- TODO The first case avoids the comparison when `m` is 1. However, it
-  --      cover the case when `m` is a complicated expression that is later
-  --      optimized to the literal 1. The same holds for other such
-  --      optimizations in this module.
-  --
-  --      Perhaps we need a language construct that lets the user supply a
-  --      custom optimization rule (similar to `sizeProp`)? `sizeProp` could
-  --      probably be expressed in terms of this more general construct.
+    l = n < m  ? 0 $ n - m + 1
 
 -- | @enumFrom m@: Enumerate the indexes from @m@ to 'maxBound'
 enumFrom :: (Integral a, Hashable a) => Data a -> Vector (Data a)

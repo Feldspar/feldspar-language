@@ -945,15 +945,9 @@ replicate1 n a = Pull (const a) (Z :. n)
 -- | A vector which enumerates numbers consecutively
 enumFromTo :: forall a. (Type a, Integral a)
            => Data a -> Data a -> Pull DIM1 (Data a)
-enumFromTo 0 n
-    | IntType U _ <- typeRep :: TypeRep a
-    = indexed1 (i2n n + 1) i2n
-enumFromTo 1 n
-    | IntType U _ <- typeRep :: TypeRep a
-    = indexed1 (i2n n) ((+1) . i2n)
 enumFromTo m n = indexed1 (i2n l) ((+m) . i2n)
   where
-    l = (n<m) ? 0 $ (n-m+1)
+    l = n < m ? 0 $ n - m + 1
 
 enumFromThenTo :: forall a. (Type a, Integral a)
                => Data a -> Data a -> Data a -> Pull DIM1 (Data a)
