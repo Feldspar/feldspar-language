@@ -322,6 +322,7 @@ test-suite regression
     mtl,
     base,
     Cabal,
+    ghc-paths,
     process,
     bytestring       >= 0.9 && < 0.11,
     stringsearch     >= 0.3,
