@@ -226,6 +226,7 @@ instance CodeGen (Constant ())
     cgen _   (FloatConst c)     = float c
     cgen _   (BoolConst False)  = text "false"
     cgen _   (BoolConst True)   = text "true"
+    cgen _   (StringConst s)    = text s
     cgen env (ArrayConst cs _)  = braces (cgenList env cs)
     cgen env (StructConst cs t) = printStruct env cs ts
       where StructType _ ts = t

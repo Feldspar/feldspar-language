@@ -241,6 +241,9 @@ data Constant t
         { realPartComplexValue      :: Constant t
         , imagPartComplexValue      :: Constant t
         }
+    | StringConst
+        { stringValue               :: String -- String value including quotes if required.
+        }
     | ArrayConst
         { arrayValues               :: [Constant t]
         , arrayType                 :: Type
@@ -289,6 +292,7 @@ data ScalarType =
 data Type =
       VoidType
     | Length :# ScalarType -- Machine SIMD vectors; xmm registers in x86.
+    | StringType
     | ArrayType (Range Length) Type
     | NativeArray (Maybe Length) Type
     | StructType String [(String, Type)]
@@ -304,6 +308,7 @@ instance Eq Type where
    (NativeArray l1 t1)   == (NativeArray l2 t2)   = l1 == l2 && t1 == t2
    (StructType _ l1)     == (StructType _ l2)     = l1 == l2
    (IVarType t1)         == (IVarType t2)         = t1 == t2
+   StringType            == StringType            = True
    _                     == _                     = False
 
 ----------------------
@@ -320,6 +325,7 @@ instance HasType (Constant t) where
     typeof DoubleConst{}     = 1 :# DoubleType
     typeof FloatConst{}      = 1 :# FloatType
     typeof BoolConst{}       = 1 :# BoolType
+    typeof StringConst{}     = StringType
     typeof ArrayConst{..}    = NativeArray (Just (fromIntegral $ length arrayValues)) arrayType
     typeof StructConst{..}   = structType
     typeof ComplexConst{..}  = 1 :# ComplexType (typeof realPartComplexValue)

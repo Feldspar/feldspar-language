@@ -184,6 +184,7 @@ data ScalarType =
 
 data Type =
      Length :# ScalarType
+   | StringType
    | TupType [Type]
    | MutType Type
    | RefType Type
@@ -219,6 +220,7 @@ data Lit =
    | LFloat Float
    | LDouble Double
    | LComplex Lit Lit
+   | LString String -- String value including quotes if required.
    | LArray Type [Lit] -- Type necessary for empty array literals.
    | LTup [Lit]
    deriving (Eq)
@@ -341,6 +343,7 @@ instance Show Lit where
    show (LFloat f)                   = show f
    show (LDouble d)                  = show d
    show (LComplex r c)               = "(" ++ show r ++ ", " ++ show c ++ "i)"
+   show (LString s)                  = s
    show (LArray _ ls)                = "[" ++ sls ++ "]"
      where sls = intercalate "," $ map show ls
    show (LTup ls)                    = "(" ++ intercalate ", " (map show ls) ++ ")"
@@ -671,6 +674,7 @@ instance HasType Lit where
     typeof LDouble{}      = 1 :# DoubleType
     typeof LFloat{}       = 1 :# FloatType
     typeof LBool{}        = 1 :# BoolType
+    typeof LString{}      = StringType
     typeof (LArray t es) = ArrayType (singletonRange $ fromIntegral $ length es) t
     typeof (LComplex r _) = 1 :# ComplexType (typeof r)
     typeof (LTup ls)      = TupType $ map typeof ls
