@@ -193,6 +193,7 @@ compileC :: String -> String -> [String] -> IO ()
 compileC srcfile objfile opts = do
     let args = [ "-optc -std=c99"
                , "-optc -Wall"
+               , "-optc -D_XOPEN_SOURCE" -- Required for M_PI in math.h.
                , "-w"
                , "-c"
                ]

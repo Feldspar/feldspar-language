@@ -632,7 +632,7 @@ compileExpr (In (App (Ut.Assert msg) _ [cond, a])) = do
 -- Eq
 -- FFI
 -- Floating
-compileExpr (In (App Ut.Pi _ [])) = error "No pi ready"
+compileExpr (In (App Ut.Pi _ [])) = literal (LString "M_PI")
 -- Fractional
 -- Future
 -- Literal
@@ -806,6 +806,7 @@ literal lit = do
       LFloat{}    -> litConst
       LDouble{}   -> litConst
       LComplex{}  -> litConst
+      LString{}   -> litConst
       LArray{}    -> litConst
       _           -> do loc <- freshVar opts "x" (typeof lit)
                         literalLoc loc lit
@@ -830,6 +831,7 @@ literalConst _   (LBool a)      = BoolConst a
 literalConst _   (LInt s sz a)  = IntConst (toInteger a) (NumType s sz)
 literalConst _   (LFloat a)     = FloatConst a
 literalConst _   (LDouble a)    = DoubleConst a
+literalConst _   (LString s)    = StringConst s
 literalConst opt (LArray t es)  = ArrayConst (map (literalConst opt) es) $ compileType opt t
 literalConst opt (LComplex r i) = ComplexConst (literalConst opt r) (literalConst opt i)
 

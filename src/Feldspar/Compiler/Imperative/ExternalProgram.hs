@@ -7,8 +7,8 @@ module Feldspar.Compiler.Imperative.ExternalProgram (parseFile, massageInput) wh
 import Feldspar.Lattice (universal)
 import qualified Feldspar.Compiler.Imperative.Representation as R
 import Feldspar.Compiler.Imperative.Representation hiding (
-  Block, Switch, Assign, Cast, IntConst, FloatConst, DoubleConst, Type,
-  Deref, AddrOf, Unsigned, Signed, inParams)
+  Block, Switch, Assign, Cast, IntConst, FloatConst, DoubleConst, StringConst,
+  Type, Deref, AddrOf, Unsigned, Signed, inParams)
 import Feldspar.Compiler.Imperative.Frontend (
     litB, litI32, toBlock, fun, call, decodeType
   )
@@ -406,8 +406,7 @@ constToConstant (DoubleConst _ r _) = R.DoubleConst r
 constToConstant (LongDoubleConst _ r _) = R.DoubleConst r
 constToConstant (CharConst _ _c _)
   = error "constToConstant: No support for character constants."
-constToConstant (StringConst _ss _s _)
-  = error "constToConstant: No support for string constants."
+constToConstant (StringConst _ s _)  = R.StringConst s
 constToConstant e = error ("constToConstant: Unhandled construct: " ++ show e)
 
 declSpecToType :: TPEnv -> DeclSpec -> R.Type
