@@ -86,12 +86,12 @@ concatV xs = fromZero $ fold (++) empty xs
 loadFun ['concatV]
 
 concatVM :: Pull DIM1 (Pull1 IntN) -> Manifest DIM1 (Data IntN)
-concatVM xs = fromZero $ fold (\ l r -> store $ l ++ r) (store empty) xs
+concatVM xs = fromZero $ fold (\l r -> store $ l ++ r) (store empty) xs
 
 loadFun ['concatVM]
 
 complexWhileCond :: Data Int32 -> (Data Int32, Data Int32)
-complexWhileCond y = whileLoop (0,y) (\(a,b) -> ((\a b -> a * a /= b * b) a (b-a))) (\(a,b) -> (a+1,b))
+complexWhileCond y = whileLoop (0, y) (\(a, b) -> (\a b -> a * a /= b * b) a (b - a)) (\(a, b) -> (a + 1 ,b))
 
 -- One test starting
 divConq3 :: Pull DIM1 (Data IntN) -> DPush DIM1 IntN
@@ -102,7 +102,7 @@ pmap f = map await . force . map (future . f)
 
 -- Note. @segment@ expects the length of @xs@ to be a multiple of @l@
 segment :: Syntax a => Data Length -> Pull DIM1 a -> Pull DIM1 (Pull DIM1 a)
-segment l xs = indexed1 clen (\ix -> take l $ drop (ix*l) xs)
+segment l xs = indexed1 clen (\ix -> take l $ drop (ix * l) xs)
   where clen = length xs `div` l
 
 loadFun ['divConq3]
@@ -127,7 +127,7 @@ ivartest2 :: (Data Index, Data Index) -> (Data Index, Data Index)
 ivartest2 a = share (future a) $ \a' -> await a'
 
 arrayInStruct :: Data [Length] -> Data [Length]
-arrayInStruct a = snd $ whileLoop (getLength a, a) (\(n,_) -> (n>0)) (\(n,a) -> (n-1, parallel (getLength a) (\ i -> a!i + 5)))
+arrayInStruct a = snd $ whileLoop (getLength a, a) (\(n, _) -> n > 0) (\(n, a) -> (n - 1, parallel (getLength a) (\i -> a!i + 5)))
 
 arrayInStructInStruct :: Data (Length, (Length, [Length])) -> Data (Length, (Length, [Length]))
 arrayInStructInStruct x = x
@@ -139,10 +139,10 @@ not1 :: Data Bool -> Data Bool
 not1 x = not x
 
 issue128_ex1 :: Data WordN -> Data WordN
-issue128_ex1 a = share (switch 45 [(1,10)] a) $ \b -> (1==a ? b $ a)
+issue128_ex1 a = share (switch 45 [(1,10)] a) $ \b -> 1 == a ? b $ a
 
 issue128_ex2 :: Data WordN -> Data WordN
-issue128_ex2 a = share (switch 45 [(1,20)] a) $ \b -> (2==a ? b $ a)
+issue128_ex2 a = share (switch 45 [(1,20)] a) $ \b -> 2 == a ? b $ a
 
 issue128_ex3 :: Data WordN -> Data WordN
 issue128_ex3 a = switch 45 [(1,10)] a + (2==a ? 2 $ a)
@@ -192,11 +192,11 @@ tests :: TestTree
 tests = testGroup "RegressionTests" [compilerTests, externalProgramTests]
 
 prop_concatV = forAll (vectorOf 3 (choose (0,5))) $ \ls ->
-                 forAll (mapM (\l -> vectorOf l arbitrary) ls) $ \xss ->
+                 forAll (mapM (`vectorOf` arbitrary) ls) $ \xss ->
                    Prelude.concat xss === c_concatV xss
 
 prop_concatVM = forAll (vectorOf 3 (choose (0,5))) $ \ls ->
-                  forAll (mapM (\l -> vectorOf l arbitrary) ls) $ \xss ->
+                  forAll (mapM (`vectorOf` arbitrary) ls) $ \xss ->
                     Prelude.concat xss === c_concatVM xss
 
 prop_divConq3 = forAll (choose (1,3)) $ \l ->
@@ -351,7 +351,7 @@ mkParseTest n opts = do
 
 fuzzyCmp :: String -> LB.ByteString -> LB.ByteString -> IO (Maybe String)
 fuzzyCmp e x y =
-  return $ if x Prelude.== (filterEp y) then Nothing else Just e
+  return $ if x Prelude.== filterEp y then Nothing else Just e
 
 -- Removes "EP-"-related prefixes from the generated output.
 filterEp :: LB.ByteString -> LB.ByteString
