@@ -142,7 +142,6 @@ library
   cpp-options: -DCABAL_IS_USED
 
   c-sources:
-    clib/feldspar_c99.c
     clib/taskpool.c
     clib/ivar.c
 
@@ -158,7 +157,6 @@ library
   install-includes:
     feldspar_array.h
     feldspar_c99.h
-    feldspar_c99.c
     feldspar_tic64x.h
     feldspar_tic64x.c
     feldspar_future.h
