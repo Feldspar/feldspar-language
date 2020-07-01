@@ -86,10 +86,8 @@ composeOn :: (Syntax a) => (b -> a -> a) -> Pull DIM1 b -> a -> a
 composeOn f v i = fromZero $ fold (flip f) i v
 
 rotBit :: Data Index -> Data Index -> Data Index
-rotBit 0 _ = P.error "rotBit: k should be at least 1"
 rotBit k i = lefts .|. rights
   where
     ir = i .>>. 1
     rights = ir .&. oneBits k
     lefts  = (((ir .>>. k) .<<. 1) .|. (i .&. 1)) .<<. k
-
