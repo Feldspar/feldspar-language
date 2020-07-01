@@ -31,6 +31,7 @@ import Data.Monoid ((<>))
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Lazy.Search as LB
+import GHC.Paths (ghc)
 import System.Exit (ExitCode (..))
 import System.Process
 import Text.Printf
@@ -363,7 +364,7 @@ mkBuildTest fun n opts = do
         cfile = new <> ".c"
         act = do compile fun new n opts
                  let ghcArgs = [cfile, "-c", "-optc -Iclib", "-optc -std=c99", "-Wall"]
-                 (ex,_,_) <- readProcessWithExitCode "ghc" ghcArgs ""
+                 (ex, _, _) <- readProcessWithExitCode ghc ghcArgs ""
                  case ex of
                    ExitFailure e -> Prelude.error (show ex)
                    _ -> return ()
