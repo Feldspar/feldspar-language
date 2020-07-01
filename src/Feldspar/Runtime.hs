@@ -13,13 +13,9 @@ feldspar_compiler_hook :: Int
 
 #ifdef CABAL_IS_USED
 
-feldspar_compiler_hook = sum [ feldspar_c99_hook
-                             , feldspar_ivar_hook
+feldspar_compiler_hook = sum [ feldspar_ivar_hook
                              , feldspar_taskpool_hook
                              ]
-
-foreign import ccall safe "feldspar_c99_hook"
-  feldspar_c99_hook :: Int
 
 foreign import ccall safe "feldspar_ivar_hook"
   feldspar_ivar_hook :: Int
