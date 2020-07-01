@@ -43,7 +43,7 @@ makeCrcTable polynomial = indexed1 256 $ \i -> forLoop 8 (i2n i .<<. (sz - 8)) s
   where
     sz       = bitSize polynomial
     step _ r = let r' = r .<<. 1
-               in condition (tstBit r (sz-1)) (r' `xor` polynomial) r'
+               in tstBit r (sz - 1) ? (r' `xor` polynomial) $ r'
 
 -- | Calculate the normal form CRC using a table
 crcNormal :: (Bits a)
@@ -67,9 +67,8 @@ crcNaive = crcNormal . makeCrcTable
 
 -- | Reflect the bottom b bits of value t
 reflect :: (Bits a) => Data a -> Data Length -> Data a
-reflect t b = forLoop b t $ \i v -> let mask = bit ((b-1)-i) in condition (testBit t i) (v .|. mask) (v .&. complement mask)
+reflect t b = forLoop b t $ \i v -> let mask = bit ((b-1)-i) in testBit t i ? (v .|. mask) $ v .&. complement mask
 
 -- References
 -- The functions in this module are inspired by the follow guide
 -- http://www.ross.net/crc/download/crc_v3.txt
-

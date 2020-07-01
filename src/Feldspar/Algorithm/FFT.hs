@@ -56,7 +56,7 @@ fftCore n = composeOn stage (reverse (0...n))
   where
     stage k vec = indexed1 (length vec) ixf
       where
-        ixf i = condition (testBit i k) (twid * (b - a)) (a+b)
+        ixf i = testBit i k ? (twid * (b - a)) $ a + b
           where
             a    = vec !! i
             b    = vec !! (i `xor` k2)
@@ -68,7 +68,7 @@ ifftCore n = map (/ complex (i2f (2^(n+1))) 0) . composeOn stage (reverse (0...n
   where
     stage k vec = indexed1 (length vec) ixf
       where
-        ixf i = condition (testBit i k) (twid * (b - a)) (a+b)
+        ixf i = testBit i k ? (twid * (b - a)) $ a + b
           where
             a    = vec !! i
             b    = vec !! (i `xor` k2)

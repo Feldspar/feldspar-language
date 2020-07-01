@@ -23,7 +23,7 @@ import Feldspar.Core.NestedTuples
 
 
 topLevelConsts :: Data Index -> Data Index -> Data Index
-topLevelConsts a b = condition (b<5) (d ! (a+5)) (c ! (a+5))
+topLevelConsts a b = b < 5 ? (d ! (a + 5)) $ c ! (a + 5)
   where
     c = value [1,2,3,4,5] :: Data [Index]
     d = value [2,3,4,5,6] :: Data [Index]
@@ -78,4 +78,3 @@ tests = testGroup "DecorationTests"
     ]
 
 main = defaultMain $ testGroup "Tests" [tests]
-
