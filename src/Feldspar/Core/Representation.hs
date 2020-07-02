@@ -62,7 +62,7 @@ module Feldspar.Core.Representation
   ) where
 
 import Feldspar.Core.Types (Type(..), TypeF(..), TypeRep(..), Length, Index, IntN,
-                            Size, Elements, FVal, Mut, AnySize, MArr, Par, IV, Tuple(..), (:*), TNil)
+                            Size, Elements, FVal, Mut, AnySize, MArr, Par, IV)
 import Feldspar.Range (Range, BoundedInt)
 
 import qualified Data.ByteString.Char8 as B
