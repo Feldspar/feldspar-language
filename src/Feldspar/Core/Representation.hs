@@ -381,7 +381,7 @@ fvi (_ :& e) = fviR e
 
 fviR :: Expr a -> S.Set VarId
 fviR (Sym (Variable v)) = S.singleton $ varNum v
-fviR (Sym (Lambda v) :@ e) = fvi e S.\\ S.singleton (varNum v)
+fviR (Sym (Lambda v) :@ e) = varNum v `S.delete` fvi e
 fviR (f :@ e) = fviR f `S.union` fvi e
 fviR _ = S.empty
 
