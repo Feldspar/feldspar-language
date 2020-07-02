@@ -151,6 +151,15 @@ library
 
   cc-options: -std=c99 -Wall -fPIC
 
+  -- MonoLocalBinds is the "Let should not be generalized" paper. Our binds
+  -- are normally monomorphic so this costs nothing for the common case
+  -- and if we need a polymorphic bind we can add a type signature.
+  -- MonoLocalBinds is implied by enabling GADTs but we want it for all
+  -- modules to avoid simplifiable class constraint warnings in GHC 8.2
+  -- and later.
+  default-extensions:
+    MonoLocalBinds
+
   if os(linux)
     extra-libraries: gcc_s pthread
       -- pthread needed on Emil's Ubuntu (15.04), but apparently not on Travis
@@ -177,6 +186,9 @@ library
 executable onnxToFeld
 
   main-is: onnxToFeld.hs
+
+  default-extensions:
+    MonoLocalBinds
 
   hs-source-dirs: src src/Feldspar/Onnx
 
@@ -220,6 +232,9 @@ test-suite range
 
   main-is: RangeTest.hs
 
+  default-extensions:
+    MonoLocalBinds
+
   other-modules:
     Feldspar.Range.Test
 
@@ -241,6 +256,9 @@ test-suite semantics
   hs-source-dirs: tests examples
 
   main-is: SemanticsTest.hs
+
+  default-extensions:
+    MonoLocalBinds
 
   other-modules:
     Feldspar.Core.Test
@@ -269,6 +287,9 @@ test-suite decoration
 
   main-is: DecorationTests.hs
 
+  default-extensions:
+    MonoLocalBinds
+
   other-modules:
     Examples.Simple.Basics
     Feldspar.Applications.TFModel
@@ -293,6 +314,9 @@ test-suite tutorial
 
   main-is: TutorialTest.hs
 
+  default-extensions:
+    MonoLocalBinds
+
   other-modules:
     Tutorial.Basic
     Tutorial.Array
@@ -316,6 +340,9 @@ test-suite regression
   hs-source-dirs: tests
 
   main-is: RegressionTests.hs
+
+  default-extensions:
+    MonoLocalBinds
 
   default-language: Haskell2010
 
@@ -342,6 +369,9 @@ test-suite callconv
 
   main-is: CallingConvention.hs
 
+  default-extensions:
+    MonoLocalBinds
+
   default-language: Haskell2010
 
   build-depends:
@@ -359,6 +389,9 @@ benchmark crc
   hs-source-dirs: benchs
 
   main-is: CRC.hs
+
+  default-extensions:
+    MonoLocalBinds
 
   other-modules:
     BenchmarkUtils
@@ -381,6 +414,9 @@ benchmark fft
 
   main-is: FFT.hs
 
+  default-extensions:
+    MonoLocalBinds
+
   other-modules:
     BenchmarkUtils
 
@@ -401,6 +437,9 @@ benchmark fft
 --  hs-source-dirs: benchs
 --
 --  main-is: MatMul.hs
+--
+--  default-extensions:
+--    MonoLocalBinds
 --
 --  other-modules:
 --    BenchmarkUtils
