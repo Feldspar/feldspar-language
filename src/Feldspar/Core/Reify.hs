@@ -238,10 +238,10 @@ applyCSE (lm, f) s@(_, (_ :& _)) = (m, f :@ e1)
    where (m, e1) = mergeMapCExpr lm s
 
 mergeMapCExpr :: CSEMap -> CExpr a -> CExpr a
-mergeMapCExpr lm (rm,e) = (M.union lm rm1, e1)
-   where sect = M.intersectionWith (,) lm rm
-         (rm1,e1) = if null colls then (rm,e) else catchBindings (map fst colls) (rm,e)
-         colls = filter (uncurry (/=) . snd) $ M.toList sect
+mergeMapCExpr lm e@(rm, _) = (M.union lm rm1, e1)
+   where (rm1, e1) | null collisions = e
+                   | otherwise = catchBindings (M.keys collisions) e
+         collisions = M.filter (uncurry (/=)) $ M.intersectionWith (,) lm rm
 
 {- | Functions for floating bindings out of lambdas whenever possible.
 -}
