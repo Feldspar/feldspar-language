@@ -115,8 +115,8 @@ legalLoops :: S.Set Var -> [AbsInfo] -> [(Bool, AbsInfo)]
 legalLoops vs (a@AbsI{absVars = avs} : ais)
     | disjoint vs avs = (False, a) : legalLoops vs ais
 legalLoops vs (a@LoopI{absVars = avs, ixVar = ixv, trip = (trvs,_)} : ais)
-    | disjoint vs avs = (not $ S.member ixv vs, a) : legalLoops vs1 ais
-  where vs1 = S.union trvs (vs S.\\ S.singleton ixv)
+    | disjoint vs avs = (S.notMember ixv vs, a) : legalLoops vs1 ais
+  where vs1 = trvs `S.union` (ixv `S.delete` vs)
 legalLoops _  _ = []
 
 profitableLoops :: [(Bool, b)] -> [(Bool, b)]
@@ -174,7 +174,7 @@ eu ai vm (App op t [eLen, AIn r1 (Lambda vIx eBody)])
            vmB = M.insert vIx (S.singleton vIx, Variable vIx) vm
        (fvsB, bseB) <- expE aiB vmB eBody
        let (bsB, eB) = bseB
-       return (fvsL `S.union` (fvsB S.\\ S.singleton vIx),
+       return (fvsL `S.union` (vIx `S.delete` fvsB),
                (bsL ++ shiftBIs bsB,
                 App op t [eL, AIn r1 $ Lambda vIx eB]))
 eu ai vm (App Condition t (e:es))
@@ -215,13 +215,13 @@ ixAndInv ai v vs = go ai
   where go (LoopI{ixVar = ix, absVars = avs} : ai) = disjoint vvs avs && (ix == v || go ai)
         go (AbsI{absVars = avs} : ai) = disjoint vvs avs && go ai
         go [] = True
-        vvs = S.union vs $ S.singleton v
+        vvs = v `S.insert` vs
 
 -- | Check that an expression is a simple array reference that we can inline
 simpleArrRef :: UExp -> Bool
 simpleArrRef (AIn _ (App GetIx _ [AIn _ (Variable _), e])) = simpleIdxE e
   where simpleIdxE (AIn _ (Variable _)) = True
-        simpleIdxE (AIn _ (App op _ es)) = elem op [Add,Sub,Mul] && all simpleIdxE es
+        simpleIdxE (AIn _ (App op _ es)) = op `elem` [Add,Sub,Mul] && all simpleIdxE es
         simpleIdxE _ = False
 simpleArrRef _ = False
 

@@ -64,6 +64,6 @@ uniq _ e = error $ "UniqueVars.uniq: unimplemented expression: " ++ show e
 record :: Var -> U Var
 record v = do s <- get
               let n = varNum v
-                  m = head [i | i <- [n, n+10000 ..], not $ S.member i s]
-              put $ S.insert m s
+                  m = head [i | i <- [n, n+10000 ..], S.notMember i s]
+              put $ m `S.insert` s
               return v{varNum = m}

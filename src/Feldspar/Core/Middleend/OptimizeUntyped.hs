@@ -358,9 +358,9 @@ deadCodeElim = snd . dceA
         dceU (App op t es) = let (vss,es1) = unzip $ map dceA es
                               in (S.unions vss, App op t es1)
         dceU (Lambda v e) = let (vs,e1) = dceA e
-                             in (vs S.\\ S.singleton v, Lambda v e1)
+                             in (v `S.delete` vs, Lambda v e1)
         dceU e = error $ "OptimizeUntyped.deadCodeElim: illegal expression " ++ show e
         dcLet t (vsR,eR) r v (vsB,eB)
-            | S.member v vsB = (S.union vsR (vsB S.\\ S.singleton v),
+            | S.member v vsB = (vsR `S.union` (v `S.delete` vsB),
                                 App Let t [eR, AIn r $ Lambda v eB])
             | otherwise = (vsB, unwrap eB)
