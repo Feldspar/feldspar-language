@@ -54,26 +54,21 @@
 
 module Feldspar.Compiler.Imperative.FromCore
   ( fromCoreUT
-  , fromCoreExp
   ) where
 
 import Data.Char (toLower)
 import Data.List (find, isPrefixOf, nub)
-import qualified Data.Map as Map
-import Data.Maybe (fromJust, isJust, mapMaybe)
+import Data.Maybe (fromJust, isJust)
 
 import Control.Monad.RWS
 
-import Feldspar.Core.Frontend (reifyFeld, Syntactic)
 import Feldspar.Core.UntypedRepresentation
          ( VarId(..), UntypedFeld, Term(..), Lit(..)
          , UntypedFeldF(App, LetFun), Fork(..)
          )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
-import Feldspar.Core.Middleend.FromTyped
 import Feldspar.Range (fullRange, upperBound)
 
-import Feldspar.Compiler.Backend.C.MachineLowering
 import Feldspar.Compiler.Backend.C.Options (Options(..))
 import Feldspar.Compiler.Backend.C.Platforms (c99, extend)
 import Feldspar.Compiler.Imperative.FromCore.Interpretation
@@ -121,7 +116,7 @@ fromCoreUT opt funname uast = (Module defs, maxVar')
     paramTypes = getTypeDefs $ map (`Declaration` Nothing) formals
     defs       = nub (def results ++ paramTypes) ++ topProc
 
-    (rtype, outs, ds', returns)
+    (rtype, outs, ds', returns) -- Note [Fast returns].
      | fastRet   = ( typeof outParam, [],  outDecl:ds ++ decls
                    , [call "return" [ValueParameter $ varToExpr outParam]])
      | otherwise = ( VoidType, [outParam],         ds ++ decls, [])
@@ -137,39 +132,6 @@ fromCoreUT opt funname uast = (Module defs, maxVar')
 
     isTask Proc{..}   = "task_core" `isPrefixOf` procName
     isTask _          = False
-
--- | Get the generated core for a program and an expression that contains the output. The components
--- of the result are as follows, in order:
---
--- * A list of extra entities needed by the program
--- * A list of declarations needed by the program
--- * The actual program
--- * An expression that contains the result
--- * A list of epilogue programs, for freeing memory, etc.
-fromCoreExp :: MonadState VarId m
-            => Syntactic a
-            => Options
-            -> Map.Map VarId String
-            -> a
-            -> m ([Entity ()], [Declaration ()], Program (), Expression (), [Program ()])
-fromCoreExp opt aliases prog = do
-    let uast = untype (frontendOpts opt) $ reifyFeld prog
-        mkAlias (Ut.Var i t _) = do
-          n <- Map.lookup i aliases
-          return (i, varToExpr $ Variable (compileType opt t) n)
-        as = mapMaybe mkAlias $ Ut.fv uast
-    s <- get
-    let (exp', s', results) = runRWS (compileExpr uast) (CodeEnv as False opt) s
-    put s'
-    unless (null $ params results) $ error "fromCoreExp: unexpected params"
-    let x = getPlatformRenames opt
-        Block ls p = block results
-    return ( renameEnt  opt x <$> def results
-           , renameDecl     x <$> (ls ++ decl results)
-           , renameProg opt x p
-           , renameExp x exp'
-           , renameProg opt x <$> epilogue results
-           )
 
 -- | Generate code for an expression that may have top-level lambdas and let
 -- bindings. The returned variable holds the result of the generated code.
@@ -200,8 +162,6 @@ compileProgTop a = do
       outParam   = Variable outType "out"
   compileProg (Just outLoc) a
   return outParam
-
-
 
 --------------------------------------------------------------------------------
 -- * compileType
