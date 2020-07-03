@@ -34,8 +34,8 @@
 
 module Feldspar.Compiler.Imperative.Frontend where
 
-import Feldspar.Compiler.Backend.C.Options
 import Feldspar.Compiler.Imperative.Representation
+import Feldspar.Compiler.Options
 import Feldspar.Core.Types (Length)
 import Feldspar.Core.UntypedRepresentation (Fork(..))
 import Feldspar.Range

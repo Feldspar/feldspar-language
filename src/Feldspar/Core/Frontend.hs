@@ -94,8 +94,8 @@ import qualified Feldspar.Core.Reify as Syntactic
 import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
+import Feldspar.Compiler.Options (FeldOpts, defaultFeldOpts)
 import Feldspar.Core.Types
-import Feldspar.Core.Interpretation (FeldOpts, defaultFeldOpts)
 import Feldspar.Core.Middleend.FromTyped (untype, untypeUnOpt, untypeDecor)
 import Feldspar.Core.UntypedRepresentation (stringTree, stringTreeExp)
 import Feldspar.Core.Language

@@ -44,8 +44,8 @@ module Feldspar.Core.Middleend.FromTyped
   )
   where
 
+import Feldspar.Compiler.Options (FeldOpts)
 import Feldspar.Core.Middleend.FromTypeUtil
-import Feldspar.Core.Interpretation (FeldOpts)
 import Feldspar.Core.Middleend.CreateTasks
 import Feldspar.Core.Middleend.LetSinking
 import Feldspar.Core.Middleend.OptimizeUntyped

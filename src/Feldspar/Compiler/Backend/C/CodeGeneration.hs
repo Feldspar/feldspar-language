@@ -36,10 +36,10 @@ import Prelude hiding (Semigroup(..), (<>), init)
 
 import Feldspar.Compiler.Imperative.Representation
 import Feldspar.Compiler.Error (handleError, ErrorClass(..))
-import Feldspar.Compiler.Backend.C.Options
 import Feldspar.Compiler.Imperative.Frontend (
     isNativeArray, isArray, isPointer
   )
+import Feldspar.Compiler.Options
 
 import Text.PrettyPrint
 

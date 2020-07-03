@@ -10,10 +10,10 @@ import qualified Data.ByteString.Char8 as B
 import Feldspar.Compiler.Compiler
         (CompiledModule, SplitModule(..), compileToCCore', defaultOptions,
          sourceCode)
-import Feldspar.Compiler.Backend.C.Options (Options(..), Platform(..))
 import Feldspar.Compiler.Frontend.Interactive.Interface (writeFiles)
 import Feldspar.Compiler.Imperative.ExternalProgram (parseFile)
 import Feldspar.Compiler.Imperative.Representation (Module(..))
+import Feldspar.Compiler.Options (Options(..), Platform(..))
 
 icompileFile :: FilePath -> IO ()
 icompileFile filename = do

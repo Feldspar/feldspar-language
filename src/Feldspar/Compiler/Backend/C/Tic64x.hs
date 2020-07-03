@@ -6,8 +6,8 @@ module Feldspar.Compiler.Backend.C.Tic64x (adaptTic64x) where
 
 import Feldspar.Compiler.Imperative.Representation
 import Feldspar.Compiler.Imperative.Frontend
-import Feldspar.Compiler.Backend.C.Options
 import Feldspar.Compiler.Backend.C.Platforms (extend, tic64x)
+import Feldspar.Compiler.Options
 
 -- This module does two major things:
 --

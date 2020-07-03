@@ -25,7 +25,6 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
-
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wall #-}
 
@@ -41,8 +40,8 @@ module Feldspar.Compiler.Backend.C.Platforms
 
 import Data.Maybe (fromMaybe)
 
-import Feldspar.Compiler.Backend.C.Options
 import Feldspar.Compiler.Imperative.Representation
+import Feldspar.Compiler.Options
 
 availablePlatforms :: [Platform]
 availablePlatforms = [ c99, c99OpenMp, c99Wool, ba, tic64x ]

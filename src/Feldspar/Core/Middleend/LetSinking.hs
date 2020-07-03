@@ -2,8 +2,8 @@
 
 module Feldspar.Core.Middleend.LetSinking ( sinkLets ) where
 
+import Feldspar.Compiler.Options (FeldOpts, Target(..), inTarget)
 import Feldspar.Core.UntypedRepresentation
-import Feldspar.Core.Interpretation (FeldOpts, Target(..), inTarget)
 
 -- | Sink lets that are stuck between two lambdas.
 -- Necessary invariant: lambdas can only appear in special places.

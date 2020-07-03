@@ -10,8 +10,8 @@ import Text.PrettyPrint (render)
 
 import Feldspar.Compiler.Imperative.Representation
 import Feldspar.Compiler.Imperative.Frontend
-import Feldspar.Compiler.Backend.C.Options hiding (name)
 import Feldspar.Compiler.Backend.C.CodeGeneration (cgen, penv0)
+import Feldspar.Compiler.Options hiding (name)
 
 machineLibrary :: Options -> [Entity ()]
 machineLibrary opts =

@@ -32,8 +32,8 @@ module Feldspar.Core.Middleend.CreateTasks ( createTasks ) where
 
 import Control.Monad.State
 
+import Feldspar.Compiler.Options (FeldOpts(..), Target(..), inTarget)
 import Feldspar.Core.UntypedRepresentation
-import Feldspar.Core.Interpretation (FeldOpts(..), Target(..), inTarget)
 
 -- | Create tasks from MkFuture and similar constructs.
 -- Invariant: There are no MkFuture, ParFork or NoInline constructs in the output.
