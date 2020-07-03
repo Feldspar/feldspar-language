@@ -21,7 +21,6 @@ module Feldspar.Compiler
   , tic64xPlatformOptions
   ) where
 
-import Feldspar.Compiler.Backend.C.Options
 import Feldspar.Compiler.Compiler
 import Feldspar.Compiler.Frontend.Interactive.Interface
-import Feldspar.Core.Interpretation (FeldOpts(..), Target(..))
+import Feldspar.Compiler.Options

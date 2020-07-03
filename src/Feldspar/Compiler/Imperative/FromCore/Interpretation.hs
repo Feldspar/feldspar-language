@@ -40,7 +40,7 @@ import Feldspar.Core.UntypedRepresentation (VarId (..))
 
 import Feldspar.Compiler.Imperative.Frontend
 import Feldspar.Compiler.Imperative.Representation
-import Feldspar.Compiler.Backend.C.Options (Options(..), Platform(..))
+import Feldspar.Compiler.Options (Options(..), Platform(..))
 
 -- | Code generation monad
 type CodeWriter = RWS CodeEnv CodeParts VarId

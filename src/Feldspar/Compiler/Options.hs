@@ -1,6 +1,3 @@
-{-# LANGUAGE DeriveLift #-}
-{-# OPTIONS_GHC -Wall #-}
-
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
 -- All rights reserved.
@@ -28,13 +25,27 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
+{-# LANGUAGE DeriveLift #-}
+{-# OPTIONS_GHC -Wall #-}
 
--- | Defines different interpretations of Feldspar programs
-
-
-module Feldspar.Core.Interpretation where
+-- | Option handling data structures for Feldspar
+module Feldspar.Compiler.Options
+  ( Target(..)
+  , FeldOpts(..)
+  , defaultFeldOpts
+  , inTarget
+  , Options(..)
+  , Platform(..)
+  , Rename
+  , Predicate(..)
+  , Which(..)
+  , WhichType(..)
+  , Destination(..)
+  ) where
 
 import Language.Haskell.TH.Syntax (Lift(..))
+
+import Feldspar.Compiler.Imperative.Representation (Type)
 
 -- | Possible compilation targets in a broad sense.
 data Target = RegionInf | Wool | CSE | SICS | BA
@@ -52,3 +63,41 @@ defaultFeldOpts = FeldOpts { targets = [] }
 -- | Decide whether a Target is enabled in FeldOpts.
 inTarget :: Target -> FeldOpts -> Bool
 inTarget t opts = t `elem` targets opts
+
+data Options = Options
+  { platform          :: Platform
+  , printHeader       :: Bool
+  , useNativeArrays   :: Bool
+  , useNativeReturns  :: Bool     -- ^ Should the generated function return by value or by
+                                  --   reference (fast return)? This option will be ignored for
+                                  --   types that can't be fast-returned.
+  , frontendOpts      :: FeldOpts -- ^ Options for the front end optimization chain
+  , safetyLimit       :: Integer  -- ^ Threshold to stop when the size information gets lost.
+  , nestSize          :: Int      -- ^ Indentation size for PrettyPrinting
+  } deriving Lift
+
+data Platform = Platform {
+  name            :: String,
+  types           :: [(Type, String)],
+  includes        :: [String],
+  varFloating     :: Bool,
+  codeGenerator   :: String
+} deriving (Lift, Show)
+
+-- * Renamer data types to avoid cyclic imports.
+type Rename = (String, [(Which, Destination)])
+
+data Predicate = Complex | Float | Signed32 | Unsigned32
+  deriving Show
+
+data Which = All | Only Predicate
+  deriving Show
+
+data WhichType = FunType | ArgType
+  deriving Show
+
+data Destination =
+    Name String
+  | Extend WhichType Platform
+  | ExtendRename WhichType Platform String
+   deriving Show

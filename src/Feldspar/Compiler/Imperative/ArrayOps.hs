@@ -31,7 +31,6 @@
 -- | Generation of type specific array management functions.
 module Feldspar.Compiler.Imperative.ArrayOps (arrayOps) where
 
-import Feldspar.Compiler.Backend.C.Options (Options)
 import Feldspar.Compiler.Imperative.Frontend
         (litI32, fun, call, for, toBlock, mkIf, isShallow, variant,
          arrayFun, freeArrayE, lowerCopy, mkSequence, elemTyAwL)
@@ -40,6 +39,7 @@ import Feldspar.Compiler.Imperative.Representation
          ParType(..), Block(..), ActualParameter(..), Expression(..),
          Variable(..), Type(..), ScalarType(..), HasType(..), Size(..),
          Signedness(..))
+import Feldspar.Compiler.Options (Options)
 import Feldspar.Range (fullRange)
 
 import Control.Monad.Writer (censor, runWriter, tell)

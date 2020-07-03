@@ -69,11 +69,11 @@ import Feldspar.Core.UntypedRepresentation
 import qualified Feldspar.Core.UntypedRepresentation as Ut
 import Feldspar.Range (fullRange, upperBound)
 
-import Feldspar.Compiler.Backend.C.Options (Options(..))
 import Feldspar.Compiler.Backend.C.Platforms (c99, extend)
 import Feldspar.Compiler.Imperative.FromCore.Interpretation
 import Feldspar.Compiler.Imperative.Frontend
 import Feldspar.Compiler.Imperative.Representation
+import Feldspar.Compiler.Options (Options(..))
 
 --------------------------------------------------------------------------------
 -- * Top-level translation functions

@@ -62,7 +62,6 @@ library
     Feldspar.Core.Middleend.PassManager
     Feldspar.Core.Middleend.PushLets
     Feldspar.Core.Middleend.UniqueVars
-    Feldspar.Core.Interpretation
     Feldspar.Core.Frontend
     Feldspar.Core.Collection
     Feldspar.Core
@@ -93,11 +92,11 @@ library
     Feldspar.Compiler.Imperative.FromCore
     Feldspar.Compiler.Imperative.FromCore.Interpretation
     Feldspar.Compiler.Imperative.Frontend
+    Feldspar.Compiler.Options
     Feldspar.Compiler.Backend.C.CodeGeneration
     Feldspar.Compiler.Backend.C.Library
     Feldspar.Compiler.Backend.C.MachineLowering
     Feldspar.Compiler.Backend.C.Tic64x
-    Feldspar.Compiler.Backend.C.Options
     Feldspar.Compiler.Backend.C.Platforms
     Feldspar.Compiler.Backend.C.RuntimeLibrary
     Feldspar.Compiler.Frontend.Interactive.Interface

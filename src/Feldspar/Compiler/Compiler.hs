@@ -55,11 +55,9 @@ import Data.List (partition)
 import Data.Maybe (fromMaybe)
 
 import Feldspar.Core.Frontend (Syntactic, reifyFeld)
-import Feldspar.Core.Interpretation (defaultFeldOpts, FeldOpts(..), Target(..))
 import Feldspar.Core.UntypedRepresentation (UntypedFeld, VarId)
 import Feldspar.Core.Middleend.FromTyped (FrontendPass, frontend)
 import Feldspar.Compiler.Backend.C.Library
-import Feldspar.Compiler.Backend.C.Options
 import Feldspar.Compiler.Backend.C.Platforms
 import Feldspar.Compiler.Backend.C.CodeGeneration
 import Feldspar.Compiler.Backend.C.MachineLowering
@@ -67,6 +65,7 @@ import Feldspar.Compiler.Backend.C.Tic64x
 import Feldspar.Compiler.Imperative.FromCore
 import Feldspar.Compiler.Imperative.ArrayOps
 import Feldspar.Compiler.Imperative.Representation
+import Feldspar.Compiler.Options
 import Feldspar.Core.Middleend.PassManager
 
 data SplitModule = SplitModule
