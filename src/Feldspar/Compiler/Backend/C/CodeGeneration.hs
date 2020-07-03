@@ -256,19 +256,7 @@ printStructMember env e@(n, e') (_, t)
 
 instance CodeGen Type
   where
-    cgen env = toC
-      where
-        toC VoidType                      = text "void"
-        toC (ArrayType _ t)               = toC t <+> text "*"
-        toC IVarType{}                    = text "struct ivar"
-        toC (StructType n _)              = text "struct" <+> text n
-        toC (NativeArray _ t)             = toC t
-        toC (1 :# (Pointer t))            = toC t <+> text "*"
-        toC t | Just s <- lookup t pts    = text s
-        toC t = codeGenerationError InternalError
-              $ unwords ["Unhandled type in platform ", name pfm,  ": ", show t]
-        pfm = platform $ options env
-        pts = types pfm
+    cgen _ = text . renderType
 
     cgenList env = sep . map (cgen env)
 

@@ -45,8 +45,6 @@ module Feldspar.Compiler.Options
 
 import Language.Haskell.TH.Syntax (Lift(..))
 
-import Feldspar.Compiler.Imperative.Representation (Type)
-
 -- | Possible compilation targets in a broad sense.
 data Target = RegionInf | Wool | CSE | SICS | BA
   deriving (Eq, Lift)
@@ -78,7 +76,6 @@ data Options = Options
 
 data Platform = Platform {
   name            :: String,
-  types           :: [(Type, String)],
   includes        :: [String],
   varFloating     :: Bool,
   codeGenerator   :: String

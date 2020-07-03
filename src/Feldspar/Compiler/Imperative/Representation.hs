@@ -46,9 +46,11 @@ module Feldspar.Compiler.Imperative.Representation (
   , StructMember(..)
   , Pattern(..)
   , ParType(..)
-  , Type(..)
     -- * Types
   , ScalarType(..)
+  , Type(..)
+  , renderScalarType
+  , renderType
   , Constant(..)
   , module Feldspar.Core.UntypedRepresentation
   , fv
@@ -310,6 +312,35 @@ instance Eq Type where
    (IVarType t1)         == (IVarType t2)         = t1 == t2
    StringType            == StringType            = True
    _                     == _                     = False
+
+-- | Render a C representation of a scalar type
+renderScalarType :: ScalarType -> String
+renderScalarType BoolType = "bool"
+renderScalarType BitType = error "renderScalarType: No support for BitType"
+renderScalarType FloatType = "float"
+renderScalarType DoubleType = "double"
+renderScalarType (NumType sg sz) = toInt sg ++ toSize sz ++ "_t"
+  where toInt Signed = "int"
+        toInt Unsigned = "uint"
+        toSize S8   = "8"
+        toSize S16  = "16"
+        toSize S32  = "32"
+        toSize S40  = "40"
+        toSize S64  = "64"
+        toSize S128 = "128"
+renderScalarType (ComplexType t) = renderType t ++ " complex"
+renderScalarType (Pointer t) = renderType t ++ " *"
+
+-- | Render a C representation of a type
+renderType :: Type -> String
+renderType VoidType = "void"
+renderType (1 :# t) = renderScalarType t
+renderType (_ :# _) = error "renderType: No support for SIMD vector output"
+renderType StringType = "char *"
+renderType (ArrayType _ t) = renderType t ++ " *"
+renderType (NativeArray _ t) = renderType t
+renderType (StructType n _) = "struct " ++ n
+renderType IVarType{} = "struct ivar"
 
 ----------------------
 --   Type inference --
