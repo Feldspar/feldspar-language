@@ -1,24 +1,17 @@
-{-# LANGUAGE TypeOperators #-}
 module Main where
 
 -- To generate the golden files use a script similiar to this one
 -- > ghc -isrc -iexampes -itests -e 'B.writeFile "tests/gold/example9.txt" $ B.pack $ showDecor example9' tests/DecorationTests.hs -iexamples
 
-import qualified Prelude
+import qualified Prelude as P
 
 import Test.Tasty
 import Test.Tasty.Golden
 
-import Data.ByteString.Lazy.UTF8 (fromString)
-
 import Feldspar
 import Feldspar.Mutable
 import Examples.Simple.Basics
-import Feldspar.Applications.TFModel(tfModel)
-
-import Feldspar.Core.UntypedRepresentation (prettyExp)
-import Feldspar.Core.Middleend.FromTyped (FrontendPass(FPUnAnnotate), frontend)
-import Feldspar.Core.Middleend.PassManager (PassCtrl(..), defaultPassCtrl)
+import Feldspar.Applications.TFModel (tfModel)
 import Feldspar.Core.NestedTuples
 
 
@@ -55,16 +48,8 @@ shareT = (build $ tuple 1 2, build $ tuple 1 2)
 selectT :: Data Length
 selectT = sel First $ snd noshareT
 
--- Compile an expression to untyped IL and show it as a string
-showUntyped :: Syntactic a => FeldOpts -> a -> String
-showUntyped opts = Prelude.head . Prelude.fst . frontend passCtrl opts . reifyFeld
-
--- Pass control to get IL after optimization
-passCtrl :: PassCtrl FrontendPass
-passCtrl = defaultPassCtrl{wrBefore = [FPUnAnnotate], stopBefore = [FPUnAnnotate]}
-
-ref :: Prelude.String -> Prelude.String
-ref f = "tests/gold/" Prelude.++ f
+ref :: P.String -> P.String
+ref f = "tests/gold/" P.++ f
 
 tests = testGroup "DecorationTests"
     [ goldenVsFile "example9" (ref "example9.txt") "tests/example9.txt" $ writeFile "tests/example9.txt" $ showDecor example9

@@ -50,6 +50,7 @@ module Feldspar.Core.Frontend
     , defaultFeldOpts
     , reifyFeld
     , showExpr
+    , showUntyped
     , printExpr
     , printExpr2
     , printExprWith
@@ -95,8 +96,10 @@ import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
 import Feldspar.Compiler.Options (FeldOpts, defaultFeldOpts)
+import Feldspar.Core.Middleend.FromTyped (FrontendPass(FPUnAnnotate), frontend,
+                                          untype, untypeUnOpt, untypeDecor)
+import Feldspar.Core.Middleend.PassManager (PassCtrl(..), defaultPassCtrl)
 import Feldspar.Core.Types
-import Feldspar.Core.Middleend.FromTyped (untype, untypeUnOpt, untypeDecor)
 import Feldspar.Core.UntypedRepresentation (stringTree, stringTreeExp)
 import Feldspar.Core.Language
 import Feldspar.Core.ValueInfo (ValueInfo)
@@ -113,6 +116,12 @@ showDecorWith f = showTree . stringTreeExp g . untypeDecor defaultFeldOpts
 
 showExpr :: Syntactic a => a -> String
 showExpr = render . reifyFeld
+
+-- Show an untyped expression
+showUntyped :: Syntactic a => FeldOpts -> a -> String
+showUntyped opts = head . fst . frontend passCtrl opts . reifyFeld
+  where passCtrl = defaultPassCtrl{ wrBefore = [FPUnAnnotate]
+                                  , stopBefore = [FPUnAnnotate]}
 
 -- | Print an optimized untyped expression
 printExpr2 :: Syntactic a => a -> IO ()
@@ -144,7 +153,7 @@ showAST = showTree . stringTreeASTF . reifyFeld
 
 -- | Draw the syntax tree on the terminal using Unicode art
 drawAST :: Syntactic a => a -> IO ()
-drawAST = putStrLn . showAST . reifyFeld
+drawAST = putStrLn . showAST
 
 -- | Write the syntax tree to an HTML file with foldable nodes
 writeHtmlAST :: Syntactic a => FilePath -> a -> IO ()
