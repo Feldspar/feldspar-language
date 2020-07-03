@@ -49,18 +49,15 @@ module Feldspar.Core.Frontend
     , FeldOpts
     , defaultFeldOpts
     , reifyFeld
-    , reifyFeldUnOpt
     , showExpr
     , printExpr
     , printExpr2
     , printExprWith
     , printExpr2With
-    , printExprUnOpt
     , drawUntyped
     , drawUntypedWith
     , showAST
     , drawAST
-    , drawASTUnOpt
     , writeHtmlAST
     , showDecor
     , drawDecor
@@ -107,9 +104,6 @@ import Feldspar.Core.ValueInfo (ValueInfo)
 reifyFeld :: Syntactic a => a -> ASTF (Internal a)
 reifyFeld = Syntactic.desugar
 
-reifyFeldUnOpt :: Syntactic a => a -> ASTF (Internal a)
-reifyFeldUnOpt = reifyFeld
-
 stringTreeASTF :: ASTF a -> Tree String
 stringTreeASTF = stringTree . untypeUnOpt defaultFeldOpts
 
@@ -144,10 +138,6 @@ printExpr2With opts = print . untype opts . reifyFeld
 printExprWith :: Syntactic a => FeldOpts -> a -> IO ()
 printExprWith _ = print . reifyFeld
 
--- | Print an unoptimized expression
-printExprUnOpt :: Syntactic a => a -> IO ()
-printExprUnOpt = print . reifyFeldUnOpt
-
 -- | Show the syntax tree using Unicode art
 showAST :: Syntactic a => a -> String
 showAST = showTree . stringTreeASTF . reifyFeld
@@ -155,9 +145,6 @@ showAST = showTree . stringTreeASTF . reifyFeld
 -- | Draw the syntax tree on the terminal using Unicode art
 drawAST :: Syntactic a => a -> IO ()
 drawAST = putStrLn . showAST . reifyFeld
-
-drawASTUnOpt :: Syntactic a => a -> IO ()
-drawASTUnOpt = putStrLn . showAST . reifyFeldUnOpt
 
 -- | Write the syntax tree to an HTML file with foldable nodes
 writeHtmlAST :: Syntactic a => FilePath -> a -> IO ()
