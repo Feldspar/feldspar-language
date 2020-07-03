@@ -2,7 +2,9 @@
 {-# LANGUAGE PatternGuards #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Feldspar.Compiler.Backend.C.MachineLowering where
+module Feldspar.Compiler.Backend.C.MachineLowering
+  ( rename
+  ) where
 
 import qualified Data.Map as M
 
@@ -215,6 +217,3 @@ getPlatformRenames opt =
     "tic64x"                                     -> M.fromList (tic64xlist ++ c99list)
     s | s `elem` ["c99", "c99OpenMp", "c99Wool"] -> M.fromList c99list
       | otherwise                                -> M.fromList []
-
-flattenProgram :: [Program ()] -> Program ()
-flattenProgram ss = if null ss then Empty else Sequence ss
