@@ -1,8 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# OPTIONS_GHC -Wall #-}
-
 --
 -- Copyright (c) 2019, ERICSSON AB
 -- All rights reserved.
@@ -30,6 +25,10 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# OPTIONS_GHC -Wall #-}
 
 {- | The ValueInfo module defines the types and basic operations for value set
      analysis. In this implementation, a value set is either
@@ -41,10 +40,12 @@
 
 module Feldspar.Core.ValueInfo where
 
+import Feldspar.Core.UntypedRepresentation
 import Feldspar.Range
 
 import Data.Bits
 import Data.Int
+import Data.List (intercalate)
 import Data.Word
 
 -- | The ValueInfo type wraps ranges of various types as well as cartesian
@@ -78,9 +79,127 @@ instance Show ValueInfo where
   show (VIWord32 r) = "VIWord32 " ++ show r
   show (VIWord64 r) = "VIWord64 " ++ show r
   show (VIWordN r)  = "VIWordN " ++ show r
-  show (VIFloat)    = "VIFloat"
-  show (VIDouble)   = "VIDouble"
+  show VIFloat{}    = "VIFloat"
+  show VIDouble{}   = "VIDouble"
   show (VIProd vs)  = "VIProd " ++ show vs
+
+-- | Annotate a literal with value info.
+aLit :: Lit -> AUntypedFeld ValueInfo
+aLit l = AIn (literalVI l) (Literal l)
+
+-- | Construct an Elements value info from those of the index and value parts
+elementsVI :: ValueInfo -> ValueInfo -> ValueInfo
+elementsVI idx val = VIProd [idx, val]
+
+-- | Forcing a range to an integer type given by a signedness and a size.
+constantIntRange :: Signedness -> Size -> (forall a . Bounded a => Range a)
+                 -> ValueInfo
+constantIntRange Signed   S8   r = VIInt8 r
+constantIntRange Signed   S16  r = VIInt16 r
+constantIntRange Signed   S32  r = VIInt32 r
+constantIntRange Signed   S64  r = VIInt64 r
+constantIntRange Unsigned S8   r = VIWord8 r
+constantIntRange Unsigned S16  r = VIWord16 r
+constantIntRange Unsigned S32  r = VIWord32 r
+constantIntRange Unsigned S64  r = VIWord64 r
+constantIntRange _        S40  _
+  = error "ValueInfo.constantIntRange: S40 not supported"
+constantIntRange _        S128 _
+  = error "ValueInfo.constantIntRange: S128 not supported"
+
+-- | Make value info from a literal
+literalVI :: Lit -> ValueInfo
+literalVI (LBool b) = singletonVI b
+literalVI (LInt sgn sz n) = go sgn sz
+  where go Signed     S8 = singletonVI (fromInteger n :: Int8)
+        go Signed    S16 = singletonVI (fromInteger n :: Int16)
+        go Signed    S32 = singletonVI (fromInteger n :: Int32)
+        go Signed    S40 = singletonVI (fromInteger n :: Int64)
+        go Signed    S64 = singletonVI (fromInteger n :: Int64)
+        go Signed   S128 = error "literalVI: S128 not supported"
+        go Unsigned   S8 = singletonVI (fromInteger n :: Word8)
+        go Unsigned  S16 = singletonVI (fromInteger n :: Word16)
+        go Unsigned  S32 = singletonVI (fromInteger n :: Word32)
+        go Unsigned  S40 = singletonVI (fromInteger n :: Word64)
+        go Unsigned  S64 = singletonVI (fromInteger n :: Word64)
+        go Unsigned S128 = error "literalVI: S128 not supported"
+literalVI (LFloat  x) = singletonVI x
+literalVI (LDouble x) = singletonVI x
+literalVI (LComplex re im) = VIProd [literalVI re, literalVI im]
+literalVI LString{} = error "literalVI: LString not supported"
+literalVI (LArray t xs) = foldr (lubVI . literalVI) (botInfo t) xs
+literalVI (LTup xs) = VIProd $ map literalVI xs
+
+-- | The bottom (most informative) elements of the info domains for each scalar type.
+botInfoST :: ScalarType -> ValueInfo
+botInfoST BoolType         = boolBot
+botInfoST BitType          = VIWord8 $ Range 1 0 -- Provisionally
+botInfoST (IntType sgn sz) = constantIntRange sgn sz emptyRange
+botInfoST FloatType        = VIFloat
+botInfoST DoubleType       = VIDouble
+botInfoST (ComplexType t)  = VIProd [botInfo t, botInfo t]
+
+-- | The bottom (most informative) elements of the info domains for each type.
+botInfo :: Type -> ValueInfo
+-- FIXME: Should (n :# t) be VIProd (replicate n botInfoST t)?
+botInfo (_ :# t)         = botInfoST t
+botInfo StringType       = error "botInfo: StringType not supported"
+botInfo (TupType ts)     = VIProd $ map botInfo ts
+botInfo (MutType t)      = botInfo t
+botInfo (RefType t)      = botInfo t
+botInfo (ArrayType r t)  = VIProd [VIWordN r, botInfo t]
+botInfo (MArrType r t)   = VIProd [VIWordN r, botInfo t]
+botInfo (ParType t)      = botInfo t -- Provisionally
+botInfo (ElementsType t) = VIProd [botInfo indexType, botInfo t]
+botInfo (IVarType t)     = botInfo t
+botInfo (FunType _ t)    = botInfo t
+botInfo (FValType t)     = botInfo t
+
+-- | The top (least informative) elements of the info domains for each scalar type.
+topInfoST :: ScalarType -> ValueInfo
+topInfoST BoolType         = boolTop
+topInfoST BitType          = VIWord8 $ Range 0 1 -- Provisionally
+topInfoST (IntType sgn sz) = constantIntRange sgn sz fullRange
+topInfoST FloatType        = VIFloat
+topInfoST DoubleType       = VIDouble
+topInfoST (ComplexType t)  = VIProd [topInfo t, topInfo t]
+
+-- | The top (least informative) elements of the info domains for each type.
+topInfo :: Type -> ValueInfo
+-- FIXME: Should (n :# t) be VIProd (replicate n topInfoST t)?
+topInfo (_ :# t)         = topInfoST t
+topInfo StringType       = error "topInfo: StringType not supported"
+topInfo (TupType ts)     = VIProd $ map topInfo ts
+topInfo (MutType t)      = topInfo t
+topInfo (RefType t)      = topInfo t
+topInfo (ArrayType r t)  = VIProd [VIWordN r, topInfo t]
+topInfo (MArrType r t)   = VIProd [VIWordN r, topInfo t]
+topInfo (ParType t)      = topInfo t -- Provisionally
+topInfo (ElementsType t) = VIProd [topInfo indexType, topInfo t]
+topInfo (IVarType t)     = topInfo t
+topInfo (FunType _ t)    = topInfo t
+topInfo (FValType t)     = topInfo t
+
+-- | Pretty printing a value info given a type
+prettyVI :: Type -> ValueInfo -> String
+prettyVI _ (VIBool r)   = show r
+prettyVI _ (VIInt8 r)   = show r
+prettyVI _ (VIInt16 r)  = show r
+prettyVI _ (VIInt32 r)  = show r
+prettyVI _ (VIInt64 r)  = show r
+prettyVI _ (VIIntN r)   = show r
+prettyVI _ (VIWord8 r)  = show r
+prettyVI _ (VIWord16 r) = show r
+prettyVI _ (VIWord32 r) = show r
+prettyVI _ (VIWord64 r) = show r
+prettyVI _ (VIWordN r)  = show r
+prettyVI _ VIFloat{}    = "[*,*]"
+prettyVI _ VIDouble{}   = "[*,*]"
+prettyVI t' (VIProd vs')  = pr t' vs'
+  where pr (ArrayType _ t)  [v1,v2] = prettyVI indexType v1 ++ " :> " ++ prettyVI t v2
+        pr (ElementsType t) [v1,v2] = prettyVI indexType v1 ++ " :>> " ++ prettyVI t v2
+        pr (TupType ts)     vs      = "(" ++ intercalate ", " (zipWith prettyVI ts vs) ++ ")"
+        pr _                vs      = "VIProd " ++ show vs
 
 -- | Overloaded construction of value info ranges
 class RangeVI a where
@@ -162,8 +281,8 @@ bop op (VIWord64 r1) (VIWord64 r2) = VIWord64  (op r1 r2)
 bop op (VIInt64 r1)  (VIInt64 r2)  = VIInt64   (op r1 r2)
 bop op (VIWordN r1)  (VIWordN r2)  = VIWordN   (op r1 r2)
 bop op (VIIntN r1)   (VIIntN r2)   = VIIntN    (op r1 r2)
-bop _  (VIFloat)     (VIFloat)     = VIFloat
-bop _  (VIDouble)    (VIDouble)    = VIDouble
+bop _  VIFloat{}     VIFloat{}     = VIFloat
+bop _  VIDouble{}    VIDouble{}    = VIDouble
 bop op (VIProd l1)   (VIProd l2)   = VIProd    (zipWith (bop op) l1 l2)
 bop _ _ _ = error "ValueInfo.hs:bop: mismatched patttern."
 
@@ -180,8 +299,8 @@ uop op (VIWord64 r)               = VIWord64  (op r)
 uop op (VIInt64 r)                = VIInt64   (op r)
 uop op (VIWordN r)                = VIWordN   (op r)
 uop op (VIIntN r)                 = VIIntN    (op r)
-uop _  (VIFloat)                  = VIFloat
-uop _  (VIDouble)                 = VIDouble
+uop _  VIFloat{}                  = VIFloat
+uop _  VIDouble{}                 = VIDouble
 uop op (VIProd l)                 = VIProd    (map (uop op) l)
 
 -- | Arithmetic on ValueInfo

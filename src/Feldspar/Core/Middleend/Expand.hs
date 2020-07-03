@@ -31,7 +31,8 @@
 module Feldspar.Core.Middleend.Expand (expand) where
 
 import Feldspar.Core.UntypedRepresentation
-import Feldspar.Core.ValueInfo (ValueInfo, setLB, addVI, mulVI)
+import Feldspar.Core.ValueInfo (ValueInfo, aLit, elementsVI, setLB, addVI,
+                                mulVI)
 import Feldspar.Lattice (top)
 
 import qualified Data.ByteString.Char8 as B
