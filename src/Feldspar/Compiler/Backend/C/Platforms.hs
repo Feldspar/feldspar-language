@@ -38,9 +38,7 @@ module Feldspar.Compiler.Backend.C.Platforms
     , extend
     ) where
 
-import Data.Maybe (fromMaybe)
-
-import Feldspar.Compiler.Imperative.Representation
+import Feldspar.Compiler.Imperative.Representation (Type, renderType)
 import Feldspar.Compiler.Options
 
 availablePlatforms :: [Platform]
@@ -53,21 +51,6 @@ platformFromName str = head $ [pf | pf <- availablePlatforms, name pf == str]
 c99 :: Platform
 c99 = Platform {
     name = "c99",
-    types =
-        [ (1 :# NumType Signed S8,             "int8_t")
-        , (1 :# NumType Signed S16,            "int16_t")
-        , (1 :# NumType Signed S32,            "int32_t")
-        , (1 :# NumType Signed S64,            "int64_t")
-        , (1 :# NumType Unsigned S8,           "uint8_t")
-        , (1 :# NumType Unsigned S16,          "uint16_t")
-        , (1 :# NumType Unsigned S32,          "uint32_t")
-        , (1 :# NumType Unsigned S64,          "uint64_t")
-        , (1 :# BoolType,                      "bool")
-        , (1 :# FloatType,                     "float")
-        , (1 :# DoubleType,                    "double")
-        , (1 :# ComplexType (1 :# FloatType),  "float complex")
-        , (1 :# ComplexType (1 :# DoubleType), "double complex")
-        ] ,
     includes =
         [ "feldspar_c99.h"
         , "feldspar_array.h"
@@ -102,23 +85,6 @@ ba = c99 { name = "ba"
 tic64x :: Platform
 tic64x = Platform {
     name = "tic64x",
-    types =
-        [ (1 :# NumType Signed S8,             "char")
-        , (1 :# NumType Signed S16,            "short")
-        , (1 :# NumType Signed S32,            "int")
-        , (1 :# NumType Signed S40,            "long")
-        , (1 :# NumType Signed S64,            "long long")
-        , (1 :# NumType Unsigned S8,           "unsigned char")
-        , (1 :# NumType Unsigned S16,          "unsigned short")
-        , (1 :# NumType Unsigned S32,          "unsigned")
-        , (1 :# NumType Unsigned S40,          "unsigned long")
-        , (1 :# NumType Unsigned S64,          "unsigned long long")
-        , (1 :# BoolType,                      "int")
-        , (1 :# FloatType,                     "float")
-        , (1 :# DoubleType,                    "double")
-        , (1 :# ComplexType (1 :# FloatType),  "complexOf_float")
-        , (1 :# ComplexType (1 :# DoubleType), "complexOf_double")
-        ] ,
     includes = [ "feldspar_tic64x.h", "feldspar_array.h", "<c6x.h>", "<string.h>"
                , "<math.h>"],
     varFloating = True,
@@ -126,4 +92,4 @@ tic64x = Platform {
 }
 
 extend :: Platform -> String -> Type -> String
-extend Platform{..} s t = s ++ "_fun_" ++ fromMaybe (show t) (lookup t types)
+extend Platform{..} s t = s ++ "_fun_" ++ renderType t
