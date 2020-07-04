@@ -44,7 +44,7 @@ module Feldspar.Core.Middleend.FromTyped
   )
   where
 
-import Feldspar.Compiler.Options (FeldOpts)
+import Feldspar.Compiler.Options (FeldOpts, Pretty(..))
 import Feldspar.Core.Middleend.FromTypeUtil
 import Feldspar.Core.Middleend.CreateTasks
 import Feldspar.Core.Middleend.LetSinking
@@ -54,7 +54,7 @@ import Feldspar.Core.Middleend.Expand
 import Feldspar.Core.Middleend.UniqueVars
 import Feldspar.Core.Middleend.PassManager
 import qualified Feldspar.Core.UntypedRepresentation as U
-import Feldspar.Core.Reify (ASTF, unASTF, render)
+import Feldspar.Core.Reify (ASTF, unASTF)
 import Feldspar.Core.Types (TypeRep(..), defaultSize, TypeF(..), (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
@@ -537,12 +537,6 @@ instance Pretty UntypedFeld where
 instance PrettyInfo a => Pretty (AUntypedFeld a) where
   pretty = prettyExp f
      where f t x = " | " ++ prettyInfo t x
-
-instance Pretty (AExpr a) where
-  pretty = show
-
-instance Pretty (ASTF a) where
-  pretty = render
 
 -- | Front-end driver
 frontend :: PassCtrl FrontendPass -> FeldOpts -> ASTF a -> ([String], Maybe UntypedFeld)

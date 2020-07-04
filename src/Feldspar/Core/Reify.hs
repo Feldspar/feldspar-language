@@ -55,6 +55,7 @@ module Feldspar.Core.Reify
        , value
        ) where
 
+import Feldspar.Compiler.Options (Pretty(..))
 import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..),
                                      VarId, Op(..), fvi, CBind(..), TypeF(..),
                                      bvId, mkLets, sharable)
@@ -83,6 +84,9 @@ resugar = sugar . desugar
 --   the Int used for generating the bound variable of any lambda abstraction
 --   in the expression part of the CExpr.
 data ASTF a = ASTF (CExpr a) Int
+
+instance Pretty (ASTF a) where
+  pretty = render
 
 -- | Convert an ASTF to an expression
 unASTF :: ASTF a -> AExpr a

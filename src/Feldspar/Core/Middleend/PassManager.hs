@@ -31,6 +31,8 @@
 
 module Feldspar.Core.Middleend.PassManager where
 
+import Feldspar.Compiler.Options (Pretty(..))
+
 data Prog a b = Prog (Maybe a) [String] b
   deriving Show
 
@@ -60,9 +62,6 @@ addSkip ctrl p = ctrl{skip = p : skip ctrl}
 
 defaultPassCtrl :: PassCtrl a
 defaultPassCtrl = PassCtrl [] [] [] [] []
-
-class Pretty a where
-  pretty :: a -> String
 
 prOrStop :: (Pretty a, Eq b, Show b) => String -> [b] -> [b] -> b -> Prog a c -> Prog a c
 prOrStop pos prs stop pass (Prog (Just p) ss s)

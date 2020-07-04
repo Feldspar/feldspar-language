@@ -30,7 +30,8 @@
 
 -- | Option handling data structures for Feldspar
 module Feldspar.Compiler.Options
-  ( Target(..)
+  ( Pretty(..)
+  , Target(..)
   , FeldOpts(..)
   , defaultFeldOpts
   , inTarget
@@ -44,6 +45,14 @@ module Feldspar.Compiler.Options
   ) where
 
 import Language.Haskell.TH.Syntax (Lift(..))
+
+-- * Pretty printing utils.
+
+-- | Class for things that can be pretty printed.
+class Pretty a where
+  pretty :: a -> String
+
+-- * Option handling data structures and utils.
 
 -- | Possible compilation targets in a broad sense.
 data Target = RegionInf | Wool | CSE | SICS | BA
