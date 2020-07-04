@@ -90,6 +90,9 @@ newtype VarId = VarId { varInteger :: Integer }
 instance Show VarId where
     show (VarId i) = show i
 
+instance Pretty VarId where
+  pretty = show
+
 data Var a = Var { varNum :: VarId, varName :: B.ByteString }
 
 instance Eq (Var a) where
