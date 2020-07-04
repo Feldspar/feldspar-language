@@ -38,7 +38,20 @@
      * a product (v1, ..., vk) of values denoting the cartesian product of the vi.
 -}
 
-module Feldspar.Core.ValueInfo where
+module Feldspar.Core.ValueInfo
+  ( ValueInfo(..)
+  , PrettyInfo(..)
+  , aLit
+  , elementsVI
+  , setLB
+  , addVI
+  , mulVI
+  -- Unused
+  , botInfo
+  , botInfoST
+  , topInfo
+  , topInfoST
+  ) where
 
 import Feldspar.Core.UntypedRepresentation
 import Feldspar.Range
@@ -66,6 +79,16 @@ data ValueInfo = VIBool   (Range Int) -- ^ We represent False as 0 and True as 1
                | VIDouble -- (Range Double)
                | VIProd [ValueInfo]
                deriving (Eq)
+
+-- | Overloaded pretty printing of annotations (for instance range information)
+class PrettyInfo a where
+  prettyInfo :: Type -> a -> String
+
+instance PrettyInfo ValueInfo where
+  prettyInfo = prettyVI
+
+instance PrettyInfo () where
+  prettyInfo _ _ = ""
 
 instance Show ValueInfo where
   show (VIBool r)   = "VIBool " ++ show r
@@ -132,7 +155,7 @@ literalVI (LTup xs) = VIProd $ map literalVI xs
 
 -- | The bottom (most informative) elements of the info domains for each scalar type.
 botInfoST :: ScalarType -> ValueInfo
-botInfoST BoolType         = boolBot
+botInfoST BoolType         = VIBool $ Range 1 0
 botInfoST BitType          = VIWord8 $ Range 1 0 -- Provisionally
 botInfoST (IntType sgn sz) = constantIntRange sgn sz emptyRange
 botInfoST FloatType        = VIFloat
@@ -157,7 +180,7 @@ botInfo (FValType t)     = botInfo t
 
 -- | The top (least informative) elements of the info domains for each scalar type.
 topInfoST :: ScalarType -> ValueInfo
-topInfoST BoolType         = boolTop
+topInfoST BoolType         = VIBool $ Range 0 1
 topInfoST BitType          = VIWord8 $ Range 0 1 -- Provisionally
 topInfoST (IntType sgn sz) = constantIntRange sgn sz fullRange
 topInfoST FloatType        = VIFloat
@@ -251,17 +274,9 @@ instance RangeVI a => RangeVI [a] where
 singletonVI :: RangeVI a => a -> ValueInfo
 singletonVI x = rangeVI x x
 
--- | The bottom and top elements of the value info domain for booleans
-boolTop :: ValueInfo
-boolTop = VIBool $ Range 0 1
-boolBot :: ValueInfo
-boolBot = VIBool $ Range 1 0
-
 -- | Least upper bound and greatest lower bound for value info
 lubVI :: ValueInfo -> ValueInfo -> ValueInfo
 lubVI = bop rangeUnion
-glbVI :: ValueInfo -> ValueInfo -> ValueInfo
-glbVI = bop rangeIntersection
 
 -- | Setting lower bound
 setLB :: Integral a => a -> ValueInfo -> ValueInfo
