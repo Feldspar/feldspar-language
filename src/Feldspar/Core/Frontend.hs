@@ -89,6 +89,7 @@ import Prelude as P
 
 import Test.QuickCheck
 
+import Control.Monad.State (evalState)
 import Data.Patch
 import Data.Tree (Tree)
 import Data.Tree.View
@@ -102,8 +103,7 @@ import Feldspar.Compiler.Options (FeldOpts, Pretty(..), defaultFeldOpts)
 import Feldspar.Core.AdjustBindings (adjustBindings)
 import Feldspar.Core.Middleend.CreateTasks
 import Feldspar.Core.Middleend.Expand (expand)
-import Feldspar.Core.Middleend.FromTyped (renameExp, toU, untype, untypeUnOpt,
-                                          untypeDecor)
+import Feldspar.Core.Middleend.FromTyped (toU)
 import Feldspar.Core.Middleend.LetSinking
 import Feldspar.Core.Middleend.OptimizeUntyped
 import Feldspar.Core.Middleend.PassManager (PassCtrl(..), Prog(..),
@@ -114,8 +114,9 @@ import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.SizeProp as SP
 import Feldspar.Core.Types
 import Feldspar.Core.UntypedRepresentation (UntypedFeld, AUntypedFeld,
-                                            annotate, prettyExp, stringTree,
-                                            stringTreeExp, unAnnotate)
+                                            annotate, prettyExp, rename,
+                                            stringTree, stringTreeExp,
+                                            unAnnotate)
 import Feldspar.Core.Language
 import Feldspar.Core.ValueInfo (ValueInfo, PrettyInfo(..))
 
@@ -238,6 +239,39 @@ desugar = resugar
 
 sugar :: Syntactic a => Data (Internal a) -> a
 sugar = resugar
+
+-- * Old compatibility functions
+
+-- FIXME: Replace the calls to the compatibility functions
+--        with calls to the frontend function.
+
+-- | Untype, optimize and unannotate.
+untype :: FeldOpts -> ASTF a -> UntypedFeld
+untype opts = cleanUp opts
+            . untypeDecor opts
+
+-- | Untype and optimize.
+untypeDecor :: FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
+untypeDecor opts = pushLets
+                 . optimize
+                 . sinkLets opts
+                 . justUntype
+
+-- | External module interface.
+untypeUnOpt :: FeldOpts -> ASTF a -> UntypedFeld
+untypeUnOpt opts = cleanUp opts
+                 . justUntype
+
+-- | Only do the conversion to AUntypedFeld ValueInfo
+justUntype :: ASTF a -> AUntypedFeld ValueInfo
+justUntype = renameExp . toU . SP.sizeProp . adjustBindings . unASTF
+
+-- | Prepare the code for fromCore
+cleanUp :: FeldOpts -> AUntypedFeld ValueInfo -> UntypedFeld
+cleanUp opts = createTasks opts . unAnnotate . uniqueVars
+
+renameExp :: AUntypedFeld a -> AUntypedFeld a
+renameExp e = evalState (rename e) 0
 
 --------------------------------------------------------------------------------
 -- * QuickCheck
