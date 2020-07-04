@@ -9,8 +9,7 @@ import qualified Data.ByteString.Char8 as B
 
 import Feldspar.Compiler.Compiler
         (CompiledModule, SplitModule(..), compileToCCore', defaultOptions,
-         sourceCode)
-import Feldspar.Compiler.Frontend.Interactive.Interface (writeFiles)
+         sourceCode, writeFiles)
 import Feldspar.Compiler.Imperative.ExternalProgram (parseFile)
 import Feldspar.Compiler.Imperative.Representation (Module(..))
 import Feldspar.Compiler.Options (Options(..), Platform(..))

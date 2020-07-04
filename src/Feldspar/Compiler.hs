@@ -22,5 +22,4 @@ module Feldspar.Compiler
   ) where
 
 import Feldspar.Compiler.Compiler
-import Feldspar.Compiler.Frontend.Interactive.Interface
 import Feldspar.Compiler.Options
