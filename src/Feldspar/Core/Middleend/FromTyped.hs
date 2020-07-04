@@ -4,8 +4,6 @@
 {-# OPTIONS_GHC -Wall #-}
 -- Pattern matches over TypeRep are partial due to calling context.
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
--- FIXME: Remove when moving Pretty instances to their right place.
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -39,26 +37,24 @@ module Feldspar.Core.Middleend.FromTyped
   ( untype
   , untypeDecor
   , untypeUnOpt
-  , FrontendPass(..)
-  , frontend
+  , toU
+  , renameExp
   )
   where
 
-import Feldspar.Compiler.Options (FeldOpts, Pretty(..))
+import Feldspar.Compiler.Options (FeldOpts)
 import Feldspar.Core.Middleend.FromTypeUtil
 import Feldspar.Core.Middleend.CreateTasks
 import Feldspar.Core.Middleend.LetSinking
 import Feldspar.Core.Middleend.OptimizeUntyped
 import Feldspar.Core.Middleend.PushLets
-import Feldspar.Core.Middleend.Expand
 import Feldspar.Core.Middleend.UniqueVars
-import Feldspar.Core.Middleend.PassManager
 import qualified Feldspar.Core.UntypedRepresentation as U
 import Feldspar.Core.Reify (ASTF, unASTF)
 import Feldspar.Core.Types (TypeRep(..), defaultSize, TypeF(..), (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
-import Feldspar.Core.ValueInfo (ValueInfo(..), PrettyInfo(..))
+import Feldspar.Core.ValueInfo (ValueInfo(..))
 import Feldspar.Range (Range(..))
 import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr((:&)), Expr((:@)))
@@ -512,48 +508,3 @@ toValueInfo (IVarType a) sz                 = toValueInfo a sz
 -- TODO: Maybe keep argument information for FunType.
 toValueInfo (FunType a _) (sa, _)           = toValueInfo a sa
 toValueInfo (FValType a) sz                 = toValueInfo a sz
-
--- The front-end driver.
-
--- | Enumeration of front end passes
-data FrontendPass
-     = FPUnASTF
-     | FPAdjustBind
-     | FPSizeProp
-     | FPUntype
-     | FPRename
-     | FPSinkLets
-     | FPOptimize
-     | FPPushLets
-     | FPExpand
-     | FPUnique
-     | FPUnAnnotate
-     | FPCreateTasks
-     deriving (Eq, Show, Enum, Bounded, Read)
-
-instance Pretty UntypedFeld where
-  pretty = pretty . annotate (const ())
-
-instance PrettyInfo a => Pretty (AUntypedFeld a) where
-  pretty = prettyExp f
-     where f t x = " | " ++ prettyInfo t x
-
--- | Front-end driver
-frontend :: PassCtrl FrontendPass -> FeldOpts -> ASTF a -> ([String], Maybe UntypedFeld)
-frontend ctrl opts = evalPasses 0
-                   $ pc FPCreateTasks      (createTasks opts)
-                   . pt FPUnAnnotate       unAnnotate
-                   . pc FPUnique           uniqueVars
-                   . pc FPExpand           expand
-                   . pc FPPushLets         pushLets
-                   . pc FPOptimize         optimize
-                   . pc FPSinkLets         (sinkLets opts)
-                   . pc FPRename           renameExp
-                   . pt FPUntype           toU
-                   . pc FPSizeProp         sizeProp
-                   . pc FPAdjustBind       adjustBindings
-                   . pt FPUnASTF           unASTF
-  where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
-        pc = passC ctrl
-        pt :: (Pretty a, Pretty b) => FrontendPass -> (a -> b) -> Prog a Int -> Prog b Int
-        pt = passT ctrl

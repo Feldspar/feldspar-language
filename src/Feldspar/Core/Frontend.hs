@@ -44,6 +44,9 @@ module Feldspar.Core.Frontend
 
     , Data
 
+    , FrontendPass(..)
+    , frontend
+
     , module Feldspar.Core.Language
 
     , FeldOpts
@@ -95,14 +98,71 @@ import qualified Feldspar.Core.Reify as Syntactic
 import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
-import Feldspar.Compiler.Options (FeldOpts, defaultFeldOpts)
-import Feldspar.Core.Middleend.FromTyped (FrontendPass(FPUnAnnotate), frontend,
-                                          untype, untypeUnOpt, untypeDecor)
-import Feldspar.Core.Middleend.PassManager (PassCtrl(..), defaultPassCtrl)
+import Feldspar.Compiler.Options (FeldOpts, Pretty(..), defaultFeldOpts)
+import Feldspar.Core.AdjustBindings (adjustBindings)
+import Feldspar.Core.Middleend.CreateTasks
+import Feldspar.Core.Middleend.Expand (expand)
+import Feldspar.Core.Middleend.FromTyped (renameExp, toU, untype, untypeUnOpt,
+                                          untypeDecor)
+import Feldspar.Core.Middleend.LetSinking
+import Feldspar.Core.Middleend.OptimizeUntyped
+import Feldspar.Core.Middleend.PassManager (PassCtrl(..), Prog(..),
+                                            defaultPassCtrl, evalPasses, passC,
+                                            passT)
+import Feldspar.Core.Middleend.PushLets
+import Feldspar.Core.Middleend.UniqueVars
+import qualified Feldspar.Core.SizeProp as SP
 import Feldspar.Core.Types
-import Feldspar.Core.UntypedRepresentation (stringTree, stringTreeExp)
+import Feldspar.Core.UntypedRepresentation (UntypedFeld, AUntypedFeld,
+                                            annotate, prettyExp, stringTree,
+                                            stringTreeExp, unAnnotate)
 import Feldspar.Core.Language
-import Feldspar.Core.ValueInfo (ValueInfo)
+import Feldspar.Core.ValueInfo (ValueInfo, PrettyInfo(..))
+
+-- The front-end driver.
+
+-- | Enumeration of front end passes
+data FrontendPass
+     = FPUnASTF
+     | FPAdjustBind
+     | FPSizeProp
+     | FPUntype
+     | FPRename
+     | FPSinkLets
+     | FPOptimize
+     | FPPushLets
+     | FPExpand
+     | FPUnique
+     | FPUnAnnotate
+     | FPCreateTasks
+     deriving (P.Eq, Show, Enum, Bounded, Read)
+
+instance Pretty UntypedFeld where
+  pretty = pretty . annotate (const ())
+
+instance PrettyInfo a => Pretty (AUntypedFeld a) where
+  pretty = prettyExp f
+     where f t x = " | " ++ prettyInfo t x
+
+-- | Front-end driver
+frontend :: PassCtrl FrontendPass -> FeldOpts -> ASTF a -> ([String], Maybe UntypedFeld)
+frontend ctrl opts = evalPasses 0
+                   $ pc FPCreateTasks      (createTasks opts)
+                   . pt FPUnAnnotate       unAnnotate
+                   . pc FPUnique           uniqueVars
+                   . pc FPExpand           expand
+                   . pc FPPushLets         pushLets
+                   . pc FPOptimize         optimize
+                   . pc FPSinkLets         (sinkLets opts)
+                   . pc FPRename           renameExp
+                   . pt FPUntype           toU
+                   . pc FPSizeProp         SP.sizeProp
+                   . pc FPAdjustBind       adjustBindings
+                   . pt FPUnASTF           unASTF
+  where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
+        pc = passC ctrl
+        pt :: (Pretty a, Pretty b) => FrontendPass -> (a -> b) -> Prog a Int -> Prog b Int
+        pt = passT ctrl
 
 reifyFeld :: Syntactic a => a -> ASTF (Internal a)
 reifyFeld = Syntactic.desugar
