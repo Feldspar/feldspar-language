@@ -99,7 +99,6 @@ library
     Feldspar.Compiler.Backend.C.Tic64x
     Feldspar.Compiler.Backend.C.Platforms
     Feldspar.Compiler.Backend.C.RuntimeLibrary
-    Feldspar.Compiler.Frontend.Interactive.Interface
     Feldspar.Compiler.Plugin
     Feldspar.Compiler.Marshal
     Feldspar.Compiler.CallConv
