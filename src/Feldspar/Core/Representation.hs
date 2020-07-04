@@ -61,6 +61,7 @@ module Feldspar.Core.Representation
   , goodToShare
   ) where
 
+import Feldspar.Compiler.Options (Pretty(..))
 import Feldspar.Core.Types (Type(..), TypeF(..), TypeRep(..), Length, Index, IntN,
                             Size, Elements, FVal, Mut, AnySize, MArr, Par, IV)
 import Feldspar.Range (Range, BoundedInt)
@@ -126,6 +127,9 @@ instance Show (AExpr a) where
 showAExpr :: Int -> AExpr a -> String -> String
 showAExpr n (i :& (e :: Expr (Full a))) r = '{':inf ++ "} " ++ showExpr n e r
   where inf = show (infoSize i) ++ " : " ++ show (typeRepF :: TypeRep a)
+
+instance Pretty (AExpr a) where
+  pretty = show
 
 {- | The main expression type.
      Applications always have an operator at the left end, and are never annotated.
