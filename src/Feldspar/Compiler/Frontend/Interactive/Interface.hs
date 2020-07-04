@@ -35,10 +35,9 @@
 module Feldspar.Compiler.Frontend.Interactive.Interface where
 
 import Feldspar.Compiler.Options
-import Feldspar.Core.Frontend (Syntactic, reifyFeld)
+import Feldspar.Core.Frontend (FrontendPass, Syntactic, frontend, reifyFeld)
 import Feldspar.Core.UntypedRepresentation (UntypedFeld)
 import Feldspar.Core.Middleend.PassManager
-import Feldspar.Core.Middleend.FromTyped (FrontendPass, frontend)
 import Feldspar.Compiler.Compiler
 import Feldspar.Compiler.Imperative.FromCore
 import Feldspar.Compiler.Backend.C.Library

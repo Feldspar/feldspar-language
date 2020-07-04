@@ -54,9 +54,8 @@ module Feldspar.Compiler.Compiler (
 import Data.List (partition)
 import Data.Maybe (fromMaybe)
 
-import Feldspar.Core.Frontend (Syntactic, reifyFeld)
+import Feldspar.Core.Frontend (FrontendPass, Syntactic, frontend, reifyFeld)
 import Feldspar.Core.UntypedRepresentation (UntypedFeld, VarId)
-import Feldspar.Core.Middleend.FromTyped (FrontendPass, frontend)
 import Feldspar.Compiler.Backend.C.Library
 import Feldspar.Compiler.Backend.C.Platforms
 import Feldspar.Compiler.Backend.C.CodeGeneration
