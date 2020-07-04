@@ -34,23 +34,11 @@
 --
 
 module Feldspar.Core.Middleend.FromTyped
-  ( untype
-  , untypeDecor
-  , untypeUnOpt
-  , toU
-  , renameExp
-  )
-  where
+  ( toU
+  ) where
 
-import Feldspar.Compiler.Options (FeldOpts)
 import Feldspar.Core.Middleend.FromTypeUtil
-import Feldspar.Core.Middleend.CreateTasks
-import Feldspar.Core.Middleend.LetSinking
-import Feldspar.Core.Middleend.OptimizeUntyped
-import Feldspar.Core.Middleend.PushLets
-import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.UntypedRepresentation as U
-import Feldspar.Core.Reify (ASTF, unASTF)
 import Feldspar.Core.Types (TypeRep(..), defaultSize, TypeF(..), (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
@@ -58,38 +46,7 @@ import Feldspar.Core.ValueInfo (ValueInfo(..))
 import Feldspar.Range (Range(..))
 import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr((:&)), Expr((:@)))
-import Feldspar.Core.SizeProp
-import Feldspar.Core.AdjustBindings
-import Control.Monad.State (evalState)
 import Data.Complex (Complex(..))
-
--- | External module interface. Untype, optimize and unannotate.
-untype :: FeldOpts -> ASTF a -> UntypedFeld
-untype opts = cleanUp opts
-            . untypeDecor opts
-
--- | External module interface. Untype and optimize.
-untypeDecor :: FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
-untypeDecor opts = pushLets
-                 . optimize
-                 . sinkLets opts
-                 . justUntype
-
--- | External module interface.
-untypeUnOpt :: FeldOpts -> ASTF a -> UntypedFeld
-untypeUnOpt opts = cleanUp opts
-                 . justUntype
-
--- | Only do the conversion to AUntypedFeld ValueInfo
-justUntype :: ASTF a -> AUntypedFeld ValueInfo
-justUntype = renameExp . toU . sizeProp . adjustBindings . unASTF
-
--- | Prepare the code for fromCore
-cleanUp :: FeldOpts -> AUntypedFeld ValueInfo -> UntypedFeld
-cleanUp opts = createTasks opts . unAnnotate . uniqueVars
-
-renameExp :: AUntypedFeld a -> AUntypedFeld a
-renameExp e = evalState (rename e) 0
 
 toU :: R.AExpr a -> AUntypedFeld ValueInfo
 toU (((R.Info i) :: R.Info a) :& e)
