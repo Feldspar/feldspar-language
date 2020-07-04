@@ -76,7 +76,7 @@ import System.IO (BufferMode(..), IOMode(..), hClose, hPutStr,
                   hSetBuffering, openFile)
 
 import Feldspar.Core.Frontend (FrontendPass, Syntactic, frontend, reifyFeld)
-import Feldspar.Core.UntypedRepresentation (UntypedFeld, VarId)
+import Feldspar.Core.UntypedRepresentation (UntypedFeld)
 import Feldspar.Compiler.Backend.C.Library
 import Feldspar.Compiler.Backend.C.Platforms
 import Feldspar.Compiler.Backend.C.CodeGeneration
@@ -369,9 +369,6 @@ instance (Pretty a, Pretty b) => Pretty (a, b) where
 
 instance Pretty (Module ()) where
   pretty m = compToCWithInfos defaultOptions m
-
-instance Pretty VarId where
-  pretty v = show v
 
 instance Pretty SplitModule where
   pretty (SplitModule impl intf) = "// Interface\n" ++ sourceCode intf ++
