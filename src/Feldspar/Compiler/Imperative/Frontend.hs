@@ -25,17 +25,12 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wall #-}
--- Some questionable partial patterns and pattern matches on strings
--- in the decoding function.
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 module Feldspar.Compiler.Imperative.Frontend where
 
 import Feldspar.Compiler.Imperative.Representation
-import Feldspar.Compiler.Options
 import Feldspar.Core.Types (Length)
 import Feldspar.Core.UntypedRepresentation (Fork(..))
 import Feldspar.Range
@@ -69,19 +64,15 @@ deepCopy :: Expression () -> [Expression ()] -> Program ()
 deepCopy arg1 [arg2]
   | arg1 == arg2
   = Empty
-
 deepCopy arg1 args
   | isAwLType (typeof arg1) || isNativeArray (typeof arg1)
   = Assign arg1 $ fun (typeof arg1) "copy" (arg1 : args)
-
 deepCopy arg1 [arg2]
   | StructType _ fts <- typeof arg2
   = Sequence $ map (deepCopyField . fst) fts
-
   | otherwise
   = Assign arg1 arg2
     where deepCopyField fld = deepCopy (StructField arg1 fld) [StructField arg2 fld]
-
 deepCopy _ _ = error "Multiple non-array arguments to copy"
 
 flattenCopy :: Expression () -> [Expression ()] -> [Expression ()] ->
@@ -90,46 +81,12 @@ flattenCopy _ [] [] _ = []
 flattenCopy dst (t:ts) (l:ls) cLen
   = Assign dst (arrayFun "copyArrayPos" $ arrayBufLen dst ++ arrayBufLen t ++ [cLen])
     : flattenCopy dst ts ls (ePlus cLen l)
+flattenCopy _ _ _ _ = error "flattenCopy: pattern match failure"
 
 ePlus :: Expression () -> Expression () -> Expression ()
 ePlus (ConstExpr (IntConst 0 _)) e = e
 ePlus e (ConstExpr (IntConst 0 _)) = e
 ePlus e1 e2                        = binop (1 :# NumType Signed S32) "+" e1 e2
-
--- | Lower array copy
-lowerCopy :: Options -> Type -> Expression () -> [Expression ()] -> [Program ()]
-lowerCopy opts t dst ins
-  | isAwLType t = lowerArrayCopy opts t dst ins
-lowerCopy opts NativeArray{} dst [arg1,arg2]
-  | l@(ConstExpr (IntConst n _)) <- arrayLength arg2
-  = if n < safetyLimit opts
-      then initArray (Just dst) l:map (\i -> Assign (ArrayElem dst [litI32 i]) (ArrayElem arg2 [litI32 i])) [0..(n-1)]
-      else error $ unlines ["Frontend.lowerCopy: array size (" ++ show n ++ ") too large", show arg1, show arg2]
-lowerCopy _ t e es = error $ "Frontend.lowerCopy: funny type (" ++ show t ++ ") or destination\n"
-                                ++ show e ++ "\nor arguments\n"
-                                ++ unlines (map show es)
-
--- | Lower general array copy
-lowerArrayCopy :: Options -> Type -> Expression () -> [Expression ()] -> [Program ()]
-lowerArrayCopy _ _ dst ins'@(arg1:in1:ins) -- FIXME: Remove the unused Options argument.
-  | [ConstExpr ArrayConst{..}] <- ins'
-  = initArray (Just dst) (litI32 $ toInteger $ length arrayValues)
-    : zipWith (\i c -> Assign (ArrayElem dst [litI32 i]) (ConstExpr c)) [0..] arrayValues
-  | [] <- ins
-  = [ Assign (arrayBuffer   dst) (arrayFun "initCopyArray" $ concatMap arrayBufLen [arg1, in1])
-    , Assign (arrayLengthLV dst) (arrayLength in1)
-    ]
-  | otherwise
-  = [ initArray (Just dst) expDstLen, copyFirstSegment ] ++
-      flattenCopy arg1 ins argnLens arg1len
-    where expDstLen = foldr ePlus (litI32 0) aLens
-          copyFirstSegment
-            | dst == in1 = Empty
-            | otherwise
-            = Assign (arrayBuffer dst)
-                     (arrayFun "copyArray" $ concatMap arrayBufLen [arg1, in1])
-          aLens@(arg1len:argnLens) = map arrayLength (in1:ins)
-
 
 -- | Initialize an array using \"initArray\"
 initArray
@@ -290,6 +247,7 @@ litC r i = ConstExpr (ComplexConst r i)
 
 litI :: Type -> Integer -> Expression ()
 litI (_ :# t) n = ConstExpr (IntConst n t)
+litI _ _ = error "litI: cannot create int from non-int type."
 
 litI32 :: Integer -> Expression ()
 litI32 = litI (1 :# NumType Unsigned S32)
@@ -351,9 +309,10 @@ variant :: String -> Type -> String
 variant str t | isShallow t = str
               | otherwise = str ++ "_" ++ encodeType t
 
+-- TODO: Haddock this function.
 arrayFun :: String -> [Expression ()] -> Expression ()
-arrayFun name (dst : dLen : es)
-  = fun arrTy (variant name eTy) (dst : dLen : addSize es eTy)
+arrayFun name (dst:dLen:es)
+  = fun arrTy (variant name eTy) (dst:dLen:addSize es eTy)
    where arrTy = typeof dst
          eTy   = elemType arrTy
          elemType (ArrayType _ t) = t
@@ -361,6 +320,7 @@ arrayFun name (dst : dLen : es)
          elemType t = error $ "Frontend.elemType: not an array " ++ show t
          addSize es' t | isShallow t = SizeOf t:es'
                        | otherwise   = es'
+arrayFun _ _ = error "arrayFun: pattern match failure"
 
 -- | The type of an array paired with its length
 mkAwLType :: Range Length -> Type -> Type
@@ -442,6 +402,7 @@ encodeType = go
   where
     go VoidType              = "void"
     -- Machine vectors do not change memory layout, so keep internal.
+    go StringType            = "string"
     go (_ :# t)              = goScalar t
     go (IVarType t)          = "i_" ++ go t
     go (NativeArray _ t)     = "narr_" ++ go t
@@ -468,6 +429,7 @@ decodeType = goL []
                       _     -> rest
 
     go (stripPrefix "void"     -> Just t) = (VoidType, t)
+    go (stripPrefix "string"   -> Just t) = (StringType, t)
     go (stripPrefix "bool"     -> Just t) = (1 :# BoolType, t)
     go (stripPrefix "bit"      -> Just t) = (1 :# BitType, t)
     go (stripPrefix "float"    -> Just t) = (1 :# FloatType, t)
@@ -491,6 +453,7 @@ decodeType = goL []
              structGo 0 s acc = (reverse acc, s)
              structGo n' ('_':s) acc = structGo (n' - 1) s' (ts':acc)
                       where (ts', s') = go s
+             structGo _ _ _ = error "decodeType: pattern match failure"
              h' = take (length h - length t'') h
     go (stripPrefix "arr_"     -> Just t) = (ArrayType fullRange tt, t')
       where (tt, t') = go t
@@ -503,8 +466,9 @@ decodeType = goL []
     decodeSize (stripPrefix "S16" -> Just t) = (S16, t)
     decodeSize (stripPrefix "S40" -> Just t) = (S40, t)
     decodeSize (stripPrefix "S64" -> Just t) = (S64, t)
+    decodeSize (stripPrefix "S128" -> Just t) = (S128, t)
+    decodeSize n = error $ "decodeSize: " ++ show n
 
     decodeLen e
-      | [p@(_,_)] <- reads e :: [(Int,String)]
-      = Just p
+      | [p@(_,_)] <- reads e :: [(Int, String)] = Just p
       | otherwise = Nothing

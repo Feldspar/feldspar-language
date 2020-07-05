@@ -25,6 +25,7 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -Wall #-}
 
@@ -32,14 +33,15 @@
 module Feldspar.Compiler.Imperative.ArrayOps (arrayOps) where
 
 import Feldspar.Compiler.Imperative.Frontend
-        (litI32, fun, call, for, toBlock, mkIf, isShallow, variant,
-         arrayFun, freeArrayE, lowerCopy, mkSequence, elemTyAwL)
+        (arrayBuffer, arrayBufLen, arrayLength, arrayLengthLV, litI32, ePlus,
+         flattenCopy, fun, call, for, toBlock, mkIf, initArray, isAwLType,
+         isShallow, variant, arrayFun, freeArrayE, mkSequence, elemTyAwL)
 import Feldspar.Compiler.Imperative.Representation
-        (Module(..), Entity(..), Declaration(..), Program(..), Function(..),
-         ParType(..), Block(..), ActualParameter(..), Expression(..),
-         Variable(..), Type(..), ScalarType(..), HasType(..), Size(..),
-         Signedness(..))
-import Feldspar.Compiler.Options (Options)
+        (Constant(..), Module(..), Entity(..), Declaration(..), Program(..),
+         Function(..), ParType(..), Block(..), ActualParameter(..),
+         Expression(..), Variable(..), Type(..), ScalarType(..),
+         HasType(..), Size(..), Signedness(..))
+import Feldspar.Compiler.Options (Options(..))
 import Feldspar.Range (fullRange)
 
 import Control.Monad.Writer (censor, runWriter, tell)
@@ -50,13 +52,15 @@ arrayOps :: Options -> Module () -> Module ()
 arrayOps opts (Module ents) = Module $ concatMap mkArrayOps dts ++ ents'
   where dts = filter (not . either isShallow isShallow) lrts
         (ents',lrts) = lower opts ents
-        mkArrayOps (Left  t) = [mkInitArray opts t, mkFreeArray opts t]
-        mkArrayOps (Right t) = [mkCopyArrayPos opts t, mkCopyArray opts t, mkInitCopyArray opts t]
+        mkArrayOps (Left  t) = [mkInitArray t, mkFreeArray t]
+        mkArrayOps (Right t)
+          = [mkCopyArrayPos opts t, mkCopyArray t, mkInitCopyArray t]
 
 -- | Copying an array to a given position in the destination
 mkCopyArrayPos :: Options -> Type -> Entity ()
-mkCopyArrayPos opts t = Proc name False [dstVar, dstLVar, srcVar, srcLVar, posVar] (typeof dstVar) (Just body)
+mkCopyArrayPos opts t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "copyArrayPos" t
+        args = [dstVar, dstLVar, srcVar, srcLVar, posVar]
         body = Block decls prog
         decls = []
         ixVar = Variable intT "i"
@@ -74,11 +78,11 @@ mkCopyArrayPos opts t = Proc name False [dstVar, dstLVar, srcVar, srcLVar, posVa
         lbProg = lowerCopy opts t lhs' [lhs', ArrayElem (VarExpr srcVar) [VarExpr ixVar]]
              where lhs' = ArrayElem (VarExpr dstVar) [fun intT "+" [VarExpr posVar, VarExpr ixVar]]
 
--- FIXME: Remove unused options argument.
 -- | Copying an array to the beginning of another array
-mkCopyArray :: Options -> Type -> Entity ()
-mkCopyArray _ t = Proc name False [dstVar, dstLVar, srcVar, srcLVar] (typeof dstVar) (Just body)
+mkCopyArray :: Type -> Entity ()
+mkCopyArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "copyArray" t
+        args = [dstVar, dstLVar, srcVar, srcLVar]
         srcVar = Variable (ArrayType fullRange t) "src"
         srcLVar = Variable intT "srcLen"
         dstVar = Variable (ArrayType fullRange t) "dst"
@@ -93,11 +97,11 @@ mkCopyArray _ t = Proc name False [dstVar, dstLVar, srcVar, srcLVar] (typeof dst
                , call "return" [ValueParameter $ VarExpr dstVar]
                ]
 
--- FIXME: Remove unused options argument.
 -- | Initializing and copying in a single operation
-mkInitCopyArray :: Options -> Type -> Entity ()
-mkInitCopyArray _ t = Proc name False [dstVar, dstLVar, srcVar, srcLVar] (typeof dstVar) (Just body)
+mkInitCopyArray :: Type -> Entity ()
+mkInitCopyArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "initCopyArray" t
+        args = [dstVar, dstLVar, srcVar, srcLVar]
         srcVar = Variable (ArrayType fullRange t) "src"
         srcLVar = Variable intT "srcLen"
         dstVar = Variable (ArrayType fullRange t) "dst"
@@ -114,11 +118,11 @@ mkInitCopyArray _ t = Proc name False [dstVar, dstLVar, srcVar, srcLVar] (typeof
                , call "return" [ValueParameter $ VarExpr dstVar]
                ]
 
--- FIXME: Remove unused optoins argument.
 -- | Initialize an array to a given length
-mkInitArray :: Options -> Type -> Entity ()
-mkInitArray _ t = Proc name False [dstVar, oldLen, newLen] (typeof dstVar) (Just body)
+mkInitArray :: Type -> Entity ()
+mkInitArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "initArray" t
+        args = [dstVar, oldLen, newLen]
         dstVar = Variable (ArrayType fullRange t) "dst"
         oldLen = Variable lengthT "oldLen"
         newLen = Variable lengthT "newLen"
@@ -146,10 +150,9 @@ mkInitArray _ t = Proc name False [dstVar, oldLen, newLen] (typeof dstVar) (Just
         nullVar t' n = Variable t' ("null_arr_" ++ show n)
         arrT = ArrayType fullRange t
 
--- FIXME: Remove unused options argument.
 -- | Free an array
-mkFreeArray :: Options -> Type -> Entity ()
-mkFreeArray _ t = Proc name False [srcVar, srcLVar] VoidType (Just body)
+mkFreeArray :: Type -> Entity ()
+mkFreeArray t = Proc name False [srcVar, srcLVar] VoidType (Just body)
   where name = variant "freeArray" t
         srcVar = Variable (ArrayType fullRange t) "src"
         srcLVar = Variable intT "srcLen"
@@ -236,6 +239,45 @@ lower opts es' = runWriter $ censor (nub . concatMap close) $ mapM lcEnt es'
         eTypes _ (NativeArray _ t) = [t]
         eTypes e t = error $ "ArrayOps.eTypes: surprising array type "
                            ++ show t ++ " with rhs\n  " ++ show e
+
+-- | Lower array copy
+lowerCopy :: Options -> Type -> Expression () -> [Expression ()] -> [Program ()]
+lowerCopy _ t dst ins
+  | isAwLType t = lowerArrayCopy dst ins
+lowerCopy opts NativeArray{} dst [arg1,arg2]
+  | l@(ConstExpr (IntConst n _)) <- arrayLength arg2
+  = if n < safetyLimit opts
+      then initArray (Just dst) l:map (\i -> Assign (ArrayElem dst [litI32 i]) (ArrayElem arg2 [litI32 i])) [0..(n-1)]
+      else error $
+            unlines ["lowerCopy: array size (" ++ show n ++ ") too large"
+                    , show arg1, show arg2]
+lowerCopy _ t e es
+  = error $ "lowerCopy: funny type (" ++ show t ++ ") or destination\n"
+      ++ show e ++ "\nor arguments\n" ++ unlines (map show es)
+
+-- | Lower general array copy
+lowerArrayCopy :: Expression () -> [Expression ()] -> [Program ()]
+lowerArrayCopy dst ins'@(arg1:in1:ins)
+  | [ConstExpr ArrayConst{..}] <- ins'
+  = initArray (Just dst) (litI32 $ toInteger $ length arrayValues)
+    : zipWith (\i c -> Assign (ArrayElem dst [litI32 i]) (ConstExpr c)) [0..] arrayValues
+  | [] <- ins
+  = [ Assign (arrayBuffer   dst)
+             (arrayFun "initCopyArray" $ concatMap arrayBufLen [arg1, in1])
+    , Assign (arrayLengthLV dst) (arrayLength in1)
+    ]
+  | otherwise
+  = [ initArray (Just dst) expDstLen, copyFirstSegment ] ++
+      flattenCopy arg1 ins argnLens arg1len
+    where expDstLen = foldr ePlus (litI32 0) aLens
+          copyFirstSegment
+            | dst == in1 = Empty
+            | otherwise
+            = Assign (arrayBuffer dst)
+                     (arrayFun "copyArray" $ concatMap arrayBufLen [arg1, in1])
+          aLens@(arg1len:argnLens) = map arrayLength (in1:ins)
+lowerArrayCopy _ ins
+  = error $ "lowerArrayCopy: pattern match failure: " ++ show ins
 
 -- | Utilities
 zero :: Expression ()
