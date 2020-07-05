@@ -89,7 +89,6 @@ library
     Feldspar.Compiler.Imperative.Representation
     Feldspar.Compiler.Imperative.ExternalProgram
     Feldspar.Compiler.Imperative.FromCore
-    Feldspar.Compiler.Imperative.FromCore.Interpretation
     Feldspar.Compiler.Imperative.Frontend
     Feldspar.Compiler.Options
     Feldspar.Compiler.Backend.C.CodeGeneration
