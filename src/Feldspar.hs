@@ -31,15 +31,32 @@
 
 module Feldspar
   ( module Prelude.EDSL
-  , module Feldspar.Core
+  -- * Reexported standard modules
+  , Complex (..)
+  , module Data.Int
+  , module Data.Word
+
+  -- * Feldspar types
+  , Range (..)
+  , BoundedInt
+  , module Feldspar.Core.Types
+
+  -- * Frontend
+  , module Feldspar.Core.Frontend
+  , module Feldspar.Core.Collection
   ) where
-
-
 
 import qualified Prelude
   -- In order to be able to use the Feldspar module in GHCi without getting name
   -- clashes.
 
 import Prelude.EDSL
-import Feldspar.Core
 
+import Data.Complex
+import Data.Int hiding (Int)
+import Data.Word
+
+import Feldspar.Range
+import Feldspar.Core.Types
+import Feldspar.Core.Frontend
+import Feldspar.Core.Collection
