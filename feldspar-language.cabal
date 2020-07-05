@@ -100,7 +100,6 @@ library
     Feldspar.Compiler.Plugin
     Feldspar.Compiler.Marshal
     Feldspar.Compiler.CallConv
-    Feldspar.Compiler.Compiler
     Feldspar.Compiler.Error
     Feldspar.Compiler.ExternalProgram
     Feldspar.Runtime

@@ -7,7 +7,7 @@ module Feldspar.Compiler.ExternalProgram
 
 import qualified Data.ByteString.Char8 as B
 
-import Feldspar.Compiler.Compiler
+import Feldspar.Compiler
         (CompiledModule, SplitModule(..), compileToCCore', defaultOptions,
          sourceCode, writeFiles)
 import Feldspar.Compiler.Imperative.ExternalProgram (parseFile)
