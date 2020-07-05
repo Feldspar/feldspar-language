@@ -64,7 +64,6 @@ library
     Feldspar.Core.Middleend.UniqueVars
     Feldspar.Core.Frontend
     Feldspar.Core.Collection
-    Feldspar.Core
     Feldspar.Future
     Feldspar.Memoize
     Feldspar.Mutable
