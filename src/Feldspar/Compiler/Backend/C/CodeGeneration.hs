@@ -35,7 +35,6 @@ module Feldspar.Compiler.Backend.C.CodeGeneration where
 import Prelude hiding (Semigroup(..), (<>), init)
 
 import Feldspar.Compiler.Imperative.Representation
-import Feldspar.Compiler.Error (handleError, ErrorClass(..))
 import Feldspar.Compiler.Imperative.Frontend (
     isNativeArray, isArray, isPointer
   )

@@ -30,7 +30,9 @@
 
 -- | Option handling data structures for Feldspar
 module Feldspar.Compiler.Options
-  ( Pretty(..)
+  ( ErrorClass(..)
+  , handleError
+  , Pretty(..)
   , Target(..)
   , FeldOpts(..)
   , defaultFeldOpts
@@ -45,6 +47,19 @@ module Feldspar.Compiler.Options
   ) where
 
 import Language.Haskell.TH.Syntax (Lift(..))
+
+-- * Error handling utils.
+
+-- | Error categorization
+data ErrorClass
+  = InvariantViolation
+  | InternalError
+  | Warning
+  deriving (Eq, Show)
+
+handleError :: String -> ErrorClass -> String -> a
+handleError place errorClass message =
+  error $ "[" ++ show errorClass ++ " @ " ++ place ++ "]: " ++ message
 
 -- * Pretty printing utils.
 

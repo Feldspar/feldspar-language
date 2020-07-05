@@ -62,9 +62,8 @@ import Data.Maybe (fromMaybe)
 import Data.Semigroup (Semigroup(..))
 import Language.Haskell.TH.Syntax (Lift(..))
 
-import Feldspar.Compiler.Error
-
 import Feldspar.Range (Range)
+import Feldspar.Compiler.Options (ErrorClass(..), handleError)
 import Feldspar.Core.Types (Length)
 import Feldspar.Core.UntypedRepresentation
         (Signedness(..), Size(..), HasType(..))
