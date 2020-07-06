@@ -183,7 +183,7 @@ toVector :: (Shape sh, Type a) => sh -> Data [a] -> DVector sh a
 toVector sh arr = Vector sh (\ix -> arr ! toIndex ix sh)
 
 freezeVector :: (Shape sh, Type a) => DVector sh a -> NPair (Data [Length]) (Data [a])
-freezeVector v   = npair shapeArr $ fromVector v
+freezeVector v   = twotup shapeArr $ fromVector v
   where shapeArr = fromList (toList $ extent v)
 
 fromList :: Type a => [Data a] -> Data [a]

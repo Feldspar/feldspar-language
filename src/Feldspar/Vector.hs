@@ -242,7 +242,7 @@ arrToPull sh arr = Pull (\ix -> arr ! toIndex sh ix) sh
 -- | Store a vector and its shape to memory
 freezePull :: (Type a, Shapely sh, ShapeTup sh, SyntacticTup (ShapeTupT sh))
            => DPull sh a -> NPair (Tuple (ShapeTupT sh)) (Data [a])
-freezePull v = npair (toTup $ extent v) (fromPull v)
+freezePull v = twotup (toTup $ extent v) (fromPull v)
 
 freezePull1 :: (Type a) => DPull DIM1 a -> Data [a]
 freezePull1 = fromPull
@@ -1278,7 +1278,7 @@ fromPush (Push ixf l) = materialize (size l) $
 
 freezePush :: (Type a, Shapely sh, ShapeTup sh) =>
               Push sh (Data a) -> NPair (Tuple (ShapeTupT sh)) (Data [a])
-freezePush v = npair (toTup $ extent v) (fromPush v)
+freezePush v = twotup (toTup $ extent v) (fromPush v)
 
 freezePush1 :: Type a => Push DIM1 (Data a) -> Data [a]
 freezePush1 = fromPush

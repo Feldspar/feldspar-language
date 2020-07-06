@@ -74,7 +74,7 @@ instance Monad Option
 
 -- | One-layer desugaring of 'Option'
 desugarOption :: Type a => Option (Data a) -> Data (NPair Bool a)
-desugarOption a = resugar $ npair (isSome a) (fromSome a)
+desugarOption a = resugar $ twotup (isSome a) (fromSome a)
 
 -- | One-layer sugaring of 'Option'
 sugarOption :: Type a => Data (NPair Bool a) -> Option (Data a)

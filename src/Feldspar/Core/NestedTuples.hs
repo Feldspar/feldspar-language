@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -48,9 +47,16 @@ module Feldspar.Core.NestedTuples
   , tuple
   , build
   , NPair
-  , npair
   , nfst
   , nsnd
+  -- * Building tuples
+  , onetup
+  , twotup
+  , threetup
+  , fourtup
+  , fivetup
+  , sixtup
+  , seventup
   ) where
 
 -- | Data and type constructor for nested tuples
@@ -140,17 +146,17 @@ tuple = stuple TNil
 build :: TupleReverse TNil a b => TT (Tuple a) -> Tuple b
 build (TT x) = tupleReverse TNil x
 
--- | Convenience functions for pairs implemented as nested tuples.
+-- * Non-variadic tuples
+
+-- | Convenience functions for short fixed tuples.
 --   Since ordinary tuples are desugared to nested tuples, desugared
 --   contexts of pairs, e.g. in the Sequential AST operator, need types
 --   of the form Tuple (a :* b :* TNil) for which we provide support here.
+--   A second reason to provide these functions is that the variable arity
+--   of build does not interact well with <$> and <*> in instances.
 
 -- | The type of pairs implemented as nested tuples, corresponds to (,).
 type NPair a b = Tuple (a :* b :* TNil)
-
--- | Function for constructing an NPair from its components.
-npair :: a -> b -> NPair a b
-npair x y = build $ tuple x y
 
 -- | Extract the first component of an NPair.
 nfst :: NPair a b -> a
@@ -159,3 +165,33 @@ nfst = sel First
 -- | Extract the second component of an NPair.
 nsnd :: NPair a b -> b
 nsnd = sel $ Skip First
+
+-- | Function for constructing a one-tuple from its components.
+onetup :: a -> Tuple (a :* TNil)
+onetup a = build $ tuple a
+
+-- | Function for constructing an NPair from its components.
+twotup :: a -> b -> NPair a b
+twotup a b = build $ tuple a b
+
+-- | Function for constructing a three-tuple from its components.
+threetup :: a -> b -> c -> Tuple (a :* b :* c :* TNil)
+threetup a b c = build $ tuple a b c
+
+-- | Function for constructing a four-tuple from its components.
+fourtup :: a -> b -> c -> d -> Tuple (a :* b :* c :* d :* TNil)
+fourtup a b c d = build $ tuple a b c d
+
+-- | Function for constructing a five-tuple from its components.
+fivetup :: a -> b -> c -> d -> e -> Tuple (a :* b :* c :* d :* e :* TNil)
+fivetup a b c d e = build $ tuple a b c d e
+
+-- | Function for constructing a six-tuple from its components.
+sixtup :: a -> b -> c -> d -> e -> f
+       -> Tuple (a :* b :* c :* d :* e :* f :* TNil)
+sixtup a b c d e f = build $ tuple a b c d e f
+
+-- | Function for constructing a seven-tuple from its components.
+seventup :: a -> b -> c -> d -> e -> f -> g
+         -> Tuple (a :* b :* c :* d :* e :* f :* g :* TNil)
+seventup a b c d e f g = build $ tuple a b c d e f g
