@@ -369,19 +369,16 @@ but we might not be able to comply.
 
 -}
 
--- | Get the generated core for an 'UntypedFeld' expression. The result is the
--- generated code and the next available variable identifier.
+-- | Get the generated core for an 'UntypedFeld' expression.
 fromCoreUT
     :: Options
     -> String       -- ^ Name of the generated function
     -> UntypedFeld  -- ^ Expression to generate code for
-    -> (Module (), VarId)
-fromCoreUT opt funname uast = (Module defs, maxVar')
+    -> Module ()
+fromCoreUT opt funname uast = Module defs
   where
-    maxVar  = succ $ maximum $ map Ut.varNum $ Ut.allVars uast
     fastRet = useNativeReturns opt && canFastReturn (compileType opt (typeof uast))
-
-    (outParam,maxVar',results) = runRWS (compileProgTop uast) (initEnv opt) maxVar
+    (outParam, results) = evalRWS (compileProgTop uast) (initEnv opt) 0
 
     decls      = decl results
     formals    = params results ++ outs

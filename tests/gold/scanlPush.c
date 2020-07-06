@@ -44,7 +44,7 @@ void scanlPush(struct awl_unsignedS32 * v0, struct awl_unsignedS32 * v1, struct 
   uint32_t v15;
   struct awl_unsignedS32 v23 = { 0 };
   uint32_t v24;
-  struct awl_unsignedS32 e27 = { 0 };
+  struct awl_unsignedS32 e0 = { 0 };
   
   v9 = (*v1).length;
   (*out).buffer = initArray_awl_unsignedS32((*out).buffer, (*out).length, v9);
@@ -64,16 +64,16 @@ void scanlPush(struct awl_unsignedS32 * v0, struct awl_unsignedS32 * v1, struct 
     (v23).buffer = initCopyArray((v23).buffer, (v23).length, sizeof(uint32_t), (v12).buffer, (v12).length);
     (v23).length = (v12).length;
     v24 = (v23).length;
-    (e27).buffer = initArray((e27).buffer, (e27).length, sizeof(uint32_t), v24);
-    (e27).length = v24;
+    (e0).buffer = initArray((e0).buffer, (e0).length, sizeof(uint32_t), v24);
+    (e0).length = v24;
     for (uint32_t v26 = 0; v26 < v24; v26 += 1)
     {
-      (e27).buffer[v26] = (v23).buffer[v26];
+      (e0).buffer[v26] = (v23).buffer[v26];
     }
-    ((*out).buffer[v13]).buffer = initCopyArray(((*out).buffer[v13]).buffer, ((*out).buffer[v13]).length, sizeof(uint32_t), (e27).buffer, (e27).length);
-    ((*out).buffer[v13]).length = (e27).length;
+    ((*out).buffer[v13]).buffer = initCopyArray(((*out).buffer[v13]).buffer, ((*out).buffer[v13]).length, sizeof(uint32_t), (e0).buffer, (e0).length);
+    ((*out).buffer[v13]).length = (e0).length;
   }
   freeArray((v12).buffer);
   freeArray((v23).buffer);
-  freeArray((e27).buffer);
+  freeArray((e0).buffer);
 }

@@ -3,25 +3,25 @@
 
 void issue128__ex3(uint32_t v0, uint32_t * out)
 {
+  uint32_t e0;
   uint32_t e1;
-  uint32_t e2;
   
   switch (v0)
   {
     case 1:
-      e1 = 10;
+      e0 = 10;
       break;
     default:
-      e1 = 45;
+      e0 = 45;
       break;
   }
   if ((2 == v0))
   {
-    e2 = 2;
+    e1 = 2;
   }
   else
   {
-    e2 = v0;
+    e1 = v0;
   }
-  *out = (e1 + e2);
+  *out = (e0 + e1);
 }

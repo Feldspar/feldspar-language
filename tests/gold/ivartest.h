@@ -13,7 +13,7 @@
 #include <complex.h>
 
 
-void task_core0(uint32_t v0, struct ivar e2);
+void task_core0(uint32_t v0, struct ivar e1);
 
 void task0(void * params);
 
