@@ -42,19 +42,19 @@ void metrics(struct awl_signedS32 * v1, struct awl_signedS32 * v2, struct awl_aw
   uint32_t v9;
   struct awl_awl_signedS32 v33 = { 0 };
   uint32_t v19;
-  struct awl_signedS32 st41 = { 0 };
+  struct awl_signedS32 st0 = { 0 };
   struct awl_signedS32 * v14 = NULL;
   uint32_t v37;
   
   v10 = (*v3).length;
   v9 = (*v1).length;
-  (st41).buffer = initArray((st41).buffer, (st41).length, sizeof(int32_t), 8);
-  (st41).length = 8;
+  (st0).buffer = initArray((st0).buffer, (st0).length, sizeof(int32_t), 8);
+  (st0).length = 8;
   for (uint32_t v6 = 0; v6 < 8; v6 += 1)
   {
-    (st41).buffer[v6] = -32678;
+    (st0).buffer[v6] = -32678;
   }
-  v14 = &st41;
+  v14 = &st0;
   (v33).buffer = initArray_awl_signedS32((v33).buffer, (v33).length, v10);
   (v33).length = v10;
   for (uint32_t v13 = 0; v13 < v10; v13 += 1)
@@ -81,5 +81,5 @@ void metrics(struct awl_signedS32 * v1, struct awl_signedS32 * v2, struct awl_aw
     }
   }
   freeArray_awl_signedS32((v33).buffer, (v33).length);
-  freeArray((st41).buffer);
+  freeArray((st0).buffer);
 }

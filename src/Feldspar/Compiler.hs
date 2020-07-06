@@ -93,7 +93,7 @@ compile prg fileName funName opts = writeFiles compRes fileName (codeGenerator $
 compileUT :: UntypedFeld -> FilePath -> String -> Options -> IO ()
 compileUT prg fileName funName opts = writeFiles compRes fileName (codeGenerator $ platform opts)
   where compRes = compileToCCore' opts prg'
-        prg'    = fst $ fromCoreUT opts (encodeFunctionName funName) prg
+        prg'    = fromCoreUT opts (encodeFunctionName funName) prg
 
 writeFiles :: SplitModule -> FilePath -> String -> IO ()
 writeFiles prg fileName "c" = do
@@ -377,7 +377,7 @@ backend ctrl opts name = evalPasses 0
                        $ codegen (codeGenerator $ platform opts) ctrl opts
                        . pc BPRename   (rename opts False)
                        . pc BPArrayOps (arrayOps opts)
-                       . pt BPFromCore (fst . fromCoreUT opts (encodeFunctionName name))
+                       . pt BPFromCore (fromCoreUT opts (encodeFunctionName name))
   where pc :: Pretty a => BackendPass -> (a -> a) -> Prog a Int -> Prog a Int
         pc = passC ctrl
         pt :: (Pretty a, Pretty b) => BackendPass -> (a -> b) -> Prog a Int -> Prog b Int
@@ -397,7 +397,7 @@ fromCore :: Syntactic a
     -> Module ()
 fromCore opt funname prog
   | Just prg <- snd $ frontend ctrl (frontendOpts opt) $ reifyFeld prog
-  = fst $ fromCoreUT opt funname prg
+  = fromCoreUT opt funname prg
   | otherwise = error "fromCore: Internal error: frontend failed?"
    where ctrl = frontendCtrl defaultProgOpts
 

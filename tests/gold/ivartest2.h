@@ -19,7 +19,7 @@ struct s_2_unsignedS32_unsignedS32
   uint32_t member2;
 };
 
-void task_core0(struct s_2_unsignedS32_unsignedS32 * v0, struct ivar e1);
+void task_core0(struct s_2_unsignedS32_unsignedS32 * v0, struct ivar e0);
 
 void task0(void * params);
 
