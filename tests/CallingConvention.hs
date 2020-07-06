@@ -101,7 +101,7 @@ prop_vecId (Small l) =
     forAll (vector1D l arbitrary) $ \xs ->
       eval vecId xs ==== c_vecId xs
 prop_vectorInPair (Small l) =
-    forAll (npair <$> vector1D l arbitrary <*> arbitrary) $ \p ->
+    forAll (twotup <$> vector1D l arbitrary <*> arbitrary) $ \p ->
       eval vectorInPair p ==== c_vectorInPair p
 prop_vectorInVector (Small l1) (Small l2) =
     forAll (vector1D l1 (vector1D l2 arbitrary)) $ \v ->
