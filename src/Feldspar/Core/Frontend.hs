@@ -54,6 +54,7 @@ module Feldspar.Core.Frontend
     , reifyFeld
     , showExpr
     , showUntyped
+    , showUntyped'
     , printExpr
     , printExpr2
     , printExprWith
@@ -178,11 +179,16 @@ showDecorWith f = showTree . stringTreeExp g . untypeDecor defaultFeldOpts
 showExpr :: Syntactic a => a -> String
 showExpr = render . reifyFeld
 
--- Show an untyped expression
+-- | Show an untyped expression
 showUntyped :: Syntactic a => FeldOpts -> a -> String
 showUntyped opts = head . fst . frontend passCtrl opts . reifyFeld
   where passCtrl = defaultPassCtrl{ wrBefore = [FPUnAnnotate]
                                   , stopBefore = [FPUnAnnotate]}
+
+-- | Show an expression after a specific frontend pass
+showUntyped' :: Syntactic a => FrontendPass -> FeldOpts -> a -> String
+showUntyped' p opts = head . fst . frontend passCtrl opts . reifyFeld
+  where passCtrl = defaultPassCtrl{wrAfter = [p], stopAfter = [p]}
 
 -- | Print an optimized untyped expression
 printExpr2 :: Syntactic a => a -> IO ()
