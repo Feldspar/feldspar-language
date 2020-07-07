@@ -66,7 +66,7 @@ import Feldspar.Core.NestedTuples
 import Control.Monad.Cont (Cont, ap)
 import Data.Complex (Complex(..))
 import Data.Typeable (Typeable, typeOf)
-import Data.Hash (Hashable(..), combine, hashInt, Hash)
+import Data.Hash (Hashable(..), asWord64, combine, hashInt, Hash)
 
 import qualified Data.ByteString.Char8 as B
 import Data.Array (Array, accumArray, (!), bounds, elems)
@@ -293,23 +293,18 @@ catchBindings vs (m, e) = (m1, mkLets (bs,e))
 -}
 
 hashExpr :: AExpr a -> VarId
-hashExpr (_ :& e) = hashExprR e
+hashExpr = fromIntegral . asWord64 . hashExpr'
 
-hashExprR :: Expr a -> VarId
-hashExprR (Sym (Variable v)) = (hashStr . show $ typeOf v) `combineHash` (varNum v)
-hashExprR (Sym op) = hashOp op
--- Hash value of rhs in let is equal to bound variable name which occurs in body
-hashExprR (Sym Let :@ _ :@ (_ :& Sym (Lambda _) :@ e)) = hashExpr e
-hashExprR (f :@ e) = appHash `combineHash` hashExprR f `combineHash` hashExpr e
+hashExpr' :: AExpr a -> Hash
+hashExpr' (_ :& e) = hashExprR e
 
--- TODO: Document. Can this use the Hash instance for string instead?
-hashStr :: String -> VarId
-hashStr s = fromInteger $ foldr combineHash 5 $ map (toInteger . fromEnum) s
-
+hashExprR :: Expr a -> Hash
 -- Hash the type into the hash value to avoid hashing different
 -- F2I/I2F type instantiations to the same value.
-hashOp :: Typeable a => Op a -> VarId
-hashOp op = (hashStr . show $ typeOf op) `combineHash` (hashStr $ show op)
+hashExprR (Sym op) = (hash . show $ typeOf op) `combine` (hash $ show op)
+-- Hash value of rhs in let is equal to bound variable name which occurs in body
+hashExprR (Sym Let :@ _ :@ (_ :& Sym (Lambda _) :@ e)) = hashExpr' e
+hashExprR (f :@ e) = hashInt appHash `combine` hashExprR f `combine` hashExpr' e
 
 --------------------------------------------------------------------------------
 -- * Hashing
@@ -388,14 +383,8 @@ instance Hashable (T.TypeRep a) where
   hash (T.IVarType t)     = hashInt 29 # t
   hash (T.FValType t)     = hashInt 30 # t
 
-appHash :: VarId
+appHash :: Int
 appHash = 655360 + 40960 + 2560 + 160 + 10 + 17
-
-combineHash :: Integral a => a -> a -> a
-combineHash l r = fromInteger $ mod (toInteger l + 127 * toInteger r) hashMod
-
-hashMod :: Integer
-hashMod = 1024 * 1024 * 1024 * 1024 * 1023 + 1
 
 hashBase :: VarId
 hashBase = 10000 * 1000000 * 1000000

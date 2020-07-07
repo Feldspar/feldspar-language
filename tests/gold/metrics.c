@@ -41,7 +41,7 @@ void metrics(struct awl_signedS32 * v1, struct awl_signedS32 * v2, struct awl_aw
   uint32_t v10;
   uint32_t v9;
   struct awl_awl_signedS32 v33 = { 0 };
-  uint32_t v19;
+  uint32_t v18;
   struct awl_signedS32 st0 = { 0 };
   struct awl_signedS32 * v14 = NULL;
   uint32_t v37;
@@ -59,10 +59,10 @@ void metrics(struct awl_signedS32 * v1, struct awl_signedS32 * v2, struct awl_aw
   (v33).length = v10;
   for (uint32_t v13 = 0; v13 < v10; v13 += 1)
   {
-    v19 = min(((*v3).buffer[v13]).length, v9);
-    ((v33).buffer[v13]).buffer = initArray(((v33).buffer[v13]).buffer, ((v33).buffer[v13]).length, sizeof(int32_t), v19);
-    ((v33).buffer[v13]).length = v19;
-    for (uint32_t v24 = 0; v24 < v19; v24 += 1)
+    v18 = min(((*v3).buffer[v13]).length, v9);
+    ((v33).buffer[v13]).buffer = initArray(((v33).buffer[v13]).buffer, ((v33).buffer[v13]).length, sizeof(int32_t), v18);
+    ((v33).buffer[v13]).length = v18;
+    for (uint32_t v24 = 0; v24 < v18; v24 += 1)
     {
       ((v33).buffer[v13]).buffer[v24] = (*v14).buffer[(((*v3).buffer[v13]).buffer[v24]).member1];
     }

@@ -3,17 +3,17 @@
 
 void task_core0(uint32_t v8, uint32_t v3, struct awl_signedS32 * v1, struct awl_i_awl_signedS32 v24)
 {
-  uint32_t v9;
+  uint32_t v10;
   uint32_t v12;
   struct awl_signedS32 e0 = { 0 };
   
-  v9 = (v8 << 10);
-  v12 = min(1024, (v3 - v9));
+  v10 = (v8 << 10);
+  v12 = min(1024, (v3 - v10));
   (e0).buffer = initArray((e0).buffer, (e0).length, sizeof(int32_t), v12);
   (e0).length = v12;
   for (uint32_t v15 = 0; v15 < v12; v15 += 1)
   {
-    (e0).buffer[v15] = ((*v1).buffer[(v15 + v9)] + 1);
+    (e0).buffer[v15] = ((*v1).buffer[(v15 + v10)] + 1);
   }
   ivar_put_array_shallow((v24).buffer[v8], &e0, sizeof(int32_t));
 }

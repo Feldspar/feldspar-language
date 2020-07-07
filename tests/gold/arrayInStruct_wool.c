@@ -4,13 +4,13 @@
 LOOP_BODY_2(wool0,
             LARGE_BODY,
             uint32_t,
-            v9,
+            v10,
             struct s_2_unsignedS32_awl_unsignedS32,
             e0,
             struct s_2_unsignedS32_awl_unsignedS32,
             v6)
 {
-  ((v6).member2).buffer[v9] = (((e0).member2).buffer[v9] + 5);
+  ((v6).member2).buffer[v10] = (((e0).member2).buffer[v10] + 5);
 }
 
 void arrayInStruct__wool(struct awl_unsignedS32 * v0, struct awl_unsignedS32 * out)
