@@ -442,6 +442,7 @@ shApp (Sym op) = shOp op
 
 shOp :: Op a -> Bool
 -- Binding
+shOp Variable{} = False
 shOp Lambda{}  = False
 -- Elements
 shOp ESkip     = False
