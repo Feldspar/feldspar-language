@@ -70,6 +70,9 @@ import Data.Hash (Hashable(..), asWord64, combine, hashInt, Hash)
 
 import qualified Data.ByteString.Char8 as B
 import Data.Array (Array, accumArray, (!), bounds, elems)
+import qualified Data.ByteString.Lazy.Char8 as LB
+import qualified Data.ByteString.Lazy.Search as LB
+import Data.Char (chr)
 import Data.List (partition)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
@@ -301,10 +304,21 @@ hashExpr' (_ :& e) = hashExprR e
 hashExprR :: Expr a -> Hash
 -- Hash the type into the hash value to avoid hashing different
 -- F2I/I2F type instantiations to the same value.
-hashExprR (Sym op) = (hash . show $ typeOf op) `combine` (hash $ show op)
+hashExprR (Sym op)
+  = (hash . normalizeTypeRep . show $ typeOf op) `combine` (hash $ show op)
 -- Hash value of rhs in let is equal to bound variable name which occurs in body
 hashExprR (Sym Let :@ _ :@ (_ :& Sym (Lambda _) :@ e)) = hashExpr' e
 hashExprR (f :@ e) = hashInt appHash `combine` hashExprR f `combine` hashExpr' e
+
+-- | Normalizes show output for TypeRep across GHC versions.
+--
+--   The output of show of a TypeRep varies across GHC versions, so
+--   patch up the output in the simplest way possible to get stable
+--   variable names in our tests. One GHC bug relating to this is #15236.
+normalizeTypeRep :: String -> String
+normalizeTypeRep s = map (chr . fromEnum) (LB.unpack out)
+  where out = LB.replace (B.pack "(:*)") (B.pack ":*") s01
+        s01 = LB.replace (B.pack "(->)") (B.pack "->") (LB.pack s)
 
 --------------------------------------------------------------------------------
 -- * Hashing
