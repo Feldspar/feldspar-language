@@ -73,7 +73,7 @@ import System.FilePath (takeFileName)
 import System.IO (BufferMode(..), IOMode(..), hClose, hPutStr,
                   hSetBuffering, openFile)
 
-import Feldspar.Core.Frontend (FrontendPass, Syntactic, frontend, reifyFeld)
+import Feldspar.Core.Frontend (FrontendPass, Syntactic, frontend)
 import Feldspar.Core.UntypedRepresentation (UntypedFeld)
 import Feldspar.Compiler.Backend.C.Library
 import Feldspar.Compiler.Backend.C.Platforms
@@ -252,7 +252,7 @@ writeFileLB name' str = do fh <- openFile name' WriteMode
 
 translate :: Syntactic a => ProgOpts -> a -> ([String], Maybe SplitModule)
 translate opts p = (ssf ++ ssb, as)
-  where (ssf, ut) = frontend (frontendCtrl opts) fopts $ reifyFeld p
+  where (ssf, ut) = frontend (frontendCtrl opts) fopts p
         (ssb, as) = maybe ([], Nothing) (backend (backendCtrl opts) bopts name') ut
         bopts     = backOpts opts
         fopts     = frontendOpts bopts
@@ -396,7 +396,7 @@ fromCore :: Syntactic a
     -> a        -- ^ Expression to generate code for
     -> Module ()
 fromCore opt funname prog
-  | Just prg <- snd $ frontend ctrl (frontendOpts opt) $ reifyFeld prog
+  | Just prg <- snd $ frontend ctrl (frontendOpts opt) prog
   = fromCoreUT opt funname prg
   | otherwise = error "fromCore: Internal error: frontend failed?"
    where ctrl = frontendCtrl defaultProgOpts

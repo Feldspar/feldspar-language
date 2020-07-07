@@ -51,7 +51,6 @@ module Feldspar.Core.Frontend
 
     , FeldOpts
     , defaultFeldOpts
-    , reifyFeld
     , showExpr
     , showUntyped
     , showUntyped'
@@ -147,9 +146,13 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
      where f t x = " | " ++ prettyInfo t x
 
 -- | Front-end driver
-frontend :: PassCtrl FrontendPass -> FeldOpts -> ASTF a -> ([String], Maybe UntypedFeld)
-frontend ctrl opts = evalPasses 0
-                   $ pc FPCreateTasks      (createTasks opts)
+frontend :: Syntactic a
+         => PassCtrl FrontendPass
+         -> FeldOpts
+         -> a
+         -> ([String], Maybe UntypedFeld)
+frontend ctrl opts prog = evalPasses 0
+                   ( pc FPCreateTasks      (createTasks opts)
                    . pt FPUnAnnotate       unAnnotate
                    . pc FPUnique           uniqueVars
                    . pc FPExpand           expand
@@ -161,6 +164,7 @@ frontend ctrl opts = evalPasses 0
                    . pc FPSizeProp         SP.sizeProp
                    . pc FPAdjustBind       adjustBindings
                    . pt FPUnASTF           unASTF
+                   ) $ reifyFeld prog
   where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
         pc = passC ctrl
         pt :: (Pretty a, Pretty b) => FrontendPass -> (a -> b) -> Prog a Int -> Prog b Int
@@ -181,13 +185,13 @@ showExpr = render . reifyFeld
 
 -- | Show an untyped expression
 showUntyped :: Syntactic a => FeldOpts -> a -> String
-showUntyped opts = head . fst . frontend passCtrl opts . reifyFeld
+showUntyped opts = head . fst . frontend passCtrl opts
   where passCtrl = defaultPassCtrl{ wrBefore = [FPUnAnnotate]
                                   , stopBefore = [FPUnAnnotate]}
 
 -- | Show an expression after a specific frontend pass
 showUntyped' :: Syntactic a => FrontendPass -> FeldOpts -> a -> String
-showUntyped' p opts = head . fst . frontend passCtrl opts . reifyFeld
+showUntyped' p opts = head . fst . frontend passCtrl opts
   where passCtrl = defaultPassCtrl{wrAfter = [p], stopAfter = [p]}
 
 -- | Print an optimized untyped expression
