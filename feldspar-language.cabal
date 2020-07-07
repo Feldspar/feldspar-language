@@ -128,6 +128,7 @@ library
     srcloc,
     storable-tuple              >= 0.0.2,
     storable-record             >= 0.0.2.5,
+    stringsearch                >= 0.3,
     template-haskell,
     tuple                       >= 0.2    && < 0.5,
     monad-par                   >= 0.3.4.5,
