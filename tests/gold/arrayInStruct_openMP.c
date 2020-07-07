@@ -21,9 +21,9 @@ void arrayInStruct__openMP(struct awl_unsignedS32 * v0, struct awl_unsignedS32 *
     ((v6).member2).buffer = initArray(((v6).member2).buffer, ((v6).member2).length, sizeof(uint32_t), len1);
     ((v6).member2).length = len1;
     #pragma omp parallel for
-    for (uint32_t v9 = 0; v9 < len1; v9 += 1)
+    for (uint32_t v10 = 0; v10 < len1; v10 += 1)
     {
-      ((v6).member2).buffer[v9] = (((e0).member2).buffer[v9] + 5);
+      ((v6).member2).buffer[v10] = (((e0).member2).buffer[v10] + 5);
     }
     e2 = (e0).member2;
     e0 = v6;
