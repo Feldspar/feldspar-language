@@ -433,11 +433,11 @@ prop_and t = rangePropagationSafety t (.&.) rangeAnd
 prop_xor t = rangePropagationSafety t xor rangeXor
 
 prop_shiftLU t1 t2
-    = rangePropagationSafetyPre2 t1 t2 fixShiftL rangeShiftLU (\_ _ -> True)
+    = rangePropagationSafetyPre2 t1 t2 fixShiftL rangeShiftLU (\_ n -> n >= 0)
   where fixShiftL a b = shiftL a (fromIntegral b)
 
 prop_shiftRU t1 t2
-    = rangePropagationSafetyPre2 t1 t2 fixShiftR rangeShiftRU (\_ _ -> True)
+    = rangePropagationSafetyPre2 t1 t2 fixShiftR rangeShiftRU (\_ n -> n >= 0)
   where fixShiftR = correctShiftRU
 
 prop_rangeMax1 t r1 = rangeMax r1 r1 == (r1 `rangeTy` t)
