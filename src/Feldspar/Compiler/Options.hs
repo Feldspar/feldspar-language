@@ -39,6 +39,13 @@ module Feldspar.Compiler.Options
   , inTarget
   , Options(..)
   , Platform(..)
+  , availablePlatforms
+  , platformFromName
+  , c99
+  , c99OpenMp
+  , c99Wool
+  , ba
+  , tic64x
   , Rename
   , Predicate(..)
   , Which(..)
@@ -104,6 +111,57 @@ data Platform = Platform {
   varFloating     :: Bool,
   codeGenerator   :: String
 } deriving (Lift, Show)
+
+availablePlatforms :: [Platform]
+availablePlatforms = [ c99, c99OpenMp, c99Wool, ba, tic64x ]
+
+platformFromName :: String -> Platform
+platformFromName str
+  = head $ [pf | pf <- availablePlatforms, platformName pf == str]
+             ++ error ("platformFromName: No platform named " ++ str)
+
+c99 :: Platform
+c99 = Platform {
+    platformName = "c99",
+    includes =
+        [ "feldspar_c99.h"
+        , "feldspar_array.h"
+        , "feldspar_future.h"
+        , "ivar.h"
+        , "taskpool.h"
+        , "<stdint.h>"
+        , "<string.h>"
+        , "<math.h>"
+        , "<stdbool.h>"
+        , "<complex.h>"],
+    varFloating = True,
+    codeGenerator = "c"
+}
+
+c99OpenMp :: Platform
+c99OpenMp = c99 { platformName = "c99OpenMp"
+                , varFloating = False
+                }
+
+c99Wool :: Platform
+c99Wool = c99 { platformName = "c99Wool"
+              , includes = "wool.h":includes c99
+              , varFloating = False
+              }
+
+ba :: Platform
+ba = c99 { platformName = "ba"
+         , codeGenerator = "ba"
+         }
+
+tic64x :: Platform
+tic64x = Platform {
+    platformName = "tic64x",
+    includes = [ "feldspar_tic64x.h", "feldspar_array.h", "<c6x.h>", "<string.h>"
+               , "<math.h>"],
+    varFloating = True,
+    codeGenerator = "c"
+}
 
 -- * Renamer data types to avoid cyclic imports.
 type Rename = (String, [(Which, Destination)])

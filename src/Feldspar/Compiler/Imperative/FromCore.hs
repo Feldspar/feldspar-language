@@ -72,10 +72,9 @@ import Feldspar.Core.UntypedRepresentation
 import qualified Feldspar.Core.UntypedRepresentation as Ut
 import Feldspar.Range (fullRange, upperBound)
 
-import Feldspar.Compiler.Backend.C.Platforms (c99, extend)
 import Feldspar.Compiler.Imperative.Frontend
 import Feldspar.Compiler.Imperative.Representation
-import Feldspar.Compiler.Options (Options(..), Platform(..))
+import Feldspar.Compiler.Options (Options(..), Platform(..), c99)
 
 -- | Code generation monad
 type CodeWriter = RWS CodeEnv CodeParts VarId

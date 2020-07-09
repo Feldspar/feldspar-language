@@ -10,7 +10,6 @@ import qualified Data.Map as M
 
 import Feldspar.Compiler.Imperative.Representation
 import Feldspar.Compiler.Imperative.Frontend
-import Feldspar.Compiler.Backend.C.Platforms (extend, c99, tic64x)
 import Feldspar.Compiler.Backend.C.RuntimeLibrary
 import Feldspar.Compiler.Options
 
