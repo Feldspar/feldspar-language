@@ -2,13 +2,13 @@
 
 module Feldspar.Core.Middleend.LetSinking ( sinkLets ) where
 
-import Feldspar.Compiler.Options (FeldOpts, Target(..), inTarget)
+import Feldspar.Compiler.Options (Options, Target(..), inTarget)
 import Feldspar.Core.UntypedRepresentation
 
 -- | Sink lets that are stuck between two lambdas.
 -- Necessary invariant: lambdas can only appear in special places.
 --
-sinkLets :: FeldOpts -> AUntypedFeld a -> AUntypedFeld a
+sinkLets :: Options -> AUntypedFeld a -> AUntypedFeld a
 sinkLets opts = collectAtTop opts . go
   where go e@(AIn _ Variable{}) = e
         go (AIn r (Lambda v e))
@@ -24,7 +24,7 @@ sinkLets opts = collectAtTop opts . go
 
 -- | Converts let x = .. in .. \x2 -> e to \x2 -> let x = .. in e
 --   for the top level expression when BA is a target.
-collectAtTop :: FeldOpts -> AUntypedFeld a -> AUntypedFeld a
+collectAtTop :: Options -> AUntypedFeld a -> AUntypedFeld a
 collectAtTop opts e
   | BA `inTarget` opts
   , (bs, e1) <- collectLetBinders e -- Get outermost let bindings

@@ -32,15 +32,15 @@ module Feldspar.Core.Middleend.CreateTasks ( createTasks ) where
 
 import Control.Monad.State
 
-import Feldspar.Compiler.Options (FeldOpts(..), Target(..), inTarget)
+import Feldspar.Compiler.Options (Options(..), Target(..), inTarget)
 import Feldspar.Core.UntypedRepresentation
 
 -- | Create tasks from MkFuture and similar constructs.
 -- Invariant: There are no MkFuture, ParFork or NoInline constructs in the output.
-createTasks :: FeldOpts -> UntypedFeld -> UntypedFeld
+createTasks :: Options -> UntypedFeld -> UntypedFeld
 createTasks opts e = evalState (go opts e) 0
 
-go :: FeldOpts -> UntypedFeld -> State Integer UntypedFeld
+go :: Options -> UntypedFeld -> State Integer UntypedFeld
 go _   e@(In Variable{}) = return e
 go env (In (Lambda v e)) = do
   e' <- go env e

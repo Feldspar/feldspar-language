@@ -40,8 +40,6 @@ module Feldspar.Compiler.Options
   , ProgOpts(..)
   , defaultProgOpts
   , Target(..)
-  , FeldOpts(..)
-  , defaultFeldOpts
   , inTarget
   , Options(..)
   , defaultOptions
@@ -154,27 +152,18 @@ defaultProgOpts = ProgOpts
 data Target = RegionInf | Wool | CSE | SICS | BA
   deriving (Eq, Lift)
 
--- | A record with options for explicit passing in rewrite rules.
-data FeldOpts = FeldOpts
-    { targets    :: [Target]
-    } deriving Lift
-
--- | Default options.
-defaultFeldOpts :: FeldOpts
-defaultFeldOpts = FeldOpts { targets = [] }
-
--- | Decide whether a Target is enabled in FeldOpts.
-inTarget :: Target -> FeldOpts -> Bool
+-- | Decide whether a Target is enabled in Options.
+inTarget :: Target -> Options -> Bool
 inTarget t opts = t `elem` targets opts
 
 data Options = Options
   { platform          :: Platform
+  , targets           :: [Target]
   , printHeader       :: Bool
   , useNativeArrays   :: Bool
   , useNativeReturns  :: Bool     -- ^ Should the generated function return by value or by
                                   --   reference (fast return)? This option will be ignored for
                                   --   types that can't be fast-returned.
-  , frontendOpts      :: FeldOpts -- ^ Options for the front end optimization chain
   , safetyLimit       :: Integer  -- ^ Threshold to stop when the size information gets lost.
   , nestSize          :: Int      -- ^ Indentation size for PrettyPrinting
   } deriving Lift
@@ -184,10 +173,10 @@ defaultOptions :: Options
 defaultOptions
     = Options
     { platform          = c99
+    , targets           = []
     , printHeader       = False
     , useNativeArrays   = False
     , useNativeReturns  = False
-    , frontendOpts      = defaultFeldOpts
     , safetyLimit       = 2000
     , nestSize          = 2
     }
@@ -202,13 +191,13 @@ tic64xPlatformOptions :: Options
 tic64xPlatformOptions           = defaultOptions { platform = tic64x }
 
 sicsOptions :: Options
-sicsOptions = defaultOptions { frontendOpts = defaultFeldOpts { targets = [SICS,CSE] }}
+sicsOptions = defaultOptions { targets = [SICS,CSE] }
 
 sicsOptions2 :: Options
-sicsOptions2 = defaultOptions { frontendOpts = defaultFeldOpts { targets = [SICS] }}
+sicsOptions2 = defaultOptions { targets = [SICS] }
 
 sicsOptions3 :: Options
-sicsOptions3 = defaultOptions { platform = c99Wool, frontendOpts = defaultFeldOpts { targets = [SICS,CSE,Wool] }}
+sicsOptions3 = defaultOptions { platform = c99Wool, targets = [SICS,CSE,Wool] }
 
 data Platform = Platform {
   platformName    :: String,
