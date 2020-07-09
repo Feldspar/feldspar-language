@@ -68,7 +68,6 @@ module Feldspar.Core.Frontend
     , showUntyped'
     , printExpr
     , printExpr2
-    , printExprWith
     , printExpr2With
     , drawUntyped
     , drawUntypedWith
@@ -175,10 +174,6 @@ printExpr = print . reifyFeld
 printExpr2With :: Syntactic a => FeldOpts -> a -> IO ()
 printExpr2With opts = print . untype opts . reifyFeld
 
--- | Print an optimized expression with options
-printExprWith :: Syntactic a => FeldOpts -> a -> IO ()
-printExprWith _ = print . reifyFeld
-
 -- | Show the syntax tree using Unicode art
 showAST :: Syntactic a => a -> String
 showAST = showTree . stringTreeASTF . reifyFeld
@@ -200,7 +195,7 @@ showDecor = showDecorWith show . reifyFeld
 
 -- | Draw a syntax tree decorated with type and size information
 drawDecor :: Syntactic a => a -> IO ()
-drawDecor = putStrLn . showDecorWith show . reifyFeld
+drawDecor = putStrLn . showDecor
 
 eval :: Syntactic a => a -> Internal a
 eval = E.eval . unASTF . reifyFeld
