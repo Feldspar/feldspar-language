@@ -36,7 +36,6 @@ module Feldspar.Compiler.Options
   , PassCtrl(..)
   , defaultPassCtrl
   , FrontendPass(..)
-  , BackendPass(..)
   , ProgOpts(..)
   , defaultProgOpts
   , Target(..)
@@ -115,11 +114,7 @@ data FrontendPass
   | FPUnAnnotate
   | FPCreateTasks
   | BPFromCore
-  deriving (Bounded, Enum, Eq, Read, Show)
-
--- | Enumeration of backend passes
-data BackendPass
-  = BPArrayOps
+  | BPArrayOps
   | BPRename
   | BPAdapt
   | BPSplit
@@ -133,7 +128,6 @@ data ProgOpts = ProgOpts
   , outFileName  :: String
   , functionName :: String
   , frontendCtrl :: PassCtrl FrontendPass
-  , backendCtrl  :: PassCtrl BackendPass
   , printHelp    :: Bool
   }
 
@@ -144,7 +138,6 @@ defaultProgOpts = ProgOpts
   , outFileName  = ""
   , functionName = ""
   , frontendCtrl = defaultPassCtrl
-  , backendCtrl  = defaultPassCtrl
   , printHelp    = False
   }
 
