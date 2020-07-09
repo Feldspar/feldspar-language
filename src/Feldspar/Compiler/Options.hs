@@ -38,6 +38,13 @@ module Feldspar.Compiler.Options
   , defaultFeldOpts
   , inTarget
   , Options(..)
+  , defaultOptions
+  , sicsOptions
+  , sicsOptions2
+  , sicsOptions3
+  , c99PlatformOptions
+  , c99OpenMpPlatformOptions
+  , tic64xPlatformOptions
   , Platform(..)
   , availablePlatforms
   , platformFromName
@@ -104,6 +111,37 @@ data Options = Options
   , safetyLimit       :: Integer  -- ^ Threshold to stop when the size information gets lost.
   , nestSize          :: Int      -- ^ Indentation size for PrettyPrinting
   } deriving Lift
+
+-- | Predefined options
+defaultOptions :: Options
+defaultOptions
+    = Options
+    { platform          = c99
+    , printHeader       = False
+    , useNativeArrays   = False
+    , useNativeReturns  = False
+    , frontendOpts      = defaultFeldOpts
+    , safetyLimit       = 2000
+    , nestSize          = 2
+    }
+
+c99PlatformOptions :: Options
+c99PlatformOptions              = defaultOptions
+
+c99OpenMpPlatformOptions :: Options
+c99OpenMpPlatformOptions        = defaultOptions { platform = c99OpenMp }
+
+tic64xPlatformOptions :: Options
+tic64xPlatformOptions           = defaultOptions { platform = tic64x }
+
+sicsOptions :: Options
+sicsOptions = defaultOptions { frontendOpts = defaultFeldOpts { targets = [SICS,CSE] }}
+
+sicsOptions2 :: Options
+sicsOptions2 = defaultOptions { frontendOpts = defaultFeldOpts { targets = [SICS] }}
+
+sicsOptions3 :: Options
+sicsOptions3 = defaultOptions { platform = c99Wool, frontendOpts = defaultFeldOpts { targets = [SICS,CSE,Wool] }}
 
 data Platform = Platform {
   platformName    :: String,

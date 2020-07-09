@@ -8,11 +8,11 @@ module Feldspar.Compiler.ExternalProgram
 import qualified Data.ByteString.Char8 as B
 
 import Feldspar.Compiler
-        (CompiledModule, SplitModule(..), compileToCCore', defaultOptions,
+        (CompiledModule, SplitModule(..), compileToCCore',
          sourceCode, writeFiles)
 import Feldspar.Compiler.Imperative.ExternalProgram (parseFile)
 import Feldspar.Compiler.Imperative.Representation (Module(..))
-import Feldspar.Compiler.Options (Options(..), Platform(..))
+import Feldspar.Compiler.Options (Options(..), Platform(..), defaultOptions)
 
 icompileFile :: FilePath -> IO ()
 icompileFile filename = do

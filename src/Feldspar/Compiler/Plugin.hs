@@ -58,10 +58,10 @@ import System.IO.Unsafe (unsafePerformIO)
 
 -- Feldspar specific
 import Feldspar.Runtime
-import Feldspar.Compiler (compile, defaultOptions)
+import Feldspar.Compiler (compile)
 import Feldspar.Compiler.Backend.C.Library (encodeFunctionName)
 import Feldspar.Compiler.Marshal ()
-import Feldspar.Compiler.Options (Options(..))
+import Feldspar.Compiler.Options (Options(..), defaultOptions)
 
 -- | Configurable configuration for the loader.
 feldsparPluginConfigWith :: String -> Options -> Config
