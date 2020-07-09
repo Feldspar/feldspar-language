@@ -45,12 +45,13 @@ availablePlatforms :: [Platform]
 availablePlatforms = [ c99, c99OpenMp, c99Wool, ba, tic64x ]
 
 platformFromName :: String -> Platform
-platformFromName str = head $ [pf | pf <- availablePlatforms, name pf == str]
-                              ++ error ("Platform.platformFromName: No platform named " ++ str)
+platformFromName str
+  = head $ [pf | pf <- availablePlatforms, platformName pf == str]
+             ++ error ("platformFromName: No platform named " ++ str)
 
 c99 :: Platform
 c99 = Platform {
-    name = "c99",
+    platformName = "c99",
     includes =
         [ "feldspar_c99.h"
         , "feldspar_array.h"
@@ -67,24 +68,24 @@ c99 = Platform {
 }
 
 c99OpenMp :: Platform
-c99OpenMp = c99 { name = "c99OpenMp"
+c99OpenMp = c99 { platformName = "c99OpenMp"
                 , varFloating = False
                 }
 
 c99Wool :: Platform
-c99Wool = c99 { name = "c99Wool"
+c99Wool = c99 { platformName = "c99Wool"
               , includes = "wool.h":includes c99
               , varFloating = False
               }
 
 ba :: Platform
-ba = c99 { name = "ba"
+ba = c99 { platformName = "ba"
          , codeGenerator = "ba"
          }
 
 tic64x :: Platform
 tic64x = Platform {
-    name = "tic64x",
+    platformName = "tic64x",
     includes = [ "feldspar_tic64x.h", "feldspar_array.h", "<c6x.h>", "<string.h>"
                , "<math.h>"],
     varFloating = True,
