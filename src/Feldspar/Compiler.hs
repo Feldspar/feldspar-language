@@ -107,10 +107,18 @@ frontend :: PassCtrl FrontendPass
                 (AExpr a)
                 (Either
                   (AUntypedFeld ValueInfo)
-                  (Either UntypedFeld (Module ()))))
-         -> ([String], Maybe (Module ()))
+                  (Either
+                    UntypedFeld
+                    (Either
+                      (Module ())
+                      (Either (Module (), Module ()) SplitModule)))))
+         -> ([String], Maybe SplitModule)
 frontend ctrl opts n = evalPasses 0
-                   ( pt BPFromCore (either (fromCoreUT opts (encodeFunctionName n)) id)
+                   ( codegen (codeGenerator $ platform opts) ctrl opts
+                   . pc BPAdapt    (either (Left . adaptTic64x opts) Right)
+                   . pc BPRename   (either (Left . ML.rename opts False) Right)
+                   . pc BPArrayOps (either (Left . arrayOps opts) Right)
+                   . pt BPFromCore (either (Left . fromCoreUT opts (encodeFunctionName n)) id)
                    . pc FPCreateTasks      (either (Left . createTasks opts) Right)
                    . pt FPUnAnnotate       (either (Left . unAnnotate) id)
                    . pc FPUnique           (either (Left . uniqueVars) Right)
@@ -231,14 +239,11 @@ decodeOpts optsIn argv
    where (actions, nonOptions, errors) = getOpt Permute optionDescs argv
 
 passInfo :: String
-passInfo = "\nPASS is a frontend pass from\n" ++
-           unlines (map ((++) "  " . unwords) $ chunksOf 5 $ map show fps) ++
-           "or a backend pass from\n" ++
-           unlines (map ((++) "  " . unwords) $ chunksOf 5 $ map show bps)
+passInfo = "\nPASS is one of\n" ++
+           unlines (map ((++) "  " . unwords) $ chunksOf 5 $ map show fps)
   where chunksOf _ [] = []
         chunksOf n xs = take n xs:chunksOf n (drop n xs)
         fps = [minBound .. maxBound :: FrontendPass]
-        bps = [minBound .. maxBound :: BackendPass]
 
 targetInfo :: String
 targetInfo = "\nTARGET is one of " ++ names ++ "\n\n"
@@ -281,7 +286,6 @@ setTarget opts str
 chooseEnd :: (forall a . PassCtrl a -> a -> PassCtrl a) -> String -> ProgOpts -> ProgOpts
 chooseEnd f str opts
   | [(p,_)] <- reads str = opts{frontendCtrl = f (frontendCtrl opts) p}
-  | [(p,_)] <- reads str = opts{backendCtrl = f (backendCtrl opts) p}
   | otherwise = error $ "Compiler.chooseEnd: unrecognized pass " ++ str
 
 writeFileLB :: String -> String -> IO ()
@@ -292,11 +296,8 @@ writeFileLB name' str = do fh <- openFile name' WriteMode
                            hClose fh
 
 translate :: Syntactic a => ProgOpts -> a -> ([String], Maybe SplitModule)
-translate opts p = (ssf ++ ssb, as)
-  where (ssf, ut) = frontend (frontendCtrl opts) bopts name' $ Left $ reifyFeld p
-        (ssb, as) = maybe ([], Nothing) left ut
-        left p'   = backend (backendCtrl opts) bopts p'
-        bopts     = backOpts opts
+translate opts p = frontend (frontendCtrl opts) bopts name' $ Left $ reifyFeld p
+  where bopts     = backOpts opts
         name'     = functionName opts
 
 data SplitModule = SplitModule
@@ -350,9 +351,8 @@ compileToCCore n opts p = fromMaybe err $ snd p'
         p' = translate (defaultProgOpts{backOpts = opts, functionName = n}) p
 
 compileToCCore' :: Options -> Module () -> SplitModule
-compileToCCore' opts m
-  = fromMaybe (error "compileToCCore: backend failed") prg
-   where prg = snd $ backend (backendCtrl defaultProgOpts) opts m
+compileToCCore' opts m = fromMaybe (error "compileToCCore: backend failed") prg
+   where prg = snd $ frontend (frontendCtrl defaultProgOpts) opts "dummy" (Right . Right . Right . Right . Left $ m)
 
 genIncludeLines :: Options -> Maybe String -> String
 genIncludeLines opts mainHeader = concatMap include incs ++ "\n\n"
@@ -375,17 +375,10 @@ instance Pretty SplitModule where
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
   pretty = either pretty pretty
 
-backend :: PassCtrl BackendPass -> Options
-        -> Module () -> ([String], Maybe SplitModule)
-backend ctrl opts = evalPasses 0
-                       $ codegen (codeGenerator $ platform opts) ctrl opts
-                       . pc BPAdapt    (adaptTic64x opts)
-                       . pc BPRename   (ML.rename opts False)
-                       . pc BPArrayOps (arrayOps opts)
-  where pc :: Pretty a => BackendPass -> (a -> a) -> Prog a Int -> Prog a Int
-        pc = passC ctrl
-
-codegen :: String -> PassCtrl BackendPass -> Options -> Prog (Module ()) Int -> Prog SplitModule Int
-codegen "c"   ctrl opts  = passT ctrl BPCompile  (compileSplitModule opts)
-                         . passT ctrl BPSplit    splitModule
+codegen :: String -> PassCtrl FrontendPass -> Options
+        -> Prog (Either (Module ())
+                (Either (Module (), Module ()) SplitModule)) Int
+        -> Prog SplitModule Int
+codegen "c"   ctrl opts  = passT ctrl BPCompile  (either (compileSplitModule opts) id)
+                         . passT ctrl BPSplit    (either (Left . splitModule) id)
 codegen gen   _    _     = error $ "Compiler.codegen: unknown code generator " ++ gen
