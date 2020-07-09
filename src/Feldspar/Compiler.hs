@@ -375,6 +375,7 @@ instance Pretty SplitModule where
 backend :: PassCtrl BackendPass -> Options -> String -> UntypedFeld -> ([String], Maybe SplitModule)
 backend ctrl opts name = evalPasses 0
                        $ codegen (codeGenerator $ platform opts) ctrl opts
+                       . pc BPAdapt    (adaptTic64x opts)
                        . pc BPRename   (rename opts False)
                        . pc BPArrayOps (arrayOps opts)
                        . pt BPFromCore (fromCoreUT opts (encodeFunctionName name))
@@ -386,7 +387,6 @@ backend ctrl opts name = evalPasses 0
 codegen :: String -> PassCtrl BackendPass -> Options -> Prog (Module ()) Int -> Prog SplitModule Int
 codegen "c"   ctrl opts  = passT ctrl BPCompile  (compileSplitModule opts)
                          . passT ctrl BPSplit    splitModule
-                         . passC ctrl BPAdapt    (adaptTic64x opts)
 codegen gen   _    _     = error $ "Compiler.codegen: unknown code generator " ++ gen
 
 -- | Get the generated core for an expression.
