@@ -45,8 +45,6 @@ module Feldspar.Compiler
   , program
   , programOpts
   , programOptsArgs
-  , getCore
-  , printCore
   -- * Internal functions
   , compileToCCore'
   , writeFiles
@@ -177,14 +175,6 @@ icompile' opts fName prg = do
       putStrLn $ sourceCode $ interface res
       putStrLn "=============== Source ================"
     putStrLn $ sourceCode $ implementation res
-
--- | Get the generated core for a program.
-getCore :: Syntactic t => t -> Module ()
-getCore = fromCore defaultOptions "test"
-
--- | Print the generated core for a program.
-printCore :: Syntactic t => t -> IO ()
-printCore prog = print $ getCore prog
 
 targetsFromPlatform :: Platform -> [Target]
 targetsFromPlatform = tfp . platformName
