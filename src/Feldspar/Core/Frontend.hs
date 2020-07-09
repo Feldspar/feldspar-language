@@ -113,8 +113,8 @@ import qualified Feldspar.Core.Reify as Syntactic
 import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
-import Feldspar.Compiler.Options (FeldOpts(..), Options(..), PassCtrl(..),
-                                  Pretty(..), Target(..),
+import Feldspar.Compiler.Options (FeldOpts(..), FrontendPass(..), Options(..),
+                                  PassCtrl(..), Pretty(..), Target(..),
                                   c99OpenMpPlatformOptions,
                                   c99PlatformOptions, defaultFeldOpts,
                                   defaultOptions, defaultPassCtrl, sicsOptions,
@@ -139,22 +139,6 @@ import Feldspar.Core.Language
 import Feldspar.Core.ValueInfo (ValueInfo, PrettyInfo(..))
 
 -- The front-end driver.
-
--- | Enumeration of front end passes
-data FrontendPass
-     = FPUnASTF
-     | FPAdjustBind
-     | FPSizeProp
-     | FPUntype
-     | FPRename
-     | FPSinkLets
-     | FPOptimize
-     | FPPushLets
-     | FPExpand
-     | FPUnique
-     | FPUnAnnotate
-     | FPCreateTasks
-     deriving (P.Eq, Show, Enum, Bounded, Read)
 
 instance Pretty UntypedFeld where
   pretty = pretty . annotate (const ())
