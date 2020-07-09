@@ -134,7 +134,7 @@ compile prg fileName funName opts = writeFiles compRes fileName (codeGenerator $
 
 compileUT :: UntypedFeld -> FilePath -> String -> Options -> IO ()
 compileUT prg fileName funName opts = writeFiles compRes fileName (codeGenerator $ platform opts)
-  where compRes = compileToCCore' opts prg'
+  where compRes = compileToCCore' opts funName prg'
         prg'    = fromCoreUT opts (encodeFunctionName funName) prg
 
 writeFiles :: SplitModule -> FilePath -> String -> IO ()
@@ -286,7 +286,8 @@ writeFileLB name' str = do fh <- openFile name' WriteMode
 translate :: Syntactic a => ProgOpts -> a -> ([String], Maybe SplitModule)
 translate opts p = (ssf ++ ssb, as)
   where (ssf, ut) = frontend (frontendCtrl opts) bopts p
-        (ssb, as) = maybe ([], Nothing) (backend (backendCtrl opts) bopts name') ut
+        (ssb, as) = maybe ([], Nothing) left ut
+        left p'   = backend (backendCtrl opts) bopts name' (Left p')
         bopts     = backOpts opts
         name'     = functionName opts
 
@@ -338,14 +339,14 @@ compileSplitModule opts (hmdl, cmdl)
 compileToCCore :: Syntactic c => String -> Options -> c -> SplitModule
 compileToCCore name' opts prg
   | Just prg' <- snd $ frontend ctrl opts prg
-  = compileToCCore' opts $ fromCoreUT opts (encodeFunctionName name') prg'
+  = compileToCCore' opts name' $ fromCoreUT opts (encodeFunctionName name') prg'
   | otherwise = error "compileToCCore: Internal error: frontend failed?"
    where ctrl = frontendCtrl defaultProgOpts
 
-compileToCCore' :: Options -> Module () -> SplitModule
-compileToCCore' opts m = compileSplitModule opts $ splitModule mod'
-      where
-        mod' = adaptTic64x opts $ ML.rename opts False $ arrayOps opts m
+compileToCCore' :: Options -> String -> Module () -> SplitModule
+compileToCCore' opts name' m
+  = fromMaybe (error "compileToCCore: backend failed") prg
+   where prg = snd $ backend (backendCtrl defaultProgOpts) opts name' (Right m)
 
 genIncludeLines :: Options -> Maybe String -> String
 genIncludeLines opts mainHeader = concatMap include incs ++ "\n\n"
@@ -365,13 +366,17 @@ instance Pretty SplitModule where
   pretty (SplitModule impl intf) = "// Interface\n" ++ sourceCode intf ++
                                    "\n// Implementation\n" ++ sourceCode impl
 
-backend :: PassCtrl BackendPass -> Options -> String -> UntypedFeld -> ([String], Maybe SplitModule)
+instance (Pretty a, Pretty b) => Pretty (Either a b) where
+  pretty = either pretty pretty
+
+backend :: PassCtrl BackendPass -> Options -> String
+        -> Either UntypedFeld (Module ()) -> ([String], Maybe SplitModule)
 backend ctrl opts name = evalPasses 0
                        $ codegen (codeGenerator $ platform opts) ctrl opts
                        . pc BPAdapt    (adaptTic64x opts)
                        . pc BPRename   (ML.rename opts False)
                        . pc BPArrayOps (arrayOps opts)
-                       . pt BPFromCore (fromCoreUT opts (encodeFunctionName name))
+                       . pt BPFromCore (either (fromCoreUT opts (encodeFunctionName name)) id)
   where pc :: Pretty a => BackendPass -> (a -> a) -> Prog a Int -> Prog a Int
         pc = passC ctrl
         pt :: (Pretty a, Pretty b) => BackendPass -> (a -> b) -> Prog a Int -> Prog b Int
