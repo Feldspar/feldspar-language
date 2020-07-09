@@ -310,15 +310,6 @@ genIncludeLines opts mainHeader = concatMap include incs ++ "\n\n"
     include fname         = "#include \"" ++ fname ++ "\"\n"
     incs = includes (platform opts) ++ [fromMaybe "" mainHeader]
 
-data BackendPass = BPFromCore
-                 | BPArrayOps
-                 | BPRename
-                 | BPAdapt
-                 | BPSplit
-                 | BPCompile
-                 | BPUnsplit
-  deriving (Eq, Enum, Bounded, Read, Show)
-
 instance (Pretty a, Pretty b) => Pretty (a, b) where
   pretty (x,y) = "(" ++ pretty x ++ ", " ++ pretty y ++ ")"
 
@@ -357,26 +348,3 @@ fromCore opt funname prog
   = fromCoreUT opt funname prg
   | otherwise = error "fromCore: Internal error: frontend failed?"
    where ctrl = frontendCtrl defaultProgOpts
-
-data ProgOpts =
-    ProgOpts
-    { backOpts     :: Options
-    , passFileName :: String
-    , outFileName  :: String
-    , functionName :: String
-    , frontendCtrl :: PassCtrl FrontendPass
-    , backendCtrl  :: PassCtrl BackendPass
-    , printHelp    :: Bool
-    }
-
-defaultProgOpts :: ProgOpts
-defaultProgOpts =
-    ProgOpts
-    { backOpts     = defaultOptions
-    , passFileName = ""
-    , outFileName  = ""
-    , functionName = ""
-    , frontendCtrl = defaultPassCtrl
-    , backendCtrl  = defaultPassCtrl
-    , printHelp    = False
-    }

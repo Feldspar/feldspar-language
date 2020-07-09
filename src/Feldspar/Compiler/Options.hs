@@ -35,6 +35,10 @@ module Feldspar.Compiler.Options
   , Pretty(..)
   , PassCtrl(..)
   , defaultPassCtrl
+  , FrontendPass(..)
+  , BackendPass(..)
+  , ProgOpts(..)
+  , defaultProgOpts
   , Target(..)
   , FeldOpts(..)
   , defaultFeldOpts
@@ -97,6 +101,54 @@ data PassCtrl a = PassCtrl
 --   any intermediate results
 defaultPassCtrl :: PassCtrl a
 defaultPassCtrl = PassCtrl [] [] [] [] []
+
+-- | Enumeration of frontend passes
+data FrontendPass
+  = FPUnASTF
+  | FPAdjustBind
+  | FPSizeProp
+  | FPUntype
+  | FPRename
+  | FPSinkLets
+  | FPOptimize
+  | FPPushLets
+  | FPExpand
+  | FPUnique
+  | FPUnAnnotate
+  | FPCreateTasks
+  deriving (Bounded, Enum, Eq, Read, Show)
+
+-- | Enumeration of backend passes
+data BackendPass
+  = BPFromCore
+  | BPArrayOps
+  | BPRename
+  | BPAdapt
+  | BPSplit
+  | BPCompile
+  | BPUnsplit
+  deriving (Bounded, Enum, Eq, Read, Show)
+
+data ProgOpts = ProgOpts
+  { backOpts     :: Options
+  , passFileName :: String
+  , outFileName  :: String
+  , functionName :: String
+  , frontendCtrl :: PassCtrl FrontendPass
+  , backendCtrl  :: PassCtrl BackendPass
+  , printHelp    :: Bool
+  }
+
+defaultProgOpts :: ProgOpts
+defaultProgOpts = ProgOpts
+  { backOpts     = defaultOptions
+  , passFileName = ""
+  , outFileName  = ""
+  , functionName = ""
+  , frontendCtrl = defaultPassCtrl
+  , backendCtrl  = defaultPassCtrl
+  , printHelp    = False
+  }
 
 -- | Possible compilation targets in a broad sense.
 data Target = RegionInf | Wool | CSE | SICS | BA
