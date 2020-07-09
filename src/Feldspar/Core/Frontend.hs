@@ -103,18 +103,17 @@ import Prelude as P
 
 import Test.QuickCheck
 
-import Control.Monad.State (evalState)
 import Data.Patch
 import Data.Tree (Tree)
 import Data.Tree.View
 import Data.Hash (Hashable)
 
-import qualified Feldspar.Core.Reify as Syntactic
 import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
+import Feldspar.Compiler (frontend, reifyFeld, renameExp)
 import Feldspar.Compiler.Options (FeldOpts(..), FrontendPass(..), Options(..),
-                                  PassCtrl(..), Pretty(..), Target(..),
+                                  PassCtrl(..), Target(..),
                                   c99OpenMpPlatformOptions,
                                   c99PlatformOptions, defaultFeldOpts,
                                   defaultOptions, defaultPassCtrl, sicsOptions,
@@ -122,55 +121,18 @@ import Feldspar.Compiler.Options (FeldOpts(..), FrontendPass(..), Options(..),
                                   tic64xPlatformOptions)
 import Feldspar.Core.AdjustBindings (adjustBindings)
 import Feldspar.Core.Middleend.CreateTasks
-import Feldspar.Core.Middleend.Expand (expand)
 import Feldspar.Core.Middleend.FromTyped (toU)
 import Feldspar.Core.Middleend.LetSinking
 import Feldspar.Core.Middleend.OptimizeUntyped
-import Feldspar.Core.Middleend.PassManager (Prog(..), evalPasses, passC, passT)
 import Feldspar.Core.Middleend.PushLets
 import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.SizeProp as SP
 import Feldspar.Core.Types
 import Feldspar.Core.UntypedRepresentation (UntypedFeld, AUntypedFeld,
-                                            prettyExp, rename,
                                             stringTree, stringTreeExp,
                                             unAnnotate)
 import Feldspar.Core.Language
-import Feldspar.Core.ValueInfo (ValueInfo, PrettyInfo(..))
-
--- The front-end driver.
-
-instance PrettyInfo a => Pretty (AUntypedFeld a) where
-  pretty = prettyExp f
-     where f t x = " | " ++ prettyInfo t x
-
--- | Front-end driver
-frontend :: Syntactic a
-         => PassCtrl FrontendPass
-         -> FeldOpts
-         -> a
-         -> ([String], Maybe UntypedFeld)
-frontend ctrl opts prog = evalPasses 0
-                   ( pc FPCreateTasks      (createTasks opts)
-                   . pt FPUnAnnotate       unAnnotate
-                   . pc FPUnique           uniqueVars
-                   . pc FPExpand           expand
-                   . pc FPPushLets         pushLets
-                   . pc FPOptimize         optimize
-                   . pc FPSinkLets         (sinkLets opts)
-                   . pc FPRename           renameExp
-                   . pt FPUntype           toU
-                   . pc FPSizeProp         SP.sizeProp
-                   . pc FPAdjustBind       adjustBindings
-                   . pt FPUnASTF           unASTF
-                   ) $ reifyFeld prog
-  where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
-        pc = passC ctrl
-        pt :: (Pretty a, Pretty b) => FrontendPass -> (a -> b) -> Prog a Int -> Prog b Int
-        pt = passT ctrl
-
-reifyFeld :: Syntactic a => a -> ASTF (Internal a)
-reifyFeld = Syntactic.desugar
+import Feldspar.Core.ValueInfo (ValueInfo)
 
 stringTreeASTF :: ASTF a -> Tree String
 stringTreeASTF = stringTree . untypeUnOpt defaultFeldOpts
@@ -278,9 +240,6 @@ justUntype = renameExp . toU . SP.sizeProp . adjustBindings . unASTF
 -- | Prepare the code for fromCore
 cleanUp :: FeldOpts -> AUntypedFeld ValueInfo -> UntypedFeld
 cleanUp opts = createTasks opts . unAnnotate . uniqueVars
-
-renameExp :: AUntypedFeld a -> AUntypedFeld a
-renameExp e = evalState (rename e) 0
 
 --------------------------------------------------------------------------------
 -- * QuickCheck
