@@ -48,7 +48,7 @@ compileFile' opts (hfilename, hfile) (cfilename, cfile) =
     Just hprg -> case parseFile cfilename cfile (entities hprg) of
                    Nothing -> (Just hres, Nothing)
                    Just cprg -> (Just hres', Just cres)
-                     where res = compileToCCore' opts cprg
+                     where res = compileToCCore' opts "unusedDummyNameC" cprg
                            cres = implementation res
                            -- Un-duplicated hres.
                            hres' = interface res
@@ -56,4 +56,4 @@ compileFile' opts (hfilename, hfile) (cfilename, cfile) =
             -- just failed parsing the c file and return nothing for
             -- that so the user is probably not that picky on
             -- potential duplicate declarations if they had succeeded.
-            hres = interface $ compileToCCore' opts hprg
+            hres = interface $ compileToCCore' opts "unusedDummyNameH" hprg
