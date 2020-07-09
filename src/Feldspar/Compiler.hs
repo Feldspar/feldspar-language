@@ -337,11 +337,9 @@ compileSplitModule opts (hmdl, cmdl)
 -- Everything should call this function and only do a trivial interface adaptation.
 -- Do not duplicate.
 compileToCCore :: Syntactic c => String -> Options -> c -> SplitModule
-compileToCCore name' opts prg
-  | Just prg' <- snd $ frontend ctrl opts prg
-  = compileToCCore' opts name' $ fromCoreUT opts (encodeFunctionName name') prg'
-  | otherwise = error "compileToCCore: Internal error: frontend failed?"
-   where ctrl = frontendCtrl defaultProgOpts
+compileToCCore n opts p = fromMaybe err $ snd p'
+  where err = error "compileToCCore: translate failed"
+        p' = translate (defaultProgOpts{backOpts = opts, functionName = n}) p
 
 compileToCCore' :: Options -> String -> Module () -> SplitModule
 compileToCCore' opts name' m
