@@ -100,18 +100,20 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
 -- | Front-end driver
 frontend :: PassCtrl FrontendPass
          -> Options
-         -> Either (ASTF a) (Either (AExpr a) (AUntypedFeld ValueInfo))
+         -> Either (ASTF a)
+                   (Either (AExpr a)
+                           (Either (AUntypedFeld ValueInfo) UntypedFeld))
          -> ([String], Maybe UntypedFeld)
 frontend ctrl opts = evalPasses 0
                    ( pc FPCreateTasks      (createTasks opts)
-                   . pt FPUnAnnotate       unAnnotate
-                   . pc FPUnique           uniqueVars
-                   . pc FPExpand           expand
-                   . pc FPPushLets         pushLets
-                   . pc FPOptimize         optimize
-                   . pc FPSinkLets         (sinkLets opts)
-                   . pc FPRename           renameExp
-                   . pt FPUntype           (either toU id)
+                   . pt FPUnAnnotate       (either unAnnotate id)
+                   . pc FPUnique           (either (Left . uniqueVars) Right)
+                   . pc FPExpand           (either (Left . expand) Right)
+                   . pc FPPushLets         (either (Left . pushLets) Right)
+                   . pc FPOptimize         (either (Left . optimize) Right)
+                   . pc FPSinkLets         (either (Left . sinkLets opts) Right)
+                   . pc FPRename           (either (Left . renameExp) Right)
+                   . pt FPUntype           (either (Left . toU) id)
                    . pc FPSizeProp         (either (Left . SP.sizeProp) Right)
                    . pc FPAdjustBind       (either (Left . adjustBindings) Right)
                    . pt FPUnASTF           (either (Left . unASTF) id)
