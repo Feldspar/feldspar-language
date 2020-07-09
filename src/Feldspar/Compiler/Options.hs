@@ -114,12 +114,12 @@ data FrontendPass
   | FPUnique
   | FPUnAnnotate
   | FPCreateTasks
+  | BPFromCore
   deriving (Bounded, Enum, Eq, Read, Show)
 
 -- | Enumeration of backend passes
 data BackendPass
-  = BPFromCore
-  | BPArrayOps
+  = BPArrayOps
   | BPRename
   | BPAdapt
   | BPSplit
