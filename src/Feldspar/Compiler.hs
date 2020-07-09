@@ -89,7 +89,7 @@ import Feldspar.Core.Representation (AExpr)
 import Feldspar.Core.Reify (ASTF, Syntactic(..), desugar, unASTF)
 import Feldspar.Core.UntypedRepresentation (AUntypedFeld, UntypedFeld,
                                             prettyExp, rename, unAnnotate)
-import Feldspar.Core.ValueInfo (PrettyInfo(..))
+import Feldspar.Core.ValueInfo (PrettyInfo(..), ValueInfo)
 
 -- The front-end driver.
 
@@ -100,7 +100,7 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
 -- | Front-end driver
 frontend :: PassCtrl FrontendPass
          -> Options
-         -> Either (ASTF a) (AExpr a)
+         -> Either (ASTF a) (Either (AExpr a) (AUntypedFeld ValueInfo))
          -> ([String], Maybe UntypedFeld)
 frontend ctrl opts = evalPasses 0
                    ( pc FPCreateTasks      (createTasks opts)
@@ -111,10 +111,10 @@ frontend ctrl opts = evalPasses 0
                    . pc FPOptimize         optimize
                    . pc FPSinkLets         (sinkLets opts)
                    . pc FPRename           renameExp
-                   . pt FPUntype           toU
-                   . pc FPSizeProp         SP.sizeProp
-                   . pc FPAdjustBind       adjustBindings
-                   . pt FPUnASTF           (either unASTF id)
+                   . pt FPUntype           (either toU id)
+                   . pc FPSizeProp         (either (Left . SP.sizeProp) Right)
+                   . pc FPAdjustBind       (either (Left . adjustBindings) Right)
+                   . pt FPUnASTF           (either (Left . unASTF) id)
                    )
   where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
         pc = passC ctrl
