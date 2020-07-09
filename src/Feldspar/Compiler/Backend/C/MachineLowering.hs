@@ -213,7 +213,7 @@ mkTic64xComplexRule s = (s, [ (Only Complex, Extend ArgType tic64x) ] )
 -- | Returns the platform renames based on the platform name.
 getPlatformRenames :: Options -> M.Map String [(Which, Destination)]
 getPlatformRenames opt =
-  case name $ platform opt of
+  case platformName $ platform opt of
     "tic64x"                                     -> M.fromList (tic64xlist ++ c99list)
     s | s `elem` ["c99", "c99OpenMp", "c99Wool"] -> M.fromList c99list
       | otherwise                                -> M.fromList []

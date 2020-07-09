@@ -148,7 +148,7 @@ instance CodeGen (Program ())
      | WorkParallel <- pParallelType
      = text "#pragma omp parallel" $$ block env forB
      | Parallel <- pParallelType
-     , (name . platform . options $ env) == "c99OpenMp"
+     , (platformName . platform . options $ env) == "c99OpenMp"
      , parNestLevel env <= 1   -- OpenMP 4 has nested data parallelism,
                                -- but it does not work well in practice.
      = text "#pragma omp parallel for" $$ forL

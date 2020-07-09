@@ -99,7 +99,7 @@ data Options = Options
   } deriving Lift
 
 data Platform = Platform {
-  name            :: String,
+  platformName    :: String,
   includes        :: [String],
   varFloating     :: Bool,
   codeGenerator   :: String

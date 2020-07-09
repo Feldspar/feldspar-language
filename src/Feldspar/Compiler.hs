@@ -143,7 +143,7 @@ printCore :: Syntactic t => t -> IO ()
 printCore prog = print $ getCore prog
 
 targetsFromPlatform :: Platform -> [Target]
-targetsFromPlatform pf = tfp $ name pf
+targetsFromPlatform = tfp . platformName
    where tfp "c99"       = []
          tfp "c99OpenMp" = []
          tfp "c99Wool"   = [Wool]
@@ -199,8 +199,8 @@ passInfo = "\nPASS is a frontend pass from\n" ++
         bps = [minBound .. maxBound :: BackendPass]
 
 targetInfo :: String
-targetInfo
-  = "\nTARGET is one of " ++ unwords (map name availablePlatforms) ++ "\n\n"
+targetInfo = "\nTARGET is one of " ++ names ++ "\n\n"
+  where names = unwords (map platformName availablePlatforms)
 
 optionDescs :: [OptDescr (ProgOpts -> ProgOpts)]
 optionDescs = driverOpts

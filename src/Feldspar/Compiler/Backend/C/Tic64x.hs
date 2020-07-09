@@ -21,7 +21,7 @@ import Feldspar.Compiler.Options
 -- | External interface for tic64x specific fixes.
 adaptTic64x :: Options -> Module () -> Module ()
 adaptTic64x opts m
- | "tic64x" == name (platform opts) = adaptTic64x' m
+ | "tic64x" == platformName (platform opts) = adaptTic64x' m
  | otherwise = m
 
 -- | Internal interface for renaming.
