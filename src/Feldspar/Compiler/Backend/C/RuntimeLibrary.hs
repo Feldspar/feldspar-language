@@ -11,7 +11,7 @@ import Text.PrettyPrint (render)
 import Feldspar.Compiler.Imperative.Representation
 import Feldspar.Compiler.Imperative.Frontend
 import Feldspar.Compiler.Backend.C.CodeGeneration (cgen, penv0)
-import Feldspar.Compiler.Options hiding (name)
+import Feldspar.Compiler.Options
 
 machineLibrary :: Options -> [Entity ()]
 machineLibrary opts =

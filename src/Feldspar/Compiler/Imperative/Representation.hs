@@ -51,6 +51,7 @@ module Feldspar.Compiler.Imperative.Representation (
   , Type(..)
   , renderScalarType
   , renderType
+  , extend
   , Constant(..)
   , module Feldspar.Core.UntypedRepresentation
   , fv
@@ -63,7 +64,7 @@ import Data.Semigroup (Semigroup(..))
 import Language.Haskell.TH.Syntax (Lift(..))
 
 import Feldspar.Range (Range)
-import Feldspar.Compiler.Options (ErrorClass(..), handleError)
+import Feldspar.Compiler.Options (ErrorClass(..), Platform(..), handleError)
 import Feldspar.Core.Types (Length)
 import Feldspar.Core.UntypedRepresentation
         (Signedness(..), Size(..), HasType(..))
@@ -341,8 +342,12 @@ renderType (NativeArray _ t) = renderType t
 renderType (StructType n _) = "struct " ++ n
 renderType IVarType{} = "struct ivar"
 
+-- | Extend a helper function for the platform
+extend :: Platform -> String -> Type -> String
+extend Platform{..} s t = s ++ "_fun_" ++ renderType t
+
 ----------------------
---   Type inference --
+-- * Type inference
 ----------------------
 
 instance HasType (Variable t) where

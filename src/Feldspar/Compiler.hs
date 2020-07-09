@@ -76,7 +76,6 @@ import System.IO (BufferMode(..), IOMode(..), hClose, hPutStr,
 import Feldspar.Core.Frontend (FrontendPass, Syntactic, frontend)
 import Feldspar.Core.UntypedRepresentation (UntypedFeld)
 import Feldspar.Compiler.Backend.C.Library
-import Feldspar.Compiler.Backend.C.Platforms
 import Feldspar.Compiler.Backend.C.CodeGeneration
 import Feldspar.Compiler.Backend.C.MachineLowering
 import Feldspar.Compiler.Backend.C.Tic64x
