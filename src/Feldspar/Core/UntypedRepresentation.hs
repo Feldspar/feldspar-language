@@ -93,6 +93,7 @@ import Data.List (nub, intercalate)
 import Data.Tree
 import Language.Haskell.TH.Syntax (Lift(..))
 
+import Feldspar.Compiler.Options (Pretty(..))
 import Feldspar.Core.Representation (VarId(..))
 
 import Feldspar.Range (Range(..), singletonRange)
@@ -106,6 +107,9 @@ import Feldspar.Core.Types (Length)
 -- but it does not reflect into the host language type system.
 
 type UntypedFeld = Term UntypedFeldF
+
+instance Pretty UntypedFeld where
+  pretty = prettyExp (const . const "") . annotate (const ())
 
 -- | Inverse of collectBinders, make a lambda abstraction.
 mkLam' :: [(a,Var)] -> AUntypedFeld a -> AUntypedFeld a
