@@ -31,18 +31,9 @@
 
 module Feldspar.Core.Middleend.PassManager where
 
-import Feldspar.Compiler.Options (Pretty(..))
+import Feldspar.Compiler.Options (PassCtrl(..), Pretty(..))
 
 data Prog a b = Prog (Maybe a) [String] b
-  deriving Show
-
-data PassCtrl a = PassCtrl
-       { wrBefore   :: [a]
-       , wrAfter    :: [a]
-       , stopBefore :: [a]
-       , stopAfter  :: [a]
-       , skip       :: [a]
-       }
   deriving Show
 
 addWrBefore :: PassCtrl a -> a -> PassCtrl a
@@ -59,9 +50,6 @@ setStopAfter ctrl p = ctrl{stopAfter = [p]}
 
 addSkip :: PassCtrl a -> a -> PassCtrl a
 addSkip ctrl p = ctrl{skip = p : skip ctrl}
-
-defaultPassCtrl :: PassCtrl a
-defaultPassCtrl = PassCtrl [] [] [] [] []
 
 prOrStop :: (Pretty a, Eq b, Show b) => String -> [b] -> [b] -> b -> Prog a c -> Prog a c
 prOrStop pos prs stop pass (Prog (Just p) ss s)

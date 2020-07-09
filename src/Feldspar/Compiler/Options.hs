@@ -33,6 +33,8 @@ module Feldspar.Compiler.Options
   ( ErrorClass(..)
   , handleError
   , Pretty(..)
+  , PassCtrl(..)
+  , defaultPassCtrl
   , Target(..)
   , FeldOpts(..)
   , defaultFeldOpts
@@ -82,6 +84,19 @@ class Pretty a where
   pretty :: a -> String
 
 -- * Option handling data structures and utils.
+
+data PassCtrl a = PassCtrl
+  { wrBefore   :: [a] -- ^ Write IR before these passes
+  , wrAfter    :: [a] -- ^ Write IR after these passes
+  , stopBefore :: [a] -- ^ Stop before these passes
+  , stopAfter  :: [a] -- ^ Stop after these passes
+  , skip       :: [a] -- ^ Skip these passes
+  } deriving Show
+
+-- | A default PassCtrl that runs all passes without writing
+--   any intermediate results
+defaultPassCtrl :: PassCtrl a
+defaultPassCtrl = PassCtrl [] [] [] [] []
 
 -- | Possible compilation targets in a broad sense.
 data Target = RegionInf | Wool | CSE | SICS | BA

@@ -113,20 +113,20 @@ import qualified Feldspar.Core.Reify as Syntactic
 import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
-import Feldspar.Compiler.Options (FeldOpts(..), Options(..), Pretty(..),
-                                  Target(..), c99OpenMpPlatformOptions,
+import Feldspar.Compiler.Options (FeldOpts(..), Options(..), PassCtrl(..),
+                                  Pretty(..), Target(..),
+                                  c99OpenMpPlatformOptions,
                                   c99PlatformOptions, defaultFeldOpts,
-                                  defaultOptions, sicsOptions, sicsOptions2,
-                                  sicsOptions3, tic64xPlatformOptions)
+                                  defaultOptions, defaultPassCtrl, sicsOptions,
+                                  sicsOptions2, sicsOptions3,
+                                  tic64xPlatformOptions)
 import Feldspar.Core.AdjustBindings (adjustBindings)
 import Feldspar.Core.Middleend.CreateTasks
 import Feldspar.Core.Middleend.Expand (expand)
 import Feldspar.Core.Middleend.FromTyped (toU)
 import Feldspar.Core.Middleend.LetSinking
 import Feldspar.Core.Middleend.OptimizeUntyped
-import Feldspar.Core.Middleend.PassManager (PassCtrl(..), Prog(..),
-                                            defaultPassCtrl, evalPasses, passC,
-                                            passT)
+import Feldspar.Core.Middleend.PassManager (Prog(..), evalPasses, passC, passT)
 import Feldspar.Core.Middleend.PushLets
 import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.SizeProp as SP
