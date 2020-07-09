@@ -49,8 +49,20 @@ module Feldspar.Core.Frontend
 
     , module Feldspar.Core.Language
 
-    , FeldOpts
+    -- * Options
+    , FeldOpts(..)
     , defaultFeldOpts
+    , Options(..)
+    , defaultOptions
+    , sicsOptions
+    , sicsOptions2
+    , sicsOptions3
+    , c99PlatformOptions
+    , c99OpenMpPlatformOptions
+    , tic64xPlatformOptions
+    , Target(..)
+
+    -- * Interactive commands
     , showExpr
     , showUntyped
     , showUntyped'
@@ -66,6 +78,8 @@ module Feldspar.Core.Frontend
     , showDecor
     , drawDecor
     , eval
+
+    -- * Language utilities
     , desugar
     , sugar
     , resugar
@@ -99,7 +113,11 @@ import qualified Feldspar.Core.Reify as Syntactic
 import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
-import Feldspar.Compiler.Options (FeldOpts, Pretty(..), defaultFeldOpts)
+import Feldspar.Compiler.Options (FeldOpts(..), Options(..), Pretty(..),
+                                  Target(..), c99OpenMpPlatformOptions,
+                                  c99PlatformOptions, defaultFeldOpts,
+                                  defaultOptions, sicsOptions, sicsOptions2,
+                                  sicsOptions3, tic64xPlatformOptions)
 import Feldspar.Core.AdjustBindings (adjustBindings)
 import Feldspar.Core.Middleend.CreateTasks
 import Feldspar.Core.Middleend.Expand (expand)
