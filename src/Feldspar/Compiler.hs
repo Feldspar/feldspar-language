@@ -34,7 +34,10 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Feldspar.Compiler
-  ( compile
+  ( frontend
+  , reifyFeld
+  , renameExp
+  , compile
   , compileUT
   , icompile
   , icompileWith
@@ -53,6 +56,7 @@ module Feldspar.Compiler
   ) where
 
 import Control.Monad (when, unless)
+import Control.Monad.State (evalState)
 import Data.Char (toUpper)
 import Data.List (partition)
 import Data.Maybe (fromMaybe)
@@ -63,17 +67,68 @@ import System.FilePath (takeFileName)
 import System.IO (BufferMode(..), IOMode(..), hClose, hPutStr,
                   hSetBuffering, openFile)
 
-import Feldspar.Core.Frontend (FrontendPass, Syntactic, frontend)
-import Feldspar.Core.UntypedRepresentation (UntypedFeld)
 import Feldspar.Compiler.Backend.C.Library
 import Feldspar.Compiler.Backend.C.CodeGeneration
-import Feldspar.Compiler.Backend.C.MachineLowering
+import qualified Feldspar.Compiler.Backend.C.MachineLowering as ML
 import Feldspar.Compiler.Backend.C.Tic64x
 import Feldspar.Compiler.Imperative.FromCore
 import Feldspar.Compiler.Imperative.ArrayOps
 import Feldspar.Compiler.Imperative.Representation
 import Feldspar.Compiler.Options
-import Feldspar.Core.Middleend.PassManager
+import Feldspar.Core.AdjustBindings (adjustBindings)
+import Feldspar.Core.Middleend.CreateTasks
+import Feldspar.Core.Middleend.Expand (expand)
+import Feldspar.Core.Middleend.FromTyped (toU)
+import Feldspar.Core.Middleend.LetSinking
+import Feldspar.Core.Middleend.OptimizeUntyped
+import Feldspar.Core.Middleend.PassManager (Prog(..), addSkip, addWrAfter,
+                                            addWrBefore, evalPasses, passC,
+                                            passT, setStopAfter, setStopBefore)
+import Feldspar.Core.Middleend.PushLets
+import Feldspar.Core.Middleend.UniqueVars
+import qualified Feldspar.Core.SizeProp as SP
+import Feldspar.Core.Reify (ASTF, Syntactic(..), desugar, unASTF)
+import Feldspar.Core.UntypedRepresentation (AUntypedFeld, UntypedFeld,
+                                            prettyExp, rename, unAnnotate)
+import Feldspar.Core.ValueInfo (PrettyInfo(..))
+
+-- The front-end driver.
+
+instance PrettyInfo a => Pretty (AUntypedFeld a) where
+  pretty = prettyExp f
+     where f t x = " | " ++ prettyInfo t x
+
+-- | Front-end driver
+frontend :: Syntactic a
+         => PassCtrl FrontendPass
+         -> FeldOpts
+         -> a
+         -> ([String], Maybe UntypedFeld)
+frontend ctrl opts prog = evalPasses 0
+                   ( pc FPCreateTasks      (createTasks opts)
+                   . pt FPUnAnnotate       unAnnotate
+                   . pc FPUnique           uniqueVars
+                   . pc FPExpand           expand
+                   . pc FPPushLets         pushLets
+                   . pc FPOptimize         optimize
+                   . pc FPSinkLets         (sinkLets opts)
+                   . pc FPRename           renameExp
+                   . pt FPUntype           toU
+                   . pc FPSizeProp         SP.sizeProp
+                   . pc FPAdjustBind       adjustBindings
+                   . pt FPUnASTF           unASTF
+                   ) $ reifyFeld prog
+  where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
+        pc = passC ctrl
+        pt :: (Pretty a, Pretty b)
+           => FrontendPass -> (a -> b) -> Prog a Int -> Prog b Int
+        pt = passT ctrl
+
+reifyFeld :: Syntactic a => a -> ASTF (Internal a)
+reifyFeld = desugar
+
+renameExp :: AUntypedFeld a -> AUntypedFeld a
+renameExp e = evalState (rename e) 0
 
 compile :: Syntactic t => t -> FilePath -> String -> Options -> IO ()
 compile prg fileName funName opts = writeFiles compRes fileName (codeGenerator $ platform opts)
@@ -300,7 +355,7 @@ compileToCCore name opts prg = compileToCCore' opts mod'
 compileToCCore' :: Options -> Module () -> SplitModule
 compileToCCore' opts m = compileSplitModule opts $ splitModule mod'
       where
-        mod' = adaptTic64x opts $ rename opts False $ arrayOps opts m
+        mod' = adaptTic64x opts $ ML.rename opts False $ arrayOps opts m
 
 genIncludeLines :: Options -> Maybe String -> String
 genIncludeLines opts mainHeader = concatMap include incs ++ "\n\n"
@@ -324,7 +379,7 @@ backend :: PassCtrl BackendPass -> Options -> String -> UntypedFeld -> ([String]
 backend ctrl opts name = evalPasses 0
                        $ codegen (codeGenerator $ platform opts) ctrl opts
                        . pc BPAdapt    (adaptTic64x opts)
-                       . pc BPRename   (rename opts False)
+                       . pc BPRename   (ML.rename opts False)
                        . pc BPArrayOps (arrayOps opts)
                        . pt BPFromCore (fromCoreUT opts (encodeFunctionName name))
   where pc :: Pretty a => BackendPass -> (a -> a) -> Prog a Int -> Prog a Int
