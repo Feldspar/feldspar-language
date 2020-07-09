@@ -143,14 +143,16 @@ showExpr = render . reifyFeld
 
 -- | Show an untyped expression
 showUntyped :: Syntactic a => Options -> a -> String
-showUntyped opts = head . fst . frontend passCtrl opts . (Left . reifyFeld)
-  where passCtrl = defaultPassCtrl{ wrBefore = [FPUnAnnotate]
+showUntyped opts prg = head . fst $ out
+  where out = frontend passCtrl opts "dummy" (Left $ reifyFeld prg)
+        passCtrl = defaultPassCtrl{ wrBefore = [FPUnAnnotate]
                                   , stopBefore = [FPUnAnnotate]}
 
 -- | Show an expression after a specific frontend pass
 showUntyped' :: Syntactic a => FrontendPass -> Options -> a -> String
-showUntyped' p opts = head . fst . frontend passCtrl opts . (Left . reifyFeld)
-  where passCtrl = defaultPassCtrl{wrAfter = [p], stopAfter = [p]}
+showUntyped' p opts prg = head . fst $ out
+  where out = frontend passCtrl opts "dummy" (Left $ reifyFeld prg)
+        passCtrl = defaultPassCtrl{wrAfter = [p], stopAfter = [p]}
 
 -- | Print an optimized untyped expression
 printExpr2 :: Syntactic a => a -> IO ()

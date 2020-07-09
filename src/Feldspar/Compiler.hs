@@ -100,13 +100,19 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
 -- | Front-end driver
 frontend :: PassCtrl FrontendPass
          -> Options
-         -> Either (ASTF a)
-                   (Either (AExpr a)
-                           (Either (AUntypedFeld ValueInfo) UntypedFeld))
-         -> ([String], Maybe UntypedFeld)
-frontend ctrl opts = evalPasses 0
-                   ( pc FPCreateTasks      (createTasks opts)
-                   . pt FPUnAnnotate       (either unAnnotate id)
+         -> String
+         -> Either
+              (ASTF a)
+              (Either
+                (AExpr a)
+                (Either
+                  (AUntypedFeld ValueInfo)
+                  (Either UntypedFeld (Module ()))))
+         -> ([String], Maybe (Module ()))
+frontend ctrl opts n = evalPasses 0
+                   ( pt BPFromCore (either (fromCoreUT opts (encodeFunctionName n)) id)
+                   . pc FPCreateTasks      (either (Left . createTasks opts) Right)
+                   . pt FPUnAnnotate       (either (Left . unAnnotate) id)
                    . pc FPUnique           (either (Left . uniqueVars) Right)
                    . pc FPExpand           (either (Left . expand) Right)
                    . pc FPPushLets         (either (Left . pushLets) Right)
@@ -136,7 +142,7 @@ compile prg fileName funName opts = writeFiles compRes fileName (codeGenerator $
 
 compileUT :: UntypedFeld -> FilePath -> String -> Options -> IO ()
 compileUT prg fileName funName opts = writeFiles compRes fileName (codeGenerator $ platform opts)
-  where compRes = compileToCCore' opts funName prg'
+  where compRes = compileToCCore' opts prg'
         prg'    = fromCoreUT opts (encodeFunctionName funName) prg
 
 writeFiles :: SplitModule -> FilePath -> String -> IO ()
@@ -287,9 +293,9 @@ writeFileLB name' str = do fh <- openFile name' WriteMode
 
 translate :: Syntactic a => ProgOpts -> a -> ([String], Maybe SplitModule)
 translate opts p = (ssf ++ ssb, as)
-  where (ssf, ut) = frontend (frontendCtrl opts) bopts $ Left $ reifyFeld p
+  where (ssf, ut) = frontend (frontendCtrl opts) bopts name' $ Left $ reifyFeld p
         (ssb, as) = maybe ([], Nothing) left ut
-        left p'   = backend (backendCtrl opts) bopts name' (Left p')
+        left p'   = backend (backendCtrl opts) bopts p'
         bopts     = backOpts opts
         name'     = functionName opts
 
@@ -343,10 +349,10 @@ compileToCCore n opts p = fromMaybe err $ snd p'
   where err = error "compileToCCore: translate failed"
         p' = translate (defaultProgOpts{backOpts = opts, functionName = n}) p
 
-compileToCCore' :: Options -> String -> Module () -> SplitModule
-compileToCCore' opts name' m
+compileToCCore' :: Options -> Module () -> SplitModule
+compileToCCore' opts m
   = fromMaybe (error "compileToCCore: backend failed") prg
-   where prg = snd $ backend (backendCtrl defaultProgOpts) opts name' (Right m)
+   where prg = snd $ backend (backendCtrl defaultProgOpts) opts m
 
 genIncludeLines :: Options -> Maybe String -> String
 genIncludeLines opts mainHeader = concatMap include incs ++ "\n\n"
@@ -369,18 +375,15 @@ instance Pretty SplitModule where
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
   pretty = either pretty pretty
 
-backend :: PassCtrl BackendPass -> Options -> String
-        -> Either UntypedFeld (Module ()) -> ([String], Maybe SplitModule)
-backend ctrl opts name = evalPasses 0
+backend :: PassCtrl BackendPass -> Options
+        -> Module () -> ([String], Maybe SplitModule)
+backend ctrl opts = evalPasses 0
                        $ codegen (codeGenerator $ platform opts) ctrl opts
                        . pc BPAdapt    (adaptTic64x opts)
                        . pc BPRename   (ML.rename opts False)
                        . pc BPArrayOps (arrayOps opts)
-                       . pt BPFromCore (either (fromCoreUT opts (encodeFunctionName name)) id)
   where pc :: Pretty a => BackendPass -> (a -> a) -> Prog a Int -> Prog a Int
         pc = passC ctrl
-        pt :: (Pretty a, Pretty b) => BackendPass -> (a -> b) -> Prog a Int -> Prog b Int
-        pt = passT ctrl
 
 codegen :: String -> PassCtrl BackendPass -> Options -> Prog (Module ()) Int -> Prog SplitModule Int
 codegen "c"   ctrl opts  = passT ctrl BPCompile  (compileSplitModule opts)
