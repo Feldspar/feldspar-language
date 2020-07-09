@@ -336,9 +336,11 @@ compileSplitModule opts (hmdl, cmdl)
 -- Everything should call this function and only do a trivial interface adaptation.
 -- Do not duplicate.
 compileToCCore :: Syntactic c => String -> Options -> c -> SplitModule
-compileToCCore name opts prg = compileToCCore' opts mod'
-      where
-        mod' = fromCore opts (encodeFunctionName name) prg
+compileToCCore name' opts prg
+  | Just prg' <- snd $ frontend ctrl opts prg
+  = compileToCCore' opts $ fromCoreUT opts (encodeFunctionName name') prg'
+  | otherwise = error "compileToCCore: Internal error: frontend failed?"
+   where ctrl = frontendCtrl defaultProgOpts
 
 compileToCCore' :: Options -> Module () -> SplitModule
 compileToCCore' opts m = compileSplitModule opts $ splitModule mod'
@@ -379,15 +381,3 @@ codegen :: String -> PassCtrl BackendPass -> Options -> Prog (Module ()) Int -> 
 codegen "c"   ctrl opts  = passT ctrl BPCompile  (compileSplitModule opts)
                          . passT ctrl BPSplit    splitModule
 codegen gen   _    _     = error $ "Compiler.codegen: unknown code generator " ++ gen
-
--- | Get the generated core for an expression.
-fromCore :: Syntactic a
-    => Options
-    -> String   -- ^ Name of the generated function
-    -> a        -- ^ Expression to generate code for
-    -> Module ()
-fromCore opt funname prog
-  | Just prg <- snd $ frontend ctrl opt prog
-  = fromCoreUT opt funname prg
-  | otherwise = error "fromCore: Internal error: frontend failed?"
-   where ctrl = frontendCtrl defaultProgOpts
