@@ -50,8 +50,6 @@ module Feldspar.Core.Frontend
     , module Feldspar.Core.Language
 
     -- * Options
-    , FeldOpts(..)
-    , defaultFeldOpts
     , Options(..)
     , defaultOptions
     , sicsOptions
@@ -111,10 +109,10 @@ import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
 import Feldspar.Compiler (frontend, reifyFeld, renameExp)
-import Feldspar.Compiler.Options (FeldOpts(..), FrontendPass(..), Options(..),
+import Feldspar.Compiler.Options (FrontendPass(..), Options(..),
                                   PassCtrl(..), Target(..),
                                   c99OpenMpPlatformOptions,
-                                  c99PlatformOptions, defaultFeldOpts,
+                                  c99PlatformOptions,
                                   defaultOptions, defaultPassCtrl, sicsOptions,
                                   sicsOptions2, sicsOptions3,
                                   tic64xPlatformOptions)
@@ -134,36 +132,36 @@ import Feldspar.Core.Language
 import Feldspar.Core.ValueInfo (ValueInfo)
 
 stringTreeASTF :: ASTF a -> Tree String
-stringTreeASTF = stringTree . untypeUnOpt defaultFeldOpts
+stringTreeASTF = stringTree . untypeUnOpt defaultOptions
 
 showDecorWith :: (ValueInfo -> String) -> ASTF a -> String
-showDecorWith f = showTree . stringTreeExp g . untypeDecor defaultFeldOpts
+showDecorWith f = showTree . stringTreeExp g . untypeDecor defaultOptions
   where g x = " in " ++ f x
 
 showExpr :: Syntactic a => a -> String
 showExpr = render . reifyFeld
 
 -- | Show an untyped expression
-showUntyped :: Syntactic a => FeldOpts -> a -> String
+showUntyped :: Syntactic a => Options -> a -> String
 showUntyped opts = head . fst . frontend passCtrl opts
   where passCtrl = defaultPassCtrl{ wrBefore = [FPUnAnnotate]
                                   , stopBefore = [FPUnAnnotate]}
 
 -- | Show an expression after a specific frontend pass
-showUntyped' :: Syntactic a => FrontendPass -> FeldOpts -> a -> String
+showUntyped' :: Syntactic a => FrontendPass -> Options -> a -> String
 showUntyped' p opts = head . fst . frontend passCtrl opts
   where passCtrl = defaultPassCtrl{wrAfter = [p], stopAfter = [p]}
 
 -- | Print an optimized untyped expression
 printExpr2 :: Syntactic a => a -> IO ()
-printExpr2 = printExpr2With defaultFeldOpts
+printExpr2 = printExpr2With defaultOptions
 
 -- | Draw the untyped syntax tree using unicode art
 drawUntyped :: Syntactic a => a -> IO ()
-drawUntyped = drawUntypedWith defaultFeldOpts
+drawUntyped = drawUntypedWith defaultOptions
 
 -- | Draw the untyped syntax tree using unicode art
-drawUntypedWith :: Syntactic a => FeldOpts -> a -> IO ()
+drawUntypedWith :: Syntactic a => Options -> a -> IO ()
 drawUntypedWith opts = drawTree . stringTree . untype opts . reifyFeld
 
 -- | Print an optimized expression
@@ -171,7 +169,7 @@ printExpr :: Syntactic a => a -> IO ()
 printExpr = print . reifyFeld
 
 -- | Print an optimized untyped expression with options
-printExpr2With :: Syntactic a => FeldOpts -> a -> IO ()
+printExpr2With :: Syntactic a => Options -> a -> IO ()
 printExpr2With opts = print . untype opts . reifyFeld
 
 -- | Show the syntax tree using Unicode art
@@ -212,19 +210,19 @@ sugar = resugar
 --        with calls to the frontend function.
 
 -- | Untype, optimize and unannotate.
-untype :: FeldOpts -> ASTF a -> UntypedFeld
+untype :: Options -> ASTF a -> UntypedFeld
 untype opts = cleanUp opts
             . untypeDecor opts
 
 -- | Untype and optimize.
-untypeDecor :: FeldOpts -> ASTF a -> AUntypedFeld ValueInfo
+untypeDecor :: Options -> ASTF a -> AUntypedFeld ValueInfo
 untypeDecor opts = pushLets
                  . optimize
                  . sinkLets opts
                  . justUntype
 
 -- | External module interface.
-untypeUnOpt :: FeldOpts -> ASTF a -> UntypedFeld
+untypeUnOpt :: Options -> ASTF a -> UntypedFeld
 untypeUnOpt opts = cleanUp opts
                  . justUntype
 
@@ -233,7 +231,7 @@ justUntype :: ASTF a -> AUntypedFeld ValueInfo
 justUntype = renameExp . toU . SP.sizeProp . adjustBindings . unASTF
 
 -- | Prepare the code for fromCore
-cleanUp :: FeldOpts -> AUntypedFeld ValueInfo -> UntypedFeld
+cleanUp :: Options -> AUntypedFeld ValueInfo -> UntypedFeld
 cleanUp opts = createTasks opts . unAnnotate . uniqueVars
 
 --------------------------------------------------------------------------------

@@ -101,7 +101,7 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
 -- | Front-end driver
 frontend :: Syntactic a
          => PassCtrl FrontendPass
-         -> FeldOpts
+         -> Options
          -> a
          -> ([String], Maybe UntypedFeld)
 frontend ctrl opts prog = evalPasses 0
@@ -275,9 +275,8 @@ driverOpts =
 
 setTarget :: ProgOpts -> String -> ProgOpts
 setTarget opts str
-  = opts{backOpts = bopts{platform = pf, frontendOpts = fopts{targets = tgs}}}
+  = opts{backOpts = bopts{platform = pf, targets = tgs}}
    where bopts = backOpts opts
-         fopts = frontendOpts bopts
          pf = platformFromName str
          tgs = targetsFromPlatform pf
 
@@ -296,10 +295,9 @@ writeFileLB name' str = do fh <- openFile name' WriteMode
 
 translate :: Syntactic a => ProgOpts -> a -> ([String], Maybe SplitModule)
 translate opts p = (ssf ++ ssb, as)
-  where (ssf, ut) = frontend (frontendCtrl opts) fopts p
+  where (ssf, ut) = frontend (frontendCtrl opts) bopts p
         (ssb, as) = maybe ([], Nothing) (backend (backendCtrl opts) bopts name') ut
         bopts     = backOpts opts
-        fopts     = frontendOpts bopts
         name'     = functionName opts
 
 data SplitModule = SplitModule
@@ -399,7 +397,7 @@ fromCore :: Syntactic a
     -> a        -- ^ Expression to generate code for
     -> Module ()
 fromCore opt funname prog
-  | Just prg <- snd $ frontend ctrl (frontendOpts opt) prog
+  | Just prg <- snd $ frontend ctrl opt prog
   = fromCoreUT opt funname prg
   | otherwise = error "fromCore: Internal error: frontend failed?"
    where ctrl = frontendCtrl defaultProgOpts

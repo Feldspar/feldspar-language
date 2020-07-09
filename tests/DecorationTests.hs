@@ -63,7 +63,7 @@ tests = testGroup "DecorationTests"
     , goldenVsFile "noshareT" (ref "noshareT.txt") "tests/noshareT.txt" $ writeFile "tests/noshareT.txt" $ showDecor noshareT
     , goldenVsFile "shareT" (ref "shareT.txt") "tests/shareT.txt" $ writeFile "tests/shareT.txt" $ showDecor shareT
     , goldenVsFile "selectT" (ref "selectT.txt") "tests/selectT.txt" $ writeFile "tests/selectT.txt" $ showDecor selectT
-    , goldenVsFile "tfModel" (ref "tfModel.txt") "tests/tfModel.txt" $ writeFile "tests/tfModel.txt" $ showUntyped defaultFeldOpts tfModel
+    , goldenVsFile "tfModel" (ref "tfModel.txt") "tests/tfModel.txt" $ writeFile "tests/tfModel.txt" $ showUntyped defaultOptions tfModel
     ]
 
 main = defaultMain $ testGroup "Tests" [tests]
