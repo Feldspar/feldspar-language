@@ -132,16 +132,13 @@ import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.SizeProp as SP
 import Feldspar.Core.Types
 import Feldspar.Core.UntypedRepresentation (UntypedFeld, AUntypedFeld,
-                                            annotate, prettyExp, rename,
+                                            prettyExp, rename,
                                             stringTree, stringTreeExp,
                                             unAnnotate)
 import Feldspar.Core.Language
 import Feldspar.Core.ValueInfo (ValueInfo, PrettyInfo(..))
 
 -- The front-end driver.
-
-instance Pretty UntypedFeld where
-  pretty = pretty . annotate (const ())
 
 instance PrettyInfo a => Pretty (AUntypedFeld a) where
   pretty = prettyExp f
