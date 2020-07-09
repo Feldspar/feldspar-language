@@ -85,6 +85,7 @@ import Feldspar.Core.Middleend.PassManager (Prog(..), addSkip, addWrAfter,
 import Feldspar.Core.Middleend.PushLets
 import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.SizeProp as SP
+import Feldspar.Core.Representation (AExpr)
 import Feldspar.Core.Reify (ASTF, Syntactic(..), desugar, unASTF)
 import Feldspar.Core.UntypedRepresentation (AUntypedFeld, UntypedFeld,
                                             prettyExp, rename, unAnnotate)
@@ -97,12 +98,11 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
      where f t x = " | " ++ prettyInfo t x
 
 -- | Front-end driver
-frontend :: Syntactic a
-         => PassCtrl FrontendPass
+frontend :: PassCtrl FrontendPass
          -> Options
-         -> a
+         -> Either (ASTF a) (AExpr a)
          -> ([String], Maybe UntypedFeld)
-frontend ctrl opts prog = evalPasses 0
+frontend ctrl opts = evalPasses 0
                    ( pc FPCreateTasks      (createTasks opts)
                    . pt FPUnAnnotate       unAnnotate
                    . pc FPUnique           uniqueVars
@@ -114,8 +114,8 @@ frontend ctrl opts prog = evalPasses 0
                    . pt FPUntype           toU
                    . pc FPSizeProp         SP.sizeProp
                    . pc FPAdjustBind       adjustBindings
-                   . pt FPUnASTF           unASTF
-                   ) $ reifyFeld prog
+                   . pt FPUnASTF           (either unASTF id)
+                   )
   where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
         pc = passC ctrl
         pt :: (Pretty a, Pretty b)
@@ -285,7 +285,7 @@ writeFileLB name' str = do fh <- openFile name' WriteMode
 
 translate :: Syntactic a => ProgOpts -> a -> ([String], Maybe SplitModule)
 translate opts p = (ssf ++ ssb, as)
-  where (ssf, ut) = frontend (frontendCtrl opts) bopts p
+  where (ssf, ut) = frontend (frontendCtrl opts) bopts $ Left $ reifyFeld p
         (ssb, as) = maybe ([], Nothing) left ut
         left p'   = backend (backendCtrl opts) bopts name' (Left p')
         bopts     = backOpts opts
