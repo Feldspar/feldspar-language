@@ -14,6 +14,7 @@ import Test.Tasty
 import Test.Tasty.Golden (goldenVsFile)
 import Test.Tasty.Golden.Advanced
 import Test.Tasty.QuickCheck
+import Test.Tasty.TH
 
 import qualified Prelude
 import Feldspar
@@ -29,7 +30,12 @@ import Feldspar.Core.NestedTuples
 
 import Examples.Simple.Basics
 import Feldspar.Applications.TFModel (tfModel)
+import Feldspar.Core.Test
+import Feldspar.Mutable.Test
 import Feldspar.Range.Test
+import Feldspar.Stream.Test
+import Feldspar.Tuple.Test
+import Feldspar.Vector.Test
 
 import Control.Applicative hiding (empty)
 import Control.Monad
@@ -224,6 +230,7 @@ selectT = sel First $ snd noshareT
 tests :: TestTree
 tests = testGroup "RegressionTests" $
                   [ decorationTests, compilerTests, externalProgramTests
+                  , mutableTests, streamTests, vectorTests, tupleTests
                   ] Prelude.++ rangeTests
 
 prop_concatV = forAll (vectorOf 3 (choose (0,5))) $ \ls ->
