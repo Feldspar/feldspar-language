@@ -210,17 +210,7 @@ platformFromName str
 c99 :: Platform
 c99 = Platform {
     platformName = "c99",
-    includes =
-        [ "feldspar_c99.h"
-        , "feldspar_array.h"
-        , "feldspar_future.h"
-        , "ivar.h"
-        , "taskpool.h"
-        , "<stdint.h>"
-        , "<string.h>"
-        , "<math.h>"
-        , "<stdbool.h>"
-        , "<complex.h>"],
+    includes = [ "feldspar_c99.h"],
     varFloating = True,
     codeGenerator = "c"
 }
@@ -242,10 +232,9 @@ ba = c99 { platformName = "ba"
          }
 
 tic64x :: Platform
-tic64x = Platform {
+tic64x = c99 {
     platformName = "tic64x",
-    includes = [ "feldspar_tic64x.h", "feldspar_array.h", "<c6x.h>", "<string.h>"
-               , "<math.h>"],
+    includes = [ "feldspar_c99.h" ],
     varFloating = True,
     codeGenerator = "c"
 }

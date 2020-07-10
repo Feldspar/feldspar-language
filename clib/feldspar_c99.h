@@ -31,10 +31,12 @@
 
 #include <complex.h>
 #include <inttypes.h>
+#include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include <string.h>
 
 #if defined(WIN32)
   #include <windows.h>
@@ -43,6 +45,13 @@
   #include <time.h>
 #endif /* WIN32 */
 
+#ifdef __TIC64X__
+#include "feldspar_tic64x.h"
+#endif
+#include "feldspar_array.h"
+#include "feldspar_future.h"
+#include "ivar.h"
+#include "taskpool.h"
 
 #define min(X, Y)  ((X) < (Y) ? (X) : (Y))
 #define max(X, Y)  ((X) > (Y) ? (X) : (Y))
