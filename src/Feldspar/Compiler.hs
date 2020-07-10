@@ -98,7 +98,7 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
      where f t x = " | " ++ prettyInfo t x
 
 -- | Front-end driver
-frontend :: PassCtrl FrontendPass
+frontend :: PassCtrl
          -> Options
          -> String
          -> Either
@@ -132,10 +132,10 @@ frontend ctrl opts n = evalPasses 0
                    . pc FPAdjustBind       (either (Left . adjustBindings) Right)
                    . pt FPUnASTF           (either (Left . unASTF) id)
                    )
-  where pc :: Pretty a => FrontendPass -> (a -> a) -> Prog a Int -> Prog a Int
+  where pc :: Pretty a => Pass -> (a -> a) -> Prog a Int -> Prog a Int
         pc = passC ctrl
         pt :: (Pretty a, Pretty b)
-           => FrontendPass -> (a -> b) -> Prog a Int -> Prog b Int
+           => Pass -> (a -> b) -> Prog a Int -> Prog b Int
         pt = passT ctrl
 
 reifyFeld :: Syntactic a => a -> ASTF (Internal a)
@@ -243,7 +243,7 @@ passInfo = "\nPASS is one of\n" ++
            unlines (map ((++) "  " . unwords) $ chunksOf 5 $ map show fps)
   where chunksOf _ [] = []
         chunksOf n xs = take n xs:chunksOf n (drop n xs)
-        fps = [minBound .. maxBound :: FrontendPass]
+        fps = [minBound .. maxBound :: Pass]
 
 targetInfo :: String
 targetInfo = "\nTARGET is one of " ++ names ++ "\n\n"
@@ -283,7 +283,7 @@ setTarget opts str
          pf = platformFromName str
          tgs = targetsFromPlatform pf
 
-chooseEnd :: (forall a . PassCtrl a -> a -> PassCtrl a) -> String -> ProgOpts -> ProgOpts
+chooseEnd :: (PassCtrl -> Pass -> PassCtrl) -> String -> ProgOpts -> ProgOpts
 chooseEnd f str opts
   | [(p,_)] <- reads str = opts{frontendCtrl = f (frontendCtrl opts) p}
   | otherwise = error $ "Compiler.chooseEnd: unrecognized pass " ++ str
@@ -375,7 +375,7 @@ instance Pretty SplitModule where
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
   pretty = either pretty pretty
 
-codegen :: String -> PassCtrl FrontendPass -> Options
+codegen :: String -> PassCtrl -> Options
         -> Prog (Either (Module ())
                 (Either (Module (), Module ()) SplitModule)) Int
         -> Prog SplitModule Int

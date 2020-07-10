@@ -35,7 +35,7 @@ module Feldspar.Compiler.Options
   , Pretty(..)
   , PassCtrl(..)
   , defaultPassCtrl
-  , FrontendPass(..)
+  , Pass(..)
   , ProgOpts(..)
   , defaultProgOpts
   , Target(..)
@@ -86,21 +86,21 @@ class Pretty a where
 
 -- * Option handling data structures and utils.
 
-data PassCtrl a = PassCtrl
-  { wrBefore   :: [a] -- ^ Write IR before these passes
-  , wrAfter    :: [a] -- ^ Write IR after these passes
-  , stopBefore :: [a] -- ^ Stop before these passes
-  , stopAfter  :: [a] -- ^ Stop after these passes
-  , skip       :: [a] -- ^ Skip these passes
+data PassCtrl = PassCtrl
+  { wrBefore   :: [Pass] -- ^ Write IR before these passes
+  , wrAfter    :: [Pass] -- ^ Write IR after these passes
+  , stopBefore :: [Pass] -- ^ Stop before these passes
+  , stopAfter  :: [Pass] -- ^ Stop after these passes
+  , skip       :: [Pass] -- ^ Skip these passes
   } deriving Show
 
 -- | A default PassCtrl that runs all passes without writing
 --   any intermediate results
-defaultPassCtrl :: PassCtrl a
+defaultPassCtrl :: PassCtrl
 defaultPassCtrl = PassCtrl [] [] [] [] []
 
--- | Enumeration of frontend passes
-data FrontendPass
+-- | Enumeration of compiler passes
+data Pass
   = FPUnASTF
   | FPAdjustBind
   | FPSizeProp
@@ -127,7 +127,7 @@ data ProgOpts = ProgOpts
   , passFileName :: String
   , outFileName  :: String
   , functionName :: String
-  , frontendCtrl :: PassCtrl FrontendPass
+  , frontendCtrl :: PassCtrl
   , printHelp    :: Bool
   }
 
