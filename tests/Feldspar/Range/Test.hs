@@ -36,7 +36,7 @@
 
 -- | Bounded integer ranges
 
-module Feldspar.Range.Test where
+module Feldspar.Range.Test ( rangeTests ) where
 
 import Feldspar.Range
 import System.Random -- Should maybe be exported from QuickCheck
@@ -55,7 +55,7 @@ import Feldspar.Lattice
 
 import Debug.Trace
 
-tests = [ testGroup "Range Int8"   $ typedTestsSigned   "Int8"   (undefined :: Int8)
+rangeTests = [ testGroup "Range Int8"   $ typedTestsSigned   "Int8"   (undefined :: Int8)
         , testGroup "Range Int64"  $ typedTestsSigned   "Int64"  (undefined :: Int64)
         , testGroup "Range Word8"  $ typedTestsUnsigned "Word8"  (undefined :: Word8)
         , testGroup "Range Word32" $ typedTestsUnsigned "Word32" (undefined :: Word32)

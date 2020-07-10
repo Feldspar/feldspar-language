@@ -218,31 +218,6 @@ executable onnxToFeld
     protocol-buffers            >= 2,
     utf8-string                 >= 0.3.7
 
-test-suite range
-  type: exitcode-stdio-1.0
-
-  hs-source-dirs: tests
-
-  main-is: RangeTest.hs
-
-  default-extensions:
-    MonoLocalBinds
-
-  other-modules:
-    Feldspar.Range.Test
-
-  default-language: Haskell2010
-
-  build-depends:
-    feldspar-language,
-    base,
-    random           >= 1   && < 2,
-    QuickCheck       >= 2.7 && < 3,
-    tasty            >= 0.3,
-    tasty-quickcheck >= 0.2
-
-  ghc-options: -threaded -with-rtsopts=-maxN4
-
 test-suite semantics
   type: exitcode-stdio-1.0
 
@@ -314,6 +289,7 @@ test-suite regression
     Examples.Simple.Basics
     Feldspar.Applications.TFModel
     Feldspar.Applications.TFLib
+    Feldspar.Range.Test
 
   default-language: Haskell2010
 
@@ -325,6 +301,7 @@ test-suite regression
     ghc-paths,
     process,
     bytestring       >= 0.9 && < 0.11,
+    random           >= 1.0    && < 1.2,
     stringsearch     >= 0.3,
     tasty            >= 0.3,
     tasty-golden     >= 2.3.0.1,

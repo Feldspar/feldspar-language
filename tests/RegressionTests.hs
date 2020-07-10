@@ -29,6 +29,7 @@ import Feldspar.Core.NestedTuples
 
 import Examples.Simple.Basics
 import Feldspar.Applications.TFModel (tfModel)
+import Feldspar.Range.Test
 
 import Control.Applicative hiding (empty)
 import Control.Monad
@@ -221,8 +222,9 @@ selectT :: Data Length
 selectT = sel First $ snd noshareT
 
 tests :: TestTree
-tests = testGroup "RegressionTests"
-                  [decorationTests, compilerTests, externalProgramTests]
+tests = testGroup "RegressionTests" $
+                  [ decorationTests, compilerTests, externalProgramTests
+                  ] Prelude.++ rangeTests
 
 prop_concatV = forAll (vectorOf 3 (choose (0,5))) $ \ls ->
                  forAll (mapM (`vectorOf` arbitrary) ls) $ \xss ->
