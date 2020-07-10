@@ -193,10 +193,10 @@ sicsOptions3 :: Options
 sicsOptions3 = defaultOptions { platform = c99Wool, targets = [SICS,CSE,Wool] }
 
 data Platform = Platform {
-  platformName    :: String,
-  includes        :: [String],
-  varFloating     :: Bool,
-  codeGenerator   :: String
+  platformName    :: String,    -- ^ Name of the platform
+  compilerFlags   :: [String],  -- ^ Flags to pass to the C compiler
+  varFloating     :: Bool,      -- ^ Declare variables on the top level scope
+  codeGenerator   :: String     -- ^ Name of the code generator
 } deriving (Lift, Show)
 
 availablePlatforms :: [Platform]
@@ -210,7 +210,9 @@ platformFromName str
 c99 :: Platform
 c99 = Platform {
     platformName = "c99",
-    includes = [ "feldspar_c99.h"],
+    compilerFlags = ["-std=c99", "-Wall"
+                    ,"-D_XOPEN_SOURCE" -- Required for M_PI in math.h
+                    ],
     varFloating = True,
     codeGenerator = "c"
 }
@@ -222,7 +224,7 @@ c99OpenMp = c99 { platformName = "c99OpenMp"
 
 c99Wool :: Platform
 c99Wool = c99 { platformName = "c99Wool"
-              , includes = "wool.h":includes c99
+              , compilerFlags = "-DUSE_WOOL":compilerFlags c99
               , varFloating = False
               }
 
@@ -232,12 +234,9 @@ ba = c99 { platformName = "ba"
          }
 
 tic64x :: Platform
-tic64x = c99 {
-    platformName = "tic64x",
-    includes = [ "feldspar_c99.h" ],
-    varFloating = True,
-    codeGenerator = "c"
-}
+tic64x = c99 { platformName = "tic64x"
+             , compilerFlags = "-D__TIC64X__":compilerFlags c99
+             }
 
 -- * Renamer data types to avoid cyclic imports.
 type Rename = (String, [(Which, Destination)])

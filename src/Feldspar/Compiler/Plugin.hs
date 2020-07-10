@@ -61,7 +61,7 @@ import Feldspar.Runtime
 import Feldspar.Compiler (compile)
 import Feldspar.Compiler.Backend.C.Library (encodeFunctionName)
 import Feldspar.Compiler.Marshal ()
-import Feldspar.Compiler.Options (Options(..), defaultOptions)
+import Feldspar.Compiler.Options (Options(..), Platform(..), defaultOptions)
 
 -- | Configurable configuration for the loader.
 feldsparPluginConfigWith :: String -> Options -> Config
@@ -130,7 +130,7 @@ feldsparBuilder fopts Config{..} fun = do
     normalB [|unsafeLocalState $ do
                 createDirectoryIfMissing True wdir
                 $(varE 'compile) $(varE fun) basename base fopts
-                compileAndLoad basename opts'
+                compileAndLoad fopts basename opts'
                 lookupSymbol symbol
             |]
   where
@@ -173,13 +173,13 @@ maybeHasLibs p =
                            then Just lib
                            else Nothing
 
-compileAndLoad :: String -> [String] -> IO ()
-compileAndLoad name opts = do
+compileAndLoad :: Options -> String -> [String] -> IO ()
+compileAndLoad opts name args = do
     let cname = name ++ ".c"
         oname = name ++ ".o"
     exists <- doesFileExist oname
     when exists $ removeFile oname
-    compileC cname oname opts
+    compileC opts cname oname args
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 802
     initObjLinker RetainCAFs
 #else
@@ -189,15 +189,12 @@ compileAndLoad name opts = do
     res <- resolveObjs
     unless res $ error $ "Symbols in " ++ oname ++ " could not be resolved"
 
-compileC :: String -> String -> [String] -> IO ()
-compileC srcfile objfile opts = do
-    let args = [ "-optc -std=c99"
-               , "-optc -Wall"
-               , "-optc -D_XOPEN_SOURCE" -- Required for M_PI in math.h.
-               , "-w"
-               , "-c"
-               ]
-    (_,stdout,stderr) <- readProcessWithExitCode ghc (args ++ opts ++ ["-o",objfile,srcfile]) ""
+compileC :: Options -> String -> String -> [String] -> IO ()
+compileC opts srcfile objfile args' = do
+    let args = [ "-w", "-c" ]
+               ++ map ("-optc " ++) (compilerFlags $ platform opts)
+               ++ args'
+    (_,stdout,stderr) <- readProcessWithExitCode ghc (args ++ ["-o",objfile,srcfile]) ""
     let output = stdout ++ stderr
     unless (null output) $ putStrLn output
 

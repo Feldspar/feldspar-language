@@ -340,7 +340,7 @@ compileSplitModule opts (hmdl, cmdl)
   where
     hres = compToCWithInfos opts hmdl
     cres = compToCWithInfos opts cmdl
-    incls = genIncludeLines opts Nothing
+    incls = "#include \"feldspar_c99.h\"\n\n"
 
 -- | Compiler core.
 -- Everything should call this function and only do a trivial interface adaptation.
@@ -353,14 +353,6 @@ compileToCCore n opts p = fromMaybe err $ snd p'
 compileToCCore' :: Options -> Module () -> SplitModule
 compileToCCore' opts m = fromMaybe (error "compileToCCore: backend failed") prg
    where prg = snd $ frontend (frontendCtrl defaultProgOpts) opts "dummy" (Right . Right . Right . Right . Left $ m)
-
-genIncludeLines :: Options -> Maybe String -> String
-genIncludeLines opts mainHeader = concatMap include incs ++ "\n\n"
-  where
-    include []            = ""
-    include fname@('<':_) = "#include " ++ fname ++ "\n"
-    include fname         = "#include \"" ++ fname ++ "\"\n"
-    incs = includes (platform opts) ++ [fromMaybe "" mainHeader]
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
   pretty (x,y) = "(" ++ pretty x ++ ", " ++ pretty y ++ ")"

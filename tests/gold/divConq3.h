@@ -3,7 +3,6 @@
 
 #include "feldspar_c99.h"
 
-
 struct awl_i_awl_signedS32
 {
   struct ivar * buffer;

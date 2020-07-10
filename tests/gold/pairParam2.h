@@ -3,7 +3,6 @@
 
 #include "feldspar_c99.h"
 
-
 struct s_2_signedS16_signedS16
 {
   int16_t member1;
