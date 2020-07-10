@@ -3,7 +3,6 @@
 
 #include "feldspar_c99.h"
 
-
 void foreignEffect(void * out);
 
 #endif // TESTS_FOREIGNEFFECT_H

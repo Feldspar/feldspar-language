@@ -3,7 +3,6 @@
 
 #include "feldspar_c99.h"
 
-
 struct awl_unsignedS32
 {
   uint32_t * buffer;

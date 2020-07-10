@@ -45,6 +45,9 @@
   #include <time.h>
 #endif /* WIN32 */
 
+#ifdef USE_WOOL
+#include "wool.h"
+#endif
 #ifdef __TIC64X__
 #include "feldspar_tic64x.h"
 #endif

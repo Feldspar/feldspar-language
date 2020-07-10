@@ -1,9 +1,7 @@
 #ifndef TESTS_ARRAYINSTRUCT_WOOL_H
 #define TESTS_ARRAYINSTRUCT_WOOL_H
 
-#include "wool.h"
 #include "feldspar_c99.h"
-
 
 struct awl_unsignedS32
 {

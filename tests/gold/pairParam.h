@@ -3,7 +3,6 @@
 
 #include "feldspar_c99.h"
 
-
 struct s_2_unsignedS32_unsignedS32
 {
   uint32_t member1;
