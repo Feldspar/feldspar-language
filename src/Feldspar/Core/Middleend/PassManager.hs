@@ -31,24 +31,24 @@
 
 module Feldspar.Core.Middleend.PassManager where
 
-import Feldspar.Compiler.Options (PassCtrl(..), Pretty(..))
+import Feldspar.Compiler.Options (Pass, PassCtrl(..), Pretty(..))
 
 data Prog a b = Prog (Maybe a) [String] b
   deriving Show
 
-addWrBefore :: PassCtrl a -> a -> PassCtrl a
+addWrBefore :: PassCtrl -> Pass -> PassCtrl
 addWrBefore ctrl p = ctrl{wrBefore = p : wrBefore ctrl}
 
-addWrAfter :: PassCtrl a -> a -> PassCtrl a
+addWrAfter :: PassCtrl -> Pass -> PassCtrl
 addWrAfter ctrl p = ctrl{wrAfter = p : wrAfter ctrl}
 
-setStopBefore :: PassCtrl a -> a -> PassCtrl a
+setStopBefore :: PassCtrl -> Pass -> PassCtrl
 setStopBefore ctrl p = ctrl{stopBefore = [p]}
 
-setStopAfter :: PassCtrl a -> a -> PassCtrl a
+setStopAfter :: PassCtrl -> Pass -> PassCtrl
 setStopAfter ctrl p = ctrl{stopAfter = [p]}
 
-addSkip :: PassCtrl a -> a -> PassCtrl a
+addSkip :: PassCtrl -> Pass -> PassCtrl
 addSkip ctrl p = ctrl{skip = p : skip ctrl}
 
 prOrStop :: (Pretty a, Eq b, Show b) => String -> [b] -> [b] -> b -> Prog a c -> Prog a c
@@ -73,17 +73,17 @@ runPassS skips pass f (Prog (Just p) ss s)
   | pass `notElem` skips = Prog (Just p1) ss s1
   where (s1,p1) = f (s,p)
 
-passC :: (Pretty a, Eq b, Show b) => PassCtrl b -> b -> (a -> a) -> Prog a c -> Prog a c
+passC :: Pretty a => PassCtrl -> Pass -> (a -> a) -> Prog a c -> Prog a c
 passC ctrl pass f = prOrStop "After" (wrAfter ctrl) (stopAfter ctrl) pass
                   . runPassC (skip ctrl) pass f
                   . prOrStop "Before" (wrBefore ctrl) (stopBefore ctrl) pass
 
-passT :: (Pretty a, Pretty d, Eq b, Show b) => PassCtrl b -> b -> (a -> d) -> Prog a c -> Prog d c
+passT :: (Pretty a, Pretty d) => PassCtrl -> Pass -> (a -> d) -> Prog a c -> Prog d c
 passT ctrl pass f = prOrStop "After" (wrAfter ctrl) (stopAfter ctrl) pass
                   . runPassT f
                   . prOrStop "Before" (wrBefore ctrl) (stopBefore ctrl) pass
 
-passS :: (Pretty a, Eq b, Show b) => PassCtrl b -> b -> ((c,a) -> (c,a)) -> Prog a c -> Prog a c
+passS :: Pretty a => PassCtrl -> Pass -> ((c,a) -> (c,a)) -> Prog a c -> Prog a c
 passS ctrl pass f = prOrStop "After" (wrAfter ctrl) (stopAfter ctrl) pass
                   . runPassS (skip ctrl) pass f
                   . prOrStop "Before" (wrBefore ctrl) (stopBefore ctrl) pass

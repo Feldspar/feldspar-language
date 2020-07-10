@@ -44,7 +44,7 @@ module Feldspar.Core.Frontend
 
     , Data
 
-    , FrontendPass(..)
+    , Pass(..)
     , frontend
 
     , module Feldspar.Core.Language
@@ -109,7 +109,7 @@ import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
 import Feldspar.Compiler (frontend, reifyFeld, renameExp)
-import Feldspar.Compiler.Options (FrontendPass(..), Options(..),
+import Feldspar.Compiler.Options (Options(..), Pass(..),
                                   PassCtrl(..), Target(..),
                                   c99OpenMpPlatformOptions,
                                   c99PlatformOptions,
@@ -149,7 +149,7 @@ showUntyped opts prg = head . fst $ out
                                   , stopBefore = [FPUnAnnotate]}
 
 -- | Show an expression after a specific frontend pass
-showUntyped' :: Syntactic a => FrontendPass -> Options -> a -> String
+showUntyped' :: Syntactic a => Pass -> Options -> a -> String
 showUntyped' p opts prg = head . fst $ out
   where out = frontend passCtrl opts "dummy" (Left $ reifyFeld prg)
         passCtrl = defaultPassCtrl{wrAfter = [p], stopAfter = [p]}
