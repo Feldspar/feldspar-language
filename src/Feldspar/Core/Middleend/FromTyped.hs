@@ -48,23 +48,37 @@ import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr((:&)), Expr((:@)))
 import Data.Complex (Complex(..))
 
+{-
+
+GHC 8.4+ performance
+--------------------
+
+GHC 8.4 and later seems performance sensitive to using pattern guards
+on patterns involving a variable number of :@. There is some kind
+of exponential behavior in GHC on the code and it happens before
+the simplifier.
+
+Avoid pattern guards for this case and write the manual case expressions
+we need. This makes the code less readable but compilation times of 2 seconds
+or 30+ seconds for a single file make a significant difference.
+
+-}
+
 toU :: R.AExpr a -> AUntypedFeld ValueInfo
 toU (((R.Info i) :: R.Info a) :& e)
-  | (R.Sym (R.Variable (R.Var n s))) <- e
-  = i2 $ Variable $ Var n (untypeType tr i) s
-  | (R.Sym (R.Literal v)) <- e
-  = i2 $ Literal $ literal tr i v
   | (R.Sym op) <- e
-  = i2 $ App (trOp op) (untypeType tr i) []
-  | (R.Sym (R.Lambda (R.Var n s)) :@ e') <- e
-  , FunType b _ <- tr
-  = i2 $ Lambda (Var n (untypeType b (fst i)) s) $ toU e'
+  = i2 $ case op of -- Note [GHC 8.4+ performance].
+          R.Variable (R.Var n s) -> Variable $ Var n (untypeType tr i) s
+          R.Literal v -> Literal $ literal tr i v
+          _ -> App (trOp op) (untypeType tr i) []
   | (R.Sym R.Cons :@ a1 :@ a2) <- e
-  , e' <- toU a1
-  , AIn _ (App Tup (U.TupType ts) es) <- toU a2
-  = i2 $ App Tup (U.TupType $ typeof e' : ts) $ e' : es
+  = i2 $ case toU a2 of
+           AIn _ (App Tup (U.TupType ts) es) ->
+             let e' = toU a1 in App Tup (U.TupType $ typeof e' : ts) $ e' : es
   | (f :@ a) <- e
-  = i2 $ case f of -- Avoid more pattern guards for GHC 8.4 performance reasons.
+  = i2 $ case f of -- Note [GHC 8.4+ performance].
+           R.Sym (R.Lambda ((R.Var n s) :: R.Var b)) ->
+             Lambda (Var n (untypeType (T.typeRep :: TypeRep b) (fst i)) s) $ toU a
            R.Sym R.Car ->
             case addDrop $ toU a of
               AIn _ (App (Drop n) (U.TupType (t:_)) es) ->
