@@ -1,7 +1,8 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Main where
 
@@ -10,6 +11,7 @@ module Main where
 -- > ghc -ilib -isrc -itests tests/RegressionTests.hs -e 'writeGoldFile example9 "example9_native" nativeOpts'
 
 import Test.Tasty
+import Test.Tasty.Golden (goldenVsFile)
 import Test.Tasty.Golden.Advanced
 import Test.Tasty.QuickCheck
 
@@ -23,6 +25,10 @@ import qualified Feldspar.SimpleVector as S
 import Feldspar.Compiler
 import Feldspar.Compiler.Plugin
 import Feldspar.Compiler.ExternalProgram (compileFile)
+import Feldspar.Core.NestedTuples
+
+import Examples.Simple.Basics
+import Feldspar.Applications.TFModel (tfModel)
 
 import Control.Applicative hiding (empty)
 import Control.Monad
@@ -38,9 +44,6 @@ import Text.Printf
 
 vgReadFiles :: String -> IO LB.ByteString
 vgReadFiles base = liftM LB.concat $ mapM (LB.readFile . (base<>)) [".h",".c"]
-
-example9 :: Data Int32 -> Data Int32
-example9 a = a < 5 ? (3 * (a + 20)) $ 30 * (a + 20)
 
 -- Compile and load example9 as c_example9 (using plugins)
 loadFun ['example9]
@@ -188,8 +191,38 @@ loadFun ['tuples]
 deepArrayCopyTest :: Data [[[Length]]] -> (Data [[[Length]]], Data [[[Length]]])
 deepArrayCopyTest xs = (xs, xs)
 
+monadicSharing :: Data Index -> Data Index
+monadicSharing a = runMutable $ do
+    b  <- newRef a
+    b' <- getRef b
+    c  <- newRef (b'+3)
+    c' <- getRef c
+    return (c'+(b'+3))
+
+-- An example with nested sharing. Our first codeMotion would miss the opportunity to share `(a+b)`.
+trickySharing :: Data Index -> Data Index
+trickySharing x = (a+b+c) + (a+b) + (a+b+c)
+  where
+    a = x*3
+    b = x*5
+    c = x*7
+
+-- We want no sharing between the two tuples in the result although they have a common tail
+noshareT :: (Tuple '[Data Length, Data Length]
+           , Tuple '[Data Length, Data Length])
+noshareT = let two = 2 in (build $ tuple 1 two, build $ tuple 3 two)
+
+-- We want sharing between the two tuples in the result since they are identical
+shareT :: (Tuple '[Data Length, Data Length]
+         , Tuple '[Data Length, Data Length])
+shareT = (build $ tuple 1 2, build $ tuple 1 2)
+
+selectT :: Data Length
+selectT = sel First $ snd noshareT
+
 tests :: TestTree
-tests = testGroup "RegressionTests" [compilerTests, externalProgramTests]
+tests = testGroup "RegressionTests"
+                  [decorationTests, compilerTests, externalProgramTests]
 
 prop_concatV = forAll (vectorOf 3 (choose (0,5))) $ \ls ->
                  forAll (mapM (`vectorOf` arbitrary) ls) $ \xss ->
@@ -202,6 +235,26 @@ prop_concatVM = forAll (vectorOf 3 (choose (0,5))) $ \ls ->
 prop_divConq3 = forAll (choose (1,3)) $ \l ->
                   forAll (vectorOf (l*1024) arbitrary) $ \xs ->
                     map (+1) xs === c_divConq3 xs
+
+decorationTests :: TestTree
+decorationTests = testGroup "DecorationTests"
+    [ goldenVsFile "example9" (goldDir <> "example9.txt") "tests/example9.txt"
+      $ writeFile "tests/example9.txt" $ showDecor example9
+    , goldenVsFile "topLevelConsts" (goldDir <> "topLevelConsts.txt") "tests/topLevelConsts.txt"
+      $ writeFile "tests/topLevelConsts.txt" $ showDecor topLevelConsts
+    , goldenVsFile "monadicSharing" (goldDir <> "monadicSharing.txt") "tests/monadicSharing.txt"
+      $ writeFile "tests/monadicSharing.txt" $ showDecor monadicSharing
+    , goldenVsFile "trickySharing" (goldDir <> "trickySharing.txt") "tests/trickySharing.txt"
+      $ writeFile "tests/trickySharing.txt" $ showDecor trickySharing
+    , goldenVsFile "noshareT" (goldDir <> "noshareT.txt") "tests/noshareT.txt"
+      $ writeFile "tests/noshareT.txt" $ showDecor noshareT
+    , goldenVsFile "shareT" (goldDir <> "shareT.txt") "tests/shareT.txt"
+      $ writeFile "tests/shareT.txt" $ showDecor shareT
+    , goldenVsFile "selectT" (goldDir <> "selectT.txt") "tests/selectT.txt"
+      $ writeFile "tests/selectT.txt" $ showDecor selectT
+    , goldenVsFile "tfModel" (goldDir <> "tfModel.txt") "tests/tfModel.txt"
+      $ writeFile "tests/tfModel.txt" $ showUntyped defaultOptions tfModel
+    ]
 
 compilerTests :: TestTree
 compilerTests = testGroup "Compiler-RegressionTests"

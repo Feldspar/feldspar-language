@@ -47,9 +47,8 @@ script:
  - cabal new-build -j4  # this builds all libraries and executables (including tests/benchmarks)
  # There is no "cabal new-test" in Cabal 1.24 so run tests/benchmarks manually.
  # The path for build outputs has also changed so special-case on the cabal version.
- # Decoration and regression are most likely to break from variable number changes so start with those.
+ # Regression is most likely to break from variable number changes so start with that.
  - if [ "$CABALVER" != "1.24" ]; then $TESTBASE/build/regression/regression; else $TESTBASE/regression/regression; fi
- - if [ "$CABALVER" != "1.24" ]; then $TESTBASE/build/decoration/decoration; else $TESTBASE/decoration/decoration; fi
  - if [ "$CABALVER" != "1.24" ]; then $TESTBASE/build/range/range; else $TESTBASE/range/range; fi
  - if [ "$CABALVER" != "1.24" ]; then $TESTBASE/build/semantics/semantics; else $TESTBASE/semantics/semantics; fi
  - if [ "$CABALVER" != "1.24" ]; then $TESTBASE/build/callconv/callconv; else $TESTBASE/callconv/callconv; fi

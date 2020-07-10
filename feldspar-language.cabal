@@ -273,33 +273,6 @@ test-suite semantics
 
   ghc-options: -threaded -with-rtsopts=-maxN4
 
-test-suite decoration
-  type: exitcode-stdio-1.0
-
-  hs-source-dirs: tests examples
-
-  main-is: DecorationTests.hs
-
-  default-extensions:
-    MonoLocalBinds
-
-  other-modules:
-    Examples.Simple.Basics
-    Feldspar.Applications.TFModel
-    Feldspar.Applications.TFLib
-
-  default-language: Haskell2010
-
-  build-depends:
-    feldspar-language,
-    base,
-    bytestring            >= 0.10 && < 0.11,
-    tasty                 >= 0.3,
-    tasty-golden          >= 2.3,
-    utf8-string           >= 0.3.7
-
-  ghc-options: -threaded -with-rtsopts=-maxN4
-
 test-suite tutorial
   type: exitcode-stdio-1.0
 
@@ -330,12 +303,17 @@ test-suite tutorial
 test-suite regression
   type: exitcode-stdio-1.0
 
-  hs-source-dirs: tests
+  hs-source-dirs: tests examples
 
   main-is: RegressionTests.hs
 
   default-extensions:
     MonoLocalBinds
+
+  other-modules:
+    Examples.Simple.Basics
+    Feldspar.Applications.TFModel
+    Feldspar.Applications.TFLib
 
   default-language: Haskell2010
 
