@@ -61,11 +61,10 @@ import Data.Maybe (fromMaybe)
 import System.Console.GetOpt (ArgDescr(..), ArgOrder(..), OptDescr(..),
                               getOpt, usageInfo)
 import System.Environment (getArgs, getProgName)
-import System.FilePath (takeFileName)
+import System.FilePath ((<.>), takeFileName)
 import System.IO (BufferMode(..), IOMode(..), hClose, hPutStr,
                   hSetBuffering, openFile)
 
-import Feldspar.Compiler.Backend.C.Library
 import Feldspar.Compiler.Backend.C.CodeGeneration
 import qualified Feldspar.Compiler.Backend.C.MachineLowering as ML
 import Feldspar.Compiler.Backend.C.Tic64x
@@ -161,8 +160,8 @@ writeFiles prg fileName "c" = do
                               ]
     writeFile hfile $ withIncludeGuard $ sourceCode $ interface prg
   where
-    hfile = makeHFileName fileName
-    cfile = makeCFileName fileName
+    hfile = fileName <.> "h"
+    cfile = fileName <.> "c"
 
     withIncludeGuard code = unlines [ "#ifndef " ++ guardName
                                     , "#define " ++ guardName
