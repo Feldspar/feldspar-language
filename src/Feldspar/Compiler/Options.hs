@@ -32,6 +32,7 @@
 module Feldspar.Compiler.Options
   ( ErrorClass(..)
   , handleError
+  , encodeFunctionName
   , Pretty(..)
   , PassCtrl(..)
   , defaultPassCtrl
@@ -63,6 +64,7 @@ module Feldspar.Compiler.Options
   , Destination(..)
   ) where
 
+import Data.List (isPrefixOf)
 import Language.Haskell.TH.Syntax (Lift(..))
 
 -- * Error handling utils.
@@ -77,6 +79,18 @@ data ErrorClass
 handleError :: String -> ErrorClass -> String -> a
 handleError place errorClass message =
   error $ "[" ++ show errorClass ++ " @ " ++ place ++ "]: " ++ message
+
+-- * String utils
+
+replace :: Eq a => [a] -> [a] -> [a] -> [a]
+replace [] _ _ = []
+replace s find repl
+  | find `isPrefixOf` s = repl ++ replace (drop (length find) s) find repl
+  | otherwise = head s : replace (tail s) find repl
+
+-- | Encode special characters in function names.
+encodeFunctionName :: String -> String
+encodeFunctionName fName = replace (replace fName "_" "__") "'" "_prime"
 
 -- * Pretty printing utils.
 

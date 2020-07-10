@@ -92,7 +92,6 @@ library
     Feldspar.Compiler.Imperative.Frontend
     Feldspar.Compiler.Options
     Feldspar.Compiler.Backend.C.CodeGeneration
-    Feldspar.Compiler.Backend.C.Library
     Feldspar.Compiler.Backend.C.MachineLowering
     Feldspar.Compiler.Backend.C.Tic64x
     Feldspar.Compiler.Backend.C.RuntimeLibrary
