@@ -1,4 +1,4 @@
-module Feldspar.Tuple.Test (tests) where
+module Feldspar.Tuple.Test (tupleTests) where
 
 import qualified Prelude as P
 import Feldspar
@@ -9,7 +9,7 @@ import Test.Tasty.QuickCheck
 -- | Test that we can build and take apart tuples correctly.
 --   In particular, the Syntactic instances for tuples are tested.
 
-tests = testProperties "Feldspar.Tuple.Test"
+tupleTests = testProperties "Feldspar.Tuple.Test"
     [ ("tup2",  eval tup2t  ==== facit  2 )
     , ("tup3",  eval tup3t  ==== facit  3 )
     , ("tup4",  eval tup4t  ==== facit  4 )

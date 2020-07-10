@@ -1,8 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Feldspar.Mutable.Test where
-
-
+module Feldspar.Mutable.Test (mutableTests) where
 
 import Feldspar
 import qualified Feldspar.Vector as V
@@ -50,5 +48,4 @@ prop_withBuf =
         sequence_ [putBuf buf a | a <- as]
         withBuf buf $ \b -> return (b V.!! i)
 
-tests = $(testGroupGenerator)
-
+mutableTests = $(testGroupGenerator)

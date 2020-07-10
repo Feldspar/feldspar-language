@@ -1,8 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Feldspar.Stream.Test where
-
-
+module Feldspar.Stream.Test (streamTests) where
 
 import qualified Prelude as P
 import qualified Data.List as List
@@ -63,7 +61,7 @@ iirInt :: Numeric a => Pull1 a -> Pull1 a -> Stream (Data a) -> Stream (Data a)
 iirInt a b inp =
     recurrenceIO (replicate1 (length b) 0) inp
                  (replicate1 (length a) 0)
-                 (\i o -> (scalarProd b i - scalarProd a o))
+                 (\i o -> scalarProd b i - scalarProd a o)
 
 iirFeld :: [Int32] -> [Int32] -> [Int32] -> [Int32]
 iirFeld as bs = eval (freezePull1 . iirVec . thawPull1)
@@ -73,6 +71,4 @@ iirFeld as bs = eval (freezePull1 . iirVec . thawPull1)
 prop_iir (NonEmpty as) (NonEmpty bs) = iirRef as bs ==== iirFeld as bs
 
 
-
-tests = $(testGroupGenerator)
-
+streamTests = $(testGroupGenerator)

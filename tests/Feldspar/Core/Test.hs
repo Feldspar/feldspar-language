@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Feldspar.Core.Test where
+module Feldspar.Core.Test (coreTests) where
 
 import qualified Prelude
 
@@ -13,7 +13,7 @@ import qualified Data.List as DL
 import Feldspar
 import Feldspar.Mutable
 
-tests = $(testGroupGenerator)
+coreTests = $(testGroupGenerator)
 
 deinterleave :: (Type a) => Data [a] -> Data [a]
 deinterleave input =

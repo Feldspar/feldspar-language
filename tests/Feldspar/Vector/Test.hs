@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Feldspar.Vector.Test where
+module Feldspar.Vector.Test (vectorTests) where
 
 import qualified Prelude as P
 import qualified Data.List as P
@@ -12,7 +12,7 @@ import Test.Tasty
 import Test.Tasty.TH
 import Test.Tasty.QuickCheck
 
-tests = $(testGroupGenerator)
+vectorTests = $(testGroupGenerator)
 
 -- TODO implement tests
 --
@@ -25,4 +25,3 @@ tests = $(testGroupGenerator)
 -- prop_take   = eval (take -:: tData tLength >-> tVec1 tIndex >-> id) === P.genericTake
 -- prop_drop   = eval (drop -:: tData tLength >-> tVec1 tIndex >-> id) === P.genericDrop
 -- prop_revrev = eval ((reverse . reverse) -:: tVec1 tIndex >-> id) ==== id
-
