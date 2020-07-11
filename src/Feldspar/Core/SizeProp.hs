@@ -50,6 +50,19 @@ import qualified Data.Map.Strict as M (empty)
 sizeProp :: AExpr a -> AExpr a
 sizeProp = spA M.empty
 
+{-
+
+GHC 8.6+ performance
+--------------------
+
+The reason the file contains explicit nested case-expressions is because
+GHC 8.6 and later has terrible performance for nested pattern matches
+in this file for some reason. The commit that brought in this change
+reduced the compilation time with GHC 8.8.3 from minutes to around
+40 seconds.
+
+-}
+
 spA :: BindEnv -> AExpr a -> AExpr a
 -- | Variables and literals
 spA vm (_ :& Sym (Variable v)) = lookupBE "SizeProp.look" vm v
@@ -60,16 +73,24 @@ spA vm (_ :& Sym (Lambda v) :@ e)
   = Info (top, i1) :& Sym (Lambda v) :@ e1
 -- | Applications and lambdas based on head operator
 -- | Array
-spA vm (_ :& Sym Parallel :@ a :@ (_ :& Sym (Lambda v) :@ e))
-  | a1@(i1@(Info ai1) :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Sym (Variable v))) e
-  = Info (ai1 :> ei1) :& Sym Parallel :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
-spA vm (_ :& Sym Sequential :@ a :@ b :@ (_ :& Sym (Lambda v) :@ (_ :& Sym (Lambda w) :@ e)))
-  | a1@(Info ai1 :& _) <- spA vm a
-  , b1 <- spA vm b
-  , vm' <- extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))
-  , e1@(Info ei1@(s, _) :& _) <- spA (extendBE vm' (CBind w $ Info top :& Sym (Variable w))) e
-  = Info (ai1 :> s) :& Sym Sequential :@ a1 :@ b1 :@ (Info (ai1, (top, ei1)) :& Sym (Lambda v) :@ (Info (top, ei1) :& Sym (Lambda w) :@ e1))
+spA vm (_ :& Sym Parallel :@ a :@ b) -- Note [GHC 8.6+ performance].
+  = case (spA vm a, b) of
+      (a1@(i1@(Info ai1) :& _), (_ :& Sym (Lambda v) :@ e)) ->
+       case spA (extendBE vm (CBind v $ i1 :& Sym (Variable v))) e of
+         e1@(Info ei1 :& _) ->
+           Info (ai1 :> ei1) :&
+             Sym Parallel :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
+spA vm (_ :& Sym Sequential :@ a :@ b :@ c)
+  = case (spA vm a, c) of
+      (a1@(Info ai1 :& _), (_ :& Sym (Lambda v) :@ c1)) ->
+        case c1 of
+          (_ :& Sym (Lambda w) :@ e) ->
+            let vm' = extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))
+            in case spA (extendBE vm' (CBind w $ Info top :& Sym (Variable w))) e of
+                 e1@(Info ei1@(s, _) :& _) ->
+                   Info (ai1 :> s) :&
+                     Sym Sequential :@ a1 :@ spA vm b :@
+                       (Info (ai1, (top, ei1)) :& Sym (Lambda v) :@ (Info (top, ei1) :& Sym (Lambda w) :@ e1))
 spA vm (_ :& Sym Append :@ a :@ b)
   | a1@(Info (alen :> aelem) :& _) <- spA vm a
   , b1@(Info (blen :> belem) :& _) <- spA vm b
@@ -90,10 +111,13 @@ spA vm (_ :& Sym SetLength :@ a :@ b)
   = Info (ai1 :> bi) :& Sym SetLength :@ a1 :@ b1
 
 -- | Binding
-spA vm (_ :& Sym Let :@ a :@ (_ :& Sym (Lambda v) :@ e))
-  | a1@(Info ai1 :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))) e
-  = Info ei1 :& Sym Let :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
+spA vm (_ :& Sym Let :@ a :@ b)
+  = case (spA vm a, b) of
+      (a1@(Info ai1 :& _), (_ :& Sym (Lambda v) :@ e)) ->
+        case spA (extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))) e of
+          e1@(Info ei1 :& _) ->
+            Info ei1 :&
+              Sym Let :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
 
 -- | Bits
 spA vm (_ :& Sym BAnd :@ a :@ b)
@@ -202,11 +226,13 @@ spA vm (_ :& Sym EPar :@ a :@ b)
   | a1@(Info ai1 :& _) <- spA vm a
   , b1@(Info bi1 :& _) <- spA vm b
   = Info (ai1 \/ bi1) :& Sym EPar :@ a1 :@ b1
-spA vm (_ :& Sym EparFor :@ a :@ (_ :& Sym (Lambda v) :@ e))
-  | a1@(i1@(Info ai1) :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Sym (Variable v))) e
-  = Info ei1 :& Sym EparFor :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
-
+spA vm (_ :& Sym EparFor :@ a :@ b)
+  = case (spA vm a, b) of
+    (a1@(i1@(Info ai1) :& _), (_ :& Sym (Lambda v) :@ e)) ->
+      case spA (extendBE vm (CBind v $ i1 :& Sym (Variable v))) e of
+        e1@(Info ei1 :& _) ->
+          Info ei1 :&
+            Sym EparFor :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
 -- | Eq
 spA vm (_ :& Sym Equal :@ a :@ b)
   = Info top :& Sym Equal :@ spA vm a :@ spA vm b
@@ -301,22 +327,28 @@ spA vm (_ :& Sym Not :@ a)
   = Info top :& Sym Not :@ spA vm a
 
 -- | Loop
-spA vm (_ :& Sym ForLoop :@ a :@ b :@ (_ :& Sym (Lambda v) :@ (_ :& Sym (Lambda w) :@ e)))
-  | a1@(Info ai1 :& _) <- spA vm a
-  , b1@(Info bi1 :& _) <- spA vm b
-  , vm' <- extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))
-  , e1@(Info ei1 :& _) <- spA (extendBE vm' (CBind w $ Info top :& Sym (Variable w))) e
-  , r1 <- Info (ai1, (top, ei1)) :& Sym (Lambda v) :@ (Info (top, ei1) :& Sym (Lambda w) :@ e1)
-  = Info (bi1 \/ ei1):& Sym ForLoop :@ a1 :@ b1 :@ r1
-
-spA vm (_ :& Sym WhileLoop :@ a :@ (_ :& Sym (Lambda v1) :@ e1) :@ (_ :& Sym (Lambda v2) :@ e2))
-  | a1@(Info ai1 :& _) <- spA vm a
-  , e1'@(Info ei1' :& _) <- spA (extendBE vm (CBind v1 $ Info top :& Sym (Variable v1))) e1
-  , e2'@(Info ei2' :& _) <- spA (extendBE vm (CBind v2 $ Info top :& Sym (Variable v2))) e2
-  , b1 <- Info (top, ei1') :& Sym (Lambda v1) :@ e1'
-  , c1 <- Info (top, ei2') :& Sym (Lambda v2) :@ e2'
-  = Info (ai1 \/ ei2') :& Sym WhileLoop :@ a1 :@ b1 :@ c1
-
+spA vm (_ :& Sym ForLoop :@ a :@ b :@ c)
+  = case (spA vm a, c) of
+      (a1@(Info ai1 :& _), (_ :& Sym (Lambda v) :@ c1)) ->
+        case (spA vm b, c1) of
+          (b1@(Info bi1 :& _), (_ :& Sym (Lambda w) :@ e)) ->
+            let vm' = extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))
+            in case spA (extendBE vm' (CBind w $ Info top :& Sym (Variable w))) e of
+                 e1@(Info ei1 :& _) ->
+                   let r1 = Info (ai1, (top, ei1)) :& Sym (Lambda v) :@ (Info (top, ei1) :& Sym (Lambda w) :@ e1)
+                   in Info (bi1 \/ ei1):& Sym ForLoop :@ a1 :@ b1 :@ r1
+spA vm (_ :& Sym WhileLoop :@ a :@ b :@ c)
+  = case (spA vm a, b) of
+      (a1@(Info ai1 :& _), (_ :& Sym (Lambda v1) :@ e1)) ->
+        case spA (extendBE vm (CBind v1 $ Info top :& Sym (Variable v1))) e1 of
+          e1'@(Info ei1' :& _) ->
+            case c of
+              (_ :& Sym (Lambda v2) :@ e2) ->
+                case spA (extendBE vm (CBind v2 $ Info top :& Sym (Variable v2))) e2 of
+                  e2'@(Info ei2' :& _) ->
+                    let b1 = Info (top, ei1') :& Sym (Lambda v1) :@ e1'
+                        c1 = Info (top, ei2') :& Sym (Lambda v2) :@ e2'
+                    in Info (ai1 \/ ei2') :& Sym WhileLoop :@ a1 :@ b1 :@ c1
 -- | Mutable
 spA vm (_ :& Sym Run :@ a)
   | a1@(Info ai1 :& _) <- spA vm a
@@ -341,11 +373,13 @@ spA vm (_ :& Sym ArrLength :@ a)
 spA vm (_ :& Sym RunMutableArray :@ a)
   | a1@(Info ai1 :& _) <- spA vm a
   = Info ai1 :& Sym RunMutableArray :@ a1
-spA vm (_ :& Sym WithArray :@ a :@ (_ :& Sym (Lambda v) :@ e))
-  | a1@(Info ai1 :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))) e
-  = Info ei1:& Sym WithArray :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
-
+spA vm (_ :& Sym WithArray :@ a :@ b)
+  = case (spA vm a, b) of
+     (a1@(Info ai1 :& _), (_ :& Sym (Lambda v) :@ e)) ->
+       case spA (extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))) e of
+         e1@(Info ei1 :& _) ->
+           Info ei1:&
+             Sym WithArray :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
 -- | MutableReference
 spA vm (_ :& Sym NewRef :@ a)
   = Info top :& Sym NewRef :@ spA vm a
@@ -467,10 +501,12 @@ spA vm (_ :& Sym For :@ a :@ b)
 spA vm (_ :& Sym Return :@ a)
   | a1@(Info ai1 :& _) <- spA vm a
   = Info ai1 :& Sym Return :@ a1
-spA vm (_ :& Sym Bind :@ a :@ (_ :& Sym (Lambda v) :@ e))
-  | a1@(Info ai1 :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))) e
-  = Info ei1 :& Sym Bind :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
+spA vm (_ :& Sym Bind :@ a :@ b)
+  = case (spA vm a, b) of
+     (a1@(Info ai1 :& _), (_ :& Sym (Lambda v) :@ e)) ->
+       case spA (extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))) e of
+        e1@(Info ei1 :& _) ->
+          Info ei1 :& Sym Bind :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
 spA vm (_ :& Sym Then :@ a :@ b)
   | b1@(Info bi1 :& _) <- spA vm b
   = Info bi1 :& Sym Then :@ spA vm a :@ b1
