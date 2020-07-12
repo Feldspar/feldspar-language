@@ -74,7 +74,7 @@ import Feldspar.Range (fullRange, upperBound)
 
 import Feldspar.Compiler.Imperative.Frontend
 import Feldspar.Compiler.Imperative.Representation
-import Feldspar.Compiler.Options (Options(..), Platform(..), c99)
+import Feldspar.Compiler.Options (Options(..), Platform(..))
 
 -- | Code generation monad
 type CodeWriter = RWS CodeEnv CodeParts VarId
@@ -833,7 +833,7 @@ compileExpr (In (App Ut.I2N t1 [e])) = do
       1 :# (ComplexType t) -> do
         e' <- compileExpr e
         let args = [Cast t e', litF 0]
-        return $ fun t' (extend c99 "complex" t) args
+        return $ fun t' (extend "complex" t) args
       _ -> do
         e' <- compileExpr e
         return $ Cast t' e'
