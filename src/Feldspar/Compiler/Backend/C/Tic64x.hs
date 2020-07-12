@@ -64,7 +64,7 @@ adaptTic64xExp (ArrayElem e es)    = ArrayElem (adaptTic64xExp e) $ map adaptTic
 adaptTic64xExp (StructField e s)   = StructField (adaptTic64xExp e) s
 adaptTic64xExp c@ConstExpr{}       = c
 adaptTic64xExp (FunctionCall (Function "/=" t) [arg1,arg2]) | isComplex (typeof arg1)
-  = fun t "!" [fun t (extend tic64x "equal" $ typeof arg1) [arg1, arg2]]
+  = fun t "!" [fun t (extend "equal" $ typeof arg1) [arg1, arg2]]
 adaptTic64xExp (FunctionCall (Function "bitCount" t) [arg]) | isComplex (typeof arg)
   = fun t "_dotpu4" [fun t "_bitc4" [arg], litI32 0x01010101]
 adaptTic64xExp (FunctionCall f es)
@@ -89,5 +89,5 @@ adaptTic64xFun :: Type -> Int -> Function -> Function
 adaptTic64xFun argtype args f@(Function _ t)
   | isComplex argtype
   , args == 1 -- TODO: This transformation looks dangerous.
-  = Function (extend tic64x "creal" argtype) t
+  = Function (extend "creal" argtype) t
   | otherwise                           = f

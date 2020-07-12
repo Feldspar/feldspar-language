@@ -64,7 +64,7 @@ import Data.Semigroup (Semigroup(..))
 import Language.Haskell.TH.Syntax (Lift(..))
 
 import Feldspar.Range (Range)
-import Feldspar.Compiler.Options (ErrorClass(..), Platform(..), handleError)
+import Feldspar.Compiler.Options (ErrorClass(..), handleError)
 import Feldspar.Core.Types (Length)
 import Feldspar.Core.UntypedRepresentation
         (Signedness(..), Size(..), HasType(..))
@@ -343,8 +343,8 @@ renderType (StructType n _) = "struct " ++ n
 renderType IVarType{} = "struct ivar"
 
 -- | Extend a helper function for the platform
-extend :: Platform -> String -> Type -> String
-extend Platform{..} s t = s ++ "_fun_" ++ renderType t
+extend :: String -> Type -> String
+extend s t = s ++ "_fun_" ++ renderType t
 
 ----------------------
 -- * Type inference
@@ -387,7 +387,8 @@ instance HasType (Expression t) where
     typeof FunctionCall{..} = returnType function
     typeof Cast{..}         = castType
     typeof AddrOf{..}       = 1 :# Pointer (typeof addrExpr)
-    typeof SizeOf{..}       = 1 :# NumType Signed S32
+    -- FIXME: Non-portable size_t assumption for SizeOf.
+    typeof SizeOf{}         = 1 :# NumType Signed S32
     typeof Deref{..}        = case typeof ptrExpr of
                                 1 :# (Pointer btype) -> btype
                                 wtype         -> reprError InternalError $ "Type of dereferenced expression " ++ show ptrExpr ++ " has type " ++ show wtype
