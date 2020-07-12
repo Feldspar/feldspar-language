@@ -2,12 +2,16 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -Wall #-}
--- FIXME: Current data structures make incomplete checking impossible.
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
--- GHC 8.6.5 runs out of stack in the reduction with the default value.
-{-# OPTIONS_GHC -freduction-depth=0 #-}
-{-# OPTIONS_GHC -fmax-pmcheck-iterations=4000000 #-}
+-- Compilation times are measured in minutes without these warnings
+-- disabled in GHC 8.6 and later.
+-- https://gitlab.haskell.org/ghc/ghc/-/issues/14987
+{-# OPTIONS_GHC -Wno-overlapping-patterns -Wno-incomplete-record-updates #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 806
+{-# OPTIONS_GHC -Wno-inaccessible-code #-}
+#endif
 
 --
 -- Copyright (c) 2019, ERICSSON AB
