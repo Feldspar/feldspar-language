@@ -20,6 +20,12 @@
 resolver: lts-15.14
 compiler: ghc-8.4.4
 
+ghc-options:
+    # Somewhere deep inside there is a call to ghc --make, pass -j3 to
+    # speed up builds. Sys time goes up with -j4 on GHC 8.4 so there
+    # is a slowdown for that.
+    "$locals": -j3
+
 # User packages to be built.
 # Various formats can be used as shown in the example below.
 #
