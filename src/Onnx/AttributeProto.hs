@@ -1,5 +1,9 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, OverloadedStrings #-}
 {-# OPTIONS_GHC  -w #-}
+-- This file takes minutes to compile with GHC 8.10 on anything above -O0 so
+-- disable optimization for now.
+{-# OPTIONS_GHC -O0 #-}
+
 module Onnx.AttributeProto (AttributeProto(..)) where
 import Prelude ((+), (/), (++), (.))
 import qualified Prelude as Prelude'
