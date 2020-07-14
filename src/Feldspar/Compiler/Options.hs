@@ -35,7 +35,6 @@ module Feldspar.Compiler.Options
   , encodeFunctionName
   , Pretty(..)
   , PassCtrl(..)
-  , defaultPassCtrl
   , Pass(..)
   , Target(..)
   , inTarget
@@ -98,6 +97,7 @@ class Pretty a where
 
 -- * Option handling data structures and utils.
 
+-- | Record controlling pass behavior
 data PassCtrl = PassCtrl
   { wrBefore   :: [Pass] -- ^ Write IR before these passes
   , wrAfter    :: [Pass] -- ^ Write IR after these passes
@@ -105,11 +105,6 @@ data PassCtrl = PassCtrl
   , stopAfter  :: [Pass] -- ^ Stop after these passes
   , skip       :: [Pass] -- ^ Skip these passes
   } deriving (Lift, Show)
-
--- | A default PassCtrl that runs all passes without writing
---   any intermediate results
-defaultPassCtrl :: PassCtrl
-defaultPassCtrl = PassCtrl [] [] [] [] []
 
 -- | Enumeration of compiler passes
 data Pass
@@ -173,7 +168,7 @@ defaultOptions
     , passFileName      = ""
     , outFileName       = ""
     , functionName      = ""
-    , passCtrl          = defaultPassCtrl
+    , passCtrl          = PassCtrl [] [] [] [] []
     , printHelp         = False
     }
 
