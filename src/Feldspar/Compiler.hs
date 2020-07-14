@@ -284,7 +284,7 @@ setTarget opts str
 
 chooseEnd :: (PassCtrl -> Pass -> PassCtrl) -> String -> ProgOpts -> ProgOpts
 chooseEnd f str opts
-  | [(p,_)] <- reads str = opts{frontendCtrl = f (frontendCtrl opts) p}
+  | [(p,_)] <- reads str = opts{passCtrl = f (passCtrl opts) p}
   | otherwise = error $ "Compiler.chooseEnd: unrecognized pass " ++ str
 
 writeFileLB :: String -> String -> IO ()
@@ -295,7 +295,7 @@ writeFileLB name' str = do fh <- openFile name' WriteMode
                            hClose fh
 
 translate :: Syntactic a => ProgOpts -> a -> ([String], Maybe SplitModule)
-translate opts p = frontend (frontendCtrl opts) bopts name' $ Left $ reifyFeld p
+translate opts p = frontend (passCtrl opts) bopts name' $ Left $ reifyFeld p
   where bopts     = backOpts opts
         name'     = functionName opts
 
@@ -351,7 +351,7 @@ compileToCCore n opts p = fromMaybe err $ snd p'
 
 compileToCCore' :: Options -> Module () -> SplitModule
 compileToCCore' opts m = fromMaybe (error "compileToCCore: backend failed") prg
-   where prg = snd $ frontend (frontendCtrl defaultProgOpts) opts "dummy" (Right . Right . Right . Right . Left $ m)
+   where prg = snd $ frontend (passCtrl defaultProgOpts) opts "dummy" (Right . Right . Right . Right . Left $ m)
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
   pretty (x,y) = "(" ++ pretty x ++ ", " ++ pretty y ++ ")"

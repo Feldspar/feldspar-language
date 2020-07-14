@@ -141,7 +141,7 @@ data ProgOpts = ProgOpts
   , passFileName :: String
   , outFileName  :: String
   , functionName :: String
-  , frontendCtrl :: PassCtrl
+  , passCtrl :: PassCtrl
   , printHelp    :: Bool
   }
 
@@ -151,7 +151,7 @@ defaultProgOpts = ProgOpts
   , passFileName = ""
   , outFileName  = ""
   , functionName = ""
-  , frontendCtrl = defaultPassCtrl
+  , passCtrl = defaultPassCtrl
   , printHelp    = False
   }
 
