@@ -134,7 +134,7 @@ simpApp env r op' t es = go op' t es
          = e
 
         go op t [e]
-         | op `elem` [I2N]
+         | op == I2N
          , Literal l <- unwrap e
          , Just e1 <- convert l t
          = e1
@@ -215,7 +215,7 @@ uLogOf _ _ = Nothing
 intLog2 :: Integer -> Maybe Integer
 intLog2 = il 0
   where il m 1 = Just m
-        il m n | n `mod` 2 == 0 = il (m+1) (n `div` 2)
+        il m n | even n = il (m+1) (n `div` 2)
                | otherwise = Nothing
 
 lshift :: Signedness -> Op

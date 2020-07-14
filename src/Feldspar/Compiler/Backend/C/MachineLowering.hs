@@ -215,4 +215,4 @@ getPlatformRenames opt =
   case platformName $ platform opt of
     "tic64x"                                     -> M.fromList (tic64xlist ++ c99list)
     s | s `elem` ["c99", "c99OpenMp", "c99Wool"] -> M.fromList c99list
-      | otherwise                                -> M.fromList []
+      | otherwise                                -> M.empty

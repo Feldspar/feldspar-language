@@ -271,7 +271,7 @@ flattenCSE (m,e@(i :& _))
 
 -- TODO: Document in what sense this applies CSE.
 applyCSE :: CSEExpr (Expr (a -> b)) -> CSEExpr (AExpr a) -> CSEExpr (Expr b)
-applyCSE (lm, f) s@(_, (_ :& _)) = (m, f :@ e1)
+applyCSE (lm, f) s@(_, _ :& _) = (m, f :@ e1)
    where (m, e1) = mergeMapCExpr lm s
 
 mergeMapCExpr :: CSEMap -> CExpr a -> CExpr a
@@ -335,7 +335,7 @@ hashExprR :: Expr a -> Hash
 -- Hash the type into the hash value to avoid hashing different
 -- F2I/I2F type instantiations to the same value.
 hashExprR (Sym op)
-  = (hash . normalizeTypeRep . show $ typeOf op) `combine` (hash $ show op)
+  = (hash . normalizeTypeRep . show $ typeOf op) `combine` hash (show op)
 -- Hash value of rhs in let is equal to bound variable name which occurs in body
 hashExprR (Sym Let :@ _ :@ (_ :& Sym (Lambda _) :@ e)) = hashExpr' e
 hashExprR (f :@ e) = hashInt appHash `combine` hashExprR f `combine` hashExpr' e
