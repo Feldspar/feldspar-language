@@ -37,8 +37,6 @@ module Feldspar.Compiler.Options
   , PassCtrl(..)
   , defaultPassCtrl
   , Pass(..)
-  , ProgOpts(..)
-  , defaultProgOpts
   , Target(..)
   , inTarget
   , Options(..)
@@ -106,7 +104,7 @@ data PassCtrl = PassCtrl
   , stopBefore :: [Pass] -- ^ Stop before these passes
   , stopAfter  :: [Pass] -- ^ Stop after these passes
   , skip       :: [Pass] -- ^ Skip these passes
-  } deriving Show
+  } deriving (Lift, Show)
 
 -- | A default PassCtrl that runs all passes without writing
 --   any intermediate results
@@ -134,26 +132,7 @@ data Pass
   | BPSplit
   | BPCompile
   | BPUnsplit
-  deriving (Bounded, Enum, Eq, Read, Show)
-
-data ProgOpts = ProgOpts
-  { backOpts     :: Options
-  , passFileName :: String
-  , outFileName  :: String
-  , functionName :: String
-  , passCtrl :: PassCtrl
-  , printHelp    :: Bool
-  }
-
-defaultProgOpts :: ProgOpts
-defaultProgOpts = ProgOpts
-  { backOpts     = defaultOptions
-  , passFileName = ""
-  , outFileName  = ""
-  , functionName = ""
-  , passCtrl = defaultPassCtrl
-  , printHelp    = False
-  }
+  deriving (Bounded, Enum, Eq, Lift, Read, Show)
 
 -- | Possible compilation targets in a broad sense.
 data Target = RegionInf | Wool | CSE | SICS | BA
@@ -173,6 +152,11 @@ data Options = Options
                                   --   types that can't be fast-returned.
   , safetyLimit       :: Integer  -- ^ Threshold to stop when the size information gets lost.
   , nestSize          :: Int      -- ^ Indentation size for PrettyPrinting
+  , passFileName      :: String   -- ^ Filename for debug output
+  , outFileName       :: String   -- ^ Filename for output
+  , functionName      :: String   -- ^ Function name to generate
+  , passCtrl          :: PassCtrl -- ^ Pass configuration
+  , printHelp         :: Bool     -- ^ Print help
   } deriving Lift
 
 -- | Predefined options
@@ -186,6 +170,11 @@ defaultOptions
     , useNativeReturns  = False
     , safetyLimit       = 2000
     , nestSize          = 2
+    , passFileName      = ""
+    , outFileName       = ""
+    , functionName      = ""
+    , passCtrl          = defaultPassCtrl
+    , printHelp         = False
     }
 
 c99PlatformOptions :: Options
