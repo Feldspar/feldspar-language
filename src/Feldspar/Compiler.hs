@@ -97,9 +97,7 @@ instance PrettyInfo a => Pretty (AUntypedFeld a) where
      where f t x = " | " ++ prettyInfo t x
 
 -- | Front-end driver
-frontend :: PassCtrl
-         -> Options
-         -> String
+frontend :: Options
          -> Either
               (ASTF a)
               (Either
@@ -112,12 +110,12 @@ frontend :: PassCtrl
                       (Module ())
                       (Either (Module (), Module ()) SplitModule)))))
          -> ([String], Maybe SplitModule)
-frontend ctrl opts n = evalPasses 0
-                   ( codegen (codeGenerator $ platform opts) ctrl opts
+frontend opts = evalPasses 0
+                   ( codegen (codeGenerator $ platform opts) opts
                    . pc BPAdapt    (either (Left . adaptTic64x opts) Right)
                    . pc BPRename   (either (Left . ML.rename opts False) Right)
                    . pc BPArrayOps (either (Left . arrayOps opts) Right)
-                   . pt BPFromCore (either (Left . fromCoreUT opts (encodeFunctionName n)) id)
+                   . pt BPFromCore (either (Left . fromCoreUT opts n') id)
                    . pc FPCreateTasks      (either (Left . createTasks opts) Right)
                    . pt FPUnAnnotate       (either (Left . unAnnotate) id)
                    . pc FPUnique           (either (Left . uniqueVars) Right)
@@ -132,10 +130,11 @@ frontend ctrl opts n = evalPasses 0
                    . pt FPUnASTF           (either (Left . unASTF) id)
                    )
   where pc :: Pretty a => Pass -> (a -> a) -> Prog a Int -> Prog a Int
-        pc = passC ctrl
+        pc = passC (passCtrl opts)
         pt :: (Pretty a, Pretty b)
            => Pass -> (a -> b) -> Prog a Int -> Prog b Int
-        pt = passT ctrl
+        pt = passT (passCtrl opts)
+        n' = encodeFunctionName $ functionName opts
 
 reifyFeld :: Syntactic a => a -> ASTF (Internal a)
 reifyFeld = desugar
@@ -204,12 +203,12 @@ program p = programOpts p defaultOptions
 
 programOpts :: Syntactic a => a -> Options -> IO ()
 programOpts p opts = do args <- getArgs
-                        programOptsArgs p defaultProgOpts{backOpts = opts} args
+                        programOptsArgs p opts args
 
-programOptsArgs :: Syntactic a => a -> ProgOpts -> [String] -> IO ()
+programOptsArgs :: Syntactic a => a -> Options -> [String] -> IO ()
 programOptsArgs p = programComp (const (return p))
 
-programComp :: Syntactic a => ([String] -> IO a) -> ProgOpts -> [String] -> IO ()
+programComp :: Syntactic a => ([String] -> IO a) -> Options -> [String] -> IO ()
 programComp pc opts args = do
   name' <- getProgName
   let (opts1, nonopts) = decodeOpts (optsFromName opts name') args
@@ -224,14 +223,14 @@ programComp pc opts args = do
       case mProgs of
         Nothing -> return ()
         Just prog -> writeFiles prog (outFileName opts1)
-                      (codeGenerator $ platform $ backOpts opts1)
+                      (codeGenerator $ platform opts1)
 
-optsFromName :: ProgOpts -> String -> ProgOpts
+optsFromName :: Options -> String -> Options
 optsFromName opts name' = opts{ passFileName = name' ++ ".passes"
                               , outFileName = name'
                               , functionName = name'}
 
-decodeOpts :: ProgOpts -> [String] -> (ProgOpts, [String])
+decodeOpts :: Options -> [String] -> (Options, [String])
 decodeOpts optsIn argv
   | null errors = (foldl (\o f -> f o) optsIn actions, nonOptions)
   | otherwise = error $ unlines errors
@@ -248,10 +247,10 @@ targetInfo :: String
 targetInfo = "\nTARGET is one of " ++ names ++ "\n\n"
   where names = unwords (map platformName availablePlatforms)
 
-optionDescs :: [OptDescr (ProgOpts -> ProgOpts)]
+optionDescs :: [OptDescr (Options -> Options)]
 optionDescs = driverOpts
 
-driverOpts :: [OptDescr (ProgOpts -> ProgOpts)]
+driverOpts :: [OptDescr (Options -> Options)]
 driverOpts =
   [ Option []  ["writeBefore"]
     (ReqArg (chooseEnd addWrBefore) "PASS")   "write IR before PASS"
@@ -275,14 +274,11 @@ driverOpts =
     (NoArg (\opts -> opts{printHelp = True})) "print a useage message"
   ]
 
-setTarget :: ProgOpts -> String -> ProgOpts
-setTarget opts str
-  = opts{backOpts = bopts{platform = pf, targets = tgs}}
-   where bopts = backOpts opts
-         pf = platformFromName str
-         tgs = targetsFromPlatform pf
+setTarget :: Options -> String -> Options
+setTarget opts str = opts{platform = pf, targets = targetsFromPlatform pf}
+   where pf = platformFromName str
 
-chooseEnd :: (PassCtrl -> Pass -> PassCtrl) -> String -> ProgOpts -> ProgOpts
+chooseEnd :: (PassCtrl -> Pass -> PassCtrl) -> String -> Options -> Options
 chooseEnd f str opts
   | [(p,_)] <- reads str = opts{passCtrl = f (passCtrl opts) p}
   | otherwise = error $ "Compiler.chooseEnd: unrecognized pass " ++ str
@@ -294,10 +290,8 @@ writeFileLB name' str = do fh <- openFile name' WriteMode
                            hPutStr fh str
                            hClose fh
 
-translate :: Syntactic a => ProgOpts -> a -> ([String], Maybe SplitModule)
-translate opts p = frontend (passCtrl opts) bopts name' $ Left $ reifyFeld p
-  where bopts     = backOpts opts
-        name'     = functionName opts
+translate :: Syntactic a => Options -> a -> ([String], Maybe SplitModule)
+translate opts p = frontend opts $ Left $ reifyFeld p
 
 data SplitModule = SplitModule
     { implementation :: CompiledModule
@@ -347,11 +341,11 @@ compileSplitModule opts (hmdl, cmdl)
 compileToCCore :: Syntactic c => String -> Options -> c -> SplitModule
 compileToCCore n opts p = fromMaybe err $ snd p'
   where err = error "compileToCCore: translate failed"
-        p' = translate (defaultProgOpts{backOpts = opts, functionName = n}) p
+        p' = translate opts{functionName = n} p
 
 compileToCCore' :: Options -> Module () -> SplitModule
 compileToCCore' opts m = fromMaybe (error "compileToCCore: backend failed") prg
-   where prg = snd $ frontend (passCtrl defaultProgOpts) opts "dummy" (Right . Right . Right . Right . Left $ m)
+   where prg = snd $ frontend opts (Right . Right . Right . Right . Left $ m)
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
   pretty (x,y) = "(" ++ pretty x ++ ", " ++ pretty y ++ ")"
@@ -366,10 +360,11 @@ instance Pretty SplitModule where
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
   pretty = either pretty pretty
 
-codegen :: String -> PassCtrl -> Options
+codegen :: String -> Options
         -> Prog (Either (Module ())
                 (Either (Module (), Module ()) SplitModule)) Int
         -> Prog SplitModule Int
-codegen "c"   ctrl opts  = passT ctrl BPCompile  (either (compileSplitModule opts) id)
-                         . passT ctrl BPSplit    (either (Left . splitModule) id)
-codegen gen   _    _     = error $ "Compiler.codegen: unknown code generator " ++ gen
+codegen "c"   opts  = passT ctrl BPCompile  (either (compileSplitModule opts) id)
+                    . passT ctrl BPSplit    (either (Left . splitModule) id)
+  where ctrl = passCtrl opts
+codegen gen   _     = error $ "Compiler.codegen: unknown code generator " ++ gen

@@ -113,7 +113,7 @@ import Feldspar.Compiler.Options (Options(..), Pass(..),
                                   PassCtrl(..), Target(..),
                                   c99OpenMpPlatformOptions,
                                   c99PlatformOptions,
-                                  defaultOptions, defaultPassCtrl, sicsOptions,
+                                  defaultOptions, sicsOptions,
                                   sicsOptions2, sicsOptions3,
                                   tic64xPlatformOptions)
 import Feldspar.Core.AdjustBindings (adjustBindings)
@@ -143,16 +143,14 @@ showExpr = render . reifyFeld
 
 -- | Show an untyped expression
 showUntyped :: Syntactic a => Options -> a -> String
-showUntyped opts prg = head . fst $ out
-  where out = frontend passCtrl opts "dummy" (Left $ reifyFeld prg)
-        passCtrl = defaultPassCtrl{ wrBefore = [FPUnAnnotate]
-                                  , stopBefore = [FPUnAnnotate]}
+showUntyped opts prg = head . fst $ frontend opts' (Left $ reifyFeld prg)
+  where opts' = opts{passCtrl = (passCtrl opts){ wrBefore = [FPUnAnnotate]
+                                               , stopBefore = [FPUnAnnotate]}}
 
 -- | Show an expression after a specific frontend pass
 showUntyped' :: Syntactic a => Pass -> Options -> a -> String
-showUntyped' p opts prg = head . fst $ out
-  where out = frontend passCtrl opts "dummy" (Left $ reifyFeld prg)
-        passCtrl = defaultPassCtrl{wrAfter = [p], stopAfter = [p]}
+showUntyped' p opts prg = head . fst $ frontend opts' (Left $ reifyFeld prg)
+  where opts' = opts{passCtrl = (passCtrl opts){wrAfter = [p], stopAfter = [p]}}
 
 -- | Print an optimized untyped expression
 printExpr2 :: Syntactic a => a -> IO ()
