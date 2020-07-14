@@ -215,7 +215,7 @@ programComp pc opts args = do
       header = "Usage: " ++ name' ++ " <option>...\n"
                          ++ "where <option> is one of"
   if printHelp opts1
-    then putStr $ usageInfo header optionDescs ++ passInfo ++ targetInfo
+    then putStr $ usageInfo header driverOpts ++ passInfo ++ targetInfo
     else do
       p <- pc nonopts
       let (strs,mProgs) = translate opts1 p
@@ -234,7 +234,7 @@ decodeOpts :: Options -> [String] -> (Options, [String])
 decodeOpts optsIn argv
   | null errors = (foldl (\o f -> f o) optsIn actions, nonOptions)
   | otherwise = error $ unlines errors
-   where (actions, nonOptions, errors) = getOpt Permute optionDescs argv
+   where (actions, nonOptions, errors) = getOpt Permute driverOpts argv
 
 passInfo :: String
 passInfo = "\nPASS is one of\n" ++
@@ -246,9 +246,6 @@ passInfo = "\nPASS is one of\n" ++
 targetInfo :: String
 targetInfo = "\nTARGET is one of " ++ names ++ "\n\n"
   where names = unwords (map platformName availablePlatforms)
-
-optionDescs :: [OptDescr (Options -> Options)]
-optionDescs = driverOpts
 
 driverOpts :: [OptDescr (Options -> Options)]
 driverOpts =
