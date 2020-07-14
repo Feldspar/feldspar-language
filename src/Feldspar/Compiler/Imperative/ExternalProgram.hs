@@ -35,9 +35,10 @@ import Debug.Trace
 -- these error messages will be unique and easy to pinpoint in the case
 -- that bugs do occur.
 
+-- | Parse a file and return a Module representing the file
 parseFile :: FilePath -> B.ByteString -> [Entity ()] -> Maybe (Module ())
 parseFile filename s hDefs =
-  case P.parse [C99] builtin_types P.parseUnit s' (Just $ startPos filename) of
+  case P.parse [C99] builtinTypes P.parseUnit s' (Just $ startPos filename) of
       Left _ -> Nothing
       Right defs -> Just (Module $ fhDefs ++ toProgram hDefs defs)
    where s' = massageInput s
@@ -45,12 +46,12 @@ parseFile filename s hDefs =
          isStructDef StructDef{} = True
          isStructDef _           = False
 
--- A list of built in types. We need the regular C99 types in this list, or
+-- | A list of built in types. We need the regular C99 types in this list, or
 -- the parser will die with a mysterious parse error.
-builtin_types :: [String]
-builtin_types = [ "uint64_t", "uint32_t", "uint16_t", "uint8_t"
-                , "int64_t", "int32_t", "int16_t", "int8_t"
-                , "bool"]
+builtinTypes :: [String]
+builtinTypes = [ "uint64_t", "uint32_t", "uint16_t", "uint8_t"
+               , "int64_t", "int32_t", "int16_t", "int8_t"
+               , "bool"]
 
 toProgram :: [Entity ()] -> [Definition] -> [Entity ()]
 toProgram [] defs = snd $ defsToProgram (emptyEnv []) defs
@@ -475,8 +476,8 @@ typSpecToType :: TPEnv -> TypeSpec -> R.Type
 typSpecToType _ Tvoid{} = VoidType
 typSpecToType _ Tchar{} = error "Tchar"
 typSpecToType _ Tshort{} = error "TShort"
-typSpecToType _ (Tint Nothing _) = 1 :# (NumType R.Unsigned S32)
-typSpecToType _ (Tint _ _)       = 1 :# (NumType R.Signed S32)
+typSpecToType _ (Tint Nothing _) = 1 :# NumType R.Unsigned S32
+typSpecToType _ (Tint _ _)       = 1 :# NumType R.Signed S32
 typSpecToType _ Tlong{} = error "Tlong"
 typSpecToType _ Tlong_long{} = error "longlong"
 typSpecToType _ Tfloat{}         = 1 :# FloatType
@@ -512,16 +513,16 @@ typSpecToType _ Tva_list{} = error "typSpecToType: No support for valist."
 typSpecToType _ t = error $ "typSpecToType: Unknown type " ++ show t
 
 namedToType :: TPEnv -> String -> R.Type
-namedToType _ "uint64_t" = 1 :# (NumType R.Unsigned S64)
-namedToType _ "uint40_t" = 1 :# (NumType R.Unsigned S40)
-namedToType _ "uint32_t" = 1 :# (NumType R.Unsigned S32)
-namedToType _ "uint16_t" = 1 :# (NumType R.Unsigned S16)
-namedToType _ "uint8_t"  = 1 :# (NumType R.Unsigned S8)
-namedToType _ "int64_t"  = 1 :# (NumType R.Signed S64)
-namedToType _ "int40_t"  = 1 :# (NumType R.Signed S40)
-namedToType _ "int32_t"  = 1 :# (NumType R.Signed S32)
-namedToType _ "int16_t"  = 1 :# (NumType R.Signed S16)
-namedToType _ "int8_t"   = 1 :# (NumType R.Signed S8)
+namedToType _ "uint64_t" = 1 :# NumType R.Unsigned S64
+namedToType _ "uint40_t" = 1 :# NumType R.Unsigned S40
+namedToType _ "uint32_t" = 1 :# NumType R.Unsigned S32
+namedToType _ "uint16_t" = 1 :# NumType R.Unsigned S16
+namedToType _ "uint8_t"  = 1 :# NumType R.Unsigned S8
+namedToType _ "int64_t"  = 1 :# NumType R.Signed S64
+namedToType _ "int40_t"  = 1 :# NumType R.Signed S40
+namedToType _ "int32_t"  = 1 :# NumType R.Signed S32
+namedToType _ "int16_t"  = 1 :# NumType R.Signed S16
+namedToType _ "int8_t"   = 1 :# NumType R.Signed S8
 namedToType _ "bool"     = 1 :# BoolType
 namedToType env s | Just t <- findLocalDeclaration env s = t
 namedToType _ s          = error $ "namedToType: Unrecognized type: " ++ s
@@ -530,7 +531,7 @@ declToType :: R.Type -> Decl -> R.Type
 declToType t DeclRoot{} = t
 -- Truncate one level of pointers on array types.
 declToType t (Ptr _ DeclRoot{} _) | pointedArray t = t
-declToType t (Ptr _ dcl _)  = declToType (1 :# (Pointer t)) dcl
+declToType t (Ptr _ dcl _)  = declToType (1 :# Pointer t) dcl
 declToType _ BlockPtr{} = error "Blocks?"
 declToType t (Array _ (NoArraySize _) _ _) = NativeArray Nothing t
 declToType _ (Array _tqs _sz _dcl _)
@@ -541,7 +542,7 @@ declToType _ (OldProto _dcl _ids _) = error "OldProto"
 declToType _ d = error $ "declToType: Unhandled construct: " ++ show d
 
 pointedArray :: R.Type -> Bool
-pointedArray (ArrayType{})                 = True
+pointedArray ArrayType{}                   = True
 pointedArray (_ :# (Pointer t))            = pointedArray t
 pointedArray _                             = False
 
@@ -575,7 +576,7 @@ fakeName = "fakeName"
 -- Feldspar "builtins".
 builtins :: [(String, R.Variable ())]
 builtins =
-  [ ("getLength", Variable (1 :# (NumType R.Unsigned S32)) "getLength")
+  [ ("getLength", Variable (1 :# NumType R.Unsigned S32) "getLength")
   ]
 
 findBuiltinDeclaration :: TPEnv -> String -> Maybe R.Type
@@ -619,7 +620,7 @@ fixupEnv env _ VoidType = env -- No new type information.
 fixupEnv env (UnOp Deref (Var (Id s _) _) _) tp = env { vars = goVar (vars env) }
   where goVar [] = []
         goVar ((n, Variable (l :# (Pointer (ArrayType r _))) n'):t)
-         | s == n = (n, Variable (l :# (Pointer (ArrayType r tp))) n'):goVar t
+         | s == n = (n, Variable (l :# Pointer (ArrayType r tp)) n'):goVar t
         goVar (p:t) = p:goVar t
 fixupEnv _ (UnOp Deref e _) _ = error $ "fixupEnv: No support for " ++ show e
 fixupEnv env (Var (Id s _) _) tp = env { vars = goVar (vars env) }
@@ -630,7 +631,7 @@ fixupEnv env (Var (Id s _) _) tp = env { vars = goVar (vars env) }
 fixupEnv env (FnCall (Var (Id "at" _) _) [(UnOp Deref (Var (Id s _) _) _), _] _) tp = env { vars = goVar (vars env) }
   where goVar [] = []
         goVar ((n, Variable (k :# (Pointer (ArrayType r1 (ArrayType r2 _)))) n'):t)
-         | s == n = let nt = (k :# (Pointer (ArrayType r1 (ArrayType r2 tp))))
+         | s == n = let nt = (k :# Pointer (ArrayType r1 (ArrayType r2 tp)))
                     in (n, Variable nt n'):goVar t
         goVar (p:t) = p:goVar t
 fixupEnv env (Member (Var (Id s _) _) (Id name _) _) tp = env { vars = goStruct (vars env) }
@@ -661,6 +662,7 @@ fixupEnv env _ _ = env
 
 -- Expression builders.
 
+-- | Build an expression that adds one
 plusOne :: Expression () -> Expression ()
 plusOne e = opToFunctionCall [e, litI32 1] Add
 
@@ -682,6 +684,7 @@ mkDef (StructType n fields)
 -- Only interested in struct definitions so discard everything else.
 mkDef _ = []
 
+-- | Lookup for triples
 lookup3 :: String -> [(String, [R.Type], Entity ())] -> [R.Type]
 lookup3 s xs = ts
   where (_, ts, _) = head $ filter (\(s1,_,_) -> s1 == s) xs
