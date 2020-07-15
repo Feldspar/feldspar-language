@@ -96,8 +96,8 @@ simpLoop env r op t (eTC:es) = go op (simplify env eTC) es
         go op tc es = AIn r $ App op t (tc : map (simplify env) es)
 
 simpApp :: SM -> ValueInfo -> Op -> Type -> [AExp] -> AExp
-simpApp env r op' t es = go op' t es
-  where eOrig = AIn r $ App op' t es
+simpApp env r op' t' es = go op' t' es
+  where eOrig = AIn r $ App op' t' es
         go :: Op -> Type -> [AExp] -> AExp
         go Add _ [e1, e2]
          | zero e1 = e2
@@ -106,7 +106,7 @@ simpApp env r op' t es = go op' t es
         go Sub _ [e1, e2]
          | zero e2 = e1
 
-        go Mul _ [e1, e2]
+        go Mul t [e1, e2]
          | one e1 = e2
          | one e2 = e1
          | zero e1 = e1
@@ -114,7 +114,7 @@ simpApp env r op' t es = go op' t es
          | Just (s,n) <- uLogOf t (examine env e1) = AIn r $ App (lshift s) t [e2, n]
          | Just (s,n) <- uLogOf t (examine env e2) = AIn r $ App (lshift s) t [e1, n]
 
-        go Div _ [e1, e2]
+        go Div t [e1, e2]
          | one e2 = e1
          | Just (s,n) <- uLogOf t (examine env e2) = AIn r $ App (rshift s) t [e1, n]
 
