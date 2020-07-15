@@ -1,7 +1,3 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 --
 -- Copyright (c) 2019, ERICSSON AB
 -- All rights reserved.
@@ -29,7 +25,12 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wall #-}
 
+-- | Evaluator of typed expressions
 module Feldspar.Core.Eval (eval) where
 
 import Feldspar.Core.Representation
@@ -51,7 +52,7 @@ evalA bm (_ :& e) = evalE bm e
 evalE :: Typeable a => CloEnv -> Expr a -> a
 evalE bm (Sym (Variable v)) = lookupCE "Eval.evalE" bm v
 evalE bm (Sym (Lambda (Var n _)) :@ e) = \x -> evalA (M.insert n (Clo x) bm) e
-evalE bm (Sym op) = semSem $ semantics op
+evalE _  (Sym op) = semSem $ semantics op
 evalE bm (f :@ e) = evalE bm f $ evalA bm e
 
 type CloEnv = M.Map VarId Closure
