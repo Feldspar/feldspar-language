@@ -25,6 +25,7 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
+{-# OPTIONS_GHC -Wall #-}
 
 module Feldspar.Core.Middleend.OptimizeUntyped ( optimize ) where
 
@@ -78,6 +79,7 @@ simpCond env r t ec@(AIn _ (Variable v)) et ee = AIn r $ App Condition t [ec, et
 simpCond env r t ec et ee = simpApp env r Condition t [ec, simplify env et, simplify env ee]
 
 simpLoop :: SM -> ValueInfo -> Op -> Type -> [AExp] -> AExp
+simpLoop _ _ _ _ [] = error "simpLoop: called with empty list"
 simpLoop env r op t (eTC:es) = go op (simplify env eTC) es
   where go For tc [eSt, eLam]
          | zero tc
@@ -93,11 +95,11 @@ simpLoop env r op t (eTC:es) = go op (simplify env eTC) es
          | Literal (LInt s sz 1) <- unwrap tc
          = simplify env $ mkLet vIx (aLit $ LInt s sz 0) body
         -- Fall through
-        go op tc es = AIn r $ App op t (tc : map (simplify env) es)
+        go op' tc es' = AIn r $ App op' t (tc:map (simplify env) es')
 
 simpApp :: SM -> ValueInfo -> Op -> Type -> [AExp] -> AExp
-simpApp env r op' t' es = go op' t' es
-  where eOrig = AIn r $ App op' t' es
+simpApp env r op' t' es' = go op' t' es'
+  where eOrig = AIn r $ App op' t' es'
         go :: Op -> Type -> [AExp] -> AExp
         go Add _ [e1, e2]
          | zero e1 = e2

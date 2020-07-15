@@ -1,5 +1,3 @@
-{-# LANGUAGE RecursiveDo #-}
-
 --
 -- Copyright (c) 2019, ERICSSON AB
 -- All rights reserved.
@@ -27,6 +25,15 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
+{-# LANGUAGE RecursiveDo #-}
+{-# OPTIONS_GHC -Wall #-}
+-- FIXME: This code is inherently tricky, stop shadowing variables to avoid
+--        more confusion.
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+-- FIXME: Annotate the types in the relevant places.
+{-# OPTIONS_GHC -Wno-type-defaults #-}
+-- FIXME: Fix the incomplete patterns.
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 module Feldspar.Core.Middleend.Expand (expand) where
 

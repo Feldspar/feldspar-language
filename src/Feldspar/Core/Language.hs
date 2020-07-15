@@ -1,14 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 --
 -- Copyright (c) 2019, ERICSSON AB
 -- All rights reserved.
@@ -36,13 +25,25 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# OPTIONS_GHC -Wall #-}
+-- I think orphans are unavoidable in this file, so disable the warning.
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Feldspar.Core.Language where
 
 import Feldspar.Core.Reify
 import Feldspar.Core.Representation as R
 import Feldspar.Core.Types as T
-import Feldspar.Core.NestedTuples
 
 import Feldspar.Range
 import Feldspar.Core.Collection
@@ -59,11 +60,9 @@ import Data.Patch
 import Data.Word
 import Data.Hash (Hashable)
 
-import qualified Data.ByteString.Char8 as B
 import qualified Data.Bits as B
-import qualified Data.Map.Strict as M
 import Prelude.EDSL
-import Prelude (Float, Double, Rational, ($), foldr)
+import Prelude (Rational, foldr)
 import qualified Prelude as P
 
 --------------------------------------------------
@@ -729,7 +728,7 @@ unless = when . not
 instance Type a => Type (Mut a)
   where
     typeRep       = T.MutType typeRep
-    sizeOf as     = P.error "sizeOf not implemented for Mut a"
+    sizeOf _      = P.error "sizeOf not implemented for Mut a"
 
 --------------------------------------------------
 -- MutableReference.hs
@@ -941,7 +940,7 @@ instance Show (Par a) where
 instance Type a => Type (Par a)
   where
     typeRep       = T.ParType typeRep
-    sizeOf as     = P.error "sizeOf not implemented for Par a"
+    sizeOf _      = P.error "sizeOf not implemented for Par a"
 
 --------------------------------------------------
 -- RealFloat.hs

@@ -25,6 +25,10 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
+{-# OPTIONS_GHC -Wall #-}
+-- The qualified prelude is required for GHCI but not the module itself so
+-- disable unused import warnings.
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 
 -- | Interface to the essential parts of the Feldspar language. High-level
 -- libraries have to be imported separately.
