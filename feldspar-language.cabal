@@ -258,7 +258,6 @@ test-suite regression
   other-modules:
     Examples.Simple.Basics
     Feldspar.Applications.TFModel
-    Feldspar.Applications.TFLib
     Feldspar.Core.Test
     Feldspar.Mutable.Test
     Feldspar.Range.Test
