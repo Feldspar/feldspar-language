@@ -36,7 +36,7 @@ import Debug.Trace
 -- that bugs do occur.
 
 -- | Parse a file and return a Module representing the file
-parseFile :: FilePath -> B.ByteString -> [Entity ()] -> Maybe (Module ())
+parseFile :: FilePath -> B.ByteString -> [Entity] -> Maybe Module
 parseFile filename s hDefs =
   case P.parse [C99] builtinTypes P.parseUnit s' (Just $ startPos filename) of
       Left _ -> Nothing
@@ -53,7 +53,7 @@ builtinTypes = [ "uint64_t", "uint32_t", "uint16_t", "uint8_t"
                , "int64_t", "int32_t", "int16_t", "int8_t"
                , "bool"]
 
-toProgram :: [Entity ()] -> [Definition] -> [Entity ()]
+toProgram :: [Entity] -> [Definition] -> [Entity]
 toProgram [] defs = snd $ defsToProgram (emptyEnv []) defs
 toProgram hDefs defs = rest' ++ reverse funcs'
   where funcs' = snd $ defsToProgram env' $ reverse funcs
@@ -62,10 +62,10 @@ toProgram hDefs defs = rest' ++ reverse funcs'
         isFunc FuncDef{} = True
         isFunc _         = False
 
-defsToProgram :: TPEnv -> [Definition] -> (TPEnv, [Entity ()])
+defsToProgram :: TPEnv -> [Definition] -> (TPEnv, [Entity])
 defsToProgram = mapAccumL defToProgram
 
-defToProgram :: TPEnv -> Definition -> (TPEnv, Entity ())
+defToProgram :: TPEnv -> Definition -> (TPEnv, Entity)
 defToProgram env (FuncDef func _) = funcToProgram env func
 defToProgram env (DecDef (InitGroup ds _ is@[Init n Array{} Nothing (Just (CompoundInitializer ins _)) _ _] _) _)
   = valueToProgram env ds is n ins'
@@ -74,7 +74,7 @@ defToProgram env (DecDef ig _) = initGroupToDeclaration env ig
 defToProgram _ (EscDef s _) = error ("defToProgram: " ++ show s)
 defToProgram _ e = error ("defToProgram: Unhandled construct: " ++ show e)
 
-funcToProgram :: TPEnv -> Func -> (TPEnv, Entity ())
+funcToProgram :: TPEnv -> Func -> (TPEnv, Entity)
 funcToProgram env (Func ds name _ (Params parms _ _) bis _)
   = (env'', Proc (unId name) False vs dsl (Just bs))
    where (env', vs) = mapAccumL paramToVariable env parms
@@ -83,21 +83,21 @@ funcToProgram env (Func ds name _ (Params parms _ _) bis _)
 funcToProgram _ e = error ("funcToProgram: Unhandled construct: " ++ show e)
 
 valueToProgram :: TPEnv -> DeclSpec -> [Init] -> Id -> [Initializer]
-               -> (TPEnv, Entity ())
+               -> (TPEnv, Entity)
 valueToProgram env ds is n ins = (env', ValueDef (nameToVariable env' n) cs')
   where env' = fst $ initToNames env ds is
         cs = map (\(ExpInitializer (Const c _) _) -> constToConstant c) ins
         cs' = ArrayConst (map (castConstant t) cs) t
         t = declSpecToType env ds
 
-paramToVariable :: TPEnv -> Param -> (TPEnv, R.Variable ())
+paramToVariable :: TPEnv -> Param -> (TPEnv, R.Variable)
 paramToVariable env (Param (Just id') t p _)
  | Just v' <- lookup (unId id') (vars env) = (env, v') -- We have recovered types.
  | otherwise = (updateEnv env [v], v)
   where v = Variable (declToType (declSpecToType env t) p) (unId id')
 paramToVariable _ e = error $ "paramToVariable: Unhandled construct: " ++ show e
 
-blockToBlock :: TPEnv -> [BlockItem] -> (TPEnv, R.Block ())
+blockToBlock :: TPEnv -> [BlockItem] -> (TPEnv, R.Block)
 blockToBlock env bis = (env'', R.Block (concat ds) (Sequence bs))
   where (env', ds) = mapAccumL blockDeclToDecl env decls
         (env'', bs) = blockItemsToProgram env' rest
@@ -105,10 +105,10 @@ blockToBlock env bis = (env'', R.Block (concat ds) (Sequence bs))
         isBlockDecl BlockDecl{} = True
         isBlockDecl _           = False
 
-blockDeclToDecl :: TPEnv -> BlockItem -> (TPEnv, [Declaration ()])
+blockDeclToDecl :: TPEnv -> BlockItem -> (TPEnv, [Declaration])
 blockDeclToDecl env (BlockDecl ig) = initGroupToProgram env ig
 
-blockItemsToProgram :: TPEnv -> [BlockItem] -> (TPEnv, [Program ()])
+blockItemsToProgram :: TPEnv -> [BlockItem] -> (TPEnv, [Program])
 -- TODO: Stop freeloading on ParLoop since we have to fake v/t at this stage.
 blockItemsToProgram env (BlockStm (Pragma "omp parallel" _):bis)
   = (env', [ParLoop WorkParallel v t t t (toBlock $ Sequence ps)])
@@ -117,7 +117,7 @@ blockItemsToProgram env (BlockStm (Pragma "omp parallel" _):bis)
           v = snd $ head builtins -- Fake information with the correct type.
 blockItemsToProgram env bs = mapAccumL blockItemToProgram env bs
 
-blockItemToProgram :: TPEnv -> BlockItem -> (TPEnv, Program ())
+blockItemToProgram :: TPEnv -> BlockItem -> (TPEnv, Program)
 blockItemToProgram _ b@BlockDecl{}
   = error ("Declaration in the middle of a block: " ++ show b)
 -- Ivar reconstruction stuff.
@@ -183,7 +183,7 @@ blockItemToProgram env (BlockStm (Exp (Just e) _)) = impureExpToProgram env e
 blockItemToProgram env (BlockStm e) = (env, stmToProgram env e)
 blockItemToProgram _ e = error ("blockItemsToProgram: Unhandled construct: " ++ show e)
 
-initGroupToDeclaration :: TPEnv -> InitGroup -> (TPEnv, Entity ())
+initGroupToDeclaration :: TPEnv -> InitGroup -> (TPEnv, Entity)
 -- Struct definitions and similar.
 initGroupToDeclaration env (InitGroup ds _ [] _) = (env', s)
   where env' = updateEnv2 env [] t
@@ -199,7 +199,7 @@ initGroupToDeclaration env (InitGroup ds _ [is@(Init _ (Proto _ (Params ps _ _) 
   = initToFunDecl env ds is ps
 initGroupToDeclaration _ e = error $ "initGroupToDeclaration: " ++ show e
 
-initGroupToProgram :: TPEnv -> InitGroup -> (TPEnv, [Declaration ()])
+initGroupToProgram :: TPEnv -> InitGroup -> (TPEnv, [Declaration])
 -- Variable declarations
 initGroupToProgram env (InitGroup ds _ is _) = initToNames env ds is
 initGroupToProgram _ (TypedefGroup _ds _attr _ts _)
@@ -208,7 +208,7 @@ initGroupToProgram _ e
   = error $ "initGroupToProgram: Unhandled construct: " ++ show e
 
 -- Contrived type to swallow break statements silently.
-switchAltToProgram :: TPEnv -> BlockItem -> [(Pattern (), R.Block ())]
+switchAltToProgram :: TPEnv -> BlockItem -> [(Pattern, R.Block)]
 switchAltToProgram _ (BlockStm Break{}) = []
 switchAltToProgram env (BlockStm (Case e s _))
   = [(Pat (expToExpression env e), toBlock (stmToProgram env s))]
@@ -216,7 +216,7 @@ switchAltToProgram env (BlockStm (Default stm _))
   = [(PatDefault, toBlock (stmToProgram env stm))]
 switchAltToProgram _ e = error $ "switchAltToProgram: " ++ show e
 
-stmToProgram :: TPEnv -> Stm -> Program ()
+stmToProgram :: TPEnv -> Stm -> Program
 stmToProgram _ l@Label{} = error $ "stmToProgram: Unexpected label: " ++ show l
 stmToProgram _ (Exp Nothing _) = error "Exp: Nothing?"
 stmToProgram env (Exp (Just e) _) = snd $ impureExpToProgram env e
@@ -256,7 +256,7 @@ stmToProgram _ (Pragma _ _) = error "Pragma not supported yet."
 stmToProgram _ a@Asm{} = error $ "stmToProgram: unexpected asm: " ++ show a
 stmToProgram _ e = error $ "stmToProgram: Unhandled construct: " ++ show e
 
-impureExpToProgram :: TPEnv -> Exp -> (TPEnv, Program ())
+impureExpToProgram :: TPEnv -> Exp -> (TPEnv, Program)
 -- Hook for padding incomplete struct array * type info.
 impureExpToProgram env (Assign e JustAssign
                                f@(FnCall (Var (Id "initArray" _) _)
@@ -298,21 +298,21 @@ impureExpToProgram env (Assign e1 JustAssign e2 _)
   = (env, R.Assign (expToExpression env e1) (expToExpression env e2))
 impureExpToProgram _ e = error $ "impureExpToProgram: " ++ show e
 
-varToVariable :: TPEnv -> Exp -> Variable ()
+varToVariable :: TPEnv -> Exp -> Variable
 varToVariable env (Var name _) = nameToVariable env name
 
-nameToVariable :: TPEnv -> Id -> Variable ()
+nameToVariable :: TPEnv -> Id -> Variable
 nameToVariable env name
  | Just v <- lookup (unId name) (vars env) = v
  | take 4 (unId name) == "task" = Variable fakeType (unId name) -- fake tasks
  | otherwise = error $ "varToVariable: Could not find: " ++ show name
 
-expToExpression :: TPEnv -> Exp -> Expression ()
+expToExpression :: TPEnv -> Exp -> Expression
 expToExpression env = expToExpression' env Nothing
 
 -- No concept of Bool constants in the C parser. They appear at expresion
 -- positions in our context.
-expToExpression' :: TPEnv -> Maybe R.Type -> Exp -> Expression ()
+expToExpression' :: TPEnv -> Maybe R.Type -> Exp -> Expression
 expToExpression' _ _ (Var n _)
   | unId n == "true" = litB True
   | unId n == "false" = litB False
@@ -357,7 +357,7 @@ expToExpression' _ _ BuiltinVaArg{} = error "expToExpression: varargs not suppor
 expToExpression' _ _ BlockLit{} = error "expToExpression: No support for blocklit."
 expToExpression' _ _ e = error $ "expToExpression: Unhandled construct: " ++ show e
 
-opToFunctionCall :: [Expression ()] -> BinOp -> Expression ()
+opToFunctionCall :: [Expression] -> BinOp -> Expression
 opToFunctionCall es op = case opToString op of
                       Right s -> fun t s es
                       Left s -> fun (1 :# BoolType) s es
@@ -383,7 +383,7 @@ opToString Xor = Right "^"
 opToString Lsh = Right "<<"
 opToString Rsh = Right ">>"
 
-expToFunctionCall :: TPEnv -> [Expression ()] -> Exp -> Expression ()
+expToFunctionCall :: TPEnv -> [Expression] -> Exp -> Expression
 expToFunctionCall _ es (Var name _)
   | Just v <- lookup (unId name) builtins
   = fun (varType v) (varName v) es
@@ -391,11 +391,11 @@ expToFunctionCall _ es (Var name _)
 
 -- Signed integers are the default for literals, but that is not always
 -- convenient. Fix things up afterwards instead.
-castConstant :: R.Type -> R.Constant () -> R.Constant ()
+castConstant :: R.Type -> Constant -> Constant
 castConstant (1 :# t) (R.IntConst i _) = R.IntConst i t
 castConstant _ c = error ("castConstant: Unexpected argument: " ++ show c)
 
-constToConstant :: Const -> Constant ()
+constToConstant :: Const -> Constant
 constToConstant (IntConst _ sgn i _)
   = R.IntConst i (NumType (signToSign sgn) S32)
 constToConstant (LongIntConst _ sgn i _)
@@ -414,23 +414,23 @@ declSpecToType :: TPEnv -> DeclSpec -> R.Type
 declSpecToType env (DeclSpec _ _ ts _) = typSpecToType env ts
 declSpecToType _ e = error ("declSpecToType: Unhandled construct: " ++ show e)
 
-initToFunDecl :: TPEnv -> DeclSpec -> Init -> [Param] -> (TPEnv, Entity ())
+initToFunDecl :: TPEnv -> DeclSpec -> Init -> [Param] -> (TPEnv, Entity)
 initToFunDecl env ds is ps = (env', Proc iv False ps' VoidType Nothing)
  where (iv, _, _)  = initToName env (declSpecToType env' ds) is
        (env', ps') = mapAccumL paramToVariable env ps
 
-initToNames :: TPEnv -> DeclSpec -> [Init] -> (TPEnv, [Declaration ()])
+initToNames :: TPEnv -> DeclSpec -> [Init] -> (TPEnv, [Declaration])
 initToNames env ds is = (updateEnv env vs, dv)
  where ivs = map (initToName env (declSpecToType env ds)) is
        vs  = map (\(name, t, _) -> Variable t name) ivs
        dv  = zipWith (\v (_, _, start) -> Declaration v start) vs ivs
 
-initToName :: TPEnv -> R.Type -> Init -> (String, R.Type, Maybe (Expression ()))
+initToName :: TPEnv -> R.Type -> Init -> (String, R.Type, Maybe Expression)
 initToName env tp (Init name dcl _ ints _ _)
   = (unId name, t, maybe Nothing (initializerToExp env t) ints)
     where t = declToType tp dcl
 
-initializerToExp :: TPEnv -> R.Type -> Initializer -> Maybe (Expression ())
+initializerToExp :: TPEnv -> R.Type -> Initializer -> Maybe Expression
 initializerToExp env _ (ExpInitializer e _)
   = Just $ expToExpression env e
 initializerToExp env t@(StructType _ ts) (CompoundInitializer es _)
@@ -442,7 +442,7 @@ initializerToExp _ t e
   = error $ "initializerToExp: Unexpected argument: " ++ show e ++ " of type " ++ show t
 
 structInit :: TPEnv -> (String, R.Type)
-           -> (Maybe Designation, Initializer) -> (Maybe String, Constant ())
+           -> (Maybe Designation, Initializer) -> (Maybe String, Constant)
 structInit env (_, t) (d, e)
   | Just (ConstExpr c) <- e'
   = (maybe Nothing (\(Designation ((MemberDesignator i _):_) _) -> Just $ unId i) d, c)
@@ -454,7 +454,7 @@ isCompoundZero :: [(Maybe Designation, Initializer)] -> Bool
 isCompoundZero [(_, ExpInitializer (Const (IntConst _ _ 0 _) _) _)] = True
 isCompoundZero _ = False
 
-unOpToExp :: Expression () -> UnOp -> Expression ()
+unOpToExp :: Expression -> UnOp -> Expression
 unOpToExp e AddrOf = R.AddrOf e
 unOpToExp e Deref  = R.Deref e
 unOpToExp (ConstExpr (R.IntConst n t)) Negate
@@ -574,7 +574,7 @@ fakeName :: String
 fakeName = "fakeName"
 
 -- Feldspar "builtins".
-builtins :: [(String, R.Variable ())]
+builtins :: [(String, R.Variable)]
 builtins =
   [ ("getLength", Variable (1 :# NumType R.Unsigned S32) "getLength")
   ]
@@ -597,19 +597,19 @@ findLocalDeclaration env = go (typedefs env)
 
 -- | Environments.
 data TPEnv = TPEnv
-    { vars :: [(String, Variable ())]
+    { vars :: [(String, Variable)]
     , typedefs :: [R.Type]
-    , headerDefs :: [(String, [R.Type], Entity ())]
+    , headerDefs :: [(String, [R.Type], Entity)]
     } deriving Show
 
-emptyEnv :: [(String, [R.Type], Entity ())] -> TPEnv
+emptyEnv :: [(String, [R.Type], Entity)] -> TPEnv
 emptyEnv = TPEnv [] []
 
-updateEnv :: TPEnv -> [R.Variable ()] -> TPEnv
+updateEnv :: TPEnv -> [R.Variable] -> TPEnv
 updateEnv env ns = env { vars = nt ++ vars env }
      where nt = map (\v@(Variable _ name) -> (name, v)) ns
 
-updateEnv2 :: TPEnv -> [R.Variable ()] -> R.Type -> TPEnv
+updateEnv2 :: TPEnv -> [R.Variable] -> R.Type -> TPEnv
 updateEnv2 (TPEnv vs tdefs hdefs) ns t
  = TPEnv (nt ++ vs) (t:tdefs) hdefs
      where nt = map (\v@(Variable _ name) -> (name, v)) ns
@@ -663,12 +663,12 @@ fixupEnv env _ _ = env
 -- Expression builders.
 
 -- | Build an expression that adds one
-plusOne :: Expression () -> Expression ()
+plusOne :: Expression -> Expression
 plusOne e = opToFunctionCall [e, litI32 1] Add
 
 -- Misc helpers
 
-patchHdefs :: [Entity ()] -> [(String, [R.Type], Entity ())]
+patchHdefs :: [Entity] -> [(String, [R.Type], Entity)]
 patchHdefs [] = []
 patchHdefs (StructDef s _:t)
   = (s, map snd ts, StructDef s $ map toDef ts):patchHdefs t
@@ -678,14 +678,14 @@ patchHdefs (p@(Proc n _ ins _ Nothing):t)
   = (n, map typeof ins, p):patchHdefs t
 patchHdefs (_:t) = patchHdefs t
 
-mkDef :: R.Type -> [Entity ()]
+mkDef :: R.Type -> [Entity]
 mkDef (StructType n fields)
   = [StructDef n (map (\(n', t) -> StructMember n' t) fields)]
 -- Only interested in struct definitions so discard everything else.
 mkDef _ = []
 
 -- | Lookup for triples
-lookup3 :: String -> [(String, [R.Type], Entity ())] -> [R.Type]
+lookup3 :: String -> [(String, [R.Type], Entity)] -> [R.Type]
 lookup3 s xs = ts
   where (_, ts, _) = head $ filter (\(s1,_,_) -> s1 == s) xs
 

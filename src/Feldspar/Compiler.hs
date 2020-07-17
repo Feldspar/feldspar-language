@@ -107,8 +107,8 @@ frontend :: Options
                   (Either
                     UntypedFeld
                     (Either
-                      (Module ())
-                      (Either (Module (), Module ()) SplitModule)))))
+                      Module
+                      (Either (Module, Module) SplitModule)))))
          -> ([String], Maybe SplitModule)
 frontend opts = evalPasses 0
                    ( codegen (codeGenerator $ platform opts) opts
@@ -297,27 +297,27 @@ data SplitModule = SplitModule
 
 data CompiledModule = CompiledModule {
     sourceCode      :: String,
-    debugModule     :: Module ()
+    debugModule     :: Module
 }
 
 -- | Split a module into interface and implemenation.
-splitModule :: Module () -> (Module (), Module ())
+splitModule :: Module -> (Module, Module)
 splitModule m = (Module (hdr ++ createProcDecls (entities m)), Module body)
   where
     (hdr, body) = partition belongsToHeader (entities m)
-    belongsToHeader :: Entity () -> Bool
+    belongsToHeader :: Entity -> Bool
     belongsToHeader StructDef{}                     = True
     belongsToHeader Proc{..} | Nothing <- procBody  = True
     belongsToHeader _                               = False
     -- TODO These only belongs in the header iff the types are used in a
     -- function interface
-    createProcDecls :: [Entity ()] -> [Entity ()]
+    createProcDecls :: [Entity] -> [Entity]
     createProcDecls = concatMap defToDecl
-    defToDecl :: Entity () -> [Entity ()]
+    defToDecl :: Entity -> [Entity]
     defToDecl (Proc n False inp rtype _) = [Proc n False inp rtype Nothing]
     defToDecl _ = []
 
-compileSplitModule :: Options -> (Module (), Module ()) -> SplitModule
+compileSplitModule :: Options -> (Module, Module) -> SplitModule
 compileSplitModule opts (hmdl, cmdl)
   = SplitModule
     { interface = CompiledModule { sourceCode  = incls ++ hres
@@ -340,14 +340,14 @@ compileToCCore n opts p = fromMaybe err $ snd p'
   where err = error "compileToCCore: translate failed"
         p' = translate opts{functionName = n} p
 
-compileToCCore' :: Options -> Module () -> SplitModule
+compileToCCore' :: Options -> Module -> SplitModule
 compileToCCore' opts m = fromMaybe (error "compileToCCore: backend failed") prg
    where prg = snd $ frontend opts (Right . Right . Right . Right . Left $ m)
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
   pretty (x,y) = "(" ++ pretty x ++ ", " ++ pretty y ++ ")"
 
-instance Pretty (Module ()) where
+instance Pretty Module where
   pretty m = compToCWithInfos defaultOptions m
 
 instance Pretty SplitModule where
@@ -358,8 +358,8 @@ instance (Pretty a, Pretty b) => Pretty (Either a b) where
   pretty = either pretty pretty
 
 codegen :: String -> Options
-        -> Prog (Either (Module ())
-                (Either (Module (), Module ()) SplitModule)) Int
+        -> Prog (Either Module
+                (Either (Module, Module) SplitModule)) Int
         -> Prog SplitModule Int
 codegen "c"   opts  = passT ctrl BPCompile  (either (compileSplitModule opts) id)
                     . passT ctrl BPSplit    (either (Left . splitModule) id)

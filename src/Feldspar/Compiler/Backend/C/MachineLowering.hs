@@ -20,37 +20,37 @@ import Feldspar.Compiler.Options
 -- results due to overflow.
 
 -- | External interface for renaming.
-rename :: Options -> Bool -> Module () -> Module ()
+rename :: Options -> Bool -> Module -> Module
 rename opts _             | codeGenerator (platform opts) /= "c" = id
 rename opts addRuntimeLib = rename' opts addRuntimeLib x
   where x = getPlatformRenames opts
 
 -- | Internal interface for renaming.
-rename' :: Options -> Bool -> M.Map String [(Which, Destination)] -> Module ()
-        -> Module ()
+rename' :: Options -> Bool -> M.Map String [(Which, Destination)] -> Module
+        -> Module
 rename' opts addRuntimeLib m (Module ents) = Module ents'
   where ents' = extra ++ map (renameEnt opts m) ents
         extra | addRuntimeLib = machineLibrary opts
               | otherwise     = []
 
 -- | Rename entities.
-renameEnt :: Options -> M.Map String [(Which, Destination)] -> Entity () -> Entity ()
+renameEnt :: Options -> M.Map String [(Which, Destination)] -> Entity -> Entity
 renameEnt opts m p@Proc{..}
   | Just body <- procBody = p { procBody = Just $ renameBlock opts m body }
 renameEnt _    _ e        = e
 
 -- | Rename blocks.
-renameBlock :: Options -> M.Map String [(Which, Destination)] -> Block () -> Block ()
+renameBlock :: Options -> M.Map String [(Which, Destination)] -> Block -> Block
 renameBlock opts m (Block vs p) = Block (map (renameDecl m) vs) (renameProg opts m p)
 
 -- | Rename declarations.
-renameDecl :: M.Map String [(Which, Destination)] -> Declaration () -> Declaration ()
+renameDecl :: M.Map String [(Which, Destination)] -> Declaration -> Declaration
 renameDecl m (Declaration v (Just e)) = Declaration v (Just $ renameExp m e)
 renameDecl _ d                        = d
 
 -- | Rename programs.
-renameProg :: Options -> M.Map String [(Which, Destination)] -> Program ()
-           -> Program ()
+renameProg :: Options -> M.Map String [(Which, Destination)] -> Program
+           -> Program
 renameProg _    _ e@Empty              = e
 renameProg _    _ c@Comment{}          = c
 renameProg _    m (Assign lhs rhs)     = Assign (renameExp m lhs) (renameExp m rhs)
@@ -65,7 +65,7 @@ renameProg opts m (ParLoop p v e0 e1 e2 b)
 renameProg opts m (BlockProgram b)     = BlockProgram $ renameBlock opts m b
 
 -- | Rename expressions.
-renameExp :: M.Map String [(Which, Destination)] -> Expression () -> Expression ()
+renameExp :: M.Map String [(Which, Destination)] -> Expression -> Expression
 renameExp _ v@VarExpr{}         = v
 renameExp m (ArrayElem e es)    = ArrayElem (renameExp m e) $ map (renameExp m) es
 renameExp m (StructField e s)   = StructField (renameExp m e) s
@@ -93,14 +93,14 @@ renameExp _ s@SizeOf{}          = s
 renameExp m (Deref e)           = Deref $ renameExp m e
 
 -- | Rename parameters.
-renameParam :: M.Map String [(Which, Destination)] -> ActualParameter ()
-            -> ActualParameter ()
+renameParam :: M.Map String [(Which, Destination)] -> ActualParameter
+            -> ActualParameter
 renameParam m (ValueParameter e) = ValueParameter $ renameExp m e
 renameParam _ p                  = p
 
 -- | Rename switch alternatives.
 renameAlt :: Options -> M.Map String [(Which, Destination)]
-          -> (Pattern (), Block ()) -> (Pattern (), Block ())
+          -> (Pattern, Block) -> (Pattern, Block)
 renameAlt opts m (p, b) = (p, renameBlock opts m b)
 
 -- | Renames functions that should be renamed. Identity function on others.

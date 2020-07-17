@@ -48,7 +48,7 @@ import Control.Monad.Writer (censor, runWriter, tell)
 import Data.List (concatMap, isPrefixOf, nub)
 
 -- | Main interface for adding needed array operations to a module.
-arrayOps :: Options -> Module () -> Module ()
+arrayOps :: Options -> Module -> Module
 arrayOps opts (Module ents) = Module $ concatMap mkArrayOps dts ++ ents'
   where dts = filter (not . either isShallow isShallow) lrts
         (ents',lrts) = lower opts ents
@@ -57,7 +57,7 @@ arrayOps opts (Module ents) = Module $ concatMap mkArrayOps dts ++ ents'
           = [mkCopyArrayPos opts t, mkCopyArray t, mkInitCopyArray t]
 
 -- | Copying an array to a given position in the destination
-mkCopyArrayPos :: Options -> Type -> Entity ()
+mkCopyArrayPos :: Options -> Type -> Entity
 mkCopyArrayPos opts t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "copyArrayPos" t
         args = [dstVar, dstLVar, srcVar, srcLVar, posVar]
@@ -79,7 +79,7 @@ mkCopyArrayPos opts t = Proc name False args (typeof dstVar) (Just body)
              where lhs' = ArrayElem (VarExpr dstVar) [fun intT "+" [VarExpr posVar, VarExpr ixVar]]
 
 -- | Copying an array to the beginning of another array
-mkCopyArray :: Type -> Entity ()
+mkCopyArray :: Type -> Entity
 mkCopyArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "copyArray" t
         args = [dstVar, dstLVar, srcVar, srcLVar]
@@ -98,7 +98,7 @@ mkCopyArray t = Proc name False args (typeof dstVar) (Just body)
                ]
 
 -- | Initializing and copying in a single operation
-mkInitCopyArray :: Type -> Entity ()
+mkInitCopyArray :: Type -> Entity
 mkInitCopyArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "initCopyArray" t
         args = [dstVar, dstLVar, srcVar, srcLVar]
@@ -119,7 +119,7 @@ mkInitCopyArray t = Proc name False args (typeof dstVar) (Just body)
                ]
 
 -- | Initialize an array to a given length
-mkInitArray :: Type -> Entity ()
+mkInitArray :: Type -> Entity
 mkInitArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "initArray" t
         args = [dstVar, oldLen, newLen]
@@ -151,7 +151,7 @@ mkInitArray t = Proc name False args (typeof dstVar) (Just body)
         arrT = ArrayType fullRange t
 
 -- | Free an array
-mkFreeArray :: Type -> Entity ()
+mkFreeArray :: Type -> Entity
 mkFreeArray t = Proc name False [srcVar, srcLVar] VoidType (Just body)
   where name = variant "freeArray" t
         srcVar = Variable (ArrayType fullRange t) "src"
@@ -171,7 +171,7 @@ intT    = 1 :# NumType Signed S32
 boolT   = 1 :# BoolType
 
 -- | Extract all arrays nested in a type
-arrays :: Expression () -> Type -> [(Expression (), Type)]
+arrays :: Expression -> Type -> [(Expression, Type)]
 arrays e t@(StructType _ [("buffer", ArrayType _ _),_]) = [(e,t)]
 arrays e (NativeArray _ t) = [(e,t)]
 arrays e (StructType _ fs) = concat [arrays (StructField e f) t | (f,t) <- fs]
@@ -187,7 +187,7 @@ close et
         go _                 = []
 
 -- | Lower copy function and collect array op variants
-lower :: Options -> [Entity ()] -> ([Entity ()], [Either Type Type])
+lower :: Options -> [Entity] -> ([Entity], [Either Type Type])
 lower opts es' = runWriter $ censor (nub . concatMap close) $ mapM lcEnt es'
   where lcEnt p@Proc{procBody = Just b} = do b' <- lcBlock b
                                              return p{procBody = Just b'}
@@ -241,7 +241,7 @@ lower opts es' = runWriter $ censor (nub . concatMap close) $ mapM lcEnt es'
                            ++ show t ++ " with rhs\n  " ++ show e
 
 -- | Lower array copy
-lowerCopy :: Options -> Type -> Expression () -> [Expression ()] -> [Program ()]
+lowerCopy :: Options -> Type -> Expression -> [Expression] -> [Program]
 lowerCopy _ t dst ins
   | isAwLType t = lowerArrayCopy dst ins
 lowerCopy opts NativeArray{} dst [arg1,arg2]
@@ -256,7 +256,7 @@ lowerCopy _ t e es
       ++ show e ++ "\nor arguments\n" ++ unlines (map show es)
 
 -- | Lower general array copy
-lowerArrayCopy :: Expression () -> [Expression ()] -> [Program ()]
+lowerArrayCopy :: Expression -> [Expression] -> [Program]
 lowerArrayCopy dst ins'@(arg1:in1:ins)
   | [ConstExpr ArrayConst{..}] <- ins'
   = initArray (Just dst) (litI32 $ toInteger $ length arrayValues)
@@ -280,7 +280,7 @@ lowerArrayCopy _ ins
   = error $ "lowerArrayCopy: pattern match failure: " ++ show ins
 
 -- | Utilities
-zero :: Expression ()
+zero :: Expression
 zero = litI32 0
-one :: Expression ()
+one :: Expression
 one  = litI32 1
