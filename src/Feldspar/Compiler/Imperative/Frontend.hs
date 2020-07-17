@@ -38,20 +38,20 @@ import Feldspar.Range
 import Data.Char (toLower)
 import Data.List (stripPrefix)
 
-toBlock :: Program () -> Block ()
+toBlock :: Program -> Block
 toBlock (BlockProgram b) = b
 toBlock p                = Block [] p
 
-toProg :: Block () -> Program ()
+toProg :: Block -> Program
 toProg (Block [] p) = p
 toProg e = BlockProgram e
 
 -- | Where to place the program result
-type Location = Maybe (Expression ())
+type Location = Maybe Expression
 
 -- | Copies expressions into a destination. If the destination is
 -- an array the arguments are appended into the destination.
-copyProg :: Location -> [Expression ()] -> Program ()
+copyProg :: Location -> [Expression] -> Program
 copyProg _ []      = error "copyProg: missing source parameter."
 copyProg Nothing _ = Empty
 copyProg (Just outExp) inExp =
@@ -60,7 +60,7 @@ copyProg (Just outExp) inExp =
     _                 -> deepCopy outExp inExp
 
 -- | Expand copying of aggregate data to copying of components
-deepCopy :: Expression () -> [Expression ()] -> Program ()
+deepCopy :: Expression -> [Expression] -> Program
 deepCopy arg1 [arg2]
   | arg1 == arg2
   = Empty
@@ -75,15 +75,15 @@ deepCopy arg1 [arg2]
     where deepCopyField fld = deepCopy (StructField arg1 fld) [StructField arg2 fld]
 deepCopy _ _ = error "Multiple non-array arguments to copy"
 
-flattenCopy :: Expression () -> [Expression ()] -> [Expression ()] ->
-               Expression () -> [Program ()]
+flattenCopy :: Expression -> [Expression] -> [Expression] ->
+               Expression -> [Program]
 flattenCopy _ [] [] _ = []
 flattenCopy dst (t:ts) (l:ls) cLen
   = Assign dst (arrayFun "copyArrayPos" $ arrayBufLen dst ++ arrayBufLen t ++ [cLen])
     : flattenCopy dst ts ls (ePlus cLen l)
 flattenCopy _ _ _ _ = error "flattenCopy: pattern match failure"
 
-ePlus :: Expression () -> Expression () -> Expression ()
+ePlus :: Expression -> Expression -> Expression
 ePlus (ConstExpr (IntConst 0 _)) e = e
 ePlus e (ConstExpr (IntConst 0 _)) = e
 ePlus e1 e2                        = binop (1 :# NumType Signed S32) "+" e1 e2
@@ -91,8 +91,8 @@ ePlus e1 e2                        = binop (1 :# NumType Signed S32) "+" e1 e2
 -- | Initialize an array using \"initArray\"
 initArray
     :: Location       -- ^ Array location
-    -> Expression ()  -- ^ Array length
-    -> Program ()
+    -> Expression     -- ^ Array length
+    -> Program
 initArray Nothing _ = Empty
 initArray (Just arr) len
   | isNativeArray $ typeof arr
@@ -103,18 +103,18 @@ initArray (Just arr) len
              ]
 
 -- | Generate a call to free an array represented as a variable
-freeArray :: Variable () -> Program ()
+freeArray :: Variable -> Program
 freeArray = freeArrayE . VarExpr
 
 -- | Generate a call to free an array represented as an expression
-freeArrayE :: Expression () -> Program ()
+freeArrayE :: Expression -> Program
 freeArrayE arr
   = call (variant "freeArray" t) $ map ValueParameter $ take n $ arrayBufLen arr
    where StructType _ [("buffer", ArrayType _ t), _] = typeof arr
          n = if isShallow t then 1 else 2
 
 -- | Generate 'freeArray' calls for all arrays in a list of declarations
-freeArrays :: [Declaration ()] -> [Program ()]
+freeArrays :: [Declaration] -> [Program]
 freeArrays defs = map freeArrayE arrays
   where
     arrays = [f $ varToExpr v | v <- map declVar defs,
@@ -122,25 +122,25 @@ freeArrays defs = map freeArrayE arrays
                                 isAwLType t]
 
 -- | Get the length of an array
-arrayLength :: Expression () -> Expression ()
+arrayLength :: Expression -> Expression
 arrayLength arr
   | Just l <- staticArrayLength arr = litI32 $ fromIntegral l
   | otherwise = StructField arr "length"
 
 -- | Get the length of an array as an lval
-arrayLengthLV :: Expression () -> Expression ()
+arrayLengthLV :: Expression -> Expression
 arrayLengthLV arr = StructField arr "length"
 
-arrayBuffer :: Expression () -> Expression ()
+arrayBuffer :: Expression -> Expression
 arrayBuffer arr = StructField arr "buffer"
 
-arrayBufLen :: Expression () -> [Expression ()]
+arrayBufLen :: Expression -> [Expression]
 arrayBufLen arr = [arrayBuffer arr, arrayLength arr]
 
 -- | If possible, return the static length of an array
-staticArrayLength :: Expression t -> Maybe Length
+staticArrayLength :: Expression -> Maybe Length
 staticArrayLength = go []  -- TODO: Extend to handle x.member1.member2
-  where go :: [String] -> Expression t -> Maybe Length
+  where go :: [String] -> Expression -> Maybe Length
         go []    (ConstExpr (ArrayConst l _)) = Just (fromIntegral $ length l)
         go []    (VarExpr (Variable (ArrayType r _) _)) | isSingleton r = Just (upperBound r)
         go []    (VarExpr (Variable (NativeArray (Just l) _) _)) = Just l
@@ -154,14 +154,14 @@ staticArrayLength = go []  -- TODO: Extend to handle x.member1.member2
           = Just l
         go _ _ = Nothing
 
-iVarInitCond :: Fork -> Expression () -> Program ()
+iVarInitCond :: Fork -> Expression -> Program
 iVarInitCond Future var = iVarInit var
 iVarInitCond _      _   = Empty
 
-iVarInit :: Expression () -> Program ()
+iVarInit :: Expression -> Program
 iVarInit var = call "ivar_init" [ValueParameter var]
 
-iVarGet :: Bool -> Expression () -> Expression () -> Program ()
+iVarGet :: Bool -> Expression -> Expression -> Program
 iVarGet inTask loc ivar
     | Just eTy <- elemTyAwL typ
     = if isShallow eTy
@@ -177,7 +177,7 @@ iVarGet inTask loc ivar
         size t = SizeOf t
         copyFun t = VarExpr $ Variable (1 :# Pointer VoidType) (variant "initCopyArray" t)
 
-iVarPut :: Expression () -> Expression () -> Program ()
+iVarPut :: Expression -> Expression -> Program
 iVarPut ivar msg
     | Just eTy <- elemTyAwL typ
     = if isShallow eTy
@@ -190,16 +190,16 @@ iVarPut ivar msg
         sizePar t = ValueParameter $ SizeOf t
 
 -- | Generate a call to free an IVar represented as a variable
-iVarDestroy :: Variable () -> Program ()
+iVarDestroy :: Variable -> Program
 iVarDestroy v = call "ivar_destroy" [ValueParameter $ AddrOf $ varToExpr v]
 
 -- | Generate 'iVarDestroy' calls for all IVars in a list of declarations
-freeIVars :: [Declaration ()] -> [Program ()]
+freeIVars :: [Declaration] -> [Program]
 freeIVars defs = map iVarDestroy ivars
   where
     ivars = filter (isIVar . typeof) $ map declVar defs
 
-spawn :: Fork -> String -> [Variable ()] -> Program ()
+spawn :: Fork -> String -> [Variable] -> Program
 spawn f taskName vs
  | f `elem` [None, Loop] = call taskName $ map mkV vs
  | otherwise = call spawnName allParams
@@ -212,7 +212,7 @@ spawn f taskName vs
       where mkv v = VarExpr $ Variable (typeof v) (varName v)
     allParams = taskParam : concat (zipWith (\a b -> [a,b]) typeParams varParams)
 
-run :: String -> [Variable ()] -> Program ()
+run :: String -> [Variable] -> Program
 run taskName vs = call runName allParams
   where
     runName = "run" ++ show (length vs)
@@ -233,23 +233,23 @@ intSigned (1 :# (NumType Unsigned _))            = Just False
 intSigned (1 :# (NumType Signed _))              = Just True
 intSigned _                                      = Nothing
 
-litF :: Float -> Expression t
+litF :: Float -> Expression
 litF n = ConstExpr (FloatConst n)
 
-litD :: Double -> Expression t
+litD :: Double -> Expression
 litD n = ConstExpr (DoubleConst n)
 
-litB :: Bool -> Expression ()
+litB :: Bool -> Expression
 litB b = ConstExpr (BoolConst b)
 
-litC :: Constant () -> Constant () -> Expression ()
+litC :: Constant -> Constant -> Expression
 litC r i = ConstExpr (ComplexConst r i)
 
-litI :: Type -> Integer -> Expression ()
+litI :: Type -> Integer -> Expression
 litI (_ :# t) n = ConstExpr (IntConst n t)
 litI _ _ = error "litI: cannot create int from non-int type."
 
-litI32 :: Integer -> Expression ()
+litI32 :: Integer -> Expression
 litI32 = litI (1 :# NumType Unsigned S32)
 
 int32, uint32 :: Type
@@ -289,7 +289,7 @@ isPointer :: Type -> Bool
 isPointer (_ :# Pointer{})            = True
 isPointer _                           = False
 
-isVarExpr :: Expression () -> Bool
+isVarExpr :: Expression -> Bool
 isVarExpr VarExpr{} = True
 isVarExpr _         = False
 
@@ -310,7 +310,7 @@ variant str t | isShallow t = str
               | otherwise = str ++ "_" ++ encodeType t
 
 -- TODO: Haddock this function.
-arrayFun :: String -> [Expression ()] -> Expression ()
+arrayFun :: String -> [Expression] -> Expression
 arrayFun name (dst:dLen:es)
   = fun arrTy (variant name eTy) (dst:dLen:addSize es eTy)
    where arrTy = typeof dst
@@ -339,7 +339,7 @@ containsNativeArray :: Type -> Bool
 containsNativeArray t = any (isNativeArray . snd) $ flattenStructs t
 
 -- | Returns a list of access functions and types for the leaves of the struct tree of the type
-flattenStructs :: Type -> [(Expression () -> Expression (), Type)]
+flattenStructs :: Type -> [(Expression -> Expression, Type)]
 flattenStructs t'@(StructType _ fts)
   | not $ isAwLType t' = [(\e -> af $ StructField e fname, t'')
                           | (fname, t) <- fts, (af, t'') <- flattenStructs t]
@@ -353,36 +353,36 @@ hasReference IVarType{}                  = True
 hasReference (StructType _ fs)           = any (hasReference . snd) fs
 hasReference _                           = False
 
-varToExpr :: Variable t -> Expression t
+varToExpr :: Variable -> Expression
 varToExpr = VarExpr
 
-exprToVar :: Expression () -> Variable ()
+exprToVar :: Expression -> Variable
 exprToVar (VarExpr v) = v
 exprToVar (Deref e)   = exprToVar e
 exprToVar e           = error $ "Frontend.exprToVar: Unexpected variable:" ++ show e
 
-binop :: Type -> String -> Expression () -> Expression () -> Expression ()
+binop :: Type -> String -> Expression -> Expression -> Expression
 binop t n e1 e2 = fun t n [e1, e2]
 
-fun :: Type -> String -> [Expression ()] -> Expression ()
+fun :: Type -> String -> [Expression] -> Expression
 fun t n = FunctionCall (Function n t)
 
-mkIf :: Expression () -> Block () -> Maybe (Block ()) -> Program ()
+mkIf :: Expression -> Block -> Maybe Block -> Program
 mkIf ce tb Nothing   = Switch ce [(Pat (litB True), tb)]
 mkIf ce tb (Just eb) = Switch ce [(Pat (litB True), tb), (Pat (litB False), eb)]
 
-call :: String -> [ActualParameter ()] -> Program ()
+call :: String -> [ActualParameter] -> Program
 call = ProcedureCall
 
-for :: ParType -> Variable () -> Expression () -> Expression () -> Expression () -> Block () -> Program ()
+for :: ParType -> Variable -> Expression -> Expression -> Expression -> Block -> Program
 for _ _ _ _ _ (Block [] (Sequence ps)) | all (== Empty) ps = Empty
 for p n s e i b = ParLoop p n s e i b
 
-while :: Block () -> Expression () -> Block () -> Program ()
+while :: Block -> Expression -> Block -> Program
 while p e = SeqLoop e p
 
 -- | Wrap a list of statements in Sequence unless there is only one statement in the list
-mkSequence :: [Program ()] -> Program ()
+mkSequence :: [Program] -> Program
 mkSequence [p] = p
 mkSequence ps  = Sequence ps
 

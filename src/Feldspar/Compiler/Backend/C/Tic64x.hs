@@ -18,32 +18,32 @@ import Feldspar.Compiler.Options
 -- TODO: Extend the renamer to cope with #1.
 
 -- | External interface for tic64x specific fixes.
-adaptTic64x :: Options -> Module () -> Module ()
+adaptTic64x :: Options -> Module -> Module
 adaptTic64x opts m
  | "tic64x" == platformName (platform opts) = adaptTic64x' m
  | otherwise = m
 
 -- | Internal interface for renaming.
-adaptTic64x' :: Module () -> Module ()
+adaptTic64x' :: Module -> Module
 adaptTic64x' (Module ents) = Module $ map adaptTic64xEnt ents
 
 -- | Adapts entities.
-adaptTic64xEnt :: Entity () -> Entity ()
+adaptTic64xEnt :: Entity -> Entity
 adaptTic64xEnt p@Proc{..}
   | Just body <- procBody = p { procBody = Just $ adaptTic64xBlock body }
 adaptTic64xEnt e             = e
 
 -- | Adapts blocks.
-adaptTic64xBlock :: Block () -> Block ()
+adaptTic64xBlock :: Block -> Block
 adaptTic64xBlock (Block vs p) = Block (map adaptTic64xDecl vs) (adaptTic64xProg p)
 
 -- | Adapts declarations.
-adaptTic64xDecl :: Declaration () -> Declaration ()
+adaptTic64xDecl :: Declaration -> Declaration
 adaptTic64xDecl (Declaration v (Just e)) = Declaration v (Just $ adaptTic64xExp e)
 adaptTic64xDecl d                        = d
 
 -- | Adapts programs.
-adaptTic64xProg :: Program () -> Program ()
+adaptTic64xProg :: Program -> Program
 adaptTic64xProg e@Empty              = e
 adaptTic64xProg c@Comment{}          = c
 adaptTic64xProg (Assign lhs rhs)     = Assign (adaptTic64xExp lhs) (adaptTic64xExp rhs)
@@ -58,7 +58,7 @@ adaptTic64xProg (ParLoop p v e0 e1 e2 b)
 adaptTic64xProg (BlockProgram b)     = BlockProgram $ adaptTic64xBlock b
 
 -- | Adapts expressions.
-adaptTic64xExp :: Expression () -> Expression ()
+adaptTic64xExp :: Expression -> Expression
 adaptTic64xExp v@VarExpr{}         = v
 adaptTic64xExp (ArrayElem e es)    = ArrayElem (adaptTic64xExp e) $ map adaptTic64xExp es
 adaptTic64xExp (StructField e s)   = StructField (adaptTic64xExp e) s
@@ -76,12 +76,12 @@ adaptTic64xExp s@SizeOf{}          = s
 adaptTic64xExp (Deref e)           = Deref $ adaptTic64xExp e
 
 -- | Adapts parameters.
-adaptTic64xParam :: ActualParameter ()    -> ActualParameter ()
+adaptTic64xParam :: ActualParameter -> ActualParameter
 adaptTic64xParam (ValueParameter e) = ValueParameter $ adaptTic64xExp e
 adaptTic64xParam p                  = p
 
 -- | Adapts switch alternatives.
-adaptTic64xAlt :: (Pattern (), Block ()) -> (Pattern (), Block ())
+adaptTic64xAlt :: (Pattern, Block) -> (Pattern, Block)
 adaptTic64xAlt (p, b) = (p, adaptTic64xBlock b)
 
 -- | Adapts functions that should be adapted Identity function on others.

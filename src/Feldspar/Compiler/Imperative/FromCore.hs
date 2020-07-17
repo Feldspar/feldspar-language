@@ -80,7 +80,7 @@ import Feldspar.Compiler.Options (Options(..), Platform(..))
 type CodeWriter = RWS CodeEnv CodeParts VarId
 
 data CodeEnv = CodeEnv
-  { aliases     :: [(VarId, Expression ())] -- ^ Variable aliasing
+  { aliases     :: [(VarId, Expression)] -- ^ Variable aliasing
   , inTask      :: Bool                     -- ^ Are we currently in a concurrent task?
   , backendOpts :: Options                  -- ^ Options for the backend
   }
@@ -89,11 +89,11 @@ initEnv :: Options -> CodeEnv
 initEnv = CodeEnv [] False
 
 data CodeParts = CodeParts
-  { block    :: Block ()         -- ^ collects code within one block
-  , def      :: [Entity ()]      -- ^ collects top level definitions
-  , decl     :: [Declaration ()] -- ^ collects top level variable declarations
-  , params   :: [Variable ()]    -- ^ collects top level parameters
-  , epilogue :: [Program ()]     -- ^ collects postlude code (freeing memory, etc)
+  { block    :: Block            -- ^ collects code within one block
+  , def      :: [Entity]         -- ^ collects top level definitions
+  , decl     :: [Declaration]    -- ^ collects top level variable declarations
+  , params   :: [Variable]       -- ^ collects top level parameters
+  , epilogue :: [Program]        -- ^ collects postlude code (freeing memory, etc)
   }
 
 instance Semigroup CodeParts where
@@ -124,7 +124,7 @@ mkStructType trs = StructType n trs
     n = "s_" ++ intercalate "_" (show (length trs):map (encodeType . snd) trs)
 
 -- | Construct an array indexing expression
-mkArrayElem :: Expression () -> [Expression ()] -> Expression ()
+mkArrayElem :: Expression -> [Expression] -> Expression
 mkArrayElem arr ixs
   | StructType _ [("buffer", ArrayType{}), _] <- typeof arr
   = ArrayElem (StructField arr "buffer") ixs
@@ -140,7 +140,7 @@ mkNamedVar
     :: String   -- ^ Base name
     -> Type     -- ^ Variable type
     -> VarId    -- ^ Identifier (appended to the base name)
-    -> Variable ()
+    -> Variable
 mkNamedVar base t i = Variable t $ base ++ if i < 0 then "" else show i
 
 -- | Construct a named variable. The 'VarId' is appended to the base name to
@@ -150,21 +150,21 @@ mkNamedRef
     :: String   -- ^ Base name
     -> Type     -- ^ Target type
     -> VarId    -- ^ Identifier (appended to the base name)
-    -> Variable ()
+    -> Variable
 mkNamedRef base t = mkNamedVar base (1 :# Pointer t)
 
 -- | Construct a variable.
-mkVariable :: Type -> VarId -> Variable ()
+mkVariable :: Type -> VarId -> Variable
 mkVariable t i | i >= 0 = mkNamedVar "v" t i
                | otherwise = error "mkVariable: negative index"
 
 -- | Construct a pointer variable.
-mkPointer :: Type -> VarId -> Variable ()
+mkPointer :: Type -> VarId -> Variable
 mkPointer t i | i >= 0 = mkNamedRef "v" t i
               | otherwise = error "mkPointer: negative index"
 
 -- | Construct a variable expression.
-mkVar :: Type -> VarId -> Expression ()
+mkVar :: Type -> VarId -> Expression
 mkVar t = varToExpr . mkVariable t
 
 -- | Generate a fresh identifier
@@ -176,7 +176,7 @@ freshId = do
 
 -- | Generate and declare a fresh uninitialized variable that will not be freed
 -- in the postlude
-freshAlias :: Type -> CodeWriter (Expression ())
+freshAlias :: Type -> CodeWriter Expression
 freshAlias t = do i <- freshId
                   let v = mkNamedVar "e" t i
                   declareAlias v
@@ -184,38 +184,38 @@ freshAlias t = do i <- freshId
 
 -- | Generate and declare a fresh variable initialized to the given expression.
 -- The variable will not be freed in the postlude.
-freshAliasInit :: Expression () -> CodeWriter (Expression ())
+freshAliasInit :: Expression -> CodeWriter Expression
 freshAliasInit e = do vexp <- freshAlias (typeof e)
                       tellProg [Assign vexp e]
                       return vexp
 
 -- | Declare an uninitialized variable that will be freed in the postlude (if
 -- applicable)
-declare :: Variable () -> CodeWriter ()
+declare :: Variable -> CodeWriter ()
 declare v = tellDeclWith True [Declaration v Nothing]
 
 -- | Declare an uninitialized variable that will not be freed in the postlude
-declareAlias :: Variable () -> CodeWriter ()
+declareAlias :: Variable -> CodeWriter ()
 declareAlias v = tellDeclWith False [Declaration v Nothing]
 
 -- | Declare and initialize a variable that will be freed in the postlude (if
 -- applicable)
-initialize :: Variable () -> Expression () -> CodeWriter ()
+initialize :: Variable -> Expression -> CodeWriter ()
 initialize v e = tellDeclWith True [Declaration v (Just e)]
 
 -- | Add a definition to the generated program
-tellDef :: [Entity ()] -> CodeWriter ()
+tellDef :: [Entity] -> CodeWriter ()
 tellDef es = tell $ mempty {def = es}
 
 -- | Add a list of sub-programs to the generated program
-tellProg :: [Program ()] -> CodeWriter ()
+tellProg :: [Program] -> CodeWriter ()
 tellProg [BlockProgram b@(Block [] _)] = tell $ mempty {block = b}
 tellProg ps = tell $ mempty {block = toBlock $ Sequence ps}
 
 -- | Add a list of declarations to the generated program
 tellDeclWith
     :: Bool  -- ^ Should arrays and IVars in the declarations be freed in the epilogue?
-    -> [Declaration ()]
+    -> [Declaration]
     -> CodeWriter ()
 tellDeclWith free ds = do
     rs <- ask
@@ -230,7 +230,7 @@ tellDeclWith free ds = do
 
 -- | Find declarations that require top-level type definitions, and return those
 -- definitions
-getTypeDefs :: [Declaration ()] -> [Entity ()]
+getTypeDefs :: [Declaration] -> [Entity]
 getTypeDefs defs = nub $ concatMap mkDef comps
   where
     comps = filter isComposite' $ map (typeof . declVar) defs
@@ -248,7 +248,7 @@ getTypeDefs defs = nub $ concatMap mkDef comps
     mkDef _                               = []
 
 -- | Copy an 'Expression' to a 'Location'. See 'copyProg' for more details.
-assign :: Location -> Expression () -> CodeWriter ()
+assign :: Location -> Expression -> CodeWriter ()
 assign dst src = tellProg [copyProg dst [src]]
 
 -- | Shallow assignment from an 'Expression' to a 'Location' (or nothing, if the
@@ -256,11 +256,11 @@ assign dst src = tellProg [copyProg dst [src]]
 --
 -- Shallow assignment means that it becomes a plain assignment operation in the
 -- generated code; i.e. no deep copying of structures.
-shallowAssign :: Location -> Expression () -> CodeWriter ()
+shallowAssign :: Location -> Expression -> CodeWriter ()
 shallowAssign (Just dst) src | dst /= src = tellProg [Assign dst src]
 shallowAssign _          _                = return ()
 
-shallowCopyWithRefSwap :: Expression () -> Expression () -> CodeWriter ()
+shallowCopyWithRefSwap :: Expression -> Expression -> CodeWriter ()
 shallowCopyWithRefSwap dst src
   | dst /= src
   = case filter (hasReference . snd) $ flattenStructs $ typeof dst of
@@ -271,7 +271,7 @@ shallowCopyWithRefSwap dst src
         tellProg [Assign (accF src) tmp | (tmp, (accF, _)) <- zip temps arrs]
   | otherwise = return ()
 
-shallowCopyReferences :: Expression () -> Expression () -> CodeWriter ()
+shallowCopyReferences :: Expression -> Expression -> CodeWriter ()
 shallowCopyReferences dst src
   = tellProg [Assign (accF dst) (accF src)
                  | (accF, t) <- flattenStructs $ typeof dst, hasReference t]
@@ -305,7 +305,7 @@ The strategy implemented a compromise between different design constraints:
     - Avoid memory leaks of arrays and ivars
 -}
 
-mkDoubleBufferState :: Expression () -> VarId -> CodeWriter (Expression (), Expression ())
+mkDoubleBufferState :: Expression -> VarId -> CodeWriter (Expression, Expression)
 mkDoubleBufferState loc stvar
    = do stvar1 <- if isVarExpr loc || containsNativeArray (typeof loc)
                      then return loc
@@ -321,7 +321,7 @@ mkDoubleBufferState loc stvar
 
 -- | Move the generated code block from the 'CodeWriter' effect to the result
 -- value. Top-level declarations etc. remain in the 'CodeWriter' effect.
-confiscateBlock :: CodeWriter a -> CodeWriter (a, Block ())
+confiscateBlock :: CodeWriter a -> CodeWriter (a, Block)
 confiscateBlock m
     = liftM (second block)
     $ censor (\rec -> rec {block = mempty})
@@ -335,7 +335,7 @@ confiscateBlock m
 -- be re-emitted in the 'CodeWriter'. Otherwise there is a risk that the
 -- generated code will be incorrect.
 confiscateBigBlock ::
-    CodeWriter a -> CodeWriter (a, (Block (), [Declaration ()], [Program ()]))
+    CodeWriter a -> CodeWriter (a, (Block, [Declaration], [Program]))
 confiscateBigBlock m
     = liftM (\(a,ws) -> (a, (block ws, decl ws, epilogue ws)))
     $ censor (\rec -> rec {block = mempty, decl = mempty, epilogue = mempty})
@@ -344,7 +344,7 @@ confiscateBigBlock m
 -- | Add an alias to the environment of a local code generator
 withAlias
     :: VarId          -- ^ Variable to alias
-    -> Expression ()  -- ^ Expression to substitute for the variable
+    -> Expression     -- ^ Expression to substitute for the variable
     -> CodeWriter a   -- ^ Local code generator
     -> CodeWriter a
 withAlias v0 expr = local (\e -> e {aliases = (v0,expr) : aliases e})
@@ -373,7 +373,7 @@ fromCoreUT
     :: Options
     -> String       -- ^ Name of the generated function
     -> UntypedFeld  -- ^ Expression to generate code for
-    -> Module ()
+    -> Module
 fromCoreUT opt funname uast = Module defs
   where
     fastRet = useNativeReturns opt && canFastReturn (compileType opt (typeof uast))
@@ -406,7 +406,7 @@ fromCoreUT opt funname uast = Module defs
 
 -- | Generate code for an expression that may have top-level lambdas and let
 -- bindings. The returned variable holds the result of the generated code.
-compileProgTop :: Ut.UntypedFeld -> CodeWriter (Variable ())
+compileProgTop :: Ut.UntypedFeld -> CodeWriter Variable
 compileProgTop (In (Ut.Lambda (Ut.Var v ta _) body)) = do
   opt <- asks backendOpts
   let typ = compileType opt ta
@@ -794,7 +794,7 @@ compileProg loc e = compileExprLoc loc e
 -- 'compileProgFresh'.
 
 -- | Compile an expression
-compileExpr :: Ut.UntypedFeld -> CodeWriter (Expression ())
+compileExpr :: Ut.UntypedFeld -> CodeWriter Expression
 -- Array
 compileExpr (In (App Ut.GetLength _ [a])) = do
    aExpr <- compileExpr a
@@ -929,14 +929,14 @@ compileExprLoc loc e = do
     assign loc expr
 
 -- | Generate and declare a fresh variable expression
-freshVar :: Options -> String -> Ut.Type -> CodeWriter (Expression ())
+freshVar :: Options -> String -> Ut.Type -> CodeWriter Expression
 freshVar opt base t = do
   v <- mkNamedVar base (compileType opt t) <$> freshId
   declare v
   return $ varToExpr v
 
 -- | Compiles code into a fresh variable.
-compileProgFresh :: Ut.UntypedFeld -> CodeWriter (Expression ())
+compileProgFresh :: Ut.UntypedFeld -> CodeWriter Expression
 compileProgFresh e = do
     opts <- asks backendOpts
     loc <- freshVar opts "e" (typeof e)
@@ -944,7 +944,7 @@ compileProgFresh e = do
     return loc
 
 -- | Compile an expression and make sure that the result is stored in a variable
-compileExprVar :: Ut.UntypedFeld -> CodeWriter (Expression ())
+compileExprVar :: Ut.UntypedFeld -> CodeWriter Expression
 compileExprVar e = do
     e' <- compileExpr e
     case e' of
@@ -962,7 +962,7 @@ compileExprVar e = do
         isNearlyVar _           = False
 
 -- | Compile a function bound by a LetFun.
-compileFunction :: Expression () -> (String, Fork, Ut.UntypedFeld) -> CodeWriter ()
+compileFunction :: Expression -> (String, Fork, Ut.UntypedFeld) -> CodeWriter ()
 compileFunction loc (coreName, kind, e) | (bs, e') <- collectBinders e = do
   es' <- mapM (compileExpr . In . Ut.Variable) bs
   let args = nub $ map exprToVar es' ++ fv loc
@@ -993,7 +993,7 @@ isVariableOrLiteral (Ut.In Ut.Variable{}) = True
 isVariableOrLiteral _                     = False
 
 -- | Create a variable of the right type for storing a length.
-mkLength :: Ut.UntypedFeld -> Ut.Type -> CodeWriter (Expression ())
+mkLength :: Ut.UntypedFeld -> Ut.Type -> CodeWriter Expression
 mkLength a t
   | isVariableOrLiteral a = compileExpr a
   | otherwise             = do
@@ -1011,7 +1011,7 @@ mkBranch loc c th el = do
                   else return (undefined, toBlock Empty)
     tellProg [Switch ce [(Pat (litB True), tb), (Pat (litB False), eb)]]
 
-compileLet :: Ut.UntypedFeld -> Ut.Type -> VarId -> CodeWriter (Expression ())
+compileLet :: Ut.UntypedFeld -> Ut.Type -> VarId -> CodeWriter Expression
 compileLet a ta v = do
    opts <- asks backendOpts
    let var  = mkVariable (compileType opts ta) v
@@ -1026,7 +1026,7 @@ compileAssert cond msg = do
     tellProg [call "assert" [ValueParameter condExpr]]
     unless (null msg) $ tellProg [Comment False $ "{" ++ msg ++ "}"]
 
-literal :: Ut.Lit -> CodeWriter (Expression ())
+literal :: Ut.Lit -> CodeWriter Expression
 literal lit = do
     opts <- asks backendOpts
     let litConst = return $ ConstExpr $ literalConst opts lit
@@ -1056,7 +1056,7 @@ representableType l
   = t == Ut.TupType []
       where t = typeof l
 
-literalConst :: Options -> Ut.Lit -> Constant ()
+literalConst :: Options -> Ut.Lit -> Constant
 literalConst _   (LTup [])      = IntConst 0 (NumType Ut.Unsigned Ut.S32)
 literalConst _   (LBool a)      = BoolConst a
 literalConst _   (LInt s sz a)  = IntConst (toInteger a) (NumType s sz)
@@ -1066,7 +1066,7 @@ literalConst _   (LString s)    = StringConst s
 literalConst opt (LArray t es)  = ArrayConst (map (literalConst opt) es) $ compileType opt t
 literalConst opt (LComplex r i) = ComplexConst (literalConst opt r) (literalConst opt i)
 
-literalLoc :: Expression () -> Ut.Lit -> CodeWriter ()
+literalLoc :: Expression -> Ut.Lit -> CodeWriter ()
 literalLoc loc arr@Ut.LArray{} = do
     opts <- asks backendOpts
     tellProg [copyProg (Just loc) [ConstExpr $ literalConst opts arr]]
@@ -1076,7 +1076,7 @@ literalLoc loc t =
     do rhs <- literal t
        assign (Just loc) rhs
 
-chaseTree :: Location -> Ut.UntypedFeld -> Ut.UntypedFeld -> CodeWriter [(Pattern (), Block ())]
+chaseTree :: Location -> Ut.UntypedFeld -> Ut.UntypedFeld -> CodeWriter [(Pattern, Block)]
 chaseTree loc _s (In (App Ut.Condition _ [In (App Ut.Equal _ [c, _]), t, f]))
     -- , alphaEq s a -- TODO check that the scrutinees are equal
     = do

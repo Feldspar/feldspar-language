@@ -30,7 +30,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Feldspar.Compiler.Backend.C.CodeGeneration where
+module Feldspar.Compiler.Backend.C.CodeGeneration
+  ( CodeGen(..)
+  , compToCWithInfos
+  , PrintEnv(..)
+  , penv0
+  ) where
 
 import Prelude hiding (Semigroup(..), (<>), init)
 
@@ -42,15 +47,12 @@ import Feldspar.Compiler.Options
 
 import Text.PrettyPrint
 
-codeGenerationError :: ErrorClass -> String -> a
-codeGenerationError = handleError "CodeGeneration"
-
 data PrintEnv = PEnv
     { options :: Options
     , parNestLevel :: Int
     }
 
-compToCWithInfos :: Options -> Module () -> String
+compToCWithInfos :: Options -> Module -> String
 compToCWithInfos opts procedure = render $ cgen (penv0 opts) procedure
 
 penv0 :: Options -> PrintEnv
@@ -61,13 +63,11 @@ class CodeGen a
     cgen     :: PrintEnv -> a -> Doc
     cgenList :: PrintEnv -> [a] -> Doc
 
-instance CodeGen (Module ())
-  where
+instance CodeGen Module where
     cgen env Module{..} = cgenList env entities
     cgenList env = vcat . map (cgen env)
 
-instance CodeGen (Entity ())
-  where
+instance CodeGen Entity where
     cgen env StructDef{..} = text "struct"   <+> text structName     $+$ block env (cgenList env structMembers) <> semi
     cgen env TypeDef{..}   = text "typedef"  <+> cgen env actualType <+> text typeName <> semi
     cgen env Proc{..}
@@ -88,22 +88,19 @@ instance CodeGen (Entity ())
 
     cgenList env = vcat . punctuate (text "\n") . map (cgen env)
 
-instance CodeGen (StructMember ())
-  where
+instance CodeGen StructMember where
     cgen env StructMember{..} = cgen env structMemberType <+> text structMemberName <> sizeInBrackets structMemberType <> semi
 
     cgenList env = vcat . map (cgen env)
 
-instance CodeGen (Block ())
-  where
+instance CodeGen Block where
     cgen env Block{..} = vcat [ cgenList env locals
                             , if null locals then empty else text ""
                             , cgen env blockBody
                             ]
     cgenList env = vcat . map (cgen env)
 
-instance CodeGen (Declaration ())
-  where
+instance CodeGen Declaration where
     cgen env Declaration{..}
      | Just i <- initVal
      = var <+> nest (nestSize $ options env) equals <+> specialInit (typeof declVar) i <> semi
@@ -121,8 +118,7 @@ instance CodeGen (Declaration ())
 
     cgenList env = vcat . map (cgen env)
 
-instance CodeGen (Program ())
-  where
+instance CodeGen Program where
     cgen _   Empty = empty
     cgen _   Comment{..}
       | isBlockComment = blockComment $ map text $ lines commentValue
@@ -175,22 +171,19 @@ instance CodeGen (Program ())
 
     cgenList env = vcat . map (cgen env)
 
-instance CodeGen (Pattern ())
-  where
+instance CodeGen Pattern where
     cgen _   PatDefault = text "default" <> colon
     cgen env (Pat c)    = text "case" <+> cgen env c <> colon
 
     cgenList env = vcat . map (cgen env)
 
-instance CodeGen (ActualParameter ())
-  where
+instance CodeGen ActualParameter where
     cgen env ValueParameter{..}      = cgen env valueParam
     cgen env TypeParameter{..}       = cgen env typeParam
     cgen _   FunParameter{..}        = text funParamName
     cgenList env = hsep . punctuate comma . map (cgen env)
 
-instance CodeGen (Expression ())
-  where
+instance CodeGen Expression where
     cgen env VarExpr{..} = cgen env varExpr
     cgen env ArrayElem{..}
      | c@ConstExpr{} <- array
@@ -213,13 +206,11 @@ instance CodeGen (Expression ())
 
     cgenList env = sep . punctuate comma . map (cgen env)
 
-instance CodeGen (Variable t)
-  where
+instance CodeGen Variable where
     cgen _ v = text $ varName v
     cgenList env = hsep . punctuate comma . map (cgen env)
 
-instance CodeGen (Constant ())
-  where
+instance CodeGen Constant where
     cgen _   (IntConst c _)     = integer c
     cgen _   (DoubleConst c)    = double c
     cgen _   (FloatConst c)     = float c
@@ -234,19 +225,19 @@ instance CodeGen (Constant ())
                         cgen env imagPartComplexValue <> char 'i'
     cgenList env = sep . punctuate comma . map (cgen env)
 
-instance CodeGen (Maybe String, Constant ())
+instance CodeGen (Maybe String, Constant)
   where
     cgen env (n, c) = name <+> cgen env c
       where name = maybe empty (\s -> char '.' <> text s <+> equals) n
     cgenList env = hsep . punctuate comma . map (cgen env)
 
 printStruct :: PrintEnv
-            -> [(Maybe String, Constant ())] -> [(String, Type)] -> Doc
+            -> [(Maybe String, Constant)] -> [(String, Type)] -> Doc
 printStruct env cs ts = braces $ space <> hsep members <> space
   where members = punctuate comma $ zipWith (printStructMember env) cs ts
 
 printStructMember :: PrintEnv
-                  -> (Maybe String, Constant ()) -> (String, Type) -> Doc
+                  -> (Maybe String, Constant) -> (String, Type) -> Doc
 printStructMember env e@(n, e') (_, t)
  | (IntConst 0 _) <- e'
  , isArray t || isPointer t
@@ -290,14 +281,14 @@ stmt = (<>semi)
 block :: PrintEnv -> Doc -> Doc
 block env d = lbrace $+$ nest (nestSize $ options env) d $+$ rbrace
 
-pvar :: PrintEnv -> Variable t -> Doc
+pvar :: PrintEnv -> Variable -> Doc
 pvar env Variable{..} = typ <+> (name <> size)
   where
     typ  = cgen env varType
     size = sizeInBrackets varType
     name = text varName
 
-pvars :: PrintEnv -> [Variable t] -> Doc
+pvars :: PrintEnv -> [Variable] -> Doc
 pvars env = hsep . punctuate comma . map (pvar env)
 
 -- C operators and their precedence.

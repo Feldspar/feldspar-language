@@ -73,15 +73,15 @@ import Feldspar.Core.UntypedRepresentation
 -- * Representation of imperative programs
 --------------------------------------------------------------------------------
 
-data Module t = Module
-    { entities                      :: [Entity t]
+data Module = Module
+    { entities                      :: [Entity]
     }
     deriving (Eq, Show)
 
-data Entity t
+data Entity
     = StructDef
         { structName                :: String
-        , structMembers             :: [StructMember t]
+        , structMembers             :: [StructMember]
         }
     | TypeDef
         { actualType                :: Type
@@ -91,29 +91,29 @@ data Entity t
         { procName                  :: String
         , loopBody                  :: Bool
         -- Is this a loopbody in disguise?
-        , inParams                  :: [Variable t]
+        , inParams                  :: [Variable]
         , procType                  :: Type
-        , procBody                  :: Maybe (Block t)
+        , procBody                  :: Maybe Block
         }
     | ValueDef
-        { valVar                    :: Variable t
-        , valValue                  :: Constant t
+        { valVar                    :: Variable
+        , valValue                  :: Constant
         }
     deriving (Eq, Show)
 
-data StructMember t = StructMember
+data StructMember = StructMember
     { structMemberName              :: String
     , structMemberType              :: Type
     }
     deriving (Eq, Show)
 
-data Block t = Block
-    { locals                        :: [Declaration t]
-    , blockBody                     :: Program t
+data Block = Block
+    { locals                        :: [Declaration]
+    , blockBody                     :: Program
     }
     deriving (Eq, Show)
 
-data Program t
+data Program
     = Empty
         {
         }
@@ -122,41 +122,41 @@ data Program t
         , commentValue              :: String
         }
     | Assign
-        { lhs                       :: Expression t
-        , rhs                       :: Expression t
+        { lhs                       :: Expression
+        , rhs                       :: Expression
         }
     | ProcedureCall
         { procCallName              :: String
-        , procCallParams            :: [ActualParameter t]
+        , procCallParams            :: [ActualParameter]
         }
     | Sequence
-        { sequenceProgs             :: [Program t]
+        { sequenceProgs             :: [Program]
         }
     | Switch
-        { scrutinee                 :: Expression t
-        , alts                      :: [(Pattern t, Block t)]
+        { scrutinee                 :: Expression
+        , alts                      :: [(Pattern, Block)]
         }
     | SeqLoop
-        { sLoopCond                 :: Expression t
-        , sLoopCondCalc             :: Block t
-        , sLoopBlock                :: Block t
+        { sLoopCond                 :: Expression
+        , sLoopCondCalc             :: Block
+        , sLoopBlock                :: Block
         }
     | ParLoop
         { pParallelType             :: ParType
-        , pLoopCounter              :: Variable t
-        , pLoopStart                :: Expression t
-        , pLoopEnd                  :: Expression t
-        , pLoopStep                 :: Expression t
-        , pLoopBlock                :: Block t
+        , pLoopCounter              :: Variable
+        , pLoopStart                :: Expression
+        , pLoopEnd                  :: Expression
+        , pLoopStep                 :: Expression
+        , pLoopBlock                :: Block
         }
     | BlockProgram
-        { blockProgram              :: Block t
+        { blockProgram              :: Block
         }
     deriving (Eq, Show)
 
-data Pattern t
+data Pattern
    = PatDefault
-   | Pat (Expression t)
+   | Pat Expression
      deriving (Eq, Show)
 
 data ParType
@@ -166,9 +166,9 @@ data ParType
    | WorkParallel -- Generated from ExternalProgram.
      deriving (Eq, Show)
 
-data ActualParameter t
+data ActualParameter
     = ValueParameter
-        { valueParam                :: Expression t
+        { valueParam                :: Expression
         }
     | TypeParameter
         { typeParam                 :: Type
@@ -178,43 +178,43 @@ data ActualParameter t
         }
     deriving (Eq, Show)
 
-data Declaration t = Declaration
-    { declVar                       :: Variable t
-    , initVal                       :: Maybe (Expression t)
+data Declaration = Declaration
+    { declVar                       :: Variable
+    , initVal                       :: Maybe Expression
     }
     deriving (Eq, Show)
 
-data Expression t
+data Expression
     = VarExpr
-        { varExpr                   :: Variable t
+        { varExpr                   :: Variable
         }
     | ArrayElem
-        { array                     :: Expression t
-        , arrayIndex                :: [Expression t]
+        { array                     :: Expression
+        , arrayIndex                :: [Expression]
         }
     | StructField
-        { struct                    :: Expression t
+        { struct                    :: Expression
         , fieldName                 :: String
         }
     | ConstExpr
-        { constExpr                 :: Constant t
+        { constExpr                 :: Constant
         }
     | FunctionCall
         { function                  :: Function
-        , funCallParams             :: [Expression t]
+        , funCallParams             :: [Expression]
         }
     | Cast
         { castType                  :: Type
-        , castExpr                  :: Expression t
+        , castExpr                  :: Expression
         }
     | AddrOf
-        { addrExpr                  :: Expression t
+        { addrExpr                  :: Expression
         }
     | SizeOf
         { sizeOf                    :: Type
         }
     | Deref
-        { ptrExpr                   :: Expression t
+        { ptrExpr                   :: Expression
         }
     deriving (Eq, Show)
 
@@ -225,7 +225,7 @@ data Function
         }
     deriving (Eq, Show)
 
-data Constant t
+data Constant
     = IntConst
         { intValue                  :: Integer
         , intType                   :: ScalarType
@@ -240,40 +240,40 @@ data Constant t
         { boolValue                 :: Bool
         }
     | ComplexConst
-        { realPartComplexValue      :: Constant t
-        , imagPartComplexValue      :: Constant t
+        { realPartComplexValue      :: Constant
+        , imagPartComplexValue      :: Constant
         }
     | StringConst
         { stringValue               :: String -- String value including quotes if required.
         }
     | ArrayConst
-        { arrayValues               :: [Constant t]
+        { arrayValues               :: [Constant]
         , arrayType                 :: Type
         }
     -- The maybe allows us to represent both x = { .field = 0 } and x = { 0 }.
     | StructConst
-        { memberValues              :: [(Maybe String, Constant t)]
+        { memberValues              :: [(Maybe String, Constant)]
         , structType                :: Type
         }
     deriving (Eq, Lift, Show)
 
-data Variable t
+data Variable
     = Variable
         { varType                   :: Type
         , varName                   :: String
         }
     deriving (Eq, Show)
 
-instance Semigroup (Program t) where
+instance Semigroup Program where
   Empty         <> p              = p
   p             <> Empty          = p
   (Sequence pa) <> (Sequence pb)  = Sequence (pa <> pb)
   pa            <> pb             = Sequence [pa <> pb]
 
-instance Semigroup (Block t) where
+instance Semigroup Block where
   (Block da pa) <> (Block db pb)  = Block (da <> db) (pa <> pb)
 
-instance Monoid (Block t) where
+instance Monoid Block where
   mempty                          = Block [] Empty
   mappend                         = (<>)
 
@@ -350,12 +350,12 @@ extend s t = s ++ "_fun_" ++ renderType t
 -- * Type inference
 ----------------------
 
-instance HasType (Variable t) where
-    type TypeOf (Variable t) = Type
+instance HasType Variable where
+    type TypeOf Variable     = Type
     typeof Variable{..}      = varType
 
-instance HasType (Constant t) where
-    type TypeOf (Constant t) = Type
+instance HasType Constant where
+    type TypeOf Constant     = Type
     typeof IntConst{..}      = 1 :# intType
     typeof DoubleConst{}     = 1 :# DoubleType
     typeof FloatConst{}      = 1 :# FloatType
@@ -365,8 +365,8 @@ instance HasType (Constant t) where
     typeof StructConst{..}   = structType
     typeof ComplexConst{..}  = 1 :# ComplexType (typeof realPartComplexValue)
 
-instance HasType (Expression t) where
-    type TypeOf (Expression t) = Type
+instance HasType Expression where
+    type TypeOf Expression   = Type
     typeof VarExpr{..}   = typeof varExpr
     typeof ArrayElem{..} = decrArrayDepth $ typeof array
       where
@@ -393,8 +393,8 @@ instance HasType (Expression t) where
                                 1 :# (Pointer btype) -> btype
                                 wtype         -> reprError InternalError $ "Type of dereferenced expression " ++ show ptrExpr ++ " has type " ++ show wtype
 
-instance HasType (ActualParameter t) where
-    type TypeOf (ActualParameter t) = Type
+instance HasType ActualParameter where
+    type TypeOf ActualParameter = Type
     typeof ValueParameter{..}= typeof valueParam
     typeof TypeParameter{..} = typeParam
     typeof FunParameter{}    = VoidType
@@ -404,10 +404,10 @@ reprError :: ErrorClass -> String -> a
 reprError = handleError "Feldspar.Compiler.Imperative.Representation"
 
 -- | Free variables of an expression.
-fv :: Expression t -> [Variable t]
+fv :: Expression -> [Variable]
 fv = nub . fv'
 
-fv' :: Expression t -> [Variable t]
+fv' :: Expression -> [Variable]
 fv' (VarExpr v)         = [v]
 fv' (ArrayElem e i)     = fv' e ++ concatMap fv' i
 fv' (StructField e _)   = fv' e
