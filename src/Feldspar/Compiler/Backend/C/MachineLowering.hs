@@ -6,18 +6,19 @@ module Feldspar.Compiler.Backend.C.MachineLowering
   ( rename
   ) where
 
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 
 import Feldspar.Compiler.Imperative.Representation
 import Feldspar.Compiler.Imperative.Frontend
 import Feldspar.Compiler.Backend.C.RuntimeLibrary
 import Feldspar.Compiler.Options
 
--- This module does function renaming as well as copy expansion, in a single pass.
+-- | This module does function renaming as well as copy expansion, in a single
+--   pass.
 --
--- Missing from the old C99 rules: Constant folding of 0 - x. That really belongs
--- in the frontend but there is no negate in NUM and multiplying by -1 gives crazy
--- results due to overflow.
+--   Missing from the old C99 rules: Constant folding of 0 - x. That really
+--   belongs in the frontend but there is no negate in NUM and multiplying
+--   by -1 gives crazy results due to overflow.
 
 -- | External interface for renaming.
 rename :: Options -> Bool -> Module -> Module
