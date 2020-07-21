@@ -51,44 +51,39 @@ import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
 import Feldspar.Core.ValueInfo (ValueInfo(..))
 import Feldspar.Range (Range(..))
 import qualified Feldspar.Core.Representation as R
-import Feldspar.Core.Representation (AExpr((:&)), Expr((:@)))
+import Feldspar.Core.Representation (AExpr(..), Expr(..))
 import Data.Complex (Complex(..))
 
-toU :: R.AExpr a -> AUntypedFeld ValueInfo
+toU :: AExpr a -> AUntypedFeld ValueInfo
 toU (((R.Info i) :: R.Info a) :& e)
-  | (R.Sym (R.Variable (R.Var n s))) <- e
+  | Sym (R.Variable (R.Var n s)) <- e
   = i2 $ Variable $ Var n (untypeType tr i) s
-  | (R.Sym (R.Literal v)) <- e
+  | Sym (R.Literal v) <- e
   = i2 $ Literal $ literal tr i v
-  | (R.Sym op) <- e
+  | Sym op <- e
   = i2 $ App (trOp op) (untypeType tr i) []
-  | (R.Sym (R.Lambda (R.Var n s)) :@ e') <- e
+  | Sym (R.Lambda (R.Var n s)) :@ e' <- e
   , FunType b _ <- tr
   = i2 $ Lambda (Var n (untypeType b (fst i)) s) $ toU e'
-  | (R.Sym R.Cons :@ a1 :@ a2) <- e
+  | Sym R.Cons :@ a1 :@ a2 <- e
   , e' <- toU a1
   , AIn _ (App Tup (U.TupType ts) es) <- toU a2
   = i2 $ App Tup (U.TupType $ typeof e' : ts) $ e' : es
-  | (f :@ a) <- e
-  = i2 $ case f of -- Avoid more pattern guards for GHC 8.4 performance reasons.
-           R.Sym R.Car ->
-            case addDrop $ toU a of
-              AIn _ (App (Drop n) (U.TupType (t:_)) es) ->
-                App (Sel n) t es
-           R.Sym R.Cdr ->
-            case addDrop $ toU a of
-              AIn _ (App (Drop n) (U.TupType (_:ts)) es) ->
-                App (Drop $ n + 1) (U.TupType ts) es
-           R.Sym R.Tup ->
-             case toU a of
-              AIn _ e' -> e'
-           _ -> case go e [] of
-                 (op, es) ->
-                   App op (untypeType tr i) es
+  | Sym R.Car :@ a <- e
+  , AIn _ (App (Drop n) (U.TupType (t:_)) es) <- addDrop $ toU a
+  = i2 $ App (Sel n) t es
+  | Sym R.Cdr :@ a <- e
+  , AIn _ (App (Drop n) (U.TupType (_:ts)) es) <- addDrop $ toU a
+  = i2 $ App (Drop $ n + 1) (U.TupType ts) es
+  | Sym R.Tup :@ a <- e
+  , AIn _ e' <- toU a
+  = i2 e'
+  | (op, es) <- go e []
+  = i2 $ App op (untypeType tr i) es
   where tr = typeRepF :: TypeRep a
         i2 = AIn $ toValueInfo tr i
-        go :: forall a' . R.Expr a' -> [AUntypedFeld ValueInfo] -> (Op, [AUntypedFeld ValueInfo])
-        go (R.Sym op) es = (trOp op, es)
+        go :: forall a' . Expr a' -> [AUntypedFeld ValueInfo] -> (Op, [AUntypedFeld ValueInfo])
+        go (Sym op) es = (trOp op, es)
         go (f :@ e') es = go f $ toU e' : es
         addDrop e'@(AIn _ (App (Drop _) _ _)) = e'
         addDrop e' = AIn (error "FromTyped: temporary drop")
