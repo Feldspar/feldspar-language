@@ -35,6 +35,7 @@
 
 module Feldspar.Compiler
   ( frontend
+  , translate
   , reifyFeld
   , renameExp
   , compile
@@ -46,10 +47,8 @@ module Feldspar.Compiler
   , programOpts
   , programOptsArgs
   -- * Internal functions
-  , compileToCCore'
   , writeFiles
-  , sourceCode
-  , CompiledModule
+  , CompiledModule(..)
   , SplitModule(..)
   ) where
 
@@ -148,8 +147,9 @@ compile prg fileName funName opts = writeFiles opts compRes fileName
 
 compileUT :: UntypedFeld -> FilePath -> String -> Options -> IO ()
 compileUT prg fileName funName opts = writeFiles opts compRes fileName
-  where compRes = compileToCCore' opts prg'
-        prg'    = fromCoreUT opts (encodeFunctionName funName) prg
+  where compRes = fromMaybe (error "compileUT: compilation failed")
+                $ snd $ frontend opts' (Right . Right . Right . Left $ prg)
+        opts' = opts{functionName = funName}
 
 writeFiles :: Options -> SplitModule -> FilePath -> IO ()
 writeFiles opts prg fileName
@@ -339,10 +339,6 @@ compileToCCore :: Syntactic c => String -> Options -> c -> SplitModule
 compileToCCore n opts p = fromMaybe err $ snd p'
   where err = error "compileToCCore: translate failed"
         p' = translate opts{functionName = n} p
-
-compileToCCore' :: Options -> Module -> SplitModule
-compileToCCore' opts m = fromMaybe (error "compileToCCore: backend failed") prg
-   where prg = snd $ frontend opts (Right . Right . Right . Right . Left $ m)
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
   pretty (x,y) = "(" ++ pretty x ++ ", " ++ pretty y ++ ")"
