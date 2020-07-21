@@ -22,8 +22,8 @@ import Feldspar.Compiler.Options
 
 -- | External interface for renaming.
 rename :: Options -> Bool -> Module -> Module
-rename opts _             | codeGenerator (platform opts) /= "c" = id
-rename opts addRuntimeLib = rename' opts addRuntimeLib x
+rename opts addRuntimeLib m | null x = m
+                            | otherwise = rename' opts addRuntimeLib x m
   where x = getPlatformRenames opts
 
 -- | Internal interface for renaming.
