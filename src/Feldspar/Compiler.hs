@@ -111,7 +111,7 @@ frontend :: Options
                       (Either (Module, Module) SplitModule)))))
          -> ([String], Maybe SplitModule)
 frontend opts = evalPasses 0
-                   ( codegen (codeGenerator $ platform opts) opts
+                   ( codegen opts
                    . pc BPAdapt    (either (Left . adaptTic64x opts) Right)
                    . pc BPRename   (either (Left . ML.rename opts False) Right)
                    . pc BPArrayOps (either (Left . arrayOps opts) Right)
@@ -143,21 +143,23 @@ renameExp :: AUntypedFeld a -> AUntypedFeld a
 renameExp e = evalState (rename e) 0
 
 compile :: Syntactic t => t -> FilePath -> String -> Options -> IO ()
-compile prg fileName funName opts = writeFiles compRes fileName (codeGenerator $ platform opts)
+compile prg fileName funName opts = writeFiles opts compRes fileName
   where compRes = compileToCCore funName opts prg
 
 compileUT :: UntypedFeld -> FilePath -> String -> Options -> IO ()
-compileUT prg fileName funName opts = writeFiles compRes fileName (codeGenerator $ platform opts)
+compileUT prg fileName funName opts = writeFiles opts compRes fileName
   where compRes = compileToCCore' opts prg'
         prg'    = fromCoreUT opts (encodeFunctionName funName) prg
 
-writeFiles :: SplitModule -> FilePath -> String -> IO ()
-writeFiles prg fileName "c" = do
+writeFiles :: Options -> SplitModule -> FilePath -> IO ()
+writeFiles opts prg fileName
+  | "c" == codeGenerator (platform opts) = do
     writeFile cfile $ unlines [ "#include \"" ++ takeFileName hfile ++ "\""
                               , "\n"
                               , sourceCode $ implementation prg
                               ]
     writeFile hfile $ withIncludeGuard $ sourceCode $ interface prg
+  | otherwise = writeFile fileName $ sourceCode $ implementation prg
   where
     hfile = fileName <.> "h"
     cfile = fileName <.> "c"
@@ -173,7 +175,6 @@ writeFiles prg fileName "c" = do
     guardName = map ((\c -> if c `elem` toBeChanged then '_' else c) . toUpper) hfile
       where
         toBeChanged = "./\\"
-writeFiles prg fileName _ = writeFile fileName $ sourceCode $ implementation prg
 
 icompile :: Syntactic t => t -> IO ()
 icompile = icompileWith defaultOptions
@@ -222,8 +223,7 @@ programComp pc opts args = do
       unless (null strs) $ writeFileLB (passFileName opts1) (concat strs)
       case mProgs of
         Nothing -> return ()
-        Just prog -> writeFiles prog (outFileName opts1)
-                      (codeGenerator $ platform opts1)
+        Just prog -> writeFiles opts1 prog (outFileName opts1)
 
 optsFromName :: Options -> String -> Options
 optsFromName opts name' = opts{ passFileName = name' ++ ".passes"
@@ -357,11 +357,15 @@ instance Pretty SplitModule where
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
   pretty = either pretty pretty
 
-codegen :: String -> Options
+codegen :: Options
         -> Prog (Either Module
                 (Either (Module, Module) SplitModule)) Int
         -> Prog SplitModule Int
-codegen "c"   opts  = passT ctrl BPCompile  (either (compileSplitModule opts) id)
-                    . passT ctrl BPSplit    (either (Left . splitModule) id)
+codegen opts
+  | "c" == codeGenerator (platform opts)
+  = passT ctrl BPCompile  (either (compileSplitModule opts) id)
+  . passT ctrl BPSplit    (either (Left . splitModule) id)
+  | otherwise
+  = error $ "Compiler.codegen: unknown code generator " ++
+             codeGenerator (platform opts)
   where ctrl = passCtrl opts
-codegen gen   _     = error $ "Compiler.codegen: unknown code generator " ++ gen

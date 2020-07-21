@@ -12,7 +12,7 @@ import Feldspar.Compiler
          sourceCode, writeFiles)
 import Feldspar.Compiler.Imperative.ExternalProgram (parseFile)
 import Feldspar.Compiler.Imperative.Representation (Module(..))
-import Feldspar.Compiler.Options (Options(..), Platform(..), defaultOptions)
+import Feldspar.Compiler.Options (Options(..), defaultOptions)
 
 icompileFile :: FilePath -> IO ()
 icompileFile filename = do
@@ -37,7 +37,7 @@ compileFile fileName outFile opts = do
   case comp of
     (Nothing, _) -> print $ "Could not parse " ++ hfilename
     (_, Nothing) -> putStrLn $ "Could not parse " ++ cfilename
-    (Just hprg, Just cprg) -> writeFiles prg outFile (codeGenerator $ platform opts)
+    (Just hprg, Just cprg) -> writeFiles opts prg outFile
       where prg = SplitModule cprg hprg
 
 compileFile' :: Options -> (String, B.ByteString) -> (String, B.ByteString)
