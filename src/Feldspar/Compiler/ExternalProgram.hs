@@ -6,10 +6,10 @@ module Feldspar.Compiler.ExternalProgram
   ) where
 
 import qualified Data.ByteString.Char8 as B
+import Data.Maybe (fromMaybe)
 
 import Feldspar.Compiler
-        (CompiledModule, SplitModule(..), compileToCCore',
-         sourceCode, writeFiles)
+        (CompiledModule(..), SplitModule(..), frontend, writeFiles)
 import Feldspar.Compiler.Imperative.ExternalProgram (parseFile)
 import Feldspar.Compiler.Imperative.Representation (Module(..))
 import Feldspar.Compiler.Options (Options(..), defaultOptions)
@@ -48,7 +48,9 @@ compileFile' opts (hfilename, hfile) (cfilename, cfile) =
     Just hprg -> case parseFile cfilename cfile (entities hprg) of
                    Nothing -> (Just hres, Nothing)
                    Just cprg -> (Just hres', Just cres)
-                     where res = compileToCCore' opts cprg
+                     where res = fromMaybe (error "Failed parsing C file")
+                               $ snd $ frontend opts
+                                   (Right . Right . Right . Right . Left $ cprg)
                            cres = implementation res
                            -- Un-duplicated hres.
                            hres' = interface res
@@ -56,4 +58,5 @@ compileFile' opts (hfilename, hfile) (cfilename, cfile) =
             -- just failed parsing the c file and return nothing for
             -- that so the user is probably not that picky on
             -- potential duplicate declarations if they had succeeded.
-            hres = interface $ compileToCCore' opts hprg
+            hres = interface $ fromMaybe (error "Failed parsing H file") $ snd
+                 $ frontend opts (Right . Right . Right . Right . Left $ hprg)

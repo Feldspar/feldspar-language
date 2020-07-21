@@ -108,7 +108,7 @@ import Data.Hash (Hashable)
 import Feldspar.Core.Reify hiding (desugar, sugar)
 import qualified Feldspar.Core.Eval as E
 
-import Feldspar.Compiler (frontend, reifyFeld, renameExp)
+import Feldspar.Compiler (frontend, reifyFeld, renameExp, translate)
 import Feldspar.Compiler.Options (Options(..), Pass(..),
                                   PassCtrl(..), Target(..),
                                   c99OpenMpPlatformOptions,
@@ -139,17 +139,17 @@ showDecorWith f = showTree . stringTreeExp g . untypeDecor defaultOptions
   where g x = " in " ++ f x
 
 showExpr :: Syntactic a => a -> String
-showExpr = render . reifyFeld
+showExpr = showUntyped' FPUnASTF defaultOptions
 
 -- | Show an untyped expression
 showUntyped :: Syntactic a => Options -> a -> String
-showUntyped opts prg = head . fst $ frontend opts' (Left $ reifyFeld prg)
+showUntyped opts prg = head . fst $ translate opts' prg
   where opts' = opts{passCtrl = (passCtrl opts){ wrBefore = [FPUnAnnotate]
                                                , stopBefore = [FPUnAnnotate]}}
 
 -- | Show an expression after a specific frontend pass
 showUntyped' :: Syntactic a => Pass -> Options -> a -> String
-showUntyped' p opts prg = head . fst $ frontend opts' (Left $ reifyFeld prg)
+showUntyped' p opts prg = head . fst $ translate opts' prg
   where opts' = opts{passCtrl = (passCtrl opts){wrAfter = [p], stopAfter = [p]}}
 
 -- | Print an optimized untyped expression
@@ -166,7 +166,7 @@ drawUntypedWith opts = drawTree . stringTree . untype opts . reifyFeld
 
 -- | Print an optimized expression
 printExpr :: Syntactic a => a -> IO ()
-printExpr = print . reifyFeld
+printExpr = print . showUntyped' FPUnASTF defaultOptions
 
 -- | Print an optimized untyped expression with options
 printExpr2With :: Syntactic a => Options -> a -> IO ()
