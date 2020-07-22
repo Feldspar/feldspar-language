@@ -467,7 +467,7 @@ nativeOpts = defaultOptions{useNativeArrays=True}
 nativeRetOpts :: Options
 nativeRetOpts = defaultOptions{useNativeReturns=True}
 woolOpts :: Options
-woolOpts = sicsOptions3
+woolOpts = c99WoolPlatformOptions
 openMPOpts :: Options
 openMPOpts = c99OpenMpPlatformOptions
 

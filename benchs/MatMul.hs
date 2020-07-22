@@ -32,7 +32,7 @@ matmul :: Pull DIM2 (Data Double) -> Pull DIM2 (Data Double) -> Pull DIM2 (Data 
 matmul = mmMult True
 
 loadFunOpts ["-optc=-O2", "-optc=-fno-vectorize"] ['matmul]
-loadFunOptsWith "_sics" sicsOptions ["-optc=-O2", "-optc=-fno-vectorize"] ['matmul]
+loadFunOptsWith "_sics" c99WoolPlatformOptions ["-optc=-O2", "-optc=-fno-vectorize"] ['matmul]
 
 len :: Length
 len = 64
