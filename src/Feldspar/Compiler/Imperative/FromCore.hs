@@ -74,7 +74,7 @@ import Feldspar.Range (fullRange, upperBound)
 
 import Feldspar.Compiler.Imperative.Frontend
 import Feldspar.Compiler.Imperative.Representation
-import Feldspar.Compiler.Options (Options(..), Platform(..))
+import Feldspar.Compiler.Options (Options(..), Platform(..), encodeFunctionName)
 
 -- | Code generation monad
 type CodeWriter = RWS CodeEnv CodeParts VarId
@@ -371,10 +371,9 @@ but we might not be able to comply.
 -- | Get the generated core for an 'UntypedFeld' expression.
 fromCoreUT
     :: Options
-    -> String       -- ^ Name of the generated function
     -> UntypedFeld  -- ^ Expression to generate code for
     -> Module
-fromCoreUT opt funname uast = Module defs
+fromCoreUT opt uast = Module defs
   where
     fastRet = useNativeReturns opt && canFastReturn (compileType opt (typeof uast))
     (outParam, results) = evalRWS (compileProgTop uast) (initEnv opt) 0
@@ -386,6 +385,7 @@ fromCoreUT opt funname uast = Module defs
     outDecl    = Declaration outParam Nothing
     paramTypes = getTypeDefs $ map (`Declaration` Nothing) formals
     defs       = nub (def results ++ paramTypes) ++ topProc
+    funname    = encodeFunctionName $ functionName opt
 
     (rtype, outs, ds', returns) -- Note [Fast returns].
      | fastRet   = ( typeof outParam, [],  outDecl:ds ++ decls
