@@ -381,7 +381,6 @@ compilerTests = testGroup "Compiler-RegressionTests"
     , mkGoldTest complexWhileCond "complexWhileCond" defaultOptions
     , mkGoldTest topLevelConsts "topLevelConsts" defaultOptions
     , mkGoldTest topLevelConsts "topLevelConsts_native" nativeOpts
-    , mkGoldTest topLevelConsts "topLevelConsts_sics" sicsOptions2
     , mkGoldTest metrics "metrics" defaultOptions
     , mkGoldTest scanlPush "scanlPush" defaultOptions
     , mkGoldTest divConq3 "divConq3" defaultOptions
@@ -410,7 +409,6 @@ compilerTests = testGroup "Compiler-RegressionTests"
     , mkBuildTest concatVM "concatVM" defaultOptions
     , mkBuildTest topLevelConsts "topLevelConsts" defaultOptions
     , mkBuildTest topLevelConsts "topLevelConsts_native" nativeOpts
-    , mkBuildTest topLevelConsts "topLevelConsts_sics" sicsOptions2
     , mkBuildTest metrics "metrics" defaultOptions
     , mkBuildTest copyPush "copyPush" defaultOptions
     , mkBuildTest scanlPush "scanlPush" defaultOptions
@@ -442,7 +440,6 @@ externalProgramTests = testGroup "ExternalProgram-RegressionTests"
     , mkParseTest "complexWhileCond" defaultOptions
     , mkParseTest "topLevelConsts" defaultOptions
     , mkParseTest "topLevelConsts_native" nativeOpts
-    , mkParseTest "topLevelConsts_sics" sicsOptions
     -- TODO: Enable with a typed array representation (both tests).
     -- , mkParseTest "metrics" defaultOptions
     -- , mkParseTest "scanlPush" defaultOptions
