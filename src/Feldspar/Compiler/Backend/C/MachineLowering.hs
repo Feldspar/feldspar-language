@@ -122,10 +122,10 @@ findFun name argtype m tp = go m
 -- | Returns a new name according to specification.
 newName :: String -> Type -> Type -> Destination -> String
 newName _    _       _  (Name s)                   = s
-newName name _       tp (Extend FunType _)         = extend name tp
-newName name argtype _  (Extend ArgType _)         = extend name argtype
-newName _    _       tp (ExtendRename FunType _ s) = extend s tp
-newName _    argtype _  (ExtendRename ArgType _ s) = extend s argtype
+newName name _       tp (Extend FunType)           = extend name tp
+newName name argtype _  (Extend ArgType)           = extend name argtype
+newName _    _       tp (ExtendRename FunType s)   = extend s tp
+newName _    argtype _  (ExtendRename ArgType s)   = extend s argtype
 
 -- | Tells whether a predicate holds for a type.
 true :: Predicate -> Type -> Bool
