@@ -1,8 +1,11 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Main where
 
@@ -100,8 +103,10 @@ concatVM xs = fromZero $ fold (\l r -> store $ l ++ r) (store empty) xs
 
 loadFun ['concatVM]
 
-complexWhileCond :: Data Int32 -> (Data Int32, Data Int32)
-complexWhileCond y = whileLoop (0, y) (\(a, b) -> (\a b -> a * a /= b * b) a (b - a)) (\(a, b) -> (a + 1 ,b))
+-- QuickCheck will generate negative inputs causing the test to take 30 seconds
+-- if the type is signed.
+complexWhileCond :: Data Word32 -> (Data Word32, Data Word32)
+complexWhileCond y = whileLoop (0, y) (\(a, b) -> (\a b -> a * a < b * b) a (b - a)) (\(a, b) -> (a + 1 ,b))
 
 -- One test starting
 divConq3 :: Pull DIM1 (Data IntN) -> DPush DIM1 IntN
@@ -227,12 +232,6 @@ shareT = (build $ tuple 1 2, build $ tuple 1 2)
 selectT :: Data Length
 selectT = sel First $ snd noshareT
 
-tests :: TestTree
-tests = testGroup "RegressionTests" $
-                  [ decorationTests, compilerTests, externalProgramTests
-                  , mutableTests, streamTests, vectorTests, tupleTests
-                  ] Prelude.++ rangeTests
-
 prop_concatV = forAll (vectorOf 3 (choose (0,5))) $ \ls ->
                  forAll (mapM (`vectorOf` arbitrary) ls) $ \xss ->
                    Prelude.concat xss === c_concatV xss
@@ -245,6 +244,88 @@ prop_divConq3 = forAll (choose (1,3)) $ \l ->
                   forAll (vectorOf (l*1024) arbitrary) $ \xs ->
                     map (+1) xs === c_divConq3 xs
 
+-- | Arbitrary instances for nested tuples
+instance Arbitrary (Tuple '[]) where
+  arbitrary = return TNil
+
+instance (Arbitrary a, Arbitrary (Tuple b)) => Arbitrary (Tuple (a ': b)) where
+  arbitrary = do a <- arbitrary
+                 b <- arbitrary
+                 return (a :* b)
+
+vector1D :: Length -> Gen a -> Gen [a]
+vector1D l = vectorOf (Prelude.fromIntegral l)
+
+pairArg :: (Data Word8, Data IntN) -> Data IntN
+pairArg (a, b) = i2n a + b
+
+pairRes :: Data Word16 -> (Data WordN, Data IntN)
+pairRes a = (i2n a, i2n a)
+
+vecId :: Pull1 Word32 -> Pull1 Word32
+vecId = id
+
+vectorInPair :: (Pull1 WordN, Data WordN) -> (Data WordN, Pull1 WordN)
+vectorInPair (v, a) = (a, v)
+
+vectorInVector :: Pull DIM1 (Pull1 WordN) -> Data WordN
+vectorInVector v = fromZero $ sum $ map (fromZero . sum) v
+
+vectorInPairInVector :: Data WordN -> Pull DIM1 (Data WordN, Pull1 WordN)
+vectorInPairInVector l = indexed1 l $ \i -> (i, indexed1 i id)
+
+shTest :: Data Length -> Data Length
+shTest n = runMutable $ do
+             a <- newArr n 1
+             c <- newArr n 2
+             let d = n < 5 ? a $ c
+             setArr d 0 n
+             getArr a 0
+
+loadFun ['pairArg]
+loadFun ['pairRes]
+loadFun ['vecId]
+loadFun ['vectorInPair]
+loadFun ['vectorInVector]
+loadFun ['vectorInPairInVector]
+loadFun ['shTest]
+loadFun ['arrayInStruct]
+loadFun ['pairParam]
+loadFun ['pairParam2]
+loadFun ['copyPush]
+loadFun ['complexWhileCond]
+loadFun ['deepArrayCopyTest]
+
+prop_pairArg = eval pairArg ==== c_pairArg
+prop_pairRes = eval pairRes ==== c_pairRes
+prop_vecId (Small l) =
+    forAll (vector1D l arbitrary) $ \xs ->
+      eval vecId xs ==== c_vecId xs
+prop_vectorInPair (Small l) =
+    forAll (twotup <$> vector1D l arbitrary <*> arbitrary) $ \p ->
+      eval vectorInPair p ==== c_vectorInPair p
+prop_vectorInVector (Small l1) (Small l2) =
+    forAll (vector1D l1 (vector1D l2 arbitrary)) $ \v ->
+      eval vectorInVector v ==== c_vectorInVector v
+prop_vectorInPairInVector (Small l) = eval vectorInPairInVector l ==== c_vectorInPairInVector l
+prop_shTest (Positive n) = eval shTest n ==== c_shTest n
+prop_deepArrayCopyTest = eval deepArrayCopyTest ==== c_deepArrayCopyTest
+
+prop_arrayInStruct = eval arrayInStruct ==== c_arrayInStruct
+prop_pairParam = eval pairParam ==== c_pairParam
+prop_pairParam2 = eval pairParam2 ==== c_pairParam2
+prop_copyPush = eval copyPush ==== c_copyPush
+prop_complexWhileCond (Small n) = eval complexWhileCond n ==== c_complexWhileCond n
+
+-- | All tests to run
+tests :: TestTree
+tests = testGroup "RegressionTests" $
+                  [ decorationTests, callingConventionTests, compilerTests
+                  , externalProgramTests, mutableTests, streamTests
+                  , vectorTests, tupleTests
+                  ] Prelude.++ rangeTests
+
+-- | Tests for decoration
 decorationTests :: TestTree
 decorationTests = testGroup "DecorationTests"
     [ goldenVsFile "example9" (goldDir <> "example9.txt") "tests/example9.txt"
@@ -263,6 +344,24 @@ decorationTests = testGroup "DecorationTests"
       $ writeFile "tests/selectT.txt" $ showDecor selectT
     , goldenVsFile "tfModel" (goldDir <> "tfModel.txt") "tests/tfModel.txt"
       $ writeFile "tests/tfModel.txt" $ showUntyped defaultOptions tfModel
+    ]
+
+-- | Tests for calling convention
+callingConventionTests :: TestTree
+callingConventionTests = testGroup "CallingConvention"
+    [ testProperty "pairArg" prop_pairArg
+    , testProperty "pairRes" prop_pairRes
+    , testProperty "vecId"   prop_vecId
+    , testProperty "vectorInPair" prop_vectorInPair
+    , testProperty "vectorInVector" prop_vectorInVector
+    -- TODO: This test case will cause a segmentation fault due to issue #145
+    -- , testProperty "vectorInPairInVector" prop_vectorInPairInVector
+    , testProperty "arrayInStruct" prop_arrayInStruct
+    , testProperty "pairParam" prop_pairParam
+    , testProperty "pairParam2" prop_pairParam2
+    , testProperty "copyPush" prop_copyPush
+    , testProperty "complexWhileCond" prop_complexWhileCond
+    , testProperty "deepArrayCopy" prop_deepArrayCopyTest
     ]
 
 compilerTests :: TestTree
