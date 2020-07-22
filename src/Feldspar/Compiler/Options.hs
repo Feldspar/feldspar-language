@@ -40,11 +40,9 @@ module Feldspar.Compiler.Options
   , inTarget
   , Options(..)
   , defaultOptions
-  , sicsOptions
-  , sicsOptions2
-  , sicsOptions3
   , c99PlatformOptions
   , c99OpenMpPlatformOptions
+  , c99WoolPlatformOptions
   , tic64xPlatformOptions
   , Platform(..)
   , availablePlatforms
@@ -130,16 +128,15 @@ data Pass
   deriving (Bounded, Enum, Eq, Lift, Read, Show)
 
 -- | Possible compilation targets in a broad sense.
-data Target = RegionInf | Wool | CSE | SICS | BA
-  deriving (Eq, Lift)
+data Target = Wool | BA
+  deriving (Eq, Lift, Show)
 
 -- | Decide whether a Target is enabled in Options.
 inTarget :: Target -> Options -> Bool
-inTarget t opts = t `elem` targets opts
+inTarget t opts = t `elem` (targets . platform $ opts)
 
 data Options = Options
   { platform          :: Platform
-  , targets           :: [Target]
   , printHeader       :: Bool
   , useNativeArrays   :: Bool
   , useNativeReturns  :: Bool     -- ^ Should the generated function return by value or by
@@ -159,7 +156,6 @@ defaultOptions :: Options
 defaultOptions
     = Options
     { platform          = c99
-    , targets           = []
     , printHeader       = False
     , useNativeArrays   = False
     , useNativeReturns  = False
@@ -178,20 +174,15 @@ c99PlatformOptions              = defaultOptions
 c99OpenMpPlatformOptions :: Options
 c99OpenMpPlatformOptions        = defaultOptions { platform = c99OpenMp }
 
+c99WoolPlatformOptions :: Options
+c99WoolPlatformOptions          = defaultOptions { platform = c99Wool }
+
 tic64xPlatformOptions :: Options
 tic64xPlatformOptions           = defaultOptions { platform = tic64x }
 
-sicsOptions :: Options
-sicsOptions = defaultOptions { targets = [SICS,CSE] }
-
-sicsOptions2 :: Options
-sicsOptions2 = defaultOptions { targets = [SICS] }
-
-sicsOptions3 :: Options
-sicsOptions3 = defaultOptions { platform = c99Wool, targets = [SICS,CSE,Wool] }
-
 data Platform = Platform {
   platformName    :: String,    -- ^ Name of the platform
+  targets         :: [Target],  -- ^ Targets for the platform
   compilerFlags   :: [String],  -- ^ Flags to pass to the C compiler
   varFloating     :: Bool,      -- ^ Declare variables on the top level scope
   codeGenerator   :: String     -- ^ Name of the code generator
@@ -208,6 +199,7 @@ platformFromName str
 c99 :: Platform
 c99 = Platform {
     platformName = "c99",
+    targets       = [],
     compilerFlags = ["-std=c99", "-Wall"
                     ,"-D_XOPEN_SOURCE" -- Required for M_PI in math.h
                     ],
@@ -222,12 +214,14 @@ c99OpenMp = c99 { platformName = "c99OpenMp"
 
 c99Wool :: Platform
 c99Wool = c99 { platformName = "c99Wool"
+              , targets = Wool:targets c99
               , compilerFlags = "-DUSE_WOOL":compilerFlags c99
               , varFloating = False
               }
 
 ba :: Platform
 ba = c99 { platformName = "ba"
+         , targets = BA:targets c99
          , codeGenerator = "ba"
          }
 

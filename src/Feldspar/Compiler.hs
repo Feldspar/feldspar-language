@@ -190,14 +190,6 @@ icompile' opts fName prg = do
       putStrLn "=============== Source ================"
     putStrLn $ sourceCode $ implementation res
 
-targetsFromPlatform :: Platform -> [Target]
-targetsFromPlatform = tfp . platformName
-   where tfp "c99"       = []
-         tfp "c99OpenMp" = []
-         tfp "c99Wool"   = [Wool]
-         tfp "ba"        = [BA]
-         tfp p           = error $ "Interface.tfp: Unknown platform:" ++ p
-
 program :: Syntactic a => a -> IO ()
 program p = programOpts p defaultOptions
 
@@ -271,8 +263,7 @@ driverOpts =
   ]
 
 setTarget :: Options -> String -> Options
-setTarget opts str = opts{platform = pf, targets = targetsFromPlatform pf}
-   where pf = platformFromName str
+setTarget opts str = opts{platform = platformFromName str}
 
 chooseEnd :: (PassCtrl -> Pass -> PassCtrl) -> String -> Options -> Options
 chooseEnd f str opts

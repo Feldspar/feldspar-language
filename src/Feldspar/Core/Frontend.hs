@@ -52,11 +52,9 @@ module Feldspar.Core.Frontend
     -- * Options
     , Options(..)
     , defaultOptions
-    , sicsOptions
-    , sicsOptions2
-    , sicsOptions3
     , c99PlatformOptions
     , c99OpenMpPlatformOptions
+    , c99WoolPlatformOptions
     , tic64xPlatformOptions
     , Target(..)
 
@@ -113,8 +111,8 @@ import Feldspar.Compiler.Options (Options(..), Pass(..),
                                   PassCtrl(..), Target(..),
                                   c99OpenMpPlatformOptions,
                                   c99PlatformOptions,
-                                  defaultOptions, sicsOptions,
-                                  sicsOptions2, sicsOptions3,
+                                  c99WoolPlatformOptions,
+                                  defaultOptions,
                                   tic64xPlatformOptions)
 import Feldspar.Core.AdjustBindings (adjustBindings)
 import Feldspar.Core.Middleend.CreateTasks
