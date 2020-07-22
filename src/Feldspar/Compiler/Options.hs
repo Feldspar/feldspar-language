@@ -246,8 +246,8 @@ data WhichType = FunType | ArgType
 
 data Destination =
     Name String
-  | Extend WhichType Platform
-  | ExtendRename WhichType Platform String
+  | Extend WhichType
+  | ExtendRename WhichType String
    deriving Show
 
 -- A rename is the name of the function to be renamed coupled with a
@@ -290,7 +290,7 @@ c99list =
 
 -- | Make C99 extend rule.
 mkC99ExtendRule :: WhichType -> String -> Rename
-mkC99ExtendRule t s = (s, [ (All, Extend t c99) ])
+mkC99ExtendRule t s = (s, [ (All, Extend t) ])
 
 -- | Make C99 trig rule.
 mkC99TrigRule :: String -> Rename
@@ -300,25 +300,25 @@ mkC99TrigRule s = (s, [ (Only Complex, Name ('c':s')), (All, Name s') ])
 -- | Tic64x renaming list.
 tic64xlist :: [Rename]
 tic64xlist =
-  [ ("==",          [ (Only Complex, ExtendRename ArgType tic64x "equal") ])
+  [ ("==",          [ (Only Complex, ExtendRename ArgType "equal") ])
   , ("abs",         [ (Only Float, Name "_fabs"), (Only Signed32, Name "_abs") ])
-  , ("+",           [ (Only Complex, ExtendRename ArgType tic64x "add") ])
-  , ("-",           [ (Only Complex, ExtendRename ArgType tic64x "sub") ])
-  , ("*",           [ (Only Complex, ExtendRename ArgType tic64x "mult") ])
-  , ("/",           [ (Only Complex, ExtendRename ArgType tic64x "div") ])
+  , ("+",           [ (Only Complex, ExtendRename ArgType "add") ])
+  , ("-",           [ (Only Complex, ExtendRename ArgType "sub") ])
+  , ("*",           [ (Only Complex, ExtendRename ArgType "mult") ])
+  , ("/",           [ (Only Complex, ExtendRename ArgType "div") ])
   ] ++
   map mkTic64xComplexRule ["exp", "sqrt", "log", "sin", "tan", "cos", "asin"
                           ,"atan", "acos", "sinh", "tanh", "cosh", "asinh"
                           ,"atanh","acosh","creal","cimag", "conjugate"
                           ,"magnitude","phase", "logBase"] ++
-  [ ("**",          [ (Only Complex, ExtendRename ArgType tic64x "cpow") ])
+  [ ("**",          [ (Only Complex, ExtendRename ArgType "cpow") ])
   , ("rotateL",     [ (Only Unsigned32, Name "_rotl") ])
   , ("reverseBits", [ (Only Unsigned32, Name "_bitr") ])
   ]
 
 -- | Create Tic64x rule for complex type.
 mkTic64xComplexRule :: String -> Rename
-mkTic64xComplexRule s = (s, [ (Only Complex, Extend ArgType tic64x) ] )
+mkTic64xComplexRule s = (s, [ (Only Complex, Extend ArgType) ] )
 
 -- | Returns the platform renames based on the platform name.
 getPlatformRenames :: Options -> M.Map String [(Which, Destination)]
