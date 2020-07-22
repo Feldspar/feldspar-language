@@ -114,7 +114,7 @@ frontend opts = evalPasses 0
                    . pc BPAdapt    (either (Left . adaptTic64x opts) Right)
                    . pc BPRename   (either (Left . ML.rename opts False) Right)
                    . pc BPArrayOps (either (Left . arrayOps opts) Right)
-                   . pt BPFromCore (either (Left . fromCoreUT opts n') id)
+                   . pt BPFromCore (either (Left . fromCoreUT opts) id)
                    . pc FPCreateTasks      (either (Left . createTasks opts) Right)
                    . pt FPUnAnnotate       (either (Left . unAnnotate) id)
                    . pc FPUnique           (either (Left . uniqueVars) Right)
@@ -133,7 +133,6 @@ frontend opts = evalPasses 0
         pt :: (Pretty a, Pretty b)
            => Pass -> (a -> b) -> Prog a Int -> Prog b Int
         pt = passT (passCtrl opts)
-        n' = encodeFunctionName $ functionName opts
 
 reifyFeld :: Syntactic a => a -> ASTF (Internal a)
 reifyFeld = desugar
