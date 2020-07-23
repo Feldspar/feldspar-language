@@ -7,22 +7,18 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Main where
-
--- To generate the golden files use a script similiar to this one
--- > ghc -ilib -isrc -itests tests/RegressionTests.hs -e 'writeGoldFile example9 "example9" defaultOptions'
--- > ghc -ilib -isrc -itests tests/RegressionTests.hs -e 'writeGoldFile example9 "example9_native" nativeOpts'
+-- | Top level module to test Feldspar. All tests should be in @tests@
+--   to keep the total runtime for tests as short as possible.
+module Main (main) where
 
 import Test.Tasty
 import Test.Tasty.Golden (goldenVsFile)
 import Test.Tasty.Golden.Advanced
 import Test.Tasty.QuickCheck
-import Test.Tasty.TH
 
 import qualified Prelude
 import Feldspar
 import qualified Feldspar.Core.UntypedRepresentation as UT
-import Feldspar.Mutable
 import Feldspar.Vector
 import qualified Feldspar.SimpleVector.Push as SP
 import qualified Feldspar.SimpleVector as S
@@ -40,7 +36,6 @@ import Feldspar.Stream.Test
 import Feldspar.Tuple.Test
 import Feldspar.Vector.Test
 
-import Control.Applicative hiding (empty)
 import Control.Monad
 import Control.Monad.Except (liftIO)
 import Data.Monoid ((<>))
@@ -52,6 +47,11 @@ import System.Exit (ExitCode (..))
 import System.Process
 import Text.Printf
 
+-- The main function for this module is just "main = defaultMain tests"
+-- but it is situated near the end of the module to avoid compilation errors
+-- about splices.
+
+-- | Read the header and C file and concatenate their contents for comparisons
 vgReadFiles :: String -> IO LB.ByteString
 vgReadFiles base = liftM LB.concat $ mapM (LB.readFile . (base<>)) [".h",".c"]
 
@@ -160,11 +160,12 @@ issue128_ex2 a = share (switch 45 [(1,20)] a) $ \b -> 2 == a ? b $ a
 issue128_ex3 :: Data WordN -> Data WordN
 issue128_ex3 a = switch 45 [(1,10)] a + (2==a ? 2 $ a)
 
+-- | Test that noinline is respected
 noinline1 :: Data Bool -> Data Bool
 noinline1 x = noInline $ not x
 
--- Test that foreign imports with result type `M ()` can be used as monadic
--- actions. This expression cannot be created from the Feldspar front end.
+-- | Test that foreign imports with result type `M ()` can be used as monadic
+--   actions. This expression cannot be created from the Feldspar front end.
 foreignEffect :: UT.UntypedFeld
 foreignEffect =
     UT.In $ UT.App UT.Then void
@@ -374,6 +375,8 @@ compilerTests = testGroup "Compiler-RegressionTests"
     [ testProperty "example9 (plugin)" $ eval example9 ==== c_example9
     , testProperty "concatV (plugin)" prop_concatV
     , testProperty "concatVM (plugin)" prop_concatVM
+    -- FIXME: divConq3 fails because the Feldspar runtime isn't included
+    --        in the symbol loading.
     -- , testProperty "divConq3 (plugin)" prop_divConq3
     , testProperty "bindToThen" (\y -> eval bindToThen y === y)
     , testProperty "tuples (plugin)" $ eval tuples ==== c_tuples
@@ -458,9 +461,9 @@ externalProgramTests = testGroup "ExternalProgram-RegressionTests"
     , mkParseTest "not1_ret" defaultOptions
     ]
 
+-- | The main function
 main :: IO ()
 main = defaultMain tests
-
 
 -- Helper functions
 testDir, goldDir :: Prelude.FilePath
@@ -475,9 +478,6 @@ woolOpts :: Options
 woolOpts = c99WoolPlatformOptions
 openMPOpts :: Options
 openMPOpts = c99OpenMpPlatformOptions
-
-writeGoldFile :: Syntax a => a -> Prelude.FilePath -> Options -> IO ()
-writeGoldFile fun n = compile fun (goldDir <> n) n
 
 -- | Make a golden test for a Feldspar expression
 mkGoldTest :: Syntactic a => a -> Prelude.FilePath -> Options -> TestTree
@@ -499,6 +499,7 @@ mkGoldTestUT untyped n opts = do
         upd = LB.writeFile ref
     goldenTest n (vgReadFiles ref) (liftIO act >> vgReadFiles new) cmp upd
 
+-- | Compares two outputs with @(==)@
 simpleCmp :: Prelude.Eq a => String -> a -> a -> IO (Maybe String)
 simpleCmp e x y =
   return $ if x Prelude.== y then Nothing else Just e
@@ -512,15 +513,17 @@ mkParseTest n opts = do
         upd = LB.writeFile ref
     goldenTest n (vgReadFiles ref) (liftIO act >> vgReadFiles new) cmp upd
 
+-- | Compares two outputs up to "EP-"-related prefixes
 fuzzyCmp :: String -> LB.ByteString -> LB.ByteString -> IO (Maybe String)
 fuzzyCmp e x y =
   return $ if x Prelude.== filterEp y then Nothing else Just e
 
--- Removes "EP-"-related prefixes from the generated output.
+-- | Removes "EP-"-related prefixes from the generated output.
 filterEp :: LB.ByteString -> LB.ByteString
 filterEp xs = LB.replace (B.pack "TESTS_EP-") (B.pack "TESTS_") xs'
   where xs' = LB.replace (B.pack "#include \"ep-") (B.pack "#include \"") xs
 
+-- | Make a build test for a Feldspar expression
 mkBuildTest :: Syntactic a => a -> Prelude.FilePath -> Options -> TestTree
 mkBuildTest fun n opts = do
     let new = testDir <> n <> "_build_test"
@@ -529,7 +532,7 @@ mkBuildTest fun n opts = do
                  let ghcArgs = [cfile, "-c", "-optc -Iclib", "-optc -std=c99", "-Wall"]
                  (ex, _, _) <- readProcessWithExitCode ghc ghcArgs ""
                  case ex of
-                   ExitFailure e -> Prelude.error (show ex)
+                   ExitFailure{} -> Prelude.error (show ex)
                    _ -> return ()
         cmp _ _ = return Nothing
         upd _ = return ()
