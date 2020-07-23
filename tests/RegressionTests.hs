@@ -103,9 +103,7 @@ concatVM xs = fromZero $ fold (\l r -> store $ l ++ r) (store empty) xs
 
 loadFun ['concatVM]
 
--- QuickCheck will generate negative inputs causing the test to take 30 seconds
--- if the type is signed.
-complexWhileCond :: Data Word32 -> (Data Word32, Data Word32)
+complexWhileCond :: Data Int32 -> (Data Int32, Data Int32)
 complexWhileCond y = whileLoop (0, y) (\(a, b) -> (\a b -> a * a < b * b) a (b - a)) (\(a, b) -> (a + 1 ,b))
 
 -- One test starting
@@ -200,8 +198,8 @@ tuples a =
 
 loadFun ['tuples]
 
-deepArrayCopyTest :: Data [[[Length]]] -> (Data [[[Length]]], Data [[[Length]]])
-deepArrayCopyTest xs = (xs, xs)
+deepArrayCopy :: Data [[[Length]]] -> (Data [[[Length]]], Data [[[Length]]])
+deepArrayCopy xs = (xs, xs)
 
 monadicSharing :: Data Index -> Data Index
 monadicSharing a = runMutable $ do
@@ -294,7 +292,7 @@ loadFun ['pairParam]
 loadFun ['pairParam2]
 loadFun ['copyPush]
 loadFun ['complexWhileCond]
-loadFun ['deepArrayCopyTest]
+loadFun ['deepArrayCopy]
 
 prop_pairArg = eval pairArg ==== c_pairArg
 prop_pairRes = eval pairRes ==== c_pairRes
@@ -304,18 +302,25 @@ prop_vecId (Small l) =
 prop_vectorInPair (Small l) =
     forAll (twotup <$> vector1D l arbitrary <*> arbitrary) $ \p ->
       eval vectorInPair p ==== c_vectorInPair p
-prop_vectorInVector (Small l1) (Small l2) =
-    forAll (vector1D l1 (vector1D l2 arbitrary)) $ \v ->
-      eval vectorInVector v ==== c_vectorInVector v
+prop_vectorInVector (Small l2) =
+    forAll (choose (1, 3)) $ \l1 ->
+      forAll (vector1D l1 (vector1D l2 arbitrary)) $ \v ->
+        eval vectorInVector v ==== c_vectorInVector v
 prop_vectorInPairInVector (Small l) = eval vectorInPairInVector l ==== c_vectorInPairInVector l
 prop_shTest (Positive n) = eval shTest n ==== c_shTest n
-prop_deepArrayCopyTest = eval deepArrayCopyTest ==== c_deepArrayCopyTest
+prop_deepArrayCopy (Small l2) =
+    forAll (choose (1, 3)) $ \l1 ->
+      forAll (vector1D l1 (vector1D l2 arbitrary)) $ \xs ->
+        eval deepArrayCopy xs ==== c_deepArrayCopy xs
 
-prop_arrayInStruct = eval arrayInStruct ==== c_arrayInStruct
+prop_arrayInStruct =
+  forAll (choose (0, 5)) $ \l ->
+    forAll (vector1D l arbitrary) $ \xs ->
+      eval arrayInStruct xs ==== c_arrayInStruct xs
 prop_pairParam = eval pairParam ==== c_pairParam
 prop_pairParam2 = eval pairParam2 ==== c_pairParam2
 prop_copyPush = eval copyPush ==== c_copyPush
-prop_complexWhileCond (Small n) = eval complexWhileCond n ==== c_complexWhileCond n
+prop_complexWhileCond (NonNegative n) = eval complexWhileCond n ==== c_complexWhileCond n
 
 -- | All tests to run
 tests :: TestTree
@@ -361,7 +366,7 @@ callingConventionTests = testGroup "CallingConvention"
     , testProperty "pairParam2" prop_pairParam2
     , testProperty "copyPush" prop_copyPush
     , testProperty "complexWhileCond" prop_complexWhileCond
-    , testProperty "deepArrayCopy" prop_deepArrayCopyTest
+    , testProperty "deepArrayCopy" prop_deepArrayCopy
     ]
 
 compilerTests :: TestTree
@@ -401,7 +406,7 @@ compilerTests = testGroup "Compiler-RegressionTests"
     , mkGoldTest noinline1 "noinline1" defaultOptions
     , mkGoldTestUT foreignEffect "foreignEffect" defaultOptions
     , mkGoldTest tuples "tuples" defaultOptions
-    , mkGoldTest deepArrayCopyTest "deepArrayCopy" defaultOptions
+    , mkGoldTest deepArrayCopy "deepArrayCopy" defaultOptions
    -- Build tests.
     , mkBuildTest pairParam "pairParam" defaultOptions
     , mkBuildTest pairParam "pairParam_ret" nativeRetOpts
@@ -426,7 +431,7 @@ compilerTests = testGroup "Compiler-RegressionTests"
     , mkBuildTest issue128_ex3 "issue128_ex3" defaultOptions
     , mkBuildTest noinline1 "noinline1" defaultOptions
     , mkBuildTest tuples "tuples" defaultOptions
-    , mkBuildTest deepArrayCopyTest "deepArrayCopy" defaultOptions
+    , mkBuildTest deepArrayCopy "deepArrayCopy" defaultOptions
     ]
 
 externalProgramTests :: TestTree
