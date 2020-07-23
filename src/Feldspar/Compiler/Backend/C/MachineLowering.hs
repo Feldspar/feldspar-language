@@ -24,7 +24,7 @@ import Feldspar.Compiler.Options
 rename :: Options -> Bool -> Module -> Module
 rename opts addRuntimeLib m | null x = m
                             | otherwise = rename' opts addRuntimeLib x m
-  where x = getPlatformRenames opts
+  where x = M.fromList . platformRenames . platform $ opts
 
 -- | Internal interface for renaming.
 rename' :: Options -> Bool -> M.Map String [(Which, Destination)] -> Module

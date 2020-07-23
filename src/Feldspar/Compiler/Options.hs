@@ -57,11 +57,9 @@ module Feldspar.Compiler.Options
   , Which(..)
   , WhichType(..)
   , Destination(..)
-  , getPlatformRenames
   ) where
 
 import Data.List (isPrefixOf)
-import qualified Data.Map.Strict as M
 import Language.Haskell.TH.Syntax (Lift(..))
 
 -- * Error handling utils.
@@ -185,6 +183,7 @@ tic64xPlatformOptions           = defaultOptions { platform = tic64x }
 data Platform = Platform {
   platformName    :: String,    -- ^ Name of the platform
   targets         :: [Target],  -- ^ Targets for the platform
+  platformRenames :: [Rename],  -- ^ Renames of functions/operators
   compilerFlags   :: [String],  -- ^ Flags to pass to the C compiler
   varFloating     :: Bool,      -- ^ Declare variables on the top level scope
   codeGenerator   :: String     -- ^ Name of the code generator
@@ -202,6 +201,7 @@ c99 :: Platform
 c99 = Platform {
     platformName = "c99",
     targets       = [],
+    platformRenames = c99list,
     compilerFlags = ["-std=c99", "-Wall"
                     ,"-D_XOPEN_SOURCE" -- Required for M_PI in math.h
                     ],
@@ -229,6 +229,7 @@ ba = c99 { platformName = "ba"
 
 tic64x :: Platform
 tic64x = c99 { platformName = "tic64x"
+             , platformRenames = tic64xlist ++ platformRenames c99
              , compilerFlags = "-D__TIC64X__":compilerFlags c99
              }
 
@@ -236,19 +237,19 @@ tic64x = c99 { platformName = "tic64x"
 type Rename = (String, [(Which, Destination)])
 
 data Predicate = Complex | Float | Signed32 | Unsigned32
-  deriving Show
+  deriving (Lift, Show)
 
 data Which = All | Only Predicate
-  deriving Show
+  deriving (Lift, Show)
 
 data WhichType = FunType | ArgType
-  deriving Show
+  deriving (Lift, Show)
 
 data Destination =
     Name String
   | Extend WhichType
   | ExtendRename WhichType String
-   deriving Show
+   deriving (Lift, Show)
 
 -- A rename is the name of the function to be renamed coupled with a
 -- list of preconditions for renaming to happen and a the destination
@@ -319,11 +320,3 @@ tic64xlist =
 -- | Create Tic64x rule for complex type.
 mkTic64xComplexRule :: String -> Rename
 mkTic64xComplexRule s = (s, [ (Only Complex, Extend ArgType) ] )
-
--- | Returns the platform renames based on the platform name.
-getPlatformRenames :: Options -> M.Map String [(Which, Destination)]
-getPlatformRenames opt =
-  case platformName $ platform opt of
-    "tic64x"                                     -> M.fromList (tic64xlist ++ c99list)
-    s | s `elem` ["c99", "c99OpenMp", "c99Wool"] -> M.fromList c99list
-      | otherwise                                -> M.empty
