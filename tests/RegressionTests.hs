@@ -32,7 +32,7 @@ import Feldspar.Applications.TFModel (tfModel)
 import Feldspar.Core.Test
 import Feldspar.Mutable.Test
 import Feldspar.Range.Test
-import Feldspar.Stream.Test
+import Feldspar.Stream.Test (streamTests, vector1D)
 import Feldspar.Tuple.Test
 import Feldspar.Vector.Test
 
@@ -251,9 +251,6 @@ instance (Arbitrary a, Arbitrary (Tuple b)) => Arbitrary (Tuple (a ': b)) where
   arbitrary = do a <- arbitrary
                  b <- arbitrary
                  return (a :* b)
-
-vector1D :: Length -> Gen a -> Gen [a]
-vector1D l = vectorOf (Prelude.fromIntegral l)
 
 pairArg :: (Data Word8, Data IntN) -> Data IntN
 pairArg (a, b) = i2n a + b
