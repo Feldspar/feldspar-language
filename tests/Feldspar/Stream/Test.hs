@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Feldspar.Stream.Test (streamTests) where
+module Feldspar.Stream.Test (streamTests, vector1D) where
 
 import qualified Prelude as P
 import qualified Data.List as List
@@ -15,14 +15,16 @@ import Test.Tasty.QuickCheck
 
 import Test.QuickCheck
 
-
+-- | Helper to generate one-dimensional vectors. Placed in the wrong module.
+vector1D :: Length -> Gen a -> Gen [a]
+vector1D l = vectorOf (P.fromIntegral l)
 
 scProd :: Num a => [a] -> [a] -> a
 scProd a b = P.sum $ P.zipWith (*) a b
 
 
 
--- Reference implementation of Fibonacci
+-- | Reference implementation of Fibonacci
 fibRef :: Num a => Int -> a
 fibRef i = fibs P.!! i
   where
@@ -35,18 +37,23 @@ prop_fib = forAll (choose (0,20)) $ \i -> fibRef (i+2) P.== (fibFeld i :: WordN)
 
 
 
--- Reference implementation of FIR filter
+-- | Reference implementation of FIR filter
 firRef :: Num a => [a] -> [a] -> [a]
 firRef coeffs inp = [scProd coeffs is | is <- P.map P.reverse $ P.tail $ List.inits inp]
 
 firFeld :: [Int32] -> [Int32] -> [Int32]
 firFeld coeffs = eval (freezePull1 . streamAsVector (fir (toPull $ value1 coeffs)) . thawPull1)
 
-prop_fir (NonEmpty coeffs) = firRef coeffs ==== firFeld coeffs
+prop_fir =
+  forAll (choose (1, 10)) $ \l1 ->
+    forAll (choose (1, 10)) $ \l2 ->
+      forAll (vector1D l1 arbitrary) $ \coeffs ->
+        forAll (vector1D l2 arbitrary) $ \xs ->
+          firRef coeffs xs ==== firFeld coeffs xs
 
 
 
--- Reference implementation of IIR filter
+-- | Reference implementation of IIR filter
 iirRef :: Num a => [a] -> [a] -> [a] -> [a]
 iirRef as bs inp = outp
   where
@@ -68,7 +75,12 @@ iirFeld as bs = eval (freezePull1 . iirVec . thawPull1)
   where
     iirVec = streamAsVector (iirInt (toPull $ value1 as) (toPull $ value1 bs))
 
-prop_iir (NonEmpty as) (NonEmpty bs) = iirRef as bs ==== iirFeld as bs
+prop_iir =
+  forAll (choose (1, 10)) $ \l1 ->
+    forAll (choose (1, 10)) $ \l2 ->
+      forAll (vector1D l1 arbitrary) $ \as ->
+        forAll (vector1D l2 arbitrary) $ \bs ->
+          iirRef as bs ==== iirFeld as bs
 
 
 streamTests = $(testGroupGenerator)
