@@ -50,7 +50,7 @@ compileFile' opts (hfilename, hfile) (cfilename, cfile) =
                    Just cprg -> (Just hres', Just cres)
                      where res = fromMaybe (error "Failed parsing C file")
                                $ snd $ frontend opts
-                                   (Right . Right . Right . Right . Left $ cprg)
+                                   (Right . Right . Right . Left $ cprg)
                            cres = implementation res
                            -- Un-duplicated hres.
                            hres' = interface res
@@ -59,4 +59,4 @@ compileFile' opts (hfilename, hfile) (cfilename, cfile) =
             -- that so the user is probably not that picky on
             -- potential duplicate declarations if they had succeeded.
             hres = interface $ fromMaybe (error "Failed parsing H file") $ snd
-                 $ frontend opts (Right . Right . Right . Right . Left $ hprg)
+                 $ frontend opts (Right . Right . Right . Left $ hprg)

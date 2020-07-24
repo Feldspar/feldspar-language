@@ -142,8 +142,8 @@ showExpr = showUntyped' FPUnASTF defaultOptions
 -- | Show an untyped expression
 showUntyped :: Syntactic a => Options -> a -> String
 showUntyped opts prg = head . fst $ translate opts' prg
-  where opts' = opts{passCtrl = (passCtrl opts){ wrBefore = [FPUnAnnotate]
-                                               , stopBefore = [FPUnAnnotate]}}
+  where opts' = opts{passCtrl = (passCtrl opts){ wrBefore = [FPCreateTasks]
+                                               , stopBefore = [FPCreateTasks]}}
 
 -- | Show an expression after a specific frontend pass
 showUntyped' :: Syntactic a => Pass -> Options -> a -> String

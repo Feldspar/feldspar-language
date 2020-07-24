@@ -85,8 +85,7 @@ import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.SizeProp as SP
 import Feldspar.Core.Representation (AExpr)
 import Feldspar.Core.Reify (ASTF, Syntactic(..), desugar, unASTF)
-import Feldspar.Core.UntypedRepresentation (AUntypedFeld, UntypedFeld,
-                                            prettyExp, rename, unAnnotate)
+import Feldspar.Core.UntypedRepresentation (AUntypedFeld, prettyExp, rename)
 import Feldspar.Core.ValueInfo (PrettyInfo(..), ValueInfo)
 
 -- The front-end driver.
@@ -104,10 +103,8 @@ frontend :: Options
                 (Either
                   (AUntypedFeld ValueInfo)
                   (Either
-                    UntypedFeld
-                    (Either
-                      Module
-                      (Either (Module, Module) SplitModule)))))
+                    Module
+                    (Either (Module, Module) SplitModule))))
          -> ([String], Maybe SplitModule)
 frontend opts = evalPasses 0
                    ( codegen opts
@@ -115,7 +112,6 @@ frontend opts = evalPasses 0
                    . pc BPRename   (either (Left . ML.rename opts False) Right)
                    . pc BPArrayOps (either (Left . arrayOps opts) Right)
                    . pt BPFromCore (either (Left . fromCoreUT opts) id)
-                   . pt FPUnAnnotate       (either (Left . unAnnotate) id)
                    . pc FPCreateTasks      (either (Left . createTasks opts) Right)
                    . pc FPUnique           (either (Left . uniqueVars) Right)
                    . pc FPExpand           (either (Left . expand) Right)

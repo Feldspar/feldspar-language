@@ -116,7 +116,6 @@ data Pass
   | FPPushLets
   | FPExpand
   | FPUnique
-  | FPUnAnnotate
   | FPCreateTasks
   | BPFromCore
   | BPArrayOps
