@@ -3,10 +3,10 @@
 
 void foreignEffect(void * out)
 {
-  float v77;
+  float v0;
   
   alert();
-  v77 = getPos();
-  launchMissiles(v77);
+  v0 = getPos();
+  launchMissiles(v0);
   *out = cleanUp();
 }
