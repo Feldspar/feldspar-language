@@ -30,67 +30,68 @@
 
 module Feldspar.Core.Middleend.CreateTasks ( createTasks ) where
 
-import Control.Monad.State
+import Control.Monad.State (State, evalState, get, liftM2, put)
 
 import Feldspar.Compiler.Options (Options(..), Target(..), inTarget)
 import Feldspar.Core.UntypedRepresentation
+import Feldspar.Core.ValueInfo (ValueInfo, topInfo)
 
 -- | Create tasks from MkFuture and similar constructs.
 -- Invariant: There are no MkFuture, ParFork or NoInline constructs in the output.
-createTasks :: Options -> UntypedFeld -> UntypedFeld
+createTasks :: Options -> AUntypedFeld ValueInfo -> AUntypedFeld ValueInfo
 createTasks opts e = evalState (go opts e) 0
 
-go :: Options -> UntypedFeld -> State Integer UntypedFeld
-go _   e@(In Variable{}) = return e
-go env (In (Lambda v e)) = do
+go :: Options -> AUntypedFeld ValueInfo -> State Integer (AUntypedFeld ValueInfo)
+go _   e@(AIn _ Variable{}) = return e
+go env (AIn r (Lambda v e)) = do
   e' <- go env e
-  return $ In (Lambda v e')
-go env (In (LetFun (s, k, e1) e2))
- = liftM2 (\e1' e2' -> In (LetFun (s, k, e1') e2')) (go env e1) (go env e2)
-go _   l@(In Literal{}) = return l
-go env (In (App p _ [e])) | p `elem` [MkFuture, ParFork] = do
+  return $ AIn r (Lambda v e')
+go env (AIn r (LetFun (s, k, e1) e2))
+ = liftM2 (\e1' e2' -> AIn r (LetFun (s, k, e1') e2')) (go env e1) (go env e2)
+go _   l@(AIn _ Literal{}) = return l
+go env (AIn r (App p _ [e])) | p `elem` [MkFuture, ParFork] = do
   p'' <- go env p'
   i <- freshId
   let taskName = "task" ++ show i
       core = "task_core" ++ show i
       k = if p == MkFuture then Future else Par
-  return $ In (LetFun (core, k, p'') (In (App (Call k taskName) t' vs')))
-   where vs = fv e
-         vs' = map (In . Variable) vs
-         p' = mkLam vs e
+  return $ AIn r (LetFun (core, k, p'') (AIn r (App (Call k taskName) t' vs')))
+   where vs = fvA e
+         vs' = map (\(r', v') -> AIn r' $ Variable v') vs
+         p' = mkLam' vs e
          t' = FValType $ typeof e
-go env (In (App NoInline _ [p])) = do
+go env (AIn r (App NoInline _ [p])) = do
   p'' <- go env p'
   i <- freshId
   let name = "noinline" ++ show i
-  return $ In (LetFun (name, None, p'') (In (App (Call None name) t' vs')))
-   where vs = fv p
-         vs' = map (In . Variable) vs
-         p' = mkLam vs p
+  return $ AIn r (LetFun (name, None, p'') (AIn r (App (Call None name) t' vs')))
+   where vs = fvA p
+         vs' = map (\(r', v') -> AIn r' $ Variable v') vs
+         p' = mkLam' vs p
          t' = typeof p
-go env (In (App Parallel t [l, e@(In (Lambda v body))])) | Wool `inTarget` env = do
+go env (AIn r1 (App Parallel t [l, e@(AIn r2 (Lambda v body))])) | Wool `inTarget` env = do
   p'' <- go env p'
   i <- freshId
   let name  = "wool" ++ show i
-      body' = In (Lambda v (In (App (Call Loop name) t' $ tail vs')))
-  return $ In (LetFun (name, Loop, p'') (In (App Parallel t [l,body'])))
-   where vs  = v:fv e -- Make sure index is outermost parameter.
-         vs' = map (In . Variable) vs
-         p'  = mkLam vs body
+      body' = AIn r2 (Lambda v (AIn r2 (App (Call Loop name) t' $ tail vs')))
+  return $ AIn r1 (LetFun (name, Loop, p'') (AIn r1 (App Parallel t [l,body'])))
+   where vs  = (topInfo $ varType v, v):fvA e -- Make sure index is outermost parameter.
+         vs' = map (\(r', v') -> AIn r' $ Variable v') vs
+         p'  = mkLam' vs body
          t'  = typeof body
-go env (In (App EparFor t [l, e@(In (Lambda v body))])) | Wool `inTarget` env = do
+go env (AIn r1 (App EparFor t [l, e@(AIn r2 (Lambda v body))])) | Wool `inTarget` env = do
   p'' <- go env p'
   i <- freshId
   let name  = "wool" ++ show i
-      body' = In (Lambda v (In (App (Call Loop name) t' $ tail vs')))
-  return $ In (LetFun (name, Loop, p'') (In (App EparFor t [l, body'])))
-   where vs  = v:fv e
-         vs' = map (In . Variable) vs
-         p'  = mkLam vs body
+      body' = AIn r2 (Lambda v (AIn r2 (App (Call Loop name) t' $ tail vs')))
+  return $ AIn r1 (LetFun (name, Loop, p'') (AIn r1 (App EparFor t [l, body'])))
+   where vs  = (topInfo $ varType v, v):fvA e
+         vs' = map (\(r', v') -> AIn r' $ Variable v') vs
+         p'  = mkLam' vs body
          t'  = typeof body
-go env (In (App p t es)) = do
+go env (AIn r (App p t es)) = do
   es' <- mapM (go env) es
-  return $ In (App p t es')
+  return $ AIn r (App p t es')
 
 freshId :: State Integer Integer
 freshId = do

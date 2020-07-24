@@ -230,7 +230,7 @@ justUntype = renameExp . toU . SP.sizeProp . adjustBindings . unASTF
 
 -- | Prepare the code for fromCore
 cleanUp :: Options -> AUntypedFeld ValueInfo -> UntypedFeld
-cleanUp opts = createTasks opts . unAnnotate . uniqueVars
+cleanUp opts = unAnnotate . createTasks opts . uniqueVars
 
 --------------------------------------------------------------------------------
 -- * QuickCheck
