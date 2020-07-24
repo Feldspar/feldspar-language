@@ -89,7 +89,8 @@ module Feldspar.Core.UntypedRepresentation (
 import Control.Monad.State hiding (join)
 import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Char8 as B
-import Data.List (nub, intercalate)
+import Data.Function (on)
+import Data.List (nub, nubBy, intercalate)
 import Data.Tree
 import Language.Haskell.TH.Syntax (Lift(..))
 
@@ -587,12 +588,27 @@ instance HasType (AUntypedFeld a) where
     typeof (AIn _ (Literal l))             = typeof l
     typeof (AIn _ (App _ t _))             = t
 
-fvA :: AUntypedFeld a -> [Var]
-fvA e = fv $ unAnnotate e
+-- | Get free variables and their annotations for an AUntypedFeld expression
+fvA :: AUntypedFeld a -> [(a, Var)]
+fvA = nubBy ((==) `on` snd) . fvA' []
 
+-- | Internal helper function for fvA
+fvA' :: [Var] -> AUntypedFeld a -> [(a, Var)]
+   -- Binding
+fvA' vs (AIn r (Variable v)) | v `elem` vs = []
+                             | otherwise   = [(r, v)]
+fvA' vs (AIn _ (Lambda v e))               = fvA' (v:vs) e
+fvA' vs (AIn _ (LetFun (_, _, e1) e2))     = fvA' vs e1 ++ fvA' vs e2
+   -- Literal
+fvA' _  (AIn _ Literal{})                  = []
+-- Common nodes.
+fvA' vs (AIn _ (App _ _ es))               = concatMap (fvA' vs) es
+
+-- | Get free variables for an UntypedFeld expression
 fv :: UntypedFeld -> [Var]
 fv = nub . fvU' []
 
+-- | Internal helper function for fv
 fvU' :: [Var] -> UntypedFeld -> [Var]
    -- Binding
 fvU' vs (In (Variable v)) | v `elem` vs  = []
