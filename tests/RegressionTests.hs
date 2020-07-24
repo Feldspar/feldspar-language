@@ -19,6 +19,7 @@ import Test.Tasty.QuickCheck
 import qualified Prelude
 import Feldspar
 import qualified Feldspar.Core.UntypedRepresentation as UT
+import Feldspar.Core.ValueInfo (ValueInfo, topInfo)
 import Feldspar.Vector
 import qualified Feldspar.SimpleVector.Push as SP
 import qualified Feldspar.SimpleVector as S
@@ -166,25 +167,32 @@ noinline1 x = noInline $ not x
 
 -- | Test that foreign imports with result type `M ()` can be used as monadic
 --   actions. This expression cannot be created from the Feldspar front end.
-foreignEffect :: UT.UntypedFeld
+foreignEffect :: UT.AUntypedFeld ValueInfo
 foreignEffect =
-    UT.In $ UT.App UT.Then void
+    UT.AIn (topInfo void) $ UT.App UT.Then void
         [ alert
-        , UT.In $ UT.App UT.Bind void
+        , UT.AIn (topInfo void) $ UT.App UT.Bind void
             [ getPos
-            , UT.In $ UT.Lambda pos $ UT.In $ UT.App UT.Then void
-                [ launchMissiles
-                , cleanUp
-                ]
+            , UT.AIn (topInfo void) $
+               UT.Lambda pos $ UT.AIn (topInfo void) $ UT.App UT.Then void
+                  [ launchMissiles
+                  , cleanUp
+                  ]
             ]
         ]
   where
     void   = UT.MutType (UT.TupType [])
-    pos    = UT.Var 77 (1 UT.:# UT.FloatType) B.empty
-    alert  = UT.In $ UT.App (UT.ForeignImport "alert") void []
-    getPos = UT.In $ UT.App (UT.ForeignImport "getPos") (1 UT.:# UT.FloatType) []
-    launchMissiles = UT.In $ UT.App (UT.ForeignImport "launchMissiles") void [UT.In $ UT.Variable pos]
-    cleanUp = UT.In $ UT.App (UT.ForeignImport "cleanUp") void []
+    pos    = UT.Var 77 posType B.empty
+    alert  = UT.AIn (topInfo void) $ UT.App (UT.ForeignImport "alert") void []
+    posType = 1 UT.:# UT.FloatType
+    getPos = UT.AIn (topInfo posType) $
+               UT.App (UT.ForeignImport "getPos") posType []
+    launchMissiles =
+      UT.AIn (topInfo void) $
+        UT.App (UT.ForeignImport "launchMissiles") void
+          [UT.AIn (topInfo posType) $ UT.Variable pos]
+    cleanUp = UT.AIn (topInfo void) $
+                UT.App (UT.ForeignImport "cleanUp") void []
 
 tuples :: Data Int32 -> Data Int32
 tuples a =
@@ -487,7 +495,7 @@ mkGoldTest fun n opts = do
     goldenTest n (vgReadFiles ref) (liftIO act >> vgReadFiles new) cmp upd
 
 -- | Make a golden test for an untyped Feldspar expression
-mkGoldTestUT :: UT.UntypedFeld -> Prelude.FilePath -> Options -> TestTree
+mkGoldTestUT :: UT.AUntypedFeld ValueInfo -> Prelude.FilePath -> Options -> TestTree
 mkGoldTestUT untyped n opts = do
     let ref = goldDir <> n
         new = testDir <> n

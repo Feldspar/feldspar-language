@@ -144,10 +144,10 @@ compile :: Syntactic t => t -> FilePath -> String -> Options -> IO ()
 compile prg fileName funName opts = writeFiles opts compRes fileName
   where compRes = compileToCCore funName opts prg
 
-compileUT :: UntypedFeld -> FilePath -> String -> Options -> IO ()
+compileUT :: AUntypedFeld ValueInfo -> FilePath -> String -> Options -> IO ()
 compileUT prg fileName funName opts = writeFiles opts compRes fileName
   where compRes = fromMaybe (error "compileUT: compilation failed")
-                $ snd $ frontend opts' (Right . Right . Right . Left $ prg)
+                $ snd $ frontend opts' (Right . Right . Left $ prg)
         opts' = opts{functionName = funName}
 
 writeFiles :: Options -> SplitModule -> FilePath -> IO ()
