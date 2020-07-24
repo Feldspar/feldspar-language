@@ -69,23 +69,16 @@ go env (AIn r (App NoInline _ [p])) = do
          vs' = map (\(r', v') -> AIn r' $ Variable v') vs
          p' = mkLam' vs p
          t' = typeof p
-go env (AIn r1 (App Parallel t [l, e@(AIn r2 (Lambda v body))])) | Wool `inTarget` env = do
+go env (AIn r1 (App f t [l, e@(AIn r2 (Lambda v body))]))
+  | Wool `inTarget` env && f `elem` [EparFor, Parallel] = do
   p'' <- go env p'
   i <- freshId
   let name  = "wool" ++ show i
       body' = AIn r2 (Lambda v (AIn r2 (App (Call Loop name) t' $ tail vs')))
-  return $ AIn r1 (LetFun (name, Loop, p'') (AIn r1 (App Parallel t [l,body'])))
-   where vs  = (topInfo $ varType v, v):fvA e -- Make sure index is outermost parameter.
-         vs' = map (\(r', v') -> AIn r' $ Variable v') vs
-         p'  = mkLam' vs body
-         t'  = typeof body
-go env (AIn r1 (App EparFor t [l, e@(AIn r2 (Lambda v body))])) | Wool `inTarget` env = do
-  p'' <- go env p'
-  i <- freshId
-  let name  = "wool" ++ show i
-      body' = AIn r2 (Lambda v (AIn r2 (App (Call Loop name) t' $ tail vs')))
-  return $ AIn r1 (LetFun (name, Loop, p'') (AIn r1 (App EparFor t [l, body'])))
-   where vs  = (topInfo $ varType v, v):fvA e
+  return $ AIn r1 (LetFun (name, Loop, p'') (AIn r1 (App f t [l,body'])))
+   where -- Make sure index is outermost parameter.
+         -- FIXME: We are losing precision in the annotations here.
+         vs  = (topInfo $ varType v, v):fvA e
          vs' = map (\(r', v') -> AIn r' $ Variable v') vs
          p'  = mkLam' vs body
          t'  = typeof body
