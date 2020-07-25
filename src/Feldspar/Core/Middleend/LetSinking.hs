@@ -31,5 +31,5 @@ collectAtTop opts e
   , not $ null bs
   , (vs, body) <- collectBinders e1 -- Get all lambdas immediately within
   , not $ null vs
-  = mkLam' vs $ mkLets (bs, body)
+  = mkLam vs $ mkLets (bs, body)
   | otherwise = e

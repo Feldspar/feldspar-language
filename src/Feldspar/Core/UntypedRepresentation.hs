@@ -44,9 +44,6 @@
 
 module Feldspar.Core.UntypedRepresentation (
     VarId (..)
-  , Term(..)
-  , UntypedFeld
-  , mkLam'
   , ATerm(..)
   , AUntypedFeld
   , UntypedFeldF(..)
@@ -61,7 +58,6 @@ module Feldspar.Core.UntypedRepresentation (
   , HasType(..)
   , getAnnotation
   , dropAnnotation
-  , fvA
   , fv
   , collectLetBinders
   , collectBinders
@@ -88,7 +84,7 @@ import Control.Monad.State hiding (join)
 import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Char8 as B
 import Data.Function (on)
-import Data.List (nub, nubBy, intercalate)
+import Data.List (nubBy, intercalate)
 import Data.Tree
 import Language.Haskell.TH.Syntax (Lift(..))
 
@@ -109,11 +105,6 @@ type UntypedFeld = Term UntypedFeldF
 
 instance Pretty UntypedFeld where
   pretty = prettyExp (const . const "") . annotate (const ())
-
--- | Inverse of collectBinders, make a lambda abstraction.
-mkLam' :: [(a,Var)] -> AUntypedFeld a -> AUntypedFeld a
-mkLam' []        e = e
-mkLam' ((a,h):t) e = AIn a (Lambda h (mkLam' t e))
 
 data Term f = In (f (Term f))
 
@@ -557,16 +548,6 @@ instance HasType Lit where
     typeof (LComplex r _) = 1 :# ComplexType (typeof r)
     typeof (LTup ls)      = TupType $ map typeof ls
 
-instance HasType UntypedFeld where
-    type TypeOf UntypedFeld                = Type
-   -- Binding
-    typeof (In (Variable v))               = typeof v
-    typeof (In (Lambda v e))               = FunType (typeof v) (typeof e)
-    typeof (In (LetFun _ e))               = typeof e
-   -- Literal
-    typeof (In (Literal l))                = typeof l
-    typeof (In (App _ t _))                = t
-
 instance HasType (AUntypedFeld a) where
     type TypeOf (AUntypedFeld a)           = Type
    -- Binding
@@ -578,10 +559,10 @@ instance HasType (AUntypedFeld a) where
     typeof (AIn _ (App _ t _))             = t
 
 -- | Get free variables and their annotations for an AUntypedFeld expression
-fvA :: AUntypedFeld a -> [(a, Var)]
-fvA = nubBy ((==) `on` snd) . fvA' []
+fv :: AUntypedFeld a -> [(a, Var)]
+fv = nubBy ((==) `on` snd) . fvA' []
 
--- | Internal helper function for fvA
+-- | Internal helper function for fv
 fvA' :: [Var] -> AUntypedFeld a -> [(a, Var)]
    -- Binding
 fvA' vs (AIn r (Variable v)) | v `elem` vs = []
@@ -592,22 +573,6 @@ fvA' vs (AIn _ (LetFun (_, _, e1) e2))     = fvA' vs e1 ++ fvA' vs e2
 fvA' _  (AIn _ Literal{})                  = []
 -- Common nodes.
 fvA' vs (AIn _ (App _ _ es))               = concatMap (fvA' vs) es
-
--- | Get free variables for an UntypedFeld expression
-fv :: UntypedFeld -> [Var]
-fv = nub . fvU' []
-
--- | Internal helper function for fv
-fvU' :: [Var] -> UntypedFeld -> [Var]
-   -- Binding
-fvU' vs (In (Variable v)) | v `elem` vs  = []
-                          | otherwise    = [v]
-fvU' vs (In (Lambda v e))                = fvU' (v:vs) e
-fvU' vs (In (LetFun (_, _, e1) e2))      = fvU' vs e1 ++ fvU' vs e2
-   -- Literal
-fvU' _  (In  Literal{})                  = []
--- Common nodes.
-fvU' vs (In (App _ _ es))                = concatMap (fvU' vs) es
 
 -- | Collect nested let binders into the binders and the body.
 collectLetBinders :: AUntypedFeld a -> ([(Var, AUntypedFeld a)], AUntypedFeld a)
@@ -630,13 +595,13 @@ mkLets ((v, e):t, body) = AIn r (App Let t' [e, body'])
         r            = getAnnotation body
 
 -- | Inverse of collectBinders, make a lambda abstraction.
-mkLam :: [Var] -> UntypedFeld -> UntypedFeld
-mkLam []    e = e
-mkLam (h:t) e = In (Lambda h (mkLam t e))
+mkLam :: [(a, Var)] -> AUntypedFeld a -> AUntypedFeld a
+mkLam []         e = e
+mkLam ((a, h):t) e = AIn a (Lambda h (mkLam t e))
 
 -- | Make an application.
-mkApp :: Type -> Op -> [UntypedFeld] -> UntypedFeld
-mkApp t p es = In (App p t es)
+mkApp :: a -> Type -> Op -> [AUntypedFeld a] -> AUntypedFeld a
+mkApp a t p es = AIn a (App p t es)
 
 -- | Make a tuple; constructs the type from the types of the components
 mkTup :: a -> [AUntypedFeld a] -> AUntypedFeld a

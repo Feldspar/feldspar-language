@@ -56,18 +56,18 @@ go env (AIn r (App p _ [e])) | p `elem` [MkFuture, ParFork] = do
       core = "task_core" ++ show i
       k = if p == MkFuture then Future else Par
   return $ AIn r (LetFun (core, k, p'') (AIn r (App (Call k taskName) t' vs')))
-   where vs = fvA e
+   where vs = fv e
          vs' = map (\(r', v') -> AIn r' $ Variable v') vs
-         p' = mkLam' vs e
+         p' = mkLam vs e
          t' = FValType $ typeof e
 go env (AIn r (App NoInline _ [p])) = do
   p'' <- go env p'
   i <- freshId
   let name = "noinline" ++ show i
   return $ AIn r (LetFun (name, None, p'') (AIn r (App (Call None name) t' vs')))
-   where vs = fvA p
+   where vs = fv p
          vs' = map (\(r', v') -> AIn r' $ Variable v') vs
-         p' = mkLam' vs p
+         p' = mkLam vs p
          t' = typeof p
 go env (AIn r1 (App f t [l, e@(AIn r2 (Lambda v body))]))
   | Wool `inTarget` env && f `elem` [EparFor, Parallel] = do
@@ -78,9 +78,9 @@ go env (AIn r1 (App f t [l, e@(AIn r2 (Lambda v body))]))
   return $ AIn r1 (LetFun (name, Loop, p'') (AIn r1 (App f t [l,body'])))
    where -- Make sure index is outermost parameter.
          -- FIXME: We are losing precision in the annotations here.
-         vs  = (topInfo $ varType v, v):fvA e
+         vs  = (topInfo $ varType v, v):fv e
          vs' = map (\(r', v') -> AIn r' $ Variable v') vs
-         p'  = mkLam' vs body
+         p'  = mkLam vs body
          t'  = typeof body
 go env (AIn r (App p t es)) = do
   es' <- mapM (go env) es
