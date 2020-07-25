@@ -72,7 +72,7 @@ concatBags = foldr appendBag (Bags [])
 type AExpB a = (BindBag a, AUntypedFeld a)
 type RExpB a = (BindBag a, RRExp a)
 
-type RRExp a = UntypedFeldF (ATerm a UntypedFeldF)
+type RRExp a = UntypedFeldF (AUntypedFeld a)
 
 toExpr :: AExpB a -> AUntypedFeld a
 toExpr (b,e) = foldBag (curry mkLets) e b

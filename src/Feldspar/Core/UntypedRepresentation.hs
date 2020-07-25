@@ -695,7 +695,7 @@ type Rename a = State VarId a
 rename :: AUntypedFeld a -> Rename (AUntypedFeld a)
 rename = renameA M.empty
 
-type RRExp a = UntypedFeldF (ATerm a UntypedFeldF)
+type RRExp a = UntypedFeldF (AUntypedFeld a)
 
 renameA :: M.Map VarId (RRExp a) -> AUntypedFeld a -> Rename (AUntypedFeld a)
 renameA env (AIn a r) = do r1 <- renameR env r
