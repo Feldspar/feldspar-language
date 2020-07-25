@@ -88,7 +88,6 @@ import Data.List (nubBy, intercalate)
 import Data.Tree
 import Language.Haskell.TH.Syntax (Lift(..))
 
-import Feldspar.Compiler.Options (Pretty(..))
 import Feldspar.Core.Representation (VarId(..))
 
 import Feldspar.Range (Range(..), singletonRange)
@@ -101,17 +100,6 @@ import Feldspar.Core.Types (Length)
 -- The format resembles the structure of the typed Syntactic format,
 -- but it does not reflect into the host language type system.
 
-type UntypedFeld = Term UntypedFeldF
-
-instance Pretty UntypedFeld where
-  pretty = prettyExp (const . const "") . annotate (const ())
-
-data Term f = In (f (Term f))
-
-deriving instance (Eq (f (Term f))) => Eq (Term f)
-instance (Show (f (Term f))) => Show (Term f) where
-  show (In f) = show f
-
 -- | Types representing an annotated term
 type AUntypedFeld a = ATerm a UntypedFeldF
 
@@ -120,16 +108,6 @@ data ATerm a f = AIn a (f (ATerm a f))
 deriving instance (Eq a, Eq (f (ATerm a f))) => Eq (ATerm a f)
 instance (Show (f (ATerm a f))) => Show (ATerm a f) where
   show (AIn _ f) = show f
-
--- | Add annotations using an annotation function
-annotate :: (UntypedFeldF (AUntypedFeld a) -> a) -> UntypedFeld -> AUntypedFeld a
-annotate anno = goA
-  where go (Lambda v e)         = Lambda v $ goA e
-        go (LetFun (s,k,e1) e2) = LetFun (s, k, goA e1) $ goA e2
-        go (App f t es)         = App f t $ map goA es
-        go (Variable v)         = Variable v
-        go (Literal l)          = Literal l
-        goA (In e)              = let e1 = go e in AIn (anno e1) e1
 
 -- | Extract the annotation part of an AUntypedFeld
 getAnnotation :: AUntypedFeld a -> a
