@@ -59,8 +59,6 @@ module Feldspar.Core.UntypedRepresentation (
   , Signedness(..)
   , Fork(..)
   , HasType(..)
-  , unAnnotate
-  , annotate
   , getAnnotation
   , dropAnnotation
   , fvA
@@ -131,15 +129,6 @@ data ATerm a f = AIn a (f (ATerm a f))
 deriving instance (Eq a, Eq (f (ATerm a f))) => Eq (ATerm a f)
 instance (Show (f (ATerm a f))) => Show (ATerm a f) where
   show (AIn _ f) = show f
-
--- | Remove annotations and translate to UntypedFeld
-unAnnotate :: AUntypedFeld a -> UntypedFeld
-unAnnotate (AIn _ e) = In $ go e
-  where go (Lambda v e)         = Lambda v (unAnnotate e)
-        go (LetFun (s,k,e1) e2) = LetFun (s, k, unAnnotate e1) (unAnnotate e2)
-        go (App f t es)         = App f t (map unAnnotate es)
-        go (Variable v)         = Variable v
-        go (Literal l)          = Literal l
 
 -- | Add annotations using an annotation function
 annotate :: (UntypedFeldF (AUntypedFeld a) -> a) -> UntypedFeld -> AUntypedFeld a
@@ -481,8 +470,8 @@ prType (FunType t1 t2)  = "(" ++ prType t1 ++ "->" ++ prType t2 ++ ")"
 prType (FValType t)     = "F" ++ prType t
 
 -- | Convert an untyped unannotated syntax tree into a @Tree@ of @String@s
-stringTree :: UntypedFeld -> Tree String
-stringTree = stringTreeExp (const "") . annotate (const ())
+stringTree :: AUntypedFeld a -> Tree String
+stringTree = stringTreeExp (const "")
 
 -- | Convert an untyped annotated syntax tree into a @Tree@ of @String@s
 stringTreeExp :: (a -> String) -> AUntypedFeld a -> Tree String

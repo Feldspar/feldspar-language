@@ -123,9 +123,9 @@ import Feldspar.Core.Middleend.PushLets
 import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.SizeProp as SP
 import Feldspar.Core.Types
-import Feldspar.Core.UntypedRepresentation (UntypedFeld, AUntypedFeld,
-                                            stringTree, stringTreeExp,
-                                            unAnnotate)
+import Feldspar.Core.UntypedRepresentation (AUntypedFeld,
+                                            stringTree, stringTreeExp
+                                           )
 import Feldspar.Core.Language
 import Feldspar.Core.ValueInfo (ValueInfo)
 
@@ -208,7 +208,7 @@ sugar = resugar
 --        with calls to the frontend function.
 
 -- | Untype, optimize and unannotate.
-untype :: Options -> ASTF a -> UntypedFeld
+untype :: Options -> ASTF a -> AUntypedFeld ValueInfo
 untype opts = cleanUp opts
             . untypeDecor opts
 
@@ -220,7 +220,7 @@ untypeDecor opts = pushLets
                  . justUntype
 
 -- | External module interface.
-untypeUnOpt :: Options -> ASTF a -> UntypedFeld
+untypeUnOpt :: Options -> ASTF a -> AUntypedFeld ValueInfo
 untypeUnOpt opts = cleanUp opts
                  . justUntype
 
@@ -229,8 +229,8 @@ justUntype :: ASTF a -> AUntypedFeld ValueInfo
 justUntype = renameExp . toU . SP.sizeProp . adjustBindings . unASTF
 
 -- | Prepare the code for fromCore
-cleanUp :: Options -> AUntypedFeld ValueInfo -> UntypedFeld
-cleanUp opts = unAnnotate . createTasks opts . uniqueVars
+cleanUp :: Options -> AUntypedFeld ValueInfo -> AUntypedFeld ValueInfo
+cleanUp opts = createTasks opts . uniqueVars
 
 --------------------------------------------------------------------------------
 -- * QuickCheck
