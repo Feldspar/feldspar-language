@@ -44,7 +44,7 @@
 
 module Feldspar.Core.UntypedRepresentation (
     VarId (..)
-  , ATerm(..)
+  , Term(..)
   , AUntypedFeld
   , UntypedFeldF(..)
   , Op(..)
@@ -101,12 +101,12 @@ import Feldspar.Core.Types (Length)
 -- but it does not reflect into the host language type system.
 
 -- | Types representing an annotated term
-type AUntypedFeld a = ATerm a UntypedFeldF
+type AUntypedFeld a = Term a UntypedFeldF
 
-data ATerm a f = AIn a (f (ATerm a f))
+data Term a f = AIn a (f (Term a f))
 
-deriving instance (Eq a, Eq (f (ATerm a f))) => Eq (ATerm a f)
-instance (Show (f (ATerm a f))) => Show (ATerm a f) where
+deriving instance (Eq a, Eq (f (Term a f))) => Eq (Term a f)
+instance (Show (f (Term a f))) => Show (Term a f) where
   show (AIn _ f) = show f
 
 -- | Extract the annotation part of an AUntypedFeld

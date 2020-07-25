@@ -66,7 +66,7 @@ import Data.Maybe (fromJust, isJust)
 import Data.Semigroup (Semigroup(..))
 
 import Feldspar.Core.UntypedRepresentation
-         ( VarId(..), AUntypedFeld, ATerm(..), Lit(..)
+         ( VarId(..), AUntypedFeld, Term(..), Lit(..)
          , UntypedFeldF(App, LetFun), Fork(..), collectBinders
          , collectLetBinders
          )
