@@ -37,7 +37,7 @@ import qualified Data.Map.Strict as M
 import Control.Monad.State
 
 type U a = State (S.Set VarId) a
-type RRExp a = UntypedFeldF (ATerm a UntypedFeldF)
+type RRExp a = UntypedFeldF (AUntypedFeld a)
 
 {- | Ensure that each variable binding binds a unique variable.
      This invariant is import since some back ends declare all
