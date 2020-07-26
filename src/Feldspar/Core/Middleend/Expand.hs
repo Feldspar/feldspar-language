@@ -49,7 +49,7 @@ import Control.Monad.State
 import Data.List (partition)
 
 type VarMap = M.Map Var (S.Set Var, RExp)
-type UExp = AUntypedFeld ValueInfo
+type UExp = UntypedFeld ValueInfo
 type RExp = UntypedFeldF UExp
 
 expand :: UExp -> UExp
@@ -104,7 +104,7 @@ idxLenExpr ai = ixTop $ reverse ai
         add x y = AIn (addVI (getAnnotation x) (getAnnotation y)) $ App Add (typeof x) [x, y]
         mul x y = AIn (mulVI (getAnnotation x) (getAnnotation y)) $ App Mul (typeof x) [x, y]
 
-mkBinds :: ([BindInfo], AUntypedFeld ValueInfo) -> AbsInfo -> ([BindInfo], UExp)
+mkBinds :: ([BindInfo], UntypedFeld ValueInfo) -> AbsInfo -> ([BindInfo], UExp)
 mkBinds (bs, e) LoopI{trip = (_,eTrip), ixVar = v} = catch (shiftBIs bs) loopE
   where loopE = AIn r $ App EparFor (typeof e) [eTrip, AIn r $ Lambda v e]
         r = getAnnotation e

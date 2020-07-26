@@ -54,7 +54,7 @@ import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr(..), Expr(..))
 import Data.Complex (Complex(..))
 
-toU :: AExpr a -> AUntypedFeld ValueInfo
+toU :: AExpr a -> UntypedFeld ValueInfo
 toU (((R.Info i) :: R.Info a) :& e)
   | Sym (R.Variable (R.Var n s)) <- e
   = i2 $ Variable $ Var n (untypeType tr i) s
@@ -82,7 +82,7 @@ toU (((R.Info i) :: R.Info a) :& e)
   = i2 $ App op (untypeType tr i) es
   where tr = typeRepF :: TypeRep a
         i2 = AIn $ toValueInfo tr i
-        go :: forall a' . Expr a' -> [AUntypedFeld ValueInfo] -> (Op, [AUntypedFeld ValueInfo])
+        go :: forall a' . Expr a' -> [UntypedFeld ValueInfo] -> (Op, [UntypedFeld ValueInfo])
         go (Sym op) es = (trOp op, es)
         go (f :@ e') es = go f $ toU e' : es
         addDrop e'@(AIn _ (App (Drop _) _ _)) = e'

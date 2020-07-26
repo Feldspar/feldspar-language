@@ -66,7 +66,7 @@ import Data.Maybe (fromJust, isJust)
 import Data.Semigroup (Semigroup(..))
 
 import Feldspar.Core.UntypedRepresentation
-         ( VarId(..), AUntypedFeld, Term(..), Lit(..)
+         ( VarId(..), UntypedFeld, Term(..), Lit(..)
          , UntypedFeldF(App, LetFun), Fork(..), collectBinders
          , collectLetBinders
          )
@@ -372,7 +372,7 @@ but we might not be able to comply.
 -- | Get the generated core for an 'UntypedFeld' expression.
 fromCoreUT
     :: Options
-    -> AUntypedFeld a -- ^ Expression to generate code for
+    -> UntypedFeld a -- ^ Expression to generate code for
     -> Module
 fromCoreUT opt uast = Module defs
   where
@@ -407,7 +407,7 @@ fromCoreUT opt uast = Module defs
 
 -- | Generate code for an expression that may have top-level lambdas and let
 -- bindings. The returned variable holds the result of the generated code.
-compileProgTop :: AUntypedFeld a -> CodeWriter Variable
+compileProgTop :: UntypedFeld a -> CodeWriter Variable
 compileProgTop (AIn _ (Ut.Lambda (Ut.Var v ta _) body)) = do
   opt <- asks backendOpts
   let typ = compileType opt ta
@@ -476,7 +476,7 @@ compileType opt (Ut.FValType a)        = IVarType $ compileType opt a
 -- constructs to 'compileExpr'. Delegation is done by calling 'compileExprLoc'.
 
 -- | Compile an expression and put the result in the given location
-compileProg :: Location -> AUntypedFeld a -> CodeWriter ()
+compileProg :: Location -> UntypedFeld a -> CodeWriter ()
 -- Array
 compileProg (Just loc) (AIn _ (App Ut.Parallel _ [len, AIn _ (Ut.Lambda (Ut.Var v ta _) ixf)])) = do
    opts <- asks backendOpts
@@ -795,7 +795,7 @@ compileProg loc e = compileExprLoc loc e
 -- 'compileProgFresh'.
 
 -- | Compile an expression
-compileExpr :: AUntypedFeld a -> CodeWriter Expression
+compileExpr :: UntypedFeld a -> CodeWriter Expression
 -- Array
 compileExpr (AIn _ (App Ut.GetLength _ [a])) = do
    aExpr <- compileExpr a
@@ -924,7 +924,7 @@ for insanely large array literals, so don't do that.
 -}
 
 -- | Call 'compileExpr' and assign the result to the given location.
-compileExprLoc :: Location  -> AUntypedFeld a -> CodeWriter ()
+compileExprLoc :: Location  -> UntypedFeld a -> CodeWriter ()
 compileExprLoc loc e = do
     expr <- compileExpr e
     assign loc expr
@@ -937,7 +937,7 @@ freshVar opt base t = do
   return $ varToExpr v
 
 -- | Compiles code into a fresh variable.
-compileProgFresh :: AUntypedFeld a -> CodeWriter Expression
+compileProgFresh :: UntypedFeld a -> CodeWriter Expression
 compileProgFresh e = do
     opts <- asks backendOpts
     loc <- freshVar opts "e" (typeof e)
@@ -945,7 +945,7 @@ compileProgFresh e = do
     return loc
 
 -- | Compile an expression and make sure that the result is stored in a variable
-compileExprVar :: AUntypedFeld a -> CodeWriter Expression
+compileExprVar :: UntypedFeld a -> CodeWriter Expression
 compileExprVar e = do
     e' <- compileExpr e
     case e' of
@@ -963,7 +963,7 @@ compileExprVar e = do
         isNearlyVar _           = False
 
 -- | Compile a function bound by a LetFun.
-compileFunction :: Expression -> (String, Fork, AUntypedFeld a) -> CodeWriter ()
+compileFunction :: Expression -> (String, Fork, UntypedFeld a) -> CodeWriter ()
 compileFunction loc (coreName, kind, e) | (bs, e') <- collectBinders e = do
   es' <- mapM (\(r, v) -> compileExpr . AIn r $ Ut.Variable v) bs
   let args = nub $ map exprToVar es' ++ fv loc
@@ -988,13 +988,13 @@ compileFunction loc (coreName, kind, e) | (bs, e') <- collectBinders e = do
    _    -> tellDef [Proc taskName False formals VoidType runTask]
 
 -- | Check if an expression is a variable or a literal
-isVariableOrLiteral :: AUntypedFeld a -> Bool
+isVariableOrLiteral :: UntypedFeld a -> Bool
 isVariableOrLiteral (AIn _ Ut.Literal{})  = True
 isVariableOrLiteral (AIn _ Ut.Variable{}) = True
 isVariableOrLiteral _                     = False
 
 -- | Create a variable of the right type for storing a length.
-mkLength :: AUntypedFeld a -> Ut.Type -> CodeWriter Expression
+mkLength :: UntypedFeld a -> Ut.Type -> CodeWriter Expression
 mkLength a t
   | isVariableOrLiteral a = compileExpr a
   | otherwise             = do
@@ -1003,7 +1003,7 @@ mkLength a t
       compileProg (Just lenvar) a
       return lenvar
 
-mkBranch :: Location -> AUntypedFeld a -> AUntypedFeld a -> Maybe (AUntypedFeld a) -> CodeWriter ()
+mkBranch :: Location -> UntypedFeld a -> UntypedFeld a -> Maybe (UntypedFeld a) -> CodeWriter ()
 mkBranch loc c th el = do
     ce <- compileExpr c
     (_, tb) <- confiscateBlock $ compileProg loc th
@@ -1012,7 +1012,7 @@ mkBranch loc c th el = do
                   else return (undefined, toBlock Empty)
     tellProg [Switch ce [(Pat (litB True), tb), (Pat (litB False), eb)]]
 
-compileLet :: AUntypedFeld a -> Ut.Type -> VarId -> CodeWriter Expression
+compileLet :: UntypedFeld a -> Ut.Type -> VarId -> CodeWriter Expression
 compileLet a ta v = do
    opts <- asks backendOpts
    let var  = mkVariable (compileType opts ta) v
@@ -1021,7 +1021,7 @@ compileLet a ta v = do
    compileProg (Just varE) a
    return varE
 
-compileAssert :: AUntypedFeld a -> String -> CodeWriter ()
+compileAssert :: UntypedFeld a -> String -> CodeWriter ()
 compileAssert cond msg = do
     condExpr <- compileExpr cond
     tellProg [call "assert" [ValueParameter condExpr]]
@@ -1077,7 +1077,7 @@ literalLoc loc t =
     do rhs <- literal t
        assign (Just loc) rhs
 
-chaseTree :: Location -> AUntypedFeld a -> AUntypedFeld a -> CodeWriter [(Pattern, Block)]
+chaseTree :: Location -> UntypedFeld a -> UntypedFeld a -> CodeWriter [(Pattern, Block)]
 chaseTree loc _s (AIn _ (App Ut.Condition _ [AIn _ (App Ut.Equal _ [c, _]), t, f]))
     -- , alphaEq s a -- TODO check that the scrutinees are equal
     = do
@@ -1092,7 +1092,7 @@ chaseTree loc _ a = do
 
 -- | Chase down the right-spine of `Bind` and `Then` constructs and return
 -- the last term
-chaseBind :: AUntypedFeld a -> AUntypedFeld a
+chaseBind :: UntypedFeld a -> UntypedFeld a
 chaseBind (AIn _ (App Ut.Let  _ [_, AIn _ (Ut.Lambda _  body)])) = chaseBind body
 chaseBind (AIn _ (App Ut.Bind _ [_, AIn _ (Ut.Lambda _  body)])) = chaseBind body
 chaseBind (AIn _ (App Ut.Then _ [_, body]))                   = chaseBind body
@@ -1108,7 +1108,7 @@ In most cases I expect `withArray` to return a scalar as its final
 result and then the copyProg is harmless.
 -}
 
-compileBind :: (Ut.Var, AUntypedFeld a) -> CodeWriter ()
+compileBind :: (Ut.Var, UntypedFeld a) -> CodeWriter ()
 compileBind (Ut.Var v t _, e) = do
    opts <- asks backendOpts
    let var = mkVariable (compileType opts t) v

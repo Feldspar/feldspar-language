@@ -37,17 +37,17 @@ import qualified Data.Map.Strict as M
 import Control.Monad.State
 
 type U a = State (S.Set VarId) a
-type RRExp a = UntypedFeldF (AUntypedFeld a)
+type RRExp a = UntypedFeldF (UntypedFeld a)
 
 {- | Ensure that each variable binding binds a unique variable.
      This invariant is import since some back ends declare all
      variables at top level.
 -}
 
-uniqueVars :: AUntypedFeld a -> AUntypedFeld a
+uniqueVars :: UntypedFeld a -> UntypedFeld a
 uniqueVars e = evalState (uniqA M.empty e) S.empty
 
-uniqA :: M.Map VarId (RRExp a) -> AUntypedFeld a -> U (AUntypedFeld a)
+uniqA :: M.Map VarId (RRExp a) -> UntypedFeld a -> U (UntypedFeld a)
 uniqA vm (AIn r e) = do e1 <- uniq vm e
                         return $ AIn r e1
 

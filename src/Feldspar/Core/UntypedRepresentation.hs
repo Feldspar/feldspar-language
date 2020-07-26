@@ -45,7 +45,7 @@
 module Feldspar.Core.UntypedRepresentation (
     VarId (..)
   , Term(..)
-  , AUntypedFeld
+  , UntypedFeld
   , UntypedFeldF(..)
   , Op(..)
   , ScalarType(..)
@@ -101,7 +101,7 @@ import Feldspar.Core.Types (Length)
 -- but it does not reflect into the host language type system.
 
 -- | Types representing an annotated term
-type AUntypedFeld a = Term a UntypedFeldF
+type UntypedFeld a = Term a UntypedFeldF
 
 data Term a f = AIn a (f (Term a f))
 
@@ -109,12 +109,12 @@ deriving instance (Eq a, Eq (f (Term a f))) => Eq (Term a f)
 instance (Show (f (Term a f))) => Show (Term a f) where
   show (AIn _ f) = show f
 
--- | Extract the annotation part of an AUntypedFeld
-getAnnotation :: AUntypedFeld a -> a
+-- | Extract the annotation part of an UntypedFeld
+getAnnotation :: UntypedFeld a -> a
 getAnnotation (AIn r _) = r
 
--- | Drop the annotation part of an AUntypedFeld
-dropAnnotation :: AUntypedFeld a -> UntypedFeldF (AUntypedFeld a)
+-- | Drop the annotation part of an UntypedFeld
+dropAnnotation :: UntypedFeld a -> UntypedFeldF (UntypedFeld a)
 dropAnnotation (AIn _ e) = e
 
 data Size = S8 | S16 | S32 | S40 | S64
@@ -439,11 +439,11 @@ prType (FunType t1 t2)  = "(" ++ prType t1 ++ "->" ++ prType t2 ++ ")"
 prType (FValType t)     = "F" ++ prType t
 
 -- | Convert an untyped unannotated syntax tree into a @Tree@ of @String@s
-stringTree :: AUntypedFeld a -> Tree String
+stringTree :: UntypedFeld a -> Tree String
 stringTree = stringTreeExp (const "")
 
 -- | Convert an untyped annotated syntax tree into a @Tree@ of @String@s
-stringTreeExp :: (a -> String) -> AUntypedFeld a -> Tree String
+stringTreeExp :: (a -> String) -> UntypedFeld a -> Tree String
 stringTreeExp prA = go
   where
     go (AIn r (Variable v))         = Node (show v ++ prC (typeof v) ++ prA r) []
@@ -459,7 +459,7 @@ stringTreeExp prA = go
     prP t r = " {" ++ prType t ++ prA r ++ "}"
     prC t   = " : " ++ prType t
 
-prettyExp :: (Type -> a -> String) -> AUntypedFeld a -> String
+prettyExp :: (Type -> a -> String) -> UntypedFeld a -> String
 prettyExp prA e = render (pr 0 0 e)
   where pr p i (AIn r e) = pe p i r e
         pe _ i _ (Variable v) = line i $ show v
@@ -526,8 +526,8 @@ instance HasType Lit where
     typeof (LComplex r _) = 1 :# ComplexType (typeof r)
     typeof (LTup ls)      = TupType $ map typeof ls
 
-instance HasType (AUntypedFeld a) where
-    type TypeOf (AUntypedFeld a)           = Type
+instance HasType (UntypedFeld a) where
+    type TypeOf (UntypedFeld a)           = Type
    -- Binding
     typeof (AIn _ (Variable v))            = typeof v
     typeof (AIn _ (Lambda v e))            = FunType (typeof v) (typeof e)
@@ -536,12 +536,12 @@ instance HasType (AUntypedFeld a) where
     typeof (AIn _ (Literal l))             = typeof l
     typeof (AIn _ (App _ t _))             = t
 
--- | Get free variables and their annotations for an AUntypedFeld expression
-fv :: AUntypedFeld a -> [(a, Var)]
+-- | Get free variables and their annotations for an UntypedFeld expression
+fv :: UntypedFeld a -> [(a, Var)]
 fv = nubBy ((==) `on` snd) . fvA' []
 
 -- | Internal helper function for fv
-fvA' :: [Var] -> AUntypedFeld a -> [(a, Var)]
+fvA' :: [Var] -> UntypedFeld a -> [(a, Var)]
    -- Binding
 fvA' vs (AIn r (Variable v)) | v `elem` vs = []
                              | otherwise   = [(r, v)]
@@ -553,19 +553,19 @@ fvA' _  (AIn _ Literal{})                  = []
 fvA' vs (AIn _ (App _ _ es))               = concatMap (fvA' vs) es
 
 -- | Collect nested let binders into the binders and the body.
-collectLetBinders :: AUntypedFeld a -> ([(Var, AUntypedFeld a)], AUntypedFeld a)
+collectLetBinders :: UntypedFeld a -> ([(Var, UntypedFeld a)], UntypedFeld a)
 collectLetBinders = go []
   where go acc (AIn _ (App Let _ [e, AIn _ (Lambda v b)])) = go ((v, e):acc) b
         go acc e                                           = (reverse acc, e)
 
 -- | Collect binders from nested lambda expressions.
-collectBinders :: AUntypedFeld a -> ([(a, Var)], AUntypedFeld a)
+collectBinders :: UntypedFeld a -> ([(a, Var)], UntypedFeld a)
 collectBinders = go []
   where go acc (AIn a (Lambda v e)) = go ((a,v):acc) e
         go acc e                    = (reverse acc, e)
 
 -- | Inverse of collectLetBinders, put the term back together.
-mkLets :: ([(Var, AUntypedFeld a)], AUntypedFeld a) -> AUntypedFeld a
+mkLets :: ([(Var, UntypedFeld a)], UntypedFeld a) -> UntypedFeld a
 mkLets ([], body)       = body
 mkLets ((v, e):t, body) = AIn r (App Let t' [e, body'])
   where body'        = AIn r (Lambda v (mkLets (t, body))) -- Value info of result
@@ -573,20 +573,20 @@ mkLets ((v, e):t, body) = AIn r (App Let t' [e, body'])
         r            = getAnnotation body
 
 -- | Inverse of collectBinders, make a lambda abstraction.
-mkLam :: [(a, Var)] -> AUntypedFeld a -> AUntypedFeld a
+mkLam :: [(a, Var)] -> UntypedFeld a -> UntypedFeld a
 mkLam []         e = e
 mkLam ((a, h):t) e = AIn a (Lambda h (mkLam t e))
 
 -- | Make an application.
-mkApp :: a -> Type -> Op -> [AUntypedFeld a] -> AUntypedFeld a
+mkApp :: a -> Type -> Op -> [UntypedFeld a] -> UntypedFeld a
 mkApp a t p es = AIn a (App p t es)
 
 -- | Make a tuple; constructs the type from the types of the components
-mkTup :: a -> [AUntypedFeld a] -> AUntypedFeld a
+mkTup :: a -> [UntypedFeld a] -> UntypedFeld a
 mkTup a es = AIn a $ App Tup (TupType $ map typeof es) es
 
 -- | Substitute new for dst in e. Assumes no shadowing.
-subst :: AUntypedFeld a -> Var -> AUntypedFeld a -> AUntypedFeld a
+subst :: UntypedFeld a -> Var -> UntypedFeld a -> UntypedFeld a
 subst new dst = go
   where go v@(AIn _ (Variable v')) | dst == v' = new -- Replace.
                                    | otherwise = v -- Stop.
@@ -598,11 +598,11 @@ subst new dst = go
         go (AIn r (App p t es)) = AIn r (App p t (map go es)) -- Recurse.
 
 -- | Expressions that can and should be shared
-sharable :: AUntypedFeld a -> Bool
+sharable :: UntypedFeld a -> Bool
 sharable e = legalToShare e && goodToShare e
 
 -- | Expressions that can be shared without breaking fromCore
-legalToShare :: AUntypedFeld a -> Bool
+legalToShare :: UntypedFeld a -> Bool
 legalToShare (AIn _ (App op _ _)) = op `notElem` [ESkip, EWrite, EPar, EparFor,
                                                   Return, Bind, Then, When,
                                                   NewArr, NewArr_, GetArr, SetArr, ArrLength,
@@ -612,24 +612,24 @@ legalToShare (AIn _ (Lambda _ _)) = False
 legalToShare _                    = True
 
 -- | Expressions that are expensive enough to be worth sharing
-goodToShare :: AUntypedFeld a -> Bool
+goodToShare :: UntypedFeld a -> Bool
 goodToShare (AIn _ (Literal l))
   | LArray _ (_:_) <- l = True
   | LTup (_:_)     <- l = True
 goodToShare (AIn _ App{})       = True
 goodToShare _                   = False
 
-legalToInline :: AUntypedFeld a -> Bool
+legalToInline :: UntypedFeld a -> Bool
 legalToInline _                    = True
 
 type Rename a = State VarId a
 
-rename :: AUntypedFeld a -> Rename (AUntypedFeld a)
+rename :: UntypedFeld a -> Rename (UntypedFeld a)
 rename = renameA M.empty
 
-type RRExp a = UntypedFeldF (AUntypedFeld a)
+type RRExp a = UntypedFeldF (UntypedFeld a)
 
-renameA :: M.Map VarId (RRExp a) -> AUntypedFeld a -> Rename (AUntypedFeld a)
+renameA :: M.Map VarId (RRExp a) -> UntypedFeld a -> Rename (UntypedFeld a)
 renameA env (AIn a r) = do r1 <- renameR env r
                            return $ AIn a r1
 

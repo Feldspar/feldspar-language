@@ -107,7 +107,7 @@ instance Show ValueInfo where
   show (VIProd vs)  = "VIProd " ++ show vs
 
 -- | Annotate a literal with value info.
-aLit :: Lit -> AUntypedFeld ValueInfo
+aLit :: Lit -> UntypedFeld ValueInfo
 aLit l = AIn (literalVI l) (Literal l)
 
 -- | Construct an Elements value info from those of the index and value parts

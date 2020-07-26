@@ -38,10 +38,10 @@ import Feldspar.Core.Middleend.FromTypeUtil (convSize)
 import Feldspar.Core.Types (BitWidth(..))
 
 -- | General simplification. Could in theory be done at earlier stages.
-optimize :: AUntypedFeld ValueInfo -> AUntypedFeld ValueInfo
+optimize :: UntypedFeld ValueInfo -> UntypedFeld ValueInfo
 optimize e = deadCodeElim $ simplify M.empty e -- go empty . go empty
 
-type AExp = AUntypedFeld ValueInfo -- ^ Annotated expressions
+type AExp = UntypedFeld ValueInfo -- ^ Annotated expressions
 type UExp = UntypedFeldF AExp -- ^ Unannotated expressions
 type SM = M.Map VarId AExp -- ^ Associate a let bound variable with its value
 
@@ -261,14 +261,14 @@ unwrap :: AExp -> UExp
 unwrap (AIn _ e) = e
 
 -- | Is this a literal zero.
-zero :: AUntypedFeld a -> Bool
+zero :: UntypedFeld a -> Bool
 zero (AIn _ (Literal (LInt    _ _ 0))) = True
 zero (AIn _ (Literal (LFloat      0))) = True
 zero (AIn _ (Literal (LDouble     0))) = True
 zero _                                 = False
 
 -- | Is this a literal one.
-one :: AUntypedFeld a -> Bool
+one :: UntypedFeld a -> Bool
 one (AIn _ (Literal (LInt    _ _ 1))) = True
 one (AIn _ (Literal (LFloat      1))) = True
 one (AIn _ (Literal (LDouble     1))) = True
@@ -276,7 +276,7 @@ one _                                 = False
 
 -- | Simple constant folder that returns result or the original expression
 -- | Num, Ord and Eq operations
-constFold :: AUntypedFeld ValueInfo -> Op -> Lit -> Lit -> AUntypedFeld ValueInfo
+constFold :: UntypedFeld ValueInfo -> Op -> Lit -> Lit -> UntypedFeld ValueInfo
 constFold _ Add (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (n1 + n2))
 constFold _ Sub (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (n1 - n2))
 constFold _ Mul (LInt sz n n1) (LInt _ _ n2) = aLit (LInt sz n (n1 * n2))
@@ -325,13 +325,13 @@ constFold _ GetIx (LArray _ ls) (LInt _ _ n)
 
 constFold e _ _ _ = e
 
-constFold1 :: AUntypedFeld ValueInfo -> Op -> Lit -> AUntypedFeld ValueInfo
+constFold1 :: UntypedFeld ValueInfo -> Op -> Lit -> UntypedFeld ValueInfo
 constFold1 e GetLength (LArray _ xs)
   | 1 :# IntType s n <- typeof e = aLit (LInt s n $ fromIntegral $ length xs)
 constFold1 e _ _ = e
 
 -- | Scan an Epar/Ewrite-nest and return the element written to a position.
-grabWrite :: Integer -> AUntypedFeld a -> Maybe (AUntypedFeld a)
+grabWrite :: Integer -> UntypedFeld a -> Maybe (UntypedFeld a)
 grabWrite n (AIn _ (App EPar _ [e1,e2]))
  | Nothing <- r1 = grabWrite n e2
  | otherwise = r1
@@ -343,7 +343,7 @@ grabWrite _ _ = Nothing
 mkLet :: Var -> AExp -> AExp -> AExp
 mkLet v rhs body = mkLets ([(v,rhs)], body)
 
-eUnit :: AUntypedFeld ValueInfo
+eUnit :: UntypedFeld ValueInfo
 eUnit = aLit $ LTup []
 
 -- We need to eliminate dead bindings

@@ -123,7 +123,7 @@ import Feldspar.Core.Middleend.PushLets
 import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.SizeProp as SP
 import Feldspar.Core.Types
-import Feldspar.Core.UntypedRepresentation (AUntypedFeld,
+import Feldspar.Core.UntypedRepresentation (UntypedFeld,
                                             stringTree, stringTreeExp
                                            )
 import Feldspar.Core.Language
@@ -208,28 +208,28 @@ sugar = resugar
 --        with calls to the frontend function.
 
 -- | Untype, optimize and unannotate.
-untype :: Options -> ASTF a -> AUntypedFeld ValueInfo
+untype :: Options -> ASTF a -> UntypedFeld ValueInfo
 untype opts = cleanUp opts
             . untypeDecor opts
 
 -- | Untype and optimize.
-untypeDecor :: Options -> ASTF a -> AUntypedFeld ValueInfo
+untypeDecor :: Options -> ASTF a -> UntypedFeld ValueInfo
 untypeDecor opts = pushLets
                  . optimize
                  . sinkLets opts
                  . justUntype
 
 -- | External module interface.
-untypeUnOpt :: Options -> ASTF a -> AUntypedFeld ValueInfo
+untypeUnOpt :: Options -> ASTF a -> UntypedFeld ValueInfo
 untypeUnOpt opts = cleanUp opts
                  . justUntype
 
--- | Only do the conversion to AUntypedFeld ValueInfo
-justUntype :: ASTF a -> AUntypedFeld ValueInfo
+-- | Only do the conversion to UntypedFeld ValueInfo
+justUntype :: ASTF a -> UntypedFeld ValueInfo
 justUntype = renameExp . toU . SP.sizeProp . adjustBindings . unASTF
 
 -- | Prepare the code for fromCore
-cleanUp :: Options -> AUntypedFeld ValueInfo -> AUntypedFeld ValueInfo
+cleanUp :: Options -> UntypedFeld ValueInfo -> UntypedFeld ValueInfo
 cleanUp opts = createTasks opts . uniqueVars
 
 --------------------------------------------------------------------------------
