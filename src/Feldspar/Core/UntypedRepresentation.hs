@@ -103,19 +103,19 @@ import Feldspar.Core.Types (Length)
 -- | Types representing an annotated term
 type UntypedFeld a = Term a UntypedFeldF
 
-data Term a f = AIn a (f (Term a f))
+data Term a f = In a (f (Term a f))
 
 deriving instance (Eq a, Eq (f (Term a f))) => Eq (Term a f)
 instance (Show (f (Term a f))) => Show (Term a f) where
-  show (AIn _ f) = show f
+  show (In _ f) = show f
 
 -- | Extract the annotation part of an UntypedFeld
 getAnnotation :: UntypedFeld a -> a
-getAnnotation (AIn r _) = r
+getAnnotation (In r _) = r
 
 -- | Drop the annotation part of an UntypedFeld
 dropAnnotation :: UntypedFeld a -> UntypedFeldF (UntypedFeld a)
-dropAnnotation (AIn _ e) = e
+dropAnnotation (In _ e) = e
 
 data Size = S8 | S16 | S32 | S40 | S64
           | S128 -- Used by SICS.
@@ -446,13 +446,13 @@ stringTree = stringTreeExp (const "")
 stringTreeExp :: (a -> String) -> UntypedFeld a -> Tree String
 stringTreeExp prA = go
   where
-    go (AIn r (Variable v))         = Node (show v ++ prC (typeof v) ++ prA r) []
-    go (AIn _ (Lambda v e))         = Node ("Lambda "++show v ++ prC (typeof v)) [go e]
-    go (AIn _ (LetFun (s,k,e1) e2)) = Node (unwords ["LetFun", show k, s]) [go e1, go e2]
-    go (AIn _ (Literal l))          = Node (show l ++ prC (typeof l)) []
-    go (AIn r (App Let t es))       = Node "Let" $ goLet $ AIn r (App Let t es)
-    go (AIn r (App p t es))         = Node (show p ++ prP t r) (map go es)
-    goLet (AIn _ (App Let _ [eRhs, AIn _ (Lambda v e)]))
+    go (In r (Variable v))         = Node (show v ++ prC (typeof v) ++ prA r) []
+    go (In _ (Lambda v e))         = Node ("Lambda "++show v ++ prC (typeof v)) [go e]
+    go (In _ (LetFun (s,k,e1) e2)) = Node (unwords ["LetFun", show k, s]) [go e1, go e2]
+    go (In _ (Literal l))          = Node (show l ++ prC (typeof l)) []
+    go (In r (App Let t es))       = Node "Let" $ goLet $ In r (App Let t es)
+    go (In r (App p t es))         = Node (show p ++ prP t r) (map go es)
+    goLet (In _ (App Let _ [eRhs, In _ (Lambda v e)]))
                                     = Node ("Var " ++ show v ++ prC (typeof v) ++ " = ") [go eRhs]
                                     : goLet e
     goLet e = [Node "In" [go e]]
@@ -461,11 +461,11 @@ stringTreeExp prA = go
 
 prettyExp :: (Type -> a -> String) -> UntypedFeld a -> String
 prettyExp prA e = render (pr 0 0 e)
-  where pr p i (AIn r e) = pe p i r e
+  where pr p i (In r e) = pe p i r e
         pe _ i _ (Variable v) = line i $ show v
         pe _ i _ (Literal l) = line i $ show l
         pe p i _ (Lambda v e) = par p 0 $ join $ line i ("\\ " ++ pv Nothing v ++ " ->") ++ pr 0 (i+2) e
-        pe p i r (App Let t es) = par p 0 $ line i "let" ++ pLet i (AIn r $ App Let t es)
+        pe p i r (App Let t es) = par p 0 $ line i "let" ++ pLet i (In r $ App Let t es)
         pe p i r (App f t es) = par p 10 $ join $ line i (show f ++ prP t r) ++ pArgs p (i+2) es
         pe _ i _ (LetFun (s,k,body) e) = line i ("letfun " ++ show k ++ " " ++ s)
                                          ++ pr 0 (i+2) body
@@ -473,10 +473,10 @@ prettyExp prA e = render (pr 0 0 e)
                                          ++ pr 0 (i+2) e
 
         pArgs _ _ [] = []
-        pArgs p i [e@(AIn _ (Lambda _ _))] = pr p i e
+        pArgs p i [e@(In _ (Lambda _ _))] = pr p i e
         pArgs p i (e:es) = pr 11 i e ++ pArgs p i es
 
-        pLet i (AIn _ (App Let _ [eRhs, AIn _ (Lambda v e)]))
+        pLet i (In _ (App Let _ [eRhs, In _ (Lambda v e)]))
                = join (line (i+2) (pv Nothing v ++ " =") ++ pr 0 (i+4) eRhs) ++ pLet i e
         pLet i e = line i "in" ++ pr 0 (i+2) e
 
@@ -529,12 +529,12 @@ instance HasType Lit where
 instance HasType (UntypedFeld a) where
     type TypeOf (UntypedFeld a)           = Type
    -- Binding
-    typeof (AIn _ (Variable v))            = typeof v
-    typeof (AIn _ (Lambda v e))            = FunType (typeof v) (typeof e)
-    typeof (AIn _ (LetFun _ e))            = typeof e
+    typeof (In _ (Variable v))            = typeof v
+    typeof (In _ (Lambda v e))            = FunType (typeof v) (typeof e)
+    typeof (In _ (LetFun _ e))            = typeof e
    -- Literal
-    typeof (AIn _ (Literal l))             = typeof l
-    typeof (AIn _ (App _ t _))             = t
+    typeof (In _ (Literal l))             = typeof l
+    typeof (In _ (App _ t _))             = t
 
 -- | Get free variables and their annotations for an UntypedFeld expression
 fv :: UntypedFeld a -> [(a, Var)]
@@ -543,59 +543,59 @@ fv = nubBy ((==) `on` snd) . fvA' []
 -- | Internal helper function for fv
 fvA' :: [Var] -> UntypedFeld a -> [(a, Var)]
    -- Binding
-fvA' vs (AIn r (Variable v)) | v `elem` vs = []
+fvA' vs (In r (Variable v)) | v `elem` vs = []
                              | otherwise   = [(r, v)]
-fvA' vs (AIn _ (Lambda v e))               = fvA' (v:vs) e
-fvA' vs (AIn _ (LetFun (_, _, e1) e2))     = fvA' vs e1 ++ fvA' vs e2
+fvA' vs (In _ (Lambda v e))               = fvA' (v:vs) e
+fvA' vs (In _ (LetFun (_, _, e1) e2))     = fvA' vs e1 ++ fvA' vs e2
    -- Literal
-fvA' _  (AIn _ Literal{})                  = []
+fvA' _  (In _ Literal{})                  = []
 -- Common nodes.
-fvA' vs (AIn _ (App _ _ es))               = concatMap (fvA' vs) es
+fvA' vs (In _ (App _ _ es))               = concatMap (fvA' vs) es
 
 -- | Collect nested let binders into the binders and the body.
 collectLetBinders :: UntypedFeld a -> ([(Var, UntypedFeld a)], UntypedFeld a)
 collectLetBinders = go []
-  where go acc (AIn _ (App Let _ [e, AIn _ (Lambda v b)])) = go ((v, e):acc) b
+  where go acc (In _ (App Let _ [e, In _ (Lambda v b)])) = go ((v, e):acc) b
         go acc e                                           = (reverse acc, e)
 
 -- | Collect binders from nested lambda expressions.
 collectBinders :: UntypedFeld a -> ([(a, Var)], UntypedFeld a)
 collectBinders = go []
-  where go acc (AIn a (Lambda v e)) = go ((a,v):acc) e
+  where go acc (In a (Lambda v e)) = go ((a,v):acc) e
         go acc e                    = (reverse acc, e)
 
 -- | Inverse of collectLetBinders, put the term back together.
 mkLets :: ([(Var, UntypedFeld a)], UntypedFeld a) -> UntypedFeld a
 mkLets ([], body)       = body
-mkLets ((v, e):t, body) = AIn r (App Let t' [e, body'])
-  where body'        = AIn r (Lambda v (mkLets (t, body))) -- Value info of result
+mkLets ((v, e):t, body) = In r (App Let t' [e, body'])
+  where body'        = In r (Lambda v (mkLets (t, body))) -- Value info of result
         FunType _ t' = typeof body'
         r            = getAnnotation body
 
 -- | Inverse of collectBinders, make a lambda abstraction.
 mkLam :: [(a, Var)] -> UntypedFeld a -> UntypedFeld a
 mkLam []         e = e
-mkLam ((a, h):t) e = AIn a (Lambda h (mkLam t e))
+mkLam ((a, h):t) e = In a (Lambda h (mkLam t e))
 
 -- | Make an application.
 mkApp :: a -> Type -> Op -> [UntypedFeld a] -> UntypedFeld a
-mkApp a t p es = AIn a (App p t es)
+mkApp a t p es = In a (App p t es)
 
 -- | Make a tuple; constructs the type from the types of the components
 mkTup :: a -> [UntypedFeld a] -> UntypedFeld a
-mkTup a es = AIn a $ App Tup (TupType $ map typeof es) es
+mkTup a es = In a $ App Tup (TupType $ map typeof es) es
 
 -- | Substitute new for dst in e. Assumes no shadowing.
 subst :: UntypedFeld a -> Var -> UntypedFeld a -> UntypedFeld a
 subst new dst = go
-  where go v@(AIn _ (Variable v')) | dst == v' = new -- Replace.
+  where go v@(In _ (Variable v')) | dst == v' = new -- Replace.
                                    | otherwise = v -- Stop.
-        go l@(AIn r (Lambda v e')) | v == dst  = l -- Stop.
-                                   | otherwise = AIn r (Lambda v (go e'))
-        go (AIn r (LetFun (s, k, e1) e2))
-           = AIn r (LetFun (s, k, go e1) (go e2)) -- Recurse.
-        go l@(AIn _ Literal{})  = l -- Stop.
-        go (AIn r (App p t es)) = AIn r (App p t (map go es)) -- Recurse.
+        go l@(In r (Lambda v e')) | v == dst  = l -- Stop.
+                                   | otherwise = In r (Lambda v (go e'))
+        go (In r (LetFun (s, k, e1) e2))
+           = In r (LetFun (s, k, go e1) (go e2)) -- Recurse.
+        go l@(In _ Literal{})  = l -- Stop.
+        go (In r (App p t es)) = In r (App p t (map go es)) -- Recurse.
 
 -- | Expressions that can and should be shared
 sharable :: UntypedFeld a -> Bool
@@ -603,20 +603,20 @@ sharable e = legalToShare e && goodToShare e
 
 -- | Expressions that can be shared without breaking fromCore
 legalToShare :: UntypedFeld a -> Bool
-legalToShare (AIn _ (App op _ _)) = op `notElem` [ESkip, EWrite, EPar, EparFor,
+legalToShare (In _ (App op _ _)) = op `notElem` [ESkip, EWrite, EPar, EparFor,
                                                   Return, Bind, Then, When,
                                                   NewArr, NewArr_, GetArr, SetArr, ArrLength,
                                                   For, While,
                                                   NewRef, GetRef, SetRef, ModRef]
-legalToShare (AIn _ (Lambda _ _)) = False
+legalToShare (In _ (Lambda _ _)) = False
 legalToShare _                    = True
 
 -- | Expressions that are expensive enough to be worth sharing
 goodToShare :: UntypedFeld a -> Bool
-goodToShare (AIn _ (Literal l))
+goodToShare (In _ (Literal l))
   | LArray _ (_:_) <- l = True
   | LTup (_:_)     <- l = True
-goodToShare (AIn _ App{})       = True
+goodToShare (In _ App{})       = True
 goodToShare _                   = False
 
 legalToInline :: UntypedFeld a -> Bool
@@ -630,8 +630,8 @@ rename = renameA M.empty
 type RRExp a = UntypedFeldF (UntypedFeld a)
 
 renameA :: M.Map VarId (RRExp a) -> UntypedFeld a -> Rename (UntypedFeld a)
-renameA env (AIn a r) = do r1 <- renameR env r
-                           return $ AIn a r1
+renameA env (In a r) = do r1 <- renameR env r
+                          return $ In a r1
 
 renameR :: M.Map VarId (RRExp a) -> RRExp a -> Rename (RRExp a)
 renameR env (Variable v) = return $ env M.! varNum v

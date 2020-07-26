@@ -67,26 +67,26 @@ toU (((R.Info i) :: R.Info a) :& e)
   = i2 $ Lambda (Var n (untypeType b (fst i)) s) $ toU e'
   | Sym R.Cons :@ a1 :@ a2 <- e
   , e' <- toU a1
-  , AIn _ (App Tup (U.TupType ts) es) <- toU a2
+  , In _ (App Tup (U.TupType ts) es) <- toU a2
   = i2 $ App Tup (U.TupType $ typeof e' : ts) $ e' : es
   | Sym R.Car :@ a <- e
-  , AIn _ (App (Drop n) (U.TupType (t:_)) es) <- addDrop $ toU a
+  , In _ (App (Drop n) (U.TupType (t:_)) es) <- addDrop $ toU a
   = i2 $ App (Sel n) t es
   | Sym R.Cdr :@ a <- e
-  , AIn _ (App (Drop n) (U.TupType (_:ts)) es) <- addDrop $ toU a
+  , In _ (App (Drop n) (U.TupType (_:ts)) es) <- addDrop $ toU a
   = i2 $ App (Drop $ n + 1) (U.TupType ts) es
   | Sym R.Tup :@ a <- e
-  , AIn _ e' <- toU a
+  , In _ e' <- toU a
   = i2 e'
   | (op, es) <- go e []
   = i2 $ App op (untypeType tr i) es
   where tr = typeRepF :: TypeRep a
-        i2 = AIn $ toValueInfo tr i
+        i2 = In $ toValueInfo tr i
         go :: forall a' . Expr a' -> [UntypedFeld ValueInfo] -> (Op, [UntypedFeld ValueInfo])
         go (Sym op) es = (trOp op, es)
         go (f :@ e') es = go f $ toU e' : es
-        addDrop e'@(AIn _ (App (Drop _) _ _)) = e'
-        addDrop e' = AIn (error "FromTyped: temporary drop")
+        addDrop e'@(In _ (App (Drop _) _ _)) = e'
+        addDrop e' = In (error "FromTyped: temporary drop")
                          (App (Drop 0) (typeof e') [e'])
 
 -- | Translate a Typed operator to the corresponding untyped one

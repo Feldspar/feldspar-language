@@ -48,8 +48,8 @@ uniqueVars :: UntypedFeld a -> UntypedFeld a
 uniqueVars e = evalState (uniqA M.empty e) S.empty
 
 uniqA :: M.Map VarId (RRExp a) -> UntypedFeld a -> U (UntypedFeld a)
-uniqA vm (AIn r e) = do e1 <- uniq vm e
-                        return $ AIn r e1
+uniqA vm (In r e) = do e1 <- uniq vm e
+                       return $ In r e1
 
 uniq :: M.Map VarId (RRExp a) -> RRExp a -> U (RRExp a)
 uniq vm (Variable v) = return $ vm M.! varNum v

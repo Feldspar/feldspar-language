@@ -81,7 +81,7 @@ fromExpr :: UntypedFeld a -> AExpB a
 fromExpr e = (Bags [], e)
 
 unAnnotateB :: AExpB a -> RExpB a
-unAnnotateB (b, AIn _ e) = (b, e)
+unAnnotateB (b, In _ e) = (b, e)
 
 fromRExpr :: RRExp a -> RExpB a
 fromRExpr e = (Bags [], e)
@@ -102,7 +102,7 @@ app op t es = (concatBags bs, App op t es1)
   where (bs,es1) = unzip es
 
 aIn :: a -> RExpB a -> AExpB a
-aIn r (b,e) = (b, AIn r e)
+aIn r (b,e) = (b, In r e)
 
 mkBinds :: ([(Var, AExpB a)], AExpB a) -> AExpB a
 mkBinds (bs,(b,e)) = (foldr appendBag (appendBag (Item $ zip vs es1) b) bs1, e)

@@ -42,49 +42,49 @@ createTasks :: Options -> UntypedFeld ValueInfo -> UntypedFeld ValueInfo
 createTasks opts e = evalState (go opts e) 0
 
 go :: Options -> UntypedFeld ValueInfo -> State Integer (UntypedFeld ValueInfo)
-go _   e@(AIn _ Variable{}) = return e
-go env (AIn r (Lambda v e)) = do
+go _   e@(In _ Variable{}) = return e
+go env (In r (Lambda v e)) = do
   e' <- go env e
-  return $ AIn r (Lambda v e')
-go env (AIn r (LetFun (s, k, e1) e2))
- = liftM2 (\e1' e2' -> AIn r (LetFun (s, k, e1') e2')) (go env e1) (go env e2)
-go _   l@(AIn _ Literal{}) = return l
-go env (AIn r (App p _ [e])) | p `elem` [MkFuture, ParFork] = do
+  return $ In r (Lambda v e')
+go env (In r (LetFun (s, k, e1) e2))
+ = liftM2 (\e1' e2' -> In r (LetFun (s, k, e1') e2')) (go env e1) (go env e2)
+go _   l@(In _ Literal{}) = return l
+go env (In r (App p _ [e])) | p `elem` [MkFuture, ParFork] = do
   p'' <- go env p'
   i <- freshId
   let taskName = "task" ++ show i
       core = "task_core" ++ show i
       k = if p == MkFuture then Future else Par
-  return $ AIn r (LetFun (core, k, p'') (AIn r (App (Call k taskName) t' vs')))
+  return $ In r (LetFun (core, k, p'') (In r (App (Call k taskName) t' vs')))
    where vs = fv e
-         vs' = map (\(r', v') -> AIn r' $ Variable v') vs
+         vs' = map (\(r', v') -> In r' $ Variable v') vs
          p' = mkLam vs e
          t' = FValType $ typeof e
-go env (AIn r (App NoInline _ [p])) = do
+go env (In r (App NoInline _ [p])) = do
   p'' <- go env p'
   i <- freshId
   let name = "noinline" ++ show i
-  return $ AIn r (LetFun (name, None, p'') (AIn r (App (Call None name) t' vs')))
+  return $ In r (LetFun (name, None, p'') (In r (App (Call None name) t' vs')))
    where vs = fv p
-         vs' = map (\(r', v') -> AIn r' $ Variable v') vs
+         vs' = map (\(r', v') -> In r' $ Variable v') vs
          p' = mkLam vs p
          t' = typeof p
-go env (AIn r1 (App f t [l, e@(AIn r2 (Lambda v body))]))
+go env (In r1 (App f t [l, e@(In r2 (Lambda v body))]))
   | Wool `inTarget` env && f `elem` [EparFor, Parallel] = do
   p'' <- go env p'
   i <- freshId
   let name  = "wool" ++ show i
-      body' = AIn r2 (Lambda v (AIn r2 (App (Call Loop name) t' $ tail vs')))
-  return $ AIn r1 (LetFun (name, Loop, p'') (AIn r1 (App f t [l,body'])))
+      body' = In r2 (Lambda v (In r2 (App (Call Loop name) t' $ tail vs')))
+  return $ In r1 (LetFun (name, Loop, p'') (In r1 (App f t [l,body'])))
    where -- Make sure index is outermost parameter.
          -- FIXME: We are losing precision in the annotations here.
          vs  = (topInfo $ varType v, v):fv e
-         vs' = map (\(r', v') -> AIn r' $ Variable v') vs
+         vs' = map (\(r', v') -> In r' $ Variable v') vs
          p'  = mkLam vs body
          t'  = typeof body
-go env (AIn r (App p t es)) = do
+go env (In r (App p t es)) = do
   es' <- mapM (go env) es
-  return $ AIn r (App p t es')
+  return $ In r (App p t es')
 
 freshId :: State Integer Integer
 freshId = do

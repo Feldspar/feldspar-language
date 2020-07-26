@@ -108,7 +108,7 @@ instance Show ValueInfo where
 
 -- | Annotate a literal with value info.
 aLit :: Lit -> UntypedFeld ValueInfo
-aLit l = AIn (literalVI l) (Literal l)
+aLit l = In (literalVI l) (Literal l)
 
 -- | Construct an Elements value info from those of the index and value parts
 elementsVI :: ValueInfo -> ValueInfo -> ValueInfo

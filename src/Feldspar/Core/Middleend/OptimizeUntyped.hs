@@ -46,13 +46,13 @@ type UExp = UntypedFeldF AExp -- ^ Unannotated expressions
 type SM = M.Map VarId AExp -- ^ Associate a let bound variable with its value
 
 simplify :: SM -> AExp -> AExp
-simplify env' (AIn r e') = simp env' e'
-  where simp env (Variable v) = AIn r $ derefToA env v
-        simp env (Lambda v e) = AIn r $ Lambda v $ simplify env e -- Or use mkLam
-        simp _   (Literal l) = AIn r $ Literal l
+simplify env' (In r e') = simp env' e'
+  where simp env (Variable v) = In r $ derefToA env v
+        simp env (Lambda v e) = In r $ Lambda v $ simplify env e -- Or use mkLam
+        simp _   (Literal l) = In r $ Literal l
         simp env (App Let _ [eRhs, eLam]) = simpLet env (simplify env eRhs) (unwrap eLam)
         -- Transform Bind to Then for values of type Unit
-        simp env (App Bind t [e1, AIn _ (Lambda v e2)])
+        simp env (App Bind t [e1, In _ (Lambda v e2)])
            | typeof v == TupType []
            = simpApp env r Then t [simplify env e1, simplify (extend env v eUnit) e2]
         simp env (App Condition t [ec, et, ee]) = simpCond env r t (simplify env ec) et ee
@@ -73,7 +73,7 @@ simpLet _ _ eLam
   = error $ "OptimizeUntyped.simpLet: malformed lambda in let: " ++ show eLam
 
 simpCond :: SM -> ValueInfo -> Type -> AExp -> AExp -> AExp -> AExp
-simpCond env r t ec@(AIn _ (Variable v)) et ee = AIn r $ App Condition t [ec, et1, ee1]
+simpCond env r t ec@(In _ (Variable v)) et ee = In r $ App Condition t [ec, et1, ee1]
   where et1 = simplify (extend env v $ aLit $ LBool True)  et
         ee1 = simplify (extend env v $ aLit $ LBool False) ee
 simpCond env r t ec et ee = simpApp env r Condition t [ec, simplify env et, simplify env ee]
@@ -89,17 +89,17 @@ simpLoop env r op t (eTC:es) = go op (simplify env eTC) es
          , Lambda vSt body <- unwrap eLam1
          = simplify env $ mkLet vIx (aLit $ LInt s sz 0)
                         $ mkLet vSt eSt body
-        go EparFor tc [AIn _ (Lambda vIx body)]
+        go EparFor tc [In _ (Lambda vIx body)]
          | zero tc
-         = AIn r $ App ESkip t []
+         = In r $ App ESkip t []
          | Literal (LInt s sz 1) <- unwrap tc
          = simplify env $ mkLet vIx (aLit $ LInt s sz 0) body
         -- Fall through
-        go op' tc es' = AIn r $ App op' t (tc:map (simplify env) es')
+        go op' tc es' = In r $ App op' t (tc:map (simplify env) es')
 
 simpApp :: SM -> ValueInfo -> Op -> Type -> [AExp] -> AExp
 simpApp env r op' t' es' = go op' t' es'
-  where eOrig = AIn r $ App op' t' es'
+  where eOrig = In r $ App op' t' es'
         go :: Op -> Type -> [AExp] -> AExp
         go Add _ [e1, e2]
          | zero e1 = e2
@@ -113,12 +113,12 @@ simpApp env r op' t' es' = go op' t' es'
          | one e2 = e1
          | zero e1 = e1
          | zero e2 = e2
-         | Just (s,n) <- uLogOf t (examine env e1) = AIn r $ App (lshift s) t [e2, n]
-         | Just (s,n) <- uLogOf t (examine env e2) = AIn r $ App (lshift s) t [e1, n]
+         | Just (s,n) <- uLogOf t (examine env e1) = In r $ App (lshift s) t [e2, n]
+         | Just (s,n) <- uLogOf t (examine env e2) = In r $ App (lshift s) t [e1, n]
 
         go Div t [e1, e2]
          | one e2 = e1
-         | Just (s,n) <- uLogOf t (examine env e2) = AIn r $ App (rshift s) t [e1, n]
+         | Just (s,n) <- uLogOf t (examine env e2) = In r $ App (rshift s) t [e1, n]
 
         go Condition _ [ec, et, ee]
          | Literal (LBool b) <- unwrap ec
@@ -155,21 +155,21 @@ simpApp env r op' t' es' = go op' t' es'
         -- element. Can e seen in the metrics test in feldspar-compiler.
         -- (RunMutableArray (Bind (NewArr_ 1)
         --                        (\v3 -> Then (SetArr v3 0 e3) (Return v3)))) ! 0
-        go GetIx _ [arr, AIn _ (Literal (LInt _ _ 0))]
-         | (AIn _ (App RunMutableArray _ [AIn _ (App Bind _ [AIn _ (App NewArr_ _ [l]), e'])]))
+        go GetIx _ [arr, In _ (Literal (LInt _ _ 0))]
+         | (In _ (App RunMutableArray _ [In _ (App Bind _ [In _ (App NewArr_ _ [l]), e'])]))
            <- arr
          , one l
-         , (AIn _ (Lambda v1 (AIn _ (App Then _  [sarr, ret])))) <- e'
-         , (AIn _ (App SetArr _ [AIn _ (Variable v3), AIn _ (Literal (LInt _ _ 0)), e3]))
+         , (In _ (Lambda v1 (In _ (App Then _  [sarr, ret])))) <- e'
+         , (In _ (App SetArr _ [In _ (Variable v3), In _ (Literal (LInt _ _ 0)), e3]))
            <- sarr
-         , (AIn _ (App Return _ [AIn _ (Variable v2)])) <- ret
+         , (In _ (App Return _ [In _ (Variable v2)])) <- ret
          , v1 == v2
          , v1 == v3
          = e3
 
         -- Same rule as previous rule but with Elements as backing write.
-        go GetIx _ [arr, AIn _ (Literal (LInt _ _ n))]
-         | AIn _ (App EMaterialize _ [AIn _ Literal{}, e@(AIn _ (App EPar _ _))]) <- arr
+        go GetIx _ [arr, In _ (Literal (LInt _ _ n))]
+         | In _ (App EMaterialize _ [In _ Literal{}, e@(In _ (App EPar _ _))]) <- arr
          , Just e3 <- grabWrite n e
          = e3
 
@@ -249,29 +249,29 @@ deref env v = maybe (Variable v) (examine env) $ M.lookup (varNum v) env
 
 derefToA :: SM -> Var -> UExp
 derefToA env v = case M.lookup (varNum v) env of
-                   Just (AIn _ (Variable v')) -> derefToA env v'
-                   Just e@(AIn _ ue) | not $ sharable e -> ue
+                   Just (In _ (Variable v')) -> derefToA env v'
+                   Just e@(In _ ue) | not $ sharable e -> ue
                    _ -> Variable v
 
 examine :: SM -> AExp -> UExp
-examine env (AIn _ (Variable v)) = deref env v
-examine _   (AIn _ e)            = e
+examine env (In _ (Variable v)) = deref env v
+examine _   (In _ e)            = e
 
 unwrap :: AExp -> UExp
-unwrap (AIn _ e) = e
+unwrap (In _ e) = e
 
 -- | Is this a literal zero.
 zero :: UntypedFeld a -> Bool
-zero (AIn _ (Literal (LInt    _ _ 0))) = True
-zero (AIn _ (Literal (LFloat      0))) = True
-zero (AIn _ (Literal (LDouble     0))) = True
+zero (In _ (Literal (LInt    _ _ 0))) = True
+zero (In _ (Literal (LFloat      0))) = True
+zero (In _ (Literal (LDouble     0))) = True
 zero _                                 = False
 
 -- | Is this a literal one.
 one :: UntypedFeld a -> Bool
-one (AIn _ (Literal (LInt    _ _ 1))) = True
-one (AIn _ (Literal (LFloat      1))) = True
-one (AIn _ (Literal (LDouble     1))) = True
+one (In _ (Literal (LInt    _ _ 1))) = True
+one (In _ (Literal (LFloat      1))) = True
+one (In _ (Literal (LDouble     1))) = True
 one _                                 = False
 
 -- | Simple constant folder that returns result or the original expression
@@ -332,11 +332,11 @@ constFold1 e _ _ = e
 
 -- | Scan an Epar/Ewrite-nest and return the element written to a position.
 grabWrite :: Integer -> UntypedFeld a -> Maybe (UntypedFeld a)
-grabWrite n (AIn _ (App EPar _ [e1,e2]))
+grabWrite n (In _ (App EPar _ [e1,e2]))
  | Nothing <- r1 = grabWrite n e2
  | otherwise = r1
    where r1 = grabWrite n e1
-grabWrite n (AIn _ (App EWrite _ [AIn _ (Literal (LInt _ _ k)), e]))
+grabWrite n (In _ (App EWrite _ [In _ (Literal (LInt _ _ k)), e]))
  | k == n = Just e
 grabWrite _ _ = Nothing
 
@@ -350,13 +350,13 @@ eUnit = aLit $ LTup []
 
 deadCodeElim :: AExp -> AExp
 deadCodeElim = snd . dceA
-  where dceA (AIn r e) = let (vs,e1) = dceU e in (vs, AIn r e1)
+  where dceA (In r e) = let (vs,e1) = dceU e in (vs, In r e1)
         dceA :: AExp -> (S.Set Var, AExp)
         dceU :: UExp -> (S.Set Var, UExp)
         dceU (Variable v) = (S.singleton v, Variable v)
         dceU (Literal l) = (S.empty, Literal l)
-        dceU (App Let t [eRhs, AIn r (Lambda v eBody)]) = dcLet t (dceA eRhs) r v $ dceA eBody
-        dceU (App Save _ [AIn _ e]) = dceU e
+        dceU (App Let t [eRhs, In r (Lambda v eBody)]) = dcLet t (dceA eRhs) r v $ dceA eBody
+        dceU (App Save _ [In _ e]) = dceU e
         dceU (App op t es) = let (vss,es1) = unzip $ map dceA es
                               in (S.unions vss, App op t es1)
         dceU (Lambda v e) = let (vs,e1) = dceA e
@@ -364,5 +364,5 @@ deadCodeElim = snd . dceA
         dceU e = error $ "OptimizeUntyped.deadCodeElim: illegal expression " ++ show e
         dcLet t (vsR,eR) r v (vsB,eB)
             | S.member v vsB = (vsR `S.union` (v `S.delete` vsB),
-                                App Let t [eR, AIn r $ Lambda v eB])
+                                App Let t [eR, In r $ Lambda v eB])
             | otherwise = (vsB, unwrap eB)
