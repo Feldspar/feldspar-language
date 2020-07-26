@@ -54,7 +54,7 @@ data Bag a = Bags [Bag a]
            | Item a
            deriving (Eq, Ord, Show)
 
-type BindBag a = Bag [(Var, AUntypedFeld a)]
+type BindBag a = Bag [(Var, UntypedFeld a)]
 
 foldBag :: (a -> b -> b) -> b -> Bag a -> b
 foldBag f u (Bags bs) = foldr (\ b r -> foldBag f r b) u bs
@@ -69,15 +69,15 @@ appendBag l         (Item r)  = Bags [l, Item r]
 concatBags :: [Bag a] -> Bag a
 concatBags = foldr appendBag (Bags [])
 
-type AExpB a = (BindBag a, AUntypedFeld a)
+type AExpB a = (BindBag a, UntypedFeld a)
 type RExpB a = (BindBag a, RRExp a)
 
-type RRExp a = UntypedFeldF (AUntypedFeld a)
+type RRExp a = UntypedFeldF (UntypedFeld a)
 
-toExpr :: AExpB a -> AUntypedFeld a
+toExpr :: AExpB a -> UntypedFeld a
 toExpr (b,e) = foldBag (curry mkLets) e b
 
-fromExpr :: AUntypedFeld a -> AExpB a
+fromExpr :: UntypedFeld a -> AExpB a
 fromExpr e = (Bags [], e)
 
 unAnnotateB :: AExpB a -> RExpB a

@@ -167,7 +167,7 @@ noinline1 x = noInline $ not x
 
 -- | Test that foreign imports with result type `M ()` can be used as monadic
 --   actions. This expression cannot be created from the Feldspar front end.
-foreignEffect :: UT.AUntypedFeld ValueInfo
+foreignEffect :: UT.UntypedFeld ValueInfo
 foreignEffect =
     UT.AIn (topInfo void) $ UT.App UT.Then void
         [ alert
@@ -495,7 +495,7 @@ mkGoldTest fun n opts = do
     goldenTest n (vgReadFiles ref) (liftIO act >> vgReadFiles new) cmp upd
 
 -- | Make a golden test for an untyped Feldspar expression
-mkGoldTestUT :: UT.AUntypedFeld ValueInfo -> Prelude.FilePath -> Options -> TestTree
+mkGoldTestUT :: UT.UntypedFeld ValueInfo -> Prelude.FilePath -> Options -> TestTree
 mkGoldTestUT untyped n opts = do
     let ref = goldDir <> n
         new = testDir <> n

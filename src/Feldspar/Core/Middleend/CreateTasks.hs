@@ -38,10 +38,10 @@ import Feldspar.Core.ValueInfo (ValueInfo, topInfo)
 
 -- | Create tasks from MkFuture and similar constructs.
 -- Invariant: There are no MkFuture, ParFork or NoInline constructs in the output.
-createTasks :: Options -> AUntypedFeld ValueInfo -> AUntypedFeld ValueInfo
+createTasks :: Options -> UntypedFeld ValueInfo -> UntypedFeld ValueInfo
 createTasks opts e = evalState (go opts e) 0
 
-go :: Options -> AUntypedFeld ValueInfo -> State Integer (AUntypedFeld ValueInfo)
+go :: Options -> UntypedFeld ValueInfo -> State Integer (UntypedFeld ValueInfo)
 go _   e@(AIn _ Variable{}) = return e
 go env (AIn r (Lambda v e)) = do
   e' <- go env e

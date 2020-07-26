@@ -33,7 +33,7 @@ module Feldspar.Core.Middleend.PushLets (pushLets) where
 import Feldspar.Core.UntypedRepresentation
 import Feldspar.Core.Middleend.Constructors
 
-pushLets :: AUntypedFeld a -> AUntypedFeld a
+pushLets :: UntypedFeld a -> UntypedFeld a
 pushLets = toExpr . go
   where go (AIn _ (App Let _ [rhs, AIn _ (Lambda v body)]))
            | legalToInline rhs = push v (go rhs) (toExpr $ go body)
@@ -48,7 +48,7 @@ data OCount = OC {low, high :: Int}
 data DSCount = DS {dynamic :: OCount, static :: Int}
   deriving (Eq, Show)
 
-push :: Var -> AExpB a -> AUntypedFeld a -> AExpB a
+push :: Var -> AExpB a -> UntypedFeld a -> AExpB a
 push v rhs = snd . goA False False
   where goA lo pa (AIn r1 e) = (norm n1, aIn r1 $ if ph then eB else e1)
            where (n1,e1) = go lo (pa || ph) e

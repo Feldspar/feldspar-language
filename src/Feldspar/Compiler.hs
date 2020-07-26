@@ -85,12 +85,12 @@ import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.SizeProp as SP
 import Feldspar.Core.Representation (AExpr)
 import Feldspar.Core.Reify (ASTF, Syntactic(..), desugar, unASTF)
-import Feldspar.Core.UntypedRepresentation (AUntypedFeld, prettyExp, rename)
+import Feldspar.Core.UntypedRepresentation (UntypedFeld, prettyExp, rename)
 import Feldspar.Core.ValueInfo (PrettyInfo(..), ValueInfo)
 
 -- The front-end driver.
 
-instance PrettyInfo a => Pretty (AUntypedFeld a) where
+instance PrettyInfo a => Pretty (UntypedFeld a) where
   pretty = prettyExp f
      where f t x = " | " ++ prettyInfo t x
 
@@ -101,7 +101,7 @@ frontend :: Options
               (Either
                 (AExpr a)
                 (Either
-                  (AUntypedFeld ValueInfo)
+                  (UntypedFeld ValueInfo)
                   (Either
                     Module
                     (Either (Module, Module) SplitModule))))
@@ -133,14 +133,14 @@ frontend opts = evalPasses 0
 reifyFeld :: Syntactic a => a -> ASTF (Internal a)
 reifyFeld = desugar
 
-renameExp :: AUntypedFeld a -> AUntypedFeld a
+renameExp :: UntypedFeld a -> UntypedFeld a
 renameExp e = evalState (rename e) 0
 
 compile :: Syntactic t => t -> FilePath -> String -> Options -> IO ()
 compile prg fileName funName opts = writeFiles opts compRes fileName
   where compRes = compileToCCore funName opts prg
 
-compileUT :: AUntypedFeld ValueInfo -> FilePath -> String -> Options -> IO ()
+compileUT :: UntypedFeld ValueInfo -> FilePath -> String -> Options -> IO ()
 compileUT prg fileName funName opts = writeFiles opts compRes fileName
   where compRes = fromMaybe (error "compileUT: compilation failed")
                 $ snd $ frontend opts' (Right . Right . Left $ prg)
