@@ -35,11 +35,11 @@ import Feldspar.Core.Middleend.Constructors
 
 pushLets :: UntypedFeld a -> UntypedFeld a
 pushLets = toExpr . go
-  where go (AIn _ (App Let _ [rhs, AIn _ (Lambda v body)]))
+  where go (In _ (App Let _ [rhs, In _ (Lambda v body)]))
            | legalToInline rhs = push v (go rhs) (toExpr $ go body)
            | otherwise = mkBinds ([(v, go rhs)], go body)
-        go (AIn r (App op t es)) = aIn r $ app op t $ map go es
-        go (AIn r (Lambda v e)) = aIn r $ lambda v $ go e
+        go (In r (App op t es)) = aIn r $ app op t $ map go es
+        go (In r (Lambda v e)) = aIn r $ lambda v $ go e
         go e = fromExpr e
 
 data OCount = OC {low, high :: Int}
@@ -50,7 +50,7 @@ data DSCount = DS {dynamic :: OCount, static :: Int}
 
 push :: Var -> AExpB a -> UntypedFeld a -> AExpB a
 push v rhs = snd . goA False False
-  where goA lo pa (AIn r1 e) = (norm n1, aIn r1 $ if ph then eB else e1)
+  where goA lo pa (In r1 e) = (norm n1, aIn r1 $ if ph then eB else e1)
            where (n1,e1) = go lo (pa || ph) e
                  d1 = dynamic n1
                  ph = not pa && (high d1 > 1 || low d1 > 0 && static n1 > 1)

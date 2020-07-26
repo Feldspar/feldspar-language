@@ -77,20 +77,20 @@ expF ai vm e = mdo (s, (bs1,e1)) <- ea aiNew vm e
                        aiNew = keepLoops ++ drop (length profLoops) ai1
                        (idxE, lenE) = idxLenExpr keepLoops
                        r = elementsVI (setLB 0 $ getAnnotation idxE) (getAnnotation e)
-                       eBody = AIn r $ App EWrite (ElementsType $ typeof e) [idxE, e2]
+                       eBody = In r $ App EWrite (ElementsType $ typeof e) [idxE, e2]
                        (bs3, e3) = foldl mkBinds (bs2, eBody) keepLoops
-                       flArr = AIn r $ App EMaterialize (ArrayType top $ typeof e) [lenE, e3]
+                       flArr = In r $ App EMaterialize (ArrayType top $ typeof e) [lenE, e3]
                    arrV <- newVar $ Var 0 (typeof flArr) $ B.pack "a"
-                   let arrVE = AIn r $ Variable arrV
+                   let arrVE = In r $ Variable arrV
                        b = BI {biAbsI = map snd profLoops, biBindIs = bs3, biBind = (arrV, flArr)}
-                       refE = AIn (getAnnotation e) $ App GetIx (typeof e) [arrVE, idxE]
+                       refE = In (getAnnotation e) $ App GetIx (typeof e) [arrVE, idxE]
                    return (s, if null keepLoops || not (sharable e1) || simpleExp ai vm e1
                                  then (bs2, e2) -- We should not float e
                                  else ([b], refE)) -- We float an expanded e in b
 
 ea :: [AbsInfo] -> VarMap -> UExp -> Rename (S.Set Var, ([BindInfo], UExp))
-ea ai vm (AIn r e) = do (s,(bs,e1)) <- eu ai vm e
-                        return (s, (bs, AIn r e1))
+ea ai vm (In r e) = do (s,(bs, e1)) <- eu ai vm e
+                       return (s, (bs, In r e1))
 
 -- | Construct an index expression and length expression
 -- Absinfos are innermost first
@@ -100,13 +100,13 @@ idxLenExpr ai = ixTop $ reverse ai
         ixTop [] = (aLit $ LInt Unsigned S32 0, aLit $ LInt Unsigned S32 0)
         ixE e s (LoopI{trip = (_,tc), ixVar = v} : ai) = ixE (mul e tc `add` var tc v) (mul s tc) ai
         ixE e s [] = (e,s)
-        var e v = AIn (setLB 0 $ getAnnotation e) $ Variable v
-        add x y = AIn (addVI (getAnnotation x) (getAnnotation y)) $ App Add (typeof x) [x, y]
-        mul x y = AIn (mulVI (getAnnotation x) (getAnnotation y)) $ App Mul (typeof x) [x, y]
+        var e v = In (setLB 0 $ getAnnotation e) $ Variable v
+        add x y = In (addVI (getAnnotation x) (getAnnotation y)) $ App Add (typeof x) [x, y]
+        mul x y = In (mulVI (getAnnotation x) (getAnnotation y)) $ App Mul (typeof x) [x, y]
 
 mkBinds :: ([BindInfo], UntypedFeld ValueInfo) -> AbsInfo -> ([BindInfo], UExp)
 mkBinds (bs, e) LoopI{trip = (_,eTrip), ixVar = v} = catch (shiftBIs bs) loopE
-  where loopE = AIn r $ App EparFor (typeof e) [eTrip, AIn r $ Lambda v e]
+  where loopE = In r $ App EparFor (typeof e) [eTrip, In r $ Lambda v e]
         r = getAnnotation e
 
 
@@ -146,7 +146,7 @@ a pair) can not be inlined into the outer pattern in the recursive invocations.
 eu :: [AbsInfo] -> VarMap -> RExp -> Rename (S.Set Var, ([BindInfo], RExp))
 eu _ vm (Variable v) = let (s,e) = vm M.! v in return (s, ([],e))
 eu _ _ (Literal l) = return (S.empty, ([], Literal l))
-eu ai vm (App Let t [eRhs, AIn r (Lambda v eBody)])
+eu ai vm (App Let t [eRhs, In r (Lambda v eBody)])
   = do (fvsR, bseR) <- expE ai vm eRhs
        let (bsR, eR) = bseR -- Note [Lazy binding]
            inline = not (sharable eR) || simpleArrRef eR
@@ -155,10 +155,10 @@ eu ai vm (App Let t [eRhs, AIn r (Lambda v eBody)])
            aiB = if inline then ai else AbsI (S.singleton v) : ai
        (fvsB, bseB) <- expE aiB vmB eBody
        let (bsB, eB) = bseB
-           eNew = App Let t [eR, AIn r $ Lambda v eB]
+           eNew = App Let t [eR, In r $ Lambda v eB]
            bsB1 = if inline then bsB else shiftBIs bsB
        return (fvsB, (bsR ++ bsB1, if inline then dropAnnotation eB else eNew))
-eu ai vm (App op t [eLen, eInit, AIn r1 (Lambda vIx (AIn r2 (Lambda vSt eBody)))])
+eu ai vm (App op t [eLen, eInit, In r1 (Lambda vIx (In r2 (Lambda vSt eBody)))])
   | op `elem` [ForLoop, Sequential]
   = do (fvsL, bseL) <- expE ai vm eLen
        let (bsL, eL) = bseL
@@ -172,8 +172,8 @@ eu ai vm (App op t [eLen, eInit, AIn r1 (Lambda vIx (AIn r2 (Lambda vSt eBody)))
        let (bsB, eB) = bseB
        return (fvsL `S.union` fvsI `S.union` (fvsB S.\\ S.fromList [vIx, vSt]),
                (bsL ++ bsI ++ shiftBIs bsB,
-                App op t [eL, eI, AIn r1 $ Lambda vIx $ AIn r2 $ Lambda vSt eB]))
-eu ai vm (App op t [eLen, AIn r1 (Lambda vIx eBody)])
+                App op t [eL, eI, In r1 $ Lambda vIx $ In r2 $ Lambda vSt eB]))
+eu ai vm (App op t [eLen, In r1 (Lambda vIx eBody)])
   | op `elem` [Parallel, EparFor, For]
   = do (fvsL, bseL) <- expE ai vm eLen
        let (bsL, eL) = bseL
@@ -184,7 +184,7 @@ eu ai vm (App op t [eLen, AIn r1 (Lambda vIx eBody)])
        let (bsB, eB) = bseB
        return (fvsL `S.union` (vIx `S.delete` fvsB),
                (bsL ++ shiftBIs bsB,
-                App op t [eL, AIn r1 $ Lambda vIx eB]))
+                App op t [eL, In r1 $ Lambda vIx eB]))
 eu ai vm (App Condition t (e:es))
   = do fvbse0 <- expE [] vm e
        fvbseR <- mapM (expE ai vm) es
@@ -206,7 +206,7 @@ simpleExp :: [AbsInfo] -> VarMap -> UExp -> Bool
 simpleExp ai vm e = simpleArrRef e || expCost ai vm e <= 2
 
 expCost :: [AbsInfo] -> VarMap -> UExp -> Int
-expCost ai vm (AIn _ e) = go e
+expCost ai vm (In _ e) = go e
   where go (Variable _)  = 0
         go (Literal _)   = 0
         go (App op _ es) = appCost ai vm op es
@@ -214,7 +214,7 @@ expCost ai vm (AIn _ e) = go e
 
 appCost :: [AbsInfo] -> VarMap -> Op -> [UExp] -> Int
 appCost ai vm = go
-  where go Mul [AIn _ (Variable v), AIn _ (Variable u)]
+  where go Mul [In _ (Variable v), In _ (Variable u)]
            | ixAndInv ai v (fst $ vm M.! u) = 1
         go _   _                            = 5
 
@@ -227,9 +227,9 @@ ixAndInv ai v vs = go ai
 
 -- | Check that an expression is a simple array reference that we can inline
 simpleArrRef :: UExp -> Bool
-simpleArrRef (AIn _ (App GetIx _ [AIn _ (Variable _), e])) = simpleIdxE e
-  where simpleIdxE (AIn _ (Variable _)) = True
-        simpleIdxE (AIn _ (App op _ es)) = op `elem` [Add,Sub,Mul] && all simpleIdxE es
+simpleArrRef (In _ (App GetIx _ [In _ (Variable _), e])) = simpleIdxE e
+  where simpleIdxE (In _ (Variable _)) = True
+        simpleIdxE (In _ (App op _ es)) = op `elem` [Add,Sub,Mul] && all simpleIdxE es
         simpleIdxE _ = False
 simpleArrRef _ = False
 

@@ -10,17 +10,17 @@ import Feldspar.Core.UntypedRepresentation
 --
 sinkLets :: Options -> UntypedFeld a -> UntypedFeld a
 sinkLets opts = collectAtTop opts . go
-  where go e@(AIn _ Variable{}) = e
-        go (AIn r (Lambda v e))
-         | (bs1, AIn r' (Lambda v' body)) <- collectLetBinders e
+  where go e@(In _ Variable{}) = e
+        go (In r (Lambda v e))
+         | (bs1, In r' (Lambda v' body)) <- collectLetBinders e
          , not $ null bs1
-         = AIn r (Lambda v $ go (AIn r' (Lambda v' $ mkLets (bs1, body))))
-        go (AIn r (Lambda v e)) = AIn r (Lambda v (go e))
-        go (AIn r (LetFun (s, k, e1) e2)) = AIn r (LetFun (s, k, go e1) (go e2))
-        go l@(AIn _ Literal{}) = l
-        go (AIn r (App Let t [e1, AIn r' (Lambda x e2)]))
-         = AIn r (App Let t [go e1, AIn r' (Lambda x $ go e2)])
-        go (AIn r (App p t es)) = AIn r (App p t $ map go es)
+         = In r (Lambda v $ go (In r' (Lambda v' $ mkLets (bs1, body))))
+        go (In r (Lambda v e)) = In r (Lambda v (go e))
+        go (In r (LetFun (s, k, e1) e2)) = In r (LetFun (s, k, go e1) (go e2))
+        go l@(In _ Literal{}) = l
+        go (In r (App Let t [e1, In r' (Lambda x e2)]))
+         = In r (App Let t [go e1, In r' (Lambda x $ go e2)])
+        go (In r (App p t es)) = In r (App p t $ map go es)
 
 -- | Converts let x = .. in .. \x2 -> e to \x2 -> let x = .. in e
 --   for the top level expression when BA is a target.

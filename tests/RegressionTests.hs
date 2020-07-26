@@ -169,12 +169,12 @@ noinline1 x = noInline $ not x
 --   actions. This expression cannot be created from the Feldspar front end.
 foreignEffect :: UT.UntypedFeld ValueInfo
 foreignEffect =
-    UT.AIn (topInfo void) $ UT.App UT.Then void
+    UT.In (topInfo void) $ UT.App UT.Then void
         [ alert
-        , UT.AIn (topInfo void) $ UT.App UT.Bind void
+        , UT.In (topInfo void) $ UT.App UT.Bind void
             [ getPos
-            , UT.AIn (topInfo void) $
-               UT.Lambda pos $ UT.AIn (topInfo void) $ UT.App UT.Then void
+            , UT.In (topInfo void) $
+               UT.Lambda pos $ UT.In (topInfo void) $ UT.App UT.Then void
                   [ launchMissiles
                   , cleanUp
                   ]
@@ -183,15 +183,15 @@ foreignEffect =
   where
     void   = UT.MutType (UT.TupType [])
     pos    = UT.Var 77 posType B.empty
-    alert  = UT.AIn (topInfo void) $ UT.App (UT.ForeignImport "alert") void []
+    alert  = UT.In (topInfo void) $ UT.App (UT.ForeignImport "alert") void []
     posType = 1 UT.:# UT.FloatType
-    getPos = UT.AIn (topInfo posType) $
+    getPos = UT.In (topInfo posType) $
                UT.App (UT.ForeignImport "getPos") posType []
     launchMissiles =
-      UT.AIn (topInfo void) $
+      UT.In (topInfo void) $
         UT.App (UT.ForeignImport "launchMissiles") void
-          [UT.AIn (topInfo posType) $ UT.Variable pos]
-    cleanUp = UT.AIn (topInfo void) $
+          [UT.In (topInfo posType) $ UT.Variable pos]
+    cleanUp = UT.In (topInfo void) $
                 UT.App (UT.ForeignImport "cleanUp") void []
 
 tuples :: Data Int32 -> Data Int32
