@@ -78,11 +78,11 @@ desugarOption a = resugar $ twotup (isSome a) (fromSome a)
 -- | One-layer sugaring of 'Option'
 sugarOption :: Type a => Data (Tuple '[Bool, a]) -> Option (Data a)
 sugarOption (resugar -> t) = Option (nfst t) (nsnd' t)
-  where -- Workaround for loss of type information with resugar. Should
-        -- be possible to add a type signature instead but I couldn't get
-        -- that to work.
+  where -- Workaround for loss of type information with resugar.
+        -- FIXME: GHC 8.8: Remove nsnd' and put a typesignature:
+        --        sugarOption (resugar -> (t :: Tuple '[a, b]))
         nsnd' :: Tuple '[a, b] -> b
-        nsnd' = sel (Skip First)
+        nsnd' = nsnd
 
 some :: a -> Option a
 some = Option true
