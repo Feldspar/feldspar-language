@@ -237,7 +237,7 @@ shareT :: (Tuple '[Data Length, Data Length]
 shareT = (build $ tuple 1 2, build $ tuple 1 2)
 
 selectT :: Data Length
-selectT = sel First $ snd noshareT
+selectT = nfst $ snd noshareT
 
 prop_concatV = forAll (vectorOf 3 (choose (0,5))) $ \ls ->
                  forAll (mapM (`vectorOf` arbitrary) ls) $ \xss ->

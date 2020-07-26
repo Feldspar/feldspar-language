@@ -1,14 +1,15 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# OPTIONS_GHC -Wall #-}
 
 --
@@ -41,8 +42,7 @@
 
 module Feldspar.Core.NestedTuples
   ( Tuple(..)
-  , Skip(..)
-  , First(..)
+  , Proxy(..)
   , sel
   , tuple
   , build
@@ -57,6 +57,10 @@ module Feldspar.Core.NestedTuples
   , sixtup
   , seventup
   ) where
+
+import Data.Kind
+import Data.Proxy
+import GHC.TypeLits
 
 -- | Data and type constructor for nested tuples
 infixr 5 :*
@@ -81,31 +85,20 @@ instance Show (Tuple '[]) where
   show TNil = "TNil"
 
 -- | Selecting components of a tuple
---     selR First
+--     sel (Proxy @0)
 --   selects the first component of any nonempty nested tuple while
---     selR (Skip First)
+--     sel (Proxy @1)
 --   selects the second component of any tuple with arity at least two.
 
--- | Designating a tuple component
-newtype Skip a = Skip {unSkip :: a}
-data First = First
+-- | Type recursive selection based on type level naturals
+class TSelect (n :: Nat) (a :: [Type]) (b :: Type) | n a -> b where
+  sel :: Proxy n -> Tuple a -> b
 
--- | Type recursive selection based on designator
-class TSelect s t where
-  type TSelResult s t
-  selR :: s -> Tuple t -> TSelResult s t
+instance TSelect 0 (a ': t) a where
+  sel _ (x :* _) = x
 
-instance TSelect a t => TSelect (Skip a) (b ': t) where
-  type TSelResult (Skip a) (b ': t) = TSelResult a t
-  selR s (_ :* y) = selR (unSkip s) y
-
-instance TSelect First (b ': t) where
-  type TSelResult First (b ': t) = b
-  selR _ (x :* _) = x
-
--- | Exposed select interface
-sel :: TSelect s t => s -> Tuple t -> TSelResult s t
-sel = selR
+instance {-# OVERLAPS #-} TSelect (n - 1) t b => TSelect n (a ': t) b where
+  sel _ (_ :* y) = sel (Proxy @(n - 1)) y
 
 -- | Reverse a nested tuple
 class TupleReverse a b c where
@@ -151,12 +144,12 @@ build (TT x) = tupleReverse TNil x
 --   of build does not interact well with <$> and <*> in instances.
 
 -- | Extract the first component of a tuple.
-nfst :: Tuple (a ': b) -> a
-nfst = sel First
+nfst :: TSelect 0 a b => Tuple a -> b
+nfst = sel (Proxy @0)
 
 -- | Extract the second component of a tuple.
-nsnd :: Tuple (a ': b ': c) -> b
-nsnd = sel $ Skip First
+nsnd :: TSelect 1 a b => Tuple a -> b
+nsnd = sel (Proxy @1)
 
 -- | Function for constructing a one-tuple from its components.
 onetup :: a -> Tuple '[a]
