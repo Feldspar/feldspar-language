@@ -47,6 +47,7 @@ import Data.Word
 import Data.Default
 import Data.Hash
 import qualified Test.QuickCheck as Q
+import System.Plugins.MultiStage (Reference(..), Marshal(..))
 import System.Random (Random(..))
 
 import Control.DeepSeq (NFData(..))
@@ -95,13 +96,23 @@ newtype IntN = IntN Int32
     , FiniteBits, Hashable
     )
 
-instance Show WordN
-  where
+instance Show WordN where
     show (WordN a) = show a
 
-instance Show IntN
-  where
+instance Show IntN where
     show (IntN a) = show a
+
+instance Reference WordN where
+  type Ref WordN       = WordN
+
+instance Reference IntN where
+  type Ref IntN        = IntN
+
+instance Marshal WordN where
+  type Rep WordN = WordN
+
+instance Marshal IntN where
+  type Rep IntN        = IntN
 
 -- | Convenience alias for bounded integers
 type BoundedInt a = (Ord a, Bounded a, Integral a, FiniteBits a,
