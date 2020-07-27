@@ -18,9 +18,6 @@ module Feldspar.Compiler.Marshal
   , Marshal(..)
   ) where
 
-import Feldspar.Core.NestedTuples (onetup, twotup, threetup, fourtup, fivetup,
-                                   sixtup, seventup)
-import Feldspar.Core.Types (IntN(..), Tuple(..), WordN(..))
 import System.Plugins.MultiStage
 
 import Data.Complex (Complex(..))
@@ -33,12 +30,8 @@ import Foreign.Storable (Storable(..))
 import qualified Foreign.Storable.Record as Store
 import Foreign.Storable.Tuple ()
 
-instance Reference IntN        where type Ref IntN        = IntN
-instance Reference WordN       where type Ref WordN       = WordN
 instance Reference (Complex a) where type Ref (Complex a) = Complex a
 
-instance Marshal IntN        where type Rep IntN        = IntN
-instance Marshal WordN       where type Rep WordN       = WordN
 instance Marshal (Complex a) where type Rep (Complex a) = Complex a
 
 instance Default (Ptr a) where def = nullPtr
@@ -206,52 +199,3 @@ instance ( Marshal a
       (,,,,,,) <$> to a <*> to b <*> to c <*> to d <*> to e <*> to f <*> to g
     from (a,b,c,d,e,f,g) =
       (,,,,,,) <$> from a <*> from b <*> from c <*> from d <*> from e <*> from f <*> from g
-
-instance Marshal a => Marshal (Tuple '[a]) where
-  type Rep (Tuple '[a]) = Rep a
-  to (a :* TNil) = to a
-  from a = onetup <$> from a
-
-instance (Marshal a, Marshal b) => Marshal (Tuple '[a, b]) where
-  type Rep (Tuple '[a, b]) = (Rep a, Rep b)
-  to (a :* b :* TNil) = (,) <$> to a <*> to b
-  from (a, b) = twotup <$> from a <*> from b
-
-instance (Marshal a, Marshal b, Marshal c) => Marshal (Tuple '[a, b, c]) where
-  type Rep (Tuple '[a, b, c]) = (Rep a, Rep b, Rep c)
-  to (a :* b :* c :* TNil) = (,,) <$> to a <*> to b <*> to c
-  from (a, b, c) = threetup <$> from a <*> from b <*> from c
-
-instance (Marshal a, Marshal b, Marshal c, Marshal d)
-         => Marshal (Tuple '[a, b, c, d]) where
-  type Rep (Tuple '[a, b, c, d]) = (Rep a, Rep b, Rep c, Rep d)
-  to (a :* b :* c :* d :* TNil) = (,,,) <$> to a <*> to b <*> to c <*> to d
-  from (a, b, c, d) = fourtup <$> from a <*> from b <*> from c <*> from d
-
-instance (Marshal a, Marshal b, Marshal c, Marshal d, Marshal e)
-         => Marshal (Tuple '[a, b, c, d, e]) where
-  type Rep (Tuple '[a, b, c, d, e]) = (Rep a, Rep b, Rep c, Rep d, Rep e)
-  to (a :* b :* c :* d :* e :* TNil) =
-    (,,,,) <$> to a <*> to b <*> to c <*> to d <*> to e
-  from (a, b, c, d, e) =
-    fivetup <$> from a <*> from b <*> from c <*> from d <*> from e
-
-instance (Marshal a, Marshal b, Marshal c, Marshal d, Marshal e, Marshal f)
-         => Marshal (Tuple '[a, b, c, d, e, f]) where
-  type Rep (Tuple '[a, b, c, d, e, f]) =
-    (Rep a, Rep b, Rep c, Rep d, Rep e, Rep f)
-  to (a :* b :* c :* d :* e :* f :* TNil) =
-    (,,,,,) <$> to a <*> to b <*> to c <*> to d <*> to e <*> to f
-  from (a, b, c, d, e, f) =
-    sixtup <$> from a <*> from b <*> from c <*> from d <*> from e <*> from f
-
-instance ( Marshal a, Marshal b, Marshal c, Marshal d, Marshal e, Marshal f
-         , Marshal g)
-         => Marshal (Tuple '[a, b, c, d, e, f, g]) where
-  type Rep (Tuple '[a, b, c, d, e, f, g]) =
-    (Rep a, Rep b, Rep c, Rep d, Rep e, Rep f, Rep g)
-  to (a :* b :* c :* d :* e :* f :* g :* TNil) =
-    (,,,,,,) <$> to a <*> to b <*> to c <*> to d <*> to e <*> to f <*> to g
-  from (a, b, c, d, e, f, g) =
-    seventup <$> from a <*> from b <*> from c <*> from d <*> from e <*> from f
-             <*> from g
