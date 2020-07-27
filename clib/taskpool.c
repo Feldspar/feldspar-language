@@ -33,10 +33,6 @@
 //#define LOG
 #include "log.h"
 
-int feldspar_taskpool_hook(void) {
-  return 0;
-}
-
 /* Definition of the Feldspar application's global taskpool. */
 typedef struct {
     int capacity;

@@ -32,8 +32,6 @@
 #include <pthread.h>
 #include "feldspar_array.h"
 
-int feldspar_ivar_hook(void);
-
 struct ivar_internals {
     pthread_mutex_t mutex;
     pthread_cond_t cond;
