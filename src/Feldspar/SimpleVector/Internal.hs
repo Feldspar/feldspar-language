@@ -44,7 +44,6 @@ import Test.QuickCheck
 
 import Feldspar.Core.Reify (Syntactic(..), resugar)
 import Feldspar.Core.Tuple
-import Feldspar.Core.NestedTuples
 
 import Feldspar.Range (rangeSubSat)
 import qualified Feldspar
