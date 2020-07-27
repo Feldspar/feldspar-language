@@ -78,6 +78,7 @@ import Data.Char (chr)
 import Data.List (partition)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
+import GHC.TypeLits
 
 {-
 
@@ -363,16 +364,11 @@ normalizeTypeRep s = out -- Note [Debugging test output differences].
 instance Hashable a => Hashable (Complex a) where
   hash (re :+ im) = hash re `combine` hash im
 
-instance Hashable (T.Signedness a) where
-  hash T.U = hashInt 1
-  hash T.S = hashInt 2
+instance KnownSymbol a => Hashable (T.Signedness a) where
+  hash = hash . symbolVal
 
-instance Hashable (T.BitWidth a) where
-  hash T.N8      = hashInt 1
-  hash T.N16     = hashInt 2
-  hash T.N32     = hashInt 3
-  hash T.N64     = hashInt 4
-  hash T.NNative = hashInt 5
+instance KnownNat a => Hashable (T.BitWidth a) where
+  hash = hashInt . fromIntegral . natVal
 
 -- This instance is needed to allow nested tuples as literals (by the value function)
 instance HashTup a => Hashable (Tuple a) where

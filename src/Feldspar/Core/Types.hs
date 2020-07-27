@@ -56,6 +56,7 @@ import Data.List
 import Data.Typeable (Typeable)
 import Data.Word
 import qualified Control.Monad.Par as MonadPar
+import GHC.TypeLits
 
 import Data.Patch
 
@@ -81,30 +82,13 @@ instance (Lattice a, Lattice b) => Lattice (a :> b)
     (a1:>a2) \/ (b1:>b2) = (a1 \/ b1) :> (a2 \/ b2)
     (a1:>a2) /\ (b1:>b2) = (a1 /\ b1) :> (a2 /\ b2)
 
-
--- | Type representation of 8 bits
-data N8
-
--- | Type representation of 16 bits
-data N16
-
--- | Type representation of 32 bits
-data N32
-
--- | Type representation of 64 bits
-data N64
-
--- | Type representation of the native number of bits on the target
-data NNative
-
--- | Witness for 'N8', 'N16', 'N32', 'N64' or 'NNative'
-data BitWidth n
-  where
-    N8      :: BitWidth N8
-    N16     :: BitWidth N16
-    N32     :: BitWidth N32
-    N64     :: BitWidth N64
-    NNative :: BitWidth NNative
+-- | Witness for a type level literal. Native is encoded as 0.
+data BitWidth (n :: Nat) where
+    N8      :: BitWidth 8
+    N16     :: BitWidth 16
+    N32     :: BitWidth 32
+    N64     :: BitWidth 64
+    NNative :: BitWidth 0
 
 bitWidth :: BitWidth n -> String
 bitWidth N8      = "8"
@@ -113,17 +97,10 @@ bitWidth N32     = "32"
 bitWidth N64     = "64"
 bitWidth NNative = "N"
 
--- | Type representation of \"unsigned\"
-data U
-
--- | Type representation of \"signed\"
-data S
-
 -- | Witness for 'U' or 'S'
-data Signedness s
-  where
-    U :: Signedness U
-    S :: Signedness S
+data Signedness (s :: Symbol) where
+    U :: Signedness "U"
+    S :: Signedness "S"
 
 signedness :: Signedness s -> String
 signedness U = "Word"
@@ -132,16 +109,16 @@ signedness S = "Int"
 -- | A generalization of unsigned and signed integers. The first parameter
 -- represents the signedness and the second parameter the number of bits.
 type family GenericInt s n where
-  GenericInt U N8      = Word8
-  GenericInt S N8      = Int8
-  GenericInt U N16     = Word16
-  GenericInt S N16     = Int16
-  GenericInt U N32     = Word32
-  GenericInt S N32     = Int32
-  GenericInt U N64     = Word64
-  GenericInt S N64     = Int64
-  GenericInt U NNative = WordN
-  GenericInt S NNative = IntN
+  GenericInt "U" 0      = WordN
+  GenericInt "S" 0      = IntN
+  GenericInt "U" 8      = Word8
+  GenericInt "S" 8      = Int8
+  GenericInt "U" 16     = Word16
+  GenericInt "S" 16     = Int16
+  GenericInt "U" 32     = Word32
+  GenericInt "S" 32     = Int32
+  GenericInt "U" 64     = Word64
+  GenericInt "S" 64     = Int64
 
 type Length = WordN
 type Index  = WordN
@@ -241,7 +218,7 @@ data TypeRep a
   where
     UnitType      :: TypeRep ()
     BoolType      :: TypeRep Bool
-    IntType       :: ( BoundedInt (GenericInt s n)
+    IntType       :: ( KnownNat n, KnownSymbol s, BoundedInt (GenericInt s n)
                      , Size (GenericInt s n) ~ Range (GenericInt s n)
                      ) =>
                        Signedness s -> BitWidth n -> TypeRep (GenericInt s n)
