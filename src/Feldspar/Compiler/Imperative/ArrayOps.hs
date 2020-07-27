@@ -35,7 +35,7 @@ module Feldspar.Compiler.Imperative.ArrayOps (arrayOps) where
 import Feldspar.Compiler.Imperative.Frontend
         (arrayBuffer, arrayBufLen, arrayLength, arrayLengthLV, litI32, ePlus,
          flattenCopy, fun, call, for, toBlock, mkIf, initArray, isAwLType,
-         isShallow, variant, arrayFun, freeArrayE, mkSequence, elemTyAwL)
+         isShallow, variant, arrayFun, freeArray, mkSequence, elemTyAwL)
 import Feldspar.Compiler.Imperative.Representation
         (Constant(..), Module(..), Entity(..), Declaration(..), Program(..),
          Function(..), ParType(..), Block(..), ActualParameter(..),
@@ -142,7 +142,7 @@ mkInitArray t = Proc name False args (typeof dstVar) (Just body)
         shrink = Sequence [ for Parallel ixVar (VarExpr newLen) (VarExpr oldLen) one (toBlock freeBody)
                           , Assign (VarExpr dstVar) (fun arrT "resizeArray" [VarExpr dstVar, SizeOf t, VarExpr newLen])
                           ]
-        freeBody = Sequence [freeArrayE e | (e,_) <- arrs]
+        freeBody = Sequence $ map (freeArray . fst) arrs
 
         arrs = arrays (ArrayElem (VarExpr dstVar) [VarExpr ixVar]) t
 
@@ -161,7 +161,7 @@ mkFreeArray t = Proc name False [srcVar, srcLVar] VoidType (Just body)
                , call "freeArray" [ValueParameter $ VarExpr srcVar]
                ]
         ixVar = Variable intT "i"
-        loopBody' = toBlock $ Sequence [freeArrayE e | (e,_) <- arrs]
+        loopBody' = toBlock $ Sequence $ map (freeArray . fst) arrs
         arrs = arrays (ArrayElem (VarExpr srcVar) [VarExpr ixVar]) t
 
 -- | Type names
