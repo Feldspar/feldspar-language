@@ -102,20 +102,16 @@ initArray (Just arr) len
              , Assign (arrayLengthLV arr) len
              ]
 
--- | Generate a call to free an array represented as a variable
-freeArray :: Variable -> Program
-freeArray = freeArrayE . VarExpr
-
 -- | Generate a call to free an array represented as an expression
-freeArrayE :: Expression -> Program
-freeArrayE arr
+freeArray :: Expression -> Program
+freeArray arr
   = call (variant "freeArray" t) $ map ValueParameter $ take n $ arrayBufLen arr
    where StructType _ [("buffer", ArrayType _ t), _] = typeof arr
          n = if isShallow t then 1 else 2
 
 -- | Generate 'freeArray' calls for all arrays in a list of declarations
 freeArrays :: [Declaration] -> [Program]
-freeArrays defs = map freeArrayE arrays
+freeArrays defs = map freeArray arrays
   where
     arrays = [f $ varToExpr v | v <- map declVar defs,
                                 (f, t) <- flattenStructs $ typeof v,
