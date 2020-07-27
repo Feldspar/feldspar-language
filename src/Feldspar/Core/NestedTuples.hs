@@ -43,11 +43,28 @@
 module Feldspar.Core.NestedTuples
   ( Tuple(..)
   , Proxy(..)
+  , TSelect
   , sel
   , tuple
   , build
+  -- * Taking tuples apart
   , nfst
   , nsnd
+  , sel1
+  , sel2
+  , sel3
+  , sel4
+  , sel5
+  , sel6
+  , sel7
+  , sel8
+  , sel9
+  , sel10
+  , sel11
+  , sel12
+  , sel13
+  , sel14
+  , sel15
   -- * Building tuples
   , onetup
   , twotup
@@ -151,6 +168,66 @@ nfst = sel (Proxy @0)
 -- | Extract the second component of a tuple.
 nsnd :: TSelect 1 a b => Tuple a -> b
 nsnd = sel (Proxy @1)
+
+-- | Extract the first component of a tuple.
+sel1 :: TSelect 0 a b => Tuple a -> b
+sel1 = nfst
+
+-- | Extract the second component of a tuple.
+sel2 :: TSelect 1 a b => Tuple a -> b
+sel2 = nsnd
+
+-- | Extract the third component of a tuple.
+sel3 :: TSelect 2 a b => Tuple a -> b
+sel3 = sel (Proxy @2)
+
+-- | Extract the fourth component of a tuple.
+sel4 :: TSelect 3 a b => Tuple a -> b
+sel4 = sel (Proxy @3)
+
+-- | Extract the fifth component of a tuple.
+sel5 :: TSelect 4 a b => Tuple a -> b
+sel5 = sel (Proxy @4)
+
+-- | Extract the sixth component of a tuple.
+sel6 :: TSelect 5 a b => Tuple a -> b
+sel6 = sel (Proxy @5)
+
+-- | Extract the seventh component of a tuple.
+sel7 :: TSelect 6 a b => Tuple a -> b
+sel7 = sel (Proxy @6)
+
+-- | Extract the eight component of a tuple.
+sel8 :: TSelect 7 a b => Tuple a -> b
+sel8 = sel (Proxy @7)
+
+-- | Extract the ninth component of a tuple.
+sel9 :: TSelect 8 a b => Tuple a -> b
+sel9 = sel (Proxy @8)
+
+-- | Extract the tenth component of a tuple.
+sel10 :: TSelect 9 a b => Tuple a -> b
+sel10 = sel (Proxy @9)
+
+-- | Extract the eleventh component of a tuple.
+sel11 :: TSelect 10 a b => Tuple a -> b
+sel11 = sel (Proxy @10)
+
+-- | Extract the twelth component of a tuple.
+sel12 :: TSelect 11 a b => Tuple a -> b
+sel12 = sel (Proxy @11)
+
+-- | Extract the thirteenth component of a tuple.
+sel13 :: TSelect 12 a b => Tuple a -> b
+sel13 = sel (Proxy @12)
+
+-- | Extract the fourteenth component of a tuple.
+sel14 :: TSelect 13 a b => Tuple a -> b
+sel14 = sel (Proxy @13)
+
+-- | Extract the fifteenth component of a tuple.
+sel15 :: TSelect 14 a b => Tuple a -> b
+sel15 = sel (Proxy @14)
 
 -- | Function for constructing a one-tuple from its components.
 onetup :: a -> Tuple '[a]
