@@ -97,7 +97,6 @@ library
     Feldspar.Compiler.Backend.C.RuntimeLibrary
     Feldspar.Compiler.Plugin
     Feldspar.Compiler.Marshal
-    Feldspar.Compiler.CallConv
     Feldspar.Compiler.ExternalProgram
     Feldspar.Runtime
 

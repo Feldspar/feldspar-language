@@ -24,18 +24,16 @@ import GHCi.ObjLink (initObjLinker, loadObj, resolveObjs)
 import GHCi.ObjLink (ShouldRetainCAFs(..))
 #endif
 import GHC.Paths (ghc)
-import System.Plugins.MultiStage
+import System.Plugins.MultiStage hiding (ref)
 import Distribution.Verbosity (verbose)
 import Distribution.Simple.Utils (defaultPackageDesc)
-import Distribution.PackageDescription
+import Distribution.PackageDescription hiding (buildType)
 #if defined(MIN_VERSION_Cabal) && MIN_VERSION_Cabal(2,2,0)
 import Distribution.PackageDescription.Parsec (readGenericPackageDescription)
 #else
 import Distribution.PackageDescription.Parse (readPackageDescription)
 #endif
 import Distribution.PackageDescription.Configuration (flattenPackageDescription)
-
-import Feldspar.Compiler.CallConv (rewriteType, buildCType, buildHaskellType)
 
 import Data.Default
 import Foreign.Ptr
@@ -47,7 +45,7 @@ import Foreign.C.String (CString, withCString)
 import Control.Exception (handle)
 import Control.Monad (join, (>=>), when, unless)
 
-import Language.Haskell.TH hiding (Type, Range)
+import Language.Haskell.TH
 
 import System.Directory (doesFileExist, removeFile, createDirectoryIfMissing)
 import System.Exit (ExitCode(..))
@@ -57,6 +55,7 @@ import System.IO.Error (IOError)
 import System.IO.Unsafe (unsafePerformIO)
 
 -- Feldspar specific
+import Feldspar.Core.Reify (Syntactic(..))
 import Feldspar.Runtime
 import Feldspar.Compiler (compile)
 import Feldspar.Compiler.Marshal ()
@@ -108,6 +107,50 @@ loadFunOpts o = loadFunWithConfig feldsparPluginConfig {opts = o}
 loadFunOptsWith :: String -> Options -> [String] -> [Name] -> Q [Dec]
 loadFunOptsWith pref fopt o =
     loadFunWithConfig (feldsparPluginConfigWith pref fopt){opts = o}
+
+-- | Normalize the type (expand type synonyms and type families)
+rewriteType :: Type -> Q Type
+rewriteType = applyTF ''Internal
+
+haskellCC :: CallConv
+haskellCC = CallConv { arg  = return
+                     , res  = appT (conT ''IO) . return
+                     }
+
+feldsparCC :: CallConv
+feldsparCC = CallConv { arg = ref . rep . return
+                      , res = toIO . appT (conT ''Ptr) . rep . return
+                      }
+  where
+    ref    = appT (conT ''Ref)
+    rep    = appT (conT ''Rep)
+    toIO t = appT (appT arrowT t) (appT (conT ''IO) (tupleT 0))
+
+-- | Construct the corresponding Haskell type of a foreign Feldspar
+-- function
+--
+-- > prog1 :: Data Index -> Vector1 Index
+-- >
+-- > sigD (mkName "h_prog1") $ loadFunType 'prog1 >>= rewriteType >>= buildHaskellType
+--
+-- becomes
+--
+-- > h_prog1 :: Index -> IO [Index]
+--
+buildHaskellType :: Type -> Q Type
+buildHaskellType = buildType haskellCC
+
+-- | Construct the corresponding C type of a compiled Feldspar function
+--
+-- > sigD (mkName "c_prog1_fun") $ loadFunType 'prog1 >>= rewriteType
+--                                                    >>= buildCType
+--
+-- becomes
+--
+-- > c_prog1_fun :: Word32 -> Ptr (SA Word32) -> IO ()
+--
+buildCType :: Type -> Q Type
+buildCType = buildType feldsparCC
 
 feldsparWorker :: Name -> [Name] -> Q Body
 feldsparWorker fun as = normalB
