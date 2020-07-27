@@ -28,7 +28,69 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Feldspar.Compiler.Imperative.Frontend where
+-- | Utililty functions for Program representation
+module Feldspar.Compiler.Imperative.Frontend
+  ( toBlock
+  , toProg
+  , Location
+  , copyProg
+  , flattenCopy
+  , ePlus
+  , initArray
+  , freeArray
+  , freeArrays
+  , arrayLength
+  , arrayLengthLV
+  , arrayBuffer
+  , arrayBufLen
+  , iVarInitCond
+  , iVarInit
+  , iVarGet
+  , iVarPut
+  , iVarDestroy
+  , freeIVars
+  , spawn
+  , run
+  , intWidth
+  , intSigned
+  , litF
+  , litD
+  , litB
+  , litC
+  , litI
+  , litI32
+  , int32
+  , uint32
+  , isComplex
+  , isFloat
+  , isAwLType
+  , elemTyAwL
+  , isArray
+  , isNativeArray
+  , isIVar
+  , isPointer
+  , isVarExpr
+  , isComposite
+  , isShallow
+  , variant
+  , arrayFun
+  , mkAwLType
+  , canFastReturn
+  , containsNativeArray
+  , flattenStructs
+  , hasReference
+  , varToExpr
+  , exprToVar
+  , binop
+  , fun
+  , mkIf
+  , call
+  , for
+  , while
+  , mkSequence
+  , encodeType
+  , decodeType
+  ) where
 
 import Feldspar.Compiler.Imperative.Representation
 import Feldspar.Core.Types (Length)
