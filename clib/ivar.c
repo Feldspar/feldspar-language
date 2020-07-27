@@ -36,10 +36,6 @@
 /* Type of function pointer */
 typedef void* array_copy_t(void* dst, int32_t dstLen, void* src, int32_t srcLen);
 
-int feldspar_ivar_hook(void) {
-  return 0;
-}
-
 void *worker(void *p);
 
 void ivar_init(struct ivar *iv) {

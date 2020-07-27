@@ -56,7 +56,6 @@ import System.IO.Unsafe (unsafePerformIO)
 
 -- Feldspar specific
 import Feldspar.Core.Reify (Syntactic(..))
-import Feldspar.Runtime
 import Feldspar.Compiler (compile)
 import Feldspar.Compiler.Marshal ()
 import Feldspar.Compiler.Options (Options(..), Platform(..), defaultOptions,
@@ -243,7 +242,6 @@ compileC opts srcfile objfile args' = do
 
 lookupSymbol :: String -> IO (Ptr a)
 lookupSymbol symbol = do
-    when (0 /= feldspar_compiler_hook) $ error "lookupSymbol: Runtime library missing"
     mptr <- withCString symbol _lookupSymbol
     when (mptr == nullPtr) $ error $ "Symbol " ++ symbol ++ " not found"
     return mptr

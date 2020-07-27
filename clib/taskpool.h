@@ -31,8 +31,6 @@
 
 #include <pthread.h>
 
-int feldspar_taskpool_hook(void);
-
 void taskpool_init(int c, int num, int min);
 
 void taskpool_shutdown();
