@@ -56,7 +56,6 @@ library
     Feldspar.Core.Middleend.CreateTasks
     Feldspar.Core.Middleend.Expand
     Feldspar.Core.Middleend.FromTyped
-    Feldspar.Core.Middleend.FromTypeUtil
     Feldspar.Core.Middleend.LetSinking
     Feldspar.Core.Middleend.OptimizeUntyped
     Feldspar.Core.Middleend.PassManager
