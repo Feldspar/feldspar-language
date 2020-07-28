@@ -137,8 +137,7 @@ class Syntactic a where
     desugar :: a -> ASTF (Internal a)
     sugar   :: ASTF (Internal a) -> a
 
-instance Syntactic (ASTF a)
-  where
+instance Syntactic (ASTF a) where
     {-# SPECIALIZE instance Syntactic (ASTF a) #-}
     type Internal (ASTF a) = a
     desugar = id
@@ -163,18 +162,14 @@ instance (Syntactic a, T.Type (Internal a)) => Syntax a
 -- * Front end
 --------------------------------------------------------------------------------
 
-instance Syntactic ()
-  where
+instance Syntactic () where
     type Internal () = ()
     desugar = value
     sugar _ = ()
 
 newtype Data a = Data { unData :: ASTF a }
 
-deriving instance Typeable Data
-
-instance Syntactic (Data a)
-  where
+instance Syntactic (Data a) where
     type Internal (Data a) = a
     desugar = unData
     sugar   = Data
@@ -183,7 +178,7 @@ instance Eq (Data a) where
     (==) _ _ = error "Eq (Data a): Binding time violation"
 
 instance Show (Data a) where
-    show = render . desugar . unData
+  show = render . desugar
 
 -------------------------------------------------
 -- Functions
@@ -198,8 +193,7 @@ instance (Syntax a, Syntactic b, TypeF (Internal b)) => Syntactic (a -> b) where
           v = Var (fromIntegral i + hashBase) B.empty
 
 -- | User interface to embedded monadic programs
-newtype Mon m a
-  where
+newtype Mon m a where
     Mon
         :: { unMon
               :: forall r . (Monad m, Typeable r, T.Type r, T.Type (m r))
@@ -209,13 +203,11 @@ newtype Mon m a
 
 deriving instance Functor (Mon m)
 
-instance Monad m => Monad (Mon m)
-  where
+instance Monad m => Monad (Mon m) where
     return a = Mon $ return a
     ma >>= f = Mon $ unMon ma >>= unMon . f
 
-instance (Monad m, Applicative m) => Applicative (Mon m)
-  where
+instance (Monad m, Applicative m) => Applicative (Mon m) where
     pure  = return
     (<*>) = ap
 
