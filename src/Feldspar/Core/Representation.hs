@@ -63,10 +63,10 @@ module Feldspar.Core.Representation
   ) where
 
 import Feldspar.Compiler.Options (Pretty(..))
-import Feldspar.Core.Types (Type(..), TypeF(..), TypeRep(..), Length, Index, IntN,
-                            Size, Elements, FVal, Mut, AnySize, MArr, Par, IV,
-                            Tuple(..))
-import Feldspar.Range (Range, BoundedInt)
+import Feldspar.Core.Types (AnySize, BoundedInt, Elements, FVal, Length, Index,
+                            IntN, IV, MArr, Mut, Par, Size, Tuple(..), Type(..),
+                            TypeF(..), TypeRep(..))
+import Feldspar.Range (Range)
 
 import qualified Data.ByteString.Char8 as B
 import Data.Typeable (Typeable, (:~:)(Refl), eqT)

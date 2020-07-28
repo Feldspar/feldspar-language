@@ -64,14 +64,6 @@ instance (Show a, Bounded a, Eq a) => Show (Range a)
         sl = if l == minBound then "*" else show l
         su = if u == maxBound then "*" else show u
 
---------------------------------------------------------------------------------
--- * Integers
---------------------------------------------------------------------------------
-
--- | Convenience alias for bounded integers
-type BoundedInt a = (Ord a, Bounded a, Integral a, FiniteBits a,
-                     Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
-
 -- | Type family to determine the bit representation of a type
 type family UnsignedRep a where
   UnsignedRep Int8   = Word8

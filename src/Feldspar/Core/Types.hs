@@ -48,6 +48,7 @@ module Feldspar.Core.Types
 
 
 import Data.Array.IO (IOArray)
+import Data.Bits
 import Data.Complex
 import Data.Int
 import Data.IORef
@@ -80,6 +81,14 @@ instance (Lattice a, Lattice b) => Lattice (a :> b)
     top = top :> top
     (a1:>a2) \/ (b1:>b2) = (a1 \/ b1) :> (a2 \/ b2)
     (a1:>a2) /\ (b1:>b2) = (a1 /\ b1) :> (a2 /\ b2)
+
+--------------------------------------------------------------------------------
+-- * Integers
+--------------------------------------------------------------------------------
+
+-- | Convenience alias for bounded integers
+type BoundedInt a = (Ord a, Bounded a, Integral a, FiniteBits a,
+                     Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
 
 -- | Witness for a type level literal. Native is encoded as 0.
 data BitWidth (n :: Nat) where
