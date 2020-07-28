@@ -387,28 +387,21 @@ instance Hashable (T.TypeRep a) where
   hash T.DoubleType                 = hashInt 5
   hash (T.ComplexType t)            = hashInt 6 # t
   hash (T.ArrayType t)              = hashInt 7 # t
-  -- Index 8 available.
-  hash (T.Tup2Type a b)             = hashInt 9 # a # b
-  hash (T.Tup3Type a b c)           = hashInt 10 # a # b # c
-  hash (T.Tup4Type a b c d)         = hashInt 11 # a # b # c # d
-  hash (T.Tup5Type a b c d e)       = hashInt 12 # a # b # c # d # e
-  hash (T.Tup6Type a b c d e f)     = hashInt 13 # a # b # c # d # e # f
-  hash (T.Tup7Type a b c d e f g)   = hashInt 14 # a # b # c # d # e # f # g
-  hash (T.Tup8Type a b c d e f g h) = hashInt 15 # a # b # c # d # e # f # g # h
-  hash (T.Tup9Type a b c d e f g h i)
-       = hashInt 16 # a # b # c # d # e # f # g # h # i
-  hash (T.Tup10Type a b c d e f g h i j)
-       = hashInt 17 # a # b # c # d # e # f # g # h # i # j
-  hash (T.Tup11Type a b c d e f g h i j k)
-       = hashInt 18 # a # b # c # d # e # f # g # h # i # j # k
-  hash (T.Tup12Type a b c d e f g h i j k l)
-       = hashInt 19 # a # b # c # d # e # f # g # h # i # j # k # l
-  hash (T.Tup13Type a b c d e f g h i j k l m)
-       = hashInt 20 # a # b # c # d # e # f # g # h # i # j # k # l # m
-  hash (T.Tup14Type a b c d e f g h i j k l m n)
-       = hashInt 21 # a # b # c # d # e # f # g # h # i # j # k # l # m # n
-  hash (T.Tup15Type a b c d e f g h i j k l m n o)
-       = hashInt 22 # a # b # c # d # e # f # g # h # i # j # k # l # m # n # o
+  hash (T.Tup2Type t)               = hashInt 8 # t
+  hash (T.Tup3Type t)               = hashInt 9 # t
+  hash (T.Tup4Type t)               = hashInt 10 # t
+  hash (T.Tup5Type t)               = hashInt 11 # t
+  hash (T.Tup6Type t)               = hashInt 12 # t
+  hash (T.Tup7Type t)               = hashInt 13 # t
+  hash (T.Tup8Type t)               = hashInt 14 # t
+  hash (T.Tup9Type t)               = hashInt 15 # t
+  hash (T.Tup10Type t)              = hashInt 16 # t
+  hash (T.Tup11Type t)              = hashInt 17 # t
+  hash (T.Tup12Type t)              = hashInt 18 # t
+  hash (T.Tup13Type t)              = hashInt 19 # t
+  hash (T.Tup14Type t)              = hashInt 20 # t
+  hash (T.Tup15Type t)              = hashInt 21 # t
+  -- Index 22 available.
   hash (T.FunType a b)    = hashInt 23 # a # b
   hash (T.MutType t)      = hashInt 24 # t
   hash (T.RefType t)      = hashInt 25 # t

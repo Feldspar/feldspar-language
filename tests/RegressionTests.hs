@@ -72,6 +72,9 @@ pairParam2 :: (Data Int16, Data Int16) ->
               ((Data Int16, Data Int16), (Data Int16, Data Int16))
 pairParam2 c = (c, c)
 
+pairRet :: Data Index -> (Data Index, Data Index)
+pairRet x = x > 3 ? (3, 9) $ (7, 5)
+
 -- One test starting.
 metrics :: Pull1 IntN -> Pull1 IntN
             -> Pull DIM1 (Pull DIM1 (Data Index, Data Index)) -> Pull DIM1 (Pull1 IntN)
@@ -296,6 +299,7 @@ loadFun ['shTest]
 loadFun ['arrayInStruct]
 loadFun ['pairParam]
 loadFun ['pairParam2]
+loadFun ['pairRet]
 loadFun ['copyPush]
 loadFun ['complexWhileCond]
 loadFun ['deepArrayCopy]
@@ -325,6 +329,7 @@ prop_arrayInStruct =
       eval arrayInStruct xs ==== c_arrayInStruct xs
 prop_pairParam = eval pairParam ==== c_pairParam
 prop_pairParam2 = eval pairParam2 ==== c_pairParam2
+prop_pairRet = eval pairRet ==== c_pairRet
 prop_copyPush = eval copyPush ==== c_copyPush
 prop_complexWhileCond (NonNegative n) = eval complexWhileCond n ==== c_complexWhileCond n
 
@@ -370,6 +375,7 @@ callingConventionTests = testGroup "CallingConvention"
     , testProperty "arrayInStruct" prop_arrayInStruct
     , testProperty "pairParam" prop_pairParam
     , testProperty "pairParam2" prop_pairParam2
+    , testProperty "pairRet" prop_pairRet
     , testProperty "copyPush" prop_copyPush
     , testProperty "complexWhileCond" prop_complexWhileCond
     , testProperty "deepArrayCopy" prop_deepArrayCopy
@@ -389,6 +395,7 @@ compilerTests = testGroup "Compiler-RegressionTests"
     , mkGoldTest pairParam "pairParam" defaultOptions
     , mkGoldTest pairParam "pairParam_ret" nativeRetOpts
     , mkGoldTest pairParam2 "pairParam2" defaultOptions
+    , mkGoldTest pairRet "pairRet" defaultOptions
     , mkGoldTest concatV "concatV" defaultOptions
     , mkGoldTest concatVM "concatVM" defaultOptions
     , mkGoldTest complexWhileCond "complexWhileCond" defaultOptions
@@ -418,6 +425,7 @@ compilerTests = testGroup "Compiler-RegressionTests"
    -- Build tests.
     , mkBuildTest pairParam "pairParam" defaultOptions
     , mkBuildTest pairParam "pairParam_ret" nativeRetOpts
+    , mkBuildTest pairRet "pairRet" defaultOptions
     , mkBuildTest concatV "concatV" defaultOptions
     , mkBuildTest concatVM "concatVM" defaultOptions
     , mkBuildTest topLevelConsts "topLevelConsts" defaultOptions
@@ -448,6 +456,7 @@ externalProgramTests = testGroup "ExternalProgram-RegressionTests"
     , mkParseTest "pairParam" defaultOptions
     , mkParseTest "pairParam_ret" defaultOptions
     , mkParseTest "pairParam2" defaultOptions
+    , mkParseTest "pairRet" defaultOptions
     , mkParseTest "concatV" defaultOptions
     , mkParseTest "concatVM" defaultOptions
     , mkParseTest "complexWhileCond" defaultOptions

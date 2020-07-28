@@ -60,6 +60,7 @@ import GHC.TypeLits
 
 import Data.Patch
 
+import Feldspar.Core.Tuple (Tuply(..))
 import Feldspar.Lattice
 import Feldspar.Range
 import Feldspar.Core.NestedTuples
@@ -232,20 +233,30 @@ data TypeRep a
     DoubleType    :: TypeRep Double
     ComplexType   :: RealFloat a => TypeRep a -> TypeRep (Complex a)
     ArrayType     :: TypeRep a -> TypeRep [a]
-    Tup2Type      :: TypeRep a -> TypeRep b -> TypeRep (a,b)
-    Tup3Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep (a,b,c)
-    Tup4Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep (a,b,c,d)
-    Tup5Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep (a,b,c,d,e)
-    Tup6Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep (a,b,c,d,e,f)
-    Tup7Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep (a,b,c,d,e,f,g)
-    Tup8Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep (a,b,c,d,e,f,g,h)
-    Tup9Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep (a,b,c,d,e,f,g,h,i)
-    Tup10Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep (a,b,c,d,e,f,g,h,i,j)
-    Tup11Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep k -> TypeRep (a,b,c,d,e,f,g,h,i,j,k)
-    Tup12Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep k -> TypeRep l -> TypeRep (a,b,c,d,e,f,g,h,i,j,k,l)
-    Tup13Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep k -> TypeRep l -> TypeRep m -> TypeRep (a,b,c,d,e,f,g,h,i,j,k,l,m)
-    Tup14Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep k -> TypeRep l -> TypeRep m -> TypeRep n -> TypeRep (a,b,c,d,e,f,g,h,i,j,k,l,m,n)
-    Tup15Type      :: TypeRep a -> TypeRep b -> TypeRep c -> TypeRep d -> TypeRep e -> TypeRep f -> TypeRep g -> TypeRep h -> TypeRep i -> TypeRep j -> TypeRep k -> TypeRep l -> TypeRep m -> TypeRep n -> TypeRep o -> TypeRep (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o)
+    Tup2Type      :: TypeRep (Tuple '[a, b]) -> TypeRep (a,b)
+    Tup3Type      :: TypeRep (Tuple '[a, b, c]) -> TypeRep (a,b,c)
+    Tup4Type      :: TypeRep (Tuple '[a, b, c, d]) -> TypeRep (a, b, c, d)
+    Tup5Type      :: TypeRep (Tuple '[a, b, c, d, e]) -> TypeRep (a, b, c, d, e)
+    Tup6Type      :: TypeRep (Tuple '[a, b, c, d, e, f])
+                  -> TypeRep (a, b, c, d, e, f)
+    Tup7Type      :: TypeRep (Tuple '[a, b, c, d, e, f, g])
+                  -> TypeRep (a, b, c, d, e, f, g)
+    Tup8Type      :: TypeRep (Tuple '[a, b, c, d, e, f, g, h])
+                  -> TypeRep (a, b, c, d, e, f, g, h)
+    Tup9Type      :: TypeRep (Tuple '[a, b, c, d, e, f, g, h, i])
+                  -> TypeRep (a, b, c, d, e, f, g, h, i)
+    Tup10Type     :: TypeRep (Tuple '[a, b, c, d, e, f, g, h, i, j])
+                  -> TypeRep (a, b, c, d, e, f, g, h, i, j)
+    Tup11Type     :: TypeRep (Tuple '[a, b, c, d, e, f, g, h, i, j, k])
+                  -> TypeRep (a, b, c, d, e, f, g, h, i, j, k)
+    Tup12Type     :: TypeRep (Tuple '[a, b, c, d, e, f, g, h, i, j, k, l])
+                  -> TypeRep (a, b, c, d, e, f, g, h, i, j, k, l)
+    Tup13Type     :: TypeRep (Tuple '[a, b, c, d, e, f, g, h, i, j, k, l, m])
+                  -> TypeRep (a, b, c, d, e, f, g, h, i, j, k, l, m)
+    Tup14Type     :: TypeRep (Tuple '[a, b, c, d, e, f, g, h, i, j, k, l, m, n])
+                  -> TypeRep (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
+    Tup15Type     :: TypeRep (Tuple '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o])
+                  -> TypeRep (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
     FunType       :: TypeRep a -> TypeRep b -> TypeRep (a -> b)
     MutType       :: TypeRep a -> TypeRep (Mut a)
     RefType       :: TypeRep a -> TypeRep (IORef a)
@@ -269,20 +280,20 @@ instance Show (TypeRep a)
     show DoubleType          = "Double"
     show (ComplexType t)     = "(Complex " ++ show t ++ ")"
     show (ArrayType t)       = "[" ++ show t ++ "]"
-    show (Tup2Type ta tb)                = showTup [show ta, show tb]
-    show (Tup3Type ta tb tc)             = showTup [show ta, show tb, show tc]
-    show (Tup4Type ta tb tc td)          = showTup [show ta, show tb, show tc, show td]
-    show (Tup5Type ta tb tc td te)       = showTup [show ta, show tb, show tc, show td, show te]
-    show (Tup6Type ta tb tc td te tf)    = showTup [show ta, show tb, show tc, show td, show te, show tf]
-    show (Tup7Type ta tb tc td te tf tg) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg]
-    show (Tup8Type ta tb tc td te tf tg th) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th]
-    show (Tup9Type ta tb tc td te tf tg th ti) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti]
-    show (Tup10Type ta tb tc td te tf tg th ti tj) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj]
-    show (Tup11Type ta tb tc td te tf tg th ti tj tk) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj, show tk]
-    show (Tup12Type ta tb tc td te tf tg th ti tj tk tl) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj, show tk, show tl]
-    show (Tup13Type ta tb tc td te tf tg th ti tj tk tl tm) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj, show tk, show tl, show tm]
-    show (Tup14Type ta tb tc td te tf tg th ti tj tk tl tm tn) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj, show tk, show tl, show tm, show tn]
-    show (Tup15Type ta tb tc td te tf tg th ti tj tk tl tm tn to) = showTup [show ta, show tb, show tc, show td, show te, show tf, show tg, show th, show ti, show tj, show tk, show tl, show tm, show tn, show to]
+    show (Tup2Type t)        = show t
+    show (Tup3Type t)        = show t
+    show (Tup4Type t)        = show t
+    show (Tup5Type t)        = show t
+    show (Tup6Type t)        = show t
+    show (Tup7Type t)        = show t
+    show (Tup8Type t)        = show t
+    show (Tup9Type t)        = show t
+    show (Tup10Type t)       = show t
+    show (Tup11Type t)       = show t
+    show (Tup12Type t)       = show t
+    show (Tup13Type t)       = show t
+    show (Tup14Type t)       = show t
+    show (Tup15Type t)       = show t
     show (FunType ta tb)                 = show ta ++ " -> " ++ show tb
     show (MutType ta)                    = unwords ["Mut", show ta]
     show (RefType ta)                    = unwords ["Ref", show ta]
@@ -302,147 +313,20 @@ defaultSize FloatType = universal
 defaultSize DoubleType = universal
 defaultSize (ComplexType _) = universal
 defaultSize (ArrayType t) = universal :> defaultSize t
-defaultSize (Tup2Type ta tb) =  ( defaultSize ta
-                                , defaultSize tb
-                                )
-defaultSize (Tup3Type ta tb tc) = ( defaultSize ta
-                                  , defaultSize tb
-                                  , defaultSize tc
-                                  )
-defaultSize (Tup4Type ta tb tc td) = ( defaultSize ta
-                                     , defaultSize tb
-                                     , defaultSize tc
-                                     , defaultSize td
-                                     )
-defaultSize (Tup5Type ta tb tc td te) = ( defaultSize ta
-                                        , defaultSize tb
-                                        , defaultSize tc
-                                        , defaultSize td
-                                        , defaultSize te
-                                        )
-defaultSize (Tup6Type ta tb tc td te tf) = ( defaultSize ta
-                                           , defaultSize tb
-                                           , defaultSize tc
-                                           , defaultSize td
-                                           , defaultSize te
-                                           , defaultSize tf
-                                           )
-defaultSize (Tup7Type ta tb tc td te tf tg) = ( defaultSize ta
-                                              , defaultSize tb
-                                              , defaultSize tc
-                                              , defaultSize td
-                                              , defaultSize te
-                                              , defaultSize tf
-                                              , defaultSize tg
-                                              )
-defaultSize (Tup8Type ta tb tc td te tf tg th) =
-                                              ( defaultSize ta
-                                              , defaultSize tb
-                                              , defaultSize tc
-                                              , defaultSize td
-                                              , defaultSize te
-                                              , defaultSize tf
-                                              , defaultSize tg
-                                              , defaultSize th
-                                              )
-defaultSize (Tup9Type ta tb tc td te tf tg th ti) =
-                                              ( defaultSize ta
-                                              , defaultSize tb
-                                              , defaultSize tc
-                                              , defaultSize td
-                                              , defaultSize te
-                                              , defaultSize tf
-                                              , defaultSize tg
-                                              , defaultSize th
-                                              , defaultSize ti
-                                              )
-defaultSize (Tup10Type ta tb tc td te tf tg th ti tj) =
-                                              ( defaultSize ta
-                                              , defaultSize tb
-                                              , defaultSize tc
-                                              , defaultSize td
-                                              , defaultSize te
-                                              , defaultSize tf
-                                              , defaultSize tg
-                                              , defaultSize th
-                                              , defaultSize ti
-                                              , defaultSize tj
-                                              )
-defaultSize (Tup11Type ta tb tc td te tf tg th ti tj tk) =
-                                              ( defaultSize ta
-                                              , defaultSize tb
-                                              , defaultSize tc
-                                              , defaultSize td
-                                              , defaultSize te
-                                              , defaultSize tf
-                                              , defaultSize tg
-                                              , defaultSize th
-                                              , defaultSize ti
-                                              , defaultSize tj
-                                              , defaultSize tk
-                                              )
-defaultSize (Tup12Type ta tb tc td te tf tg th ti tj tk tl) =
-                                              ( defaultSize ta
-                                              , defaultSize tb
-                                              , defaultSize tc
-                                              , defaultSize td
-                                              , defaultSize te
-                                              , defaultSize tf
-                                              , defaultSize tg
-                                              , defaultSize th
-                                              , defaultSize ti
-                                              , defaultSize tj
-                                              , defaultSize tk
-                                              , defaultSize tl
-                                              )
-defaultSize (Tup13Type ta tb tc td te tf tg th ti tj tk tl tm) =
-                                              ( defaultSize ta
-                                              , defaultSize tb
-                                              , defaultSize tc
-                                              , defaultSize td
-                                              , defaultSize te
-                                              , defaultSize tf
-                                              , defaultSize tg
-                                              , defaultSize th
-                                              , defaultSize ti
-                                              , defaultSize tj
-                                              , defaultSize tk
-                                              , defaultSize tl
-                                              , defaultSize tm
-                                              )
-defaultSize (Tup14Type ta tb tc td te tf tg th ti tj tk tl tm tn) =
-                                              ( defaultSize ta
-                                              , defaultSize tb
-                                              , defaultSize tc
-                                              , defaultSize td
-                                              , defaultSize te
-                                              , defaultSize tf
-                                              , defaultSize tg
-                                              , defaultSize th
-                                              , defaultSize ti
-                                              , defaultSize tj
-                                              , defaultSize tk
-                                              , defaultSize tl
-                                              , defaultSize tm
-                                              , defaultSize tn
-                                              )
-defaultSize (Tup15Type ta tb tc td te tf tg th ti tj tk tl tm tn to) =
-                                              ( defaultSize ta
-                                              , defaultSize tb
-                                              , defaultSize tc
-                                              , defaultSize td
-                                              , defaultSize te
-                                              , defaultSize tf
-                                              , defaultSize tg
-                                              , defaultSize th
-                                              , defaultSize ti
-                                              , defaultSize tj
-                                              , defaultSize tk
-                                              , defaultSize tl
-                                              , defaultSize tm
-                                              , defaultSize tn
-                                              , defaultSize to
-                                              )
+defaultSize (Tup2Type t) = defaultSize t
+defaultSize (Tup3Type t) = defaultSize t
+defaultSize (Tup4Type t) = defaultSize t
+defaultSize (Tup5Type t) = defaultSize t
+defaultSize (Tup6Type t) = defaultSize t
+defaultSize (Tup7Type t) = defaultSize t
+defaultSize (Tup8Type t) = defaultSize t
+defaultSize (Tup9Type t) = defaultSize t
+defaultSize (Tup10Type t) = defaultSize t
+defaultSize (Tup11Type t) = defaultSize t
+defaultSize (Tup12Type t) = defaultSize t
+defaultSize (Tup13Type t) = defaultSize t
+defaultSize (Tup14Type t) = defaultSize t
+defaultSize (Tup15Type t) = defaultSize t
 defaultSize (FunType ta tb) = (defaultSize ta, defaultSize tb)
 defaultSize (MutType ta) = defaultSize ta
 defaultSize (RefType ta) = defaultSize ta
@@ -453,9 +337,6 @@ defaultSize (ConsType ta tb) = (defaultSize ta, defaultSize tb)
 defaultSize NilType = universal
 defaultSize (IVarType ta) = defaultSize ta
 defaultSize (FValType ta) = defaultSize ta
-
-showTup :: [String] -> String
-showTup as =  "(" ++ intercalate "," as ++ ")"
 
 -- | The set of supported types
 class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a), TypeF a) => Type a
@@ -487,222 +368,78 @@ instance Type a => Type [a]
     typeRep       = ArrayType typeRep
     sizeOf as     = singletonRange (genericLength as) :> unions (map sizeOf as)
 
-instance (Type a, Type b) => Type (a,b)
-  where
-    typeRep = Tup2Type typeRep typeRep
+instance (Type a, Type b) => Type (a, b) where
+  typeRep = Tup2Type typeRep
+  sizeOf = sizeOf . unpack
 
-    sizeOf (a,b) =
-        ( sizeOf a
-        , sizeOf b
-        )
+instance (Type a, Type b, Type c) => Type (a, b, c) where
+  typeRep = Tup3Type typeRep
+  sizeOf = sizeOf . unpack
 
-instance (Type a, Type b, Type c) => Type (a,b,c)
-  where
-    typeRep = Tup3Type typeRep typeRep typeRep
+instance (Type a, Type b, Type c, Type d) => Type (a, b, c, d) where
+  typeRep = Tup4Type typeRep
+  sizeOf = sizeOf . unpack
 
-    sizeOf (a,b,c) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        )
+instance (Type a, Type b, Type c, Type d, Type e) => Type (a, b, c, d, e) where
+  typeRep = Tup5Type typeRep
+  sizeOf = sizeOf . unpack
 
-instance (Type a, Type b, Type c, Type d) => Type (a,b,c,d)
-  where
-    typeRep = Tup4Type typeRep typeRep typeRep typeRep
+instance (Type a, Type b, Type c, Type d, Type e, Type f)
+         => Type (a, b, c, d, e, f) where
+  typeRep = Tup6Type typeRep
+  sizeOf = sizeOf . unpack
 
-    sizeOf (a,b,c,d) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        )
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g)
+         => Type (a, b, c, d, e, f, g) where
+  typeRep = Tup7Type typeRep
+  sizeOf = sizeOf . unpack
 
-instance (Type a, Type b, Type c, Type d, Type e) => Type (a,b,c,d,e)
-  where
-    typeRep = Tup5Type typeRep typeRep typeRep typeRep typeRep
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h)
+         => Type (a, b, c, d, e, f, g, h) where
+  typeRep = Tup8Type typeRep
+  sizeOf = sizeOf . unpack
 
-    sizeOf (a,b,c,d,e) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        )
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h,
+          Type i)
+         => Type (a, b, c, d, e, f, g, h, i) where
+  typeRep = Tup9Type typeRep
+  sizeOf = sizeOf . unpack
 
-instance (Type a, Type b, Type c, Type d, Type e, Type f) => Type (a,b,c,d,e,f)
-  where
-    typeRep = Tup6Type typeRep typeRep typeRep typeRep typeRep typeRep
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h,
+          Type i, Type j)
+         => Type (a, b, c, d, e, f, g, h, i, j) where
+  typeRep = Tup10Type typeRep
+  sizeOf = sizeOf . unpack
 
-    sizeOf (a,b,c,d,e,f) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        , sizeOf f
-        )
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h,
+          Type i, Type j, Type k)
+         => Type (a, b, c, d, e, f, g, h, i, j, k) where
+  typeRep = Tup11Type typeRep
+  sizeOf = sizeOf . unpack
 
-instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g) => Type (a,b,c,d,e,f,g)
-  where
-    typeRep = Tup7Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h,
+          Type i, Type j, Type k, Type l)
+         => Type (a, b, c, d, e, f, g, h, i, j, k, l) where
+  typeRep = Tup12Type typeRep
+  sizeOf = sizeOf . unpack
 
-    sizeOf (a,b,c,d,e,f,g) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        , sizeOf f
-        , sizeOf g
-        )
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h,
+          Type i, Type j, Type k, Type l, Type m)
+         => Type (a, b, c, d, e, f, g, h, i, j, k, l, m) where
+  typeRep = Tup13Type typeRep
+  sizeOf = sizeOf . unpack
 
-instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h) => Type (a,b,c,d,e,f,g,h)
-  where
-    typeRep = Tup8Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h,
+          Type i, Type j, Type k, Type l, Type m, Type n')
+         => Type (a, b, c, d, e, f, g, h, i, j, k, l, m, n') where
+  typeRep = Tup14Type typeRep
+  sizeOf = sizeOf . unpack
 
-    sizeOf (a,b,c,d,e,f,g,h) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        , sizeOf f
-        , sizeOf g
-        , sizeOf h
-        )
-
-instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i) => Type (a,b,c,d,e,f,g,h,i)
-  where
-    typeRep = Tup9Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
-
-    sizeOf (a,b,c,d,e,f,g,h,i) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        , sizeOf f
-        , sizeOf g
-        , sizeOf h
-        , sizeOf i
-        )
-
-instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j) => Type (a,b,c,d,e,f,g,h,i,j)
-  where
-    typeRep = Tup10Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
-
-    sizeOf (a,b,c,d,e,f,g,h,i,j) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        , sizeOf f
-        , sizeOf g
-        , sizeOf h
-        , sizeOf i
-        , sizeOf j
-        )
-
-instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k) => Type (a,b,c,d,e,f,g,h,i,j,k)
-  where
-    typeRep = Tup11Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
-
-    sizeOf (a,b,c,d,e,f,g,h,i,j,k) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        , sizeOf f
-        , sizeOf g
-        , sizeOf h
-        , sizeOf i
-        , sizeOf j
-        , sizeOf k
-        )
-
-instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l) => Type (a,b,c,d,e,f,g,h,i,j,k,l)
-  where
-    typeRep = Tup12Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
-
-    sizeOf (a,b,c,d,e,f,g,h,i,j,k,l) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        , sizeOf f
-        , sizeOf g
-        , sizeOf h
-        , sizeOf i
-        , sizeOf j
-        , sizeOf k
-        , sizeOf l
-        )
-
-instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l, Type m) => Type (a,b,c,d,e,f,g,h,i,j,k,l,m)
-  where
-    typeRep = Tup13Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
-
-    sizeOf (a,b,c,d,e,f,g,h,i,j,k,l,m) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        , sizeOf f
-        , sizeOf g
-        , sizeOf h
-        , sizeOf i
-        , sizeOf j
-        , sizeOf k
-        , sizeOf l
-        , sizeOf m
-        )
-
-instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l, Type m,Type n') => Type (a,b,c,d,e,f,g,h,i,j,k,l,m,n')
-  where
-    typeRep = Tup14Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
-
-    sizeOf (a,b,c,d,e,f,g,h,i,j,k,l,m,n') =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        , sizeOf f
-        , sizeOf g
-        , sizeOf h
-        , sizeOf i
-        , sizeOf j
-        , sizeOf k
-        , sizeOf l
-        , sizeOf m
-        , sizeOf n'
-        )
-
-instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h, Type i, Type j, Type k, Type l, Type m, Type n', Type o) => Type (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o)
-  where
-    typeRep = Tup15Type typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep typeRep
-
-    sizeOf (a,b,c,d,e,f,g,h,i,j,k,l,m,n',o) =
-        ( sizeOf a
-        , sizeOf b
-        , sizeOf c
-        , sizeOf d
-        , sizeOf e
-        , sizeOf f
-        , sizeOf g
-        , sizeOf h
-        , sizeOf i
-        , sizeOf j
-        , sizeOf k
-        , sizeOf l
-        , sizeOf m
-        , sizeOf n'
-        , sizeOf o
-        )
+instance (Type a, Type b, Type c, Type d, Type e, Type f, Type g, Type h,
+          Type i, Type j, Type k, Type l, Type m, Type n', Type o)
+         => Type (a, b, c, d, e, f, g, h, i, j, k, l, m, n', o) where
+  typeRep = Tup15Type typeRep
+  sizeOf = sizeOf . unpack
 
 instance Type a => Type (IORef a)
   where
@@ -799,20 +536,26 @@ type family Size a where
   Size Double          = AnySize
   Size (Complex a)     = AnySize
   Size [a]             = Range Length :> Size a
-  Size (a,b)           = (Size a, Size b)
-  Size (a,b,c)         = (Size a, Size b, Size c)
-  Size (a,b,c,d)       = (Size a, Size b, Size c, Size d)
-  Size (a,b,c,d,e)     = (Size a, Size b, Size c, Size d, Size e)
-  Size (a,b,c,d,e,f)   = (Size a, Size b, Size c, Size d, Size e, Size f)
-  Size (a,b,c,d,e,f,g) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g)
-  Size (a,b,c,d,e,f,g,h) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h)
-  Size (a,b,c,d,e,f,g,h,i) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i)
-  Size (a,b,c,d,e,f,g,h,i,j) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j)
-  Size (a,b,c,d,e,f,g,h,i,j,k) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k)
-  Size (a,b,c,d,e,f,g,h,i,j,k,l) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l)
-  Size (a,b,c,d,e,f,g,h,i,j,k,l,m) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m)
-  Size (a,b,c,d,e,f,g,h,i,j,k,l,m,n) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m, Size n)
-  Size (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) = (Size a, Size b, Size c, Size d, Size e, Size f, Size g, Size h, Size i, Size j, Size k, Size l, Size m, Size n, Size o)
+  Size (a, b)          = Size (Tuple '[a, b])
+  Size (a, b, c)       = Size (Tuple '[a, b, c])
+  Size (a, b, c, d)    = Size (Tuple '[a, b, c, d])
+  Size (a, b, c, d, e) = Size (Tuple '[a, b, c, d, e])
+  Size (a, b, c, d, e, f) = Size (Tuple '[a, b, c, d, e, f])
+  Size (a, b, c, d, e, f, g) = Size (Tuple '[a, b, c, d, e, f, g])
+  Size (a, b, c, d, e, f, g, h) = Size (Tuple '[a, b, c, d, e, f, g, h])
+  Size (a, b, c, d, e, f, g, h, i) = Size (Tuple '[a, b, c, d, e, f, g, h, i])
+  Size (a, b, c, d, e, f, g, h, i, j)
+    = Size (Tuple '[a, b, c, d, e, f, g, h, i, j])
+  Size (a, b, c, d, e, f, g, h, i, j, k)
+    = Size (Tuple '[a, b, c, d, e, f, g, h, i, j, k])
+  Size (a, b, c, d, e, f, g, h, i, j, k, l)
+    = Size (Tuple '[a, b, c, d, e, f, g, h, i, j, k, l])
+  Size (a, b, c, d, e, f, g, h, i, j, k, l, m)
+    = Size (Tuple '[a, b, c, d, e, f, g, h, i, j, k, l, m])
+  Size (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
+    = Size (Tuple '[a, b, c, d, e, f, g, h, i, j, k, l, m, n])
+  Size (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
+    = Size (Tuple '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o])
   Size (a -> b)        = (Size a, Size b)
   Size (Mut a)         = Size a
   Size (IORef a)       = Size a
