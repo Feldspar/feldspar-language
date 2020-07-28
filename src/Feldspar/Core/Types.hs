@@ -43,7 +43,6 @@
 
 module Feldspar.Core.Types
        ( module Feldspar.Core.Types
-       , IntN(..), WordN(..)
        , Tuple(..), build, tuple -- From NestedTuples
        ) where
 
@@ -88,14 +87,12 @@ data BitWidth (n :: Nat) where
     N16     :: BitWidth 16
     N32     :: BitWidth 32
     N64     :: BitWidth 64
-    NNative :: BitWidth 0
 
 bitWidth :: BitWidth n -> String
 bitWidth N8      = "8"
 bitWidth N16     = "16"
 bitWidth N32     = "32"
 bitWidth N64     = "64"
-bitWidth NNative = "N"
 
 -- | Witness for 'U' or 'S'
 data Signedness (s :: Symbol) where
@@ -109,8 +106,6 @@ signedness S = "Int"
 -- | A generalization of unsigned and signed integers. The first parameter
 -- represents the signedness and the second parameter the number of bits.
 type family GenericInt s n where
-  GenericInt "U" 0      = WordN
-  GenericInt "S" 0      = IntN
   GenericInt "U" 8      = Word8
   GenericInt "S" 8      = Int8
   GenericInt "U" 16     = Word16
@@ -119,6 +114,14 @@ type family GenericInt s n where
   GenericInt "S" 32     = Int32
   GenericInt "U" 64     = Word64
   GenericInt "S" 64     = Int64
+
+-- FIXME: IntN/WordN are hardcoded, not based on Options for architecture.
+
+-- | Signed "natural" representation on an architecture
+type IntN = Int32
+
+-- | Unsigned "natural" representation on an architecture
+type WordN = Word32
 
 type Length = WordN
 type Index  = WordN
@@ -468,8 +471,6 @@ instance Type Word32  where typeRep = IntType U N32;     sizeOf = singletonRange
 instance Type Int32   where typeRep = IntType S N32;     sizeOf = singletonRange
 instance Type Word64  where typeRep = IntType U N64;     sizeOf = singletonRange
 instance Type Int64   where typeRep = IntType S N64;     sizeOf = singletonRange
-instance Type WordN   where typeRep = IntType U NNative; sizeOf = singletonRange
-instance Type IntN    where typeRep = IntType S NNative; sizeOf = singletonRange
 instance Type Float   where typeRep = FloatType;         sizeOf _ = AnySize
 instance Type Double  where typeRep = DoubleType;        sizeOf _ = AnySize
 
@@ -791,8 +792,6 @@ type family Size a where
   Size Int32           = Range Int32
   Size Word64          = Range Word64
   Size Int64           = Range Int64
-  Size WordN           = Range WordN
-  Size IntN            = Range IntN
   Size Float           = AnySize
   Size Double          = AnySize
   Size (Complex a)     = AnySize

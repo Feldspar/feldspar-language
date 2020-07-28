@@ -374,8 +374,6 @@ toValueInfo (IntType T.U T.N32)     r       = VIWord32  r
 toValueInfo (IntType T.S T.N32)     r       = VIInt32   r
 toValueInfo (IntType T.U T.N64)     r       = VIWord64  r
 toValueInfo (IntType T.S T.N64)     r       = VIInt64   r
-toValueInfo (IntType T.U T.NNative) r       = VIWordN   r
-toValueInfo (IntType T.S T.NNative) r       = VIIntN    r
 -- FIXME: No range for FP types and ComplexType yet.
 toValueInfo FloatType         _             = VIFloat
 toValueInfo DoubleType        _             = VIDouble
@@ -452,12 +450,12 @@ toValueInfo (Tup15Type a b c d e f g h i j k l m n o) (sa,sb,sc,sd,se,sf,sg,sh,s
            ]
 toValueInfo (MutType a) sz                  = toValueInfo a sz
 toValueInfo (RefType a) sz                  = toValueInfo a sz
-toValueInfo (ArrayType a) (Range (T.WordN l) (T.WordN r) :> es)
+toValueInfo (ArrayType a) (Range l r :> es)
   = VIProd [VIWord32 (Range l r), toValueInfo a es]
-toValueInfo (MArrType a) (Range (T.WordN l) (T.WordN r) :> es)
+toValueInfo (MArrType a) (Range l r :> es)
   = VIProd [VIWord32 (Range l r), toValueInfo a es]
 toValueInfo (ParType a) sz                  = toValueInfo a sz
-toValueInfo (ElementsType a) (Range (T.WordN l) (T.WordN r) :> es)
+toValueInfo (ElementsType a) (Range l r :> es)
   = VIProd [VIWord32 (Range l r), toValueInfo a es]
 toValueInfo (ConsType a b) (sa,sb) = VIProd $ toValueInfo a sa : ss
   where VIProd ss = toValueInfo b sb

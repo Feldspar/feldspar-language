@@ -34,8 +34,7 @@ import qualified Data.Set as S
 import Feldspar.Core.UntypedRepresentation
 import Feldspar.Core.ValueInfo (ValueInfo(..), aLit)
 import qualified Data.Bits as B
-import Feldspar.Core.Middleend.FromTypeUtil (convSize)
-import Feldspar.Core.Types (BitWidth(..))
+import Feldspar.Core.Types (WordN)
 
 -- | General simplification. Could in theory be done at earlier stages.
 optimize :: UntypedFeld ValueInfo -> UntypedFeld ValueInfo
@@ -207,7 +206,7 @@ simpApp env r op' t' es' = go op' t' es'
 
 uLogOf :: Type -> UExp -> Maybe (Signedness, AExp)
 uLogOf (_ :# IntType sgn sz) (Literal (LInt sgn' sz' n))
-  | sz == convSize NNative
+  | sizeWidth sz == B.finiteBitSize (undefined :: WordN)
   , n > 0
   , Just m <- intLog2 n
   , sgn == sgn' && sz == sz'
