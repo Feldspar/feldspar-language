@@ -33,7 +33,24 @@
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Feldspar.Core.Tuple where
+module Feldspar.Core.Tuple
+  ( -- * Taking tuples apart
+    sel1
+  , sel2
+  , sel3
+  , sel4
+  , sel5
+  , sel6
+  , sel7
+  , sel8
+  , sel9
+  , sel10
+  , sel11
+  , sel12
+  , sel13
+  , sel14
+  , sel15
+  ) where
 
 import Feldspar.Core.NestedTuples (TSelect, Tuple(..), build, tuple)
 import qualified Feldspar.Core.NestedTuples as N
