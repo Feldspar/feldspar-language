@@ -88,12 +88,6 @@ data BitWidth (n :: Nat) where
     N32     :: BitWidth 32
     N64     :: BitWidth 64
 
-bitWidth :: BitWidth n -> String
-bitWidth N8      = "8"
-bitWidth N16     = "16"
-bitWidth N32     = "32"
-bitWidth N64     = "64"
-
 -- | Witness for 'U' or 'S'
 data Signedness (s :: Symbol) where
     U :: Signedness "U"
@@ -261,7 +255,7 @@ instance Show (TypeRep a)
   where
     show UnitType            = "()"
     show BoolType            = "Bool"
-    show (IntType s n)       = signedness s ++ bitWidth n
+    show (IntType s n)       = signedness s ++ show (natVal n)
     show FloatType           = "Float"
     show DoubleType          = "Double"
     show (ComplexType t)     = "(Complex " ++ show t ++ ")"
