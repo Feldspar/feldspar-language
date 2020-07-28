@@ -39,11 +39,11 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
+-- | Translate from the typed to an untyped functional representation
 module Feldspar.Core.Middleend.FromTyped
   ( toU
   ) where
 
-import Feldspar.Core.Middleend.FromTypeUtil
 import qualified Feldspar.Core.UntypedRepresentation as U
 import Feldspar.Core.Types (TypeRep(..), defaultSize, TypeF(..), (:>)(..))
 import qualified Feldspar.Core.Types as T
@@ -220,6 +220,13 @@ trOp (R.PropSize _)    = PropSize
 trOp R.Switch          = Switch
 -- trOp R.Call            = Call
 trOp op                = error $ "FromTyped.trOp: unknown op: " ++ show op
+
+-- | Convert a BitWidth to an untyped Size
+convSize :: T.BitWidth a -> U.Size
+convSize T.N8      = U.S8
+convSize T.N16     = U.S16
+convSize T.N32     = U.S32
+convSize T.N64     = U.S64
 
 untypeType :: TypeRep a -> T.Size a -> U.Type
 untypeType UnitType _               = U.TupType []
