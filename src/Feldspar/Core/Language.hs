@@ -213,12 +213,10 @@ instance Bits Word8
 instance Bits Word16
 instance Bits Word32
 instance Bits Word64
-instance Bits WordN
 instance Bits Int8
 instance Bits Int16
 instance Bits Int32
 instance Bits Int64
-instance Bits IntN
 
 -- * Combinators
 
@@ -380,12 +378,10 @@ instance Eq Word8
 instance Eq Word16
 instance Eq Word32
 instance Eq Word64
-instance Eq WordN
 instance Eq Int8
 instance Eq Int16
 instance Eq Int32
 instance Eq Int64
-instance Eq IntN
 
 instance (Eq a, Eq b)
         => Eq (a, b)
@@ -580,12 +576,10 @@ instance Integral Word8
 instance Integral Word16
 instance Integral Word32
 instance Integral Word64
-instance Integral WordN
 instance Integral Int8
 instance Integral Int16
 instance Integral Int32
 instance Integral Int64
-instance Integral IntN
 
 --------------------------------------------------
 -- Literal.hs
@@ -847,12 +841,10 @@ instance Numeric Word8
 instance Numeric Word16
 instance Numeric Word32
 instance Numeric Word64
-instance Numeric WordN
 instance Numeric Int8
 instance Numeric Int16
 instance Numeric Int32
 instance Numeric Int64
-instance Numeric IntN
 
 instance Numeric Float
 instance Numeric Double
@@ -905,8 +897,6 @@ instance Ord Word32
 instance Ord Int32
 instance Ord Word64
 instance Ord Int64
-instance Ord WordN
-instance Ord IntN
 instance Ord Float
 instance Ord Double
 --------------------------------------------------

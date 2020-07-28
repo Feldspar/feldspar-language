@@ -58,6 +58,7 @@ module Feldspar.Core.UntypedRepresentation (
   , HasType(..)
   , getAnnotation
   , dropAnnotation
+  , sizeWidth
   , fv
   , collectLetBinders
   , collectBinders
@@ -120,6 +121,15 @@ dropAnnotation (In _ e) = e
 data Size = S8 | S16 | S32 | S40 | S64
           | S128 -- Used by SICS.
     deriving (Eq,Show,Enum,Ord,Lift)
+
+-- | Returns the number of bits in a Size
+sizeWidth :: Size -> Int
+sizeWidth S8   = 8
+sizeWidth S16  = 16
+sizeWidth S32  = 32
+sizeWidth S40  = 40
+sizeWidth S64  = 64
+sizeWidth S128 = 128
 
 data Signedness = Signed | Unsigned
     deriving (Eq,Show,Enum,Lift)

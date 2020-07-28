@@ -53,6 +53,7 @@ module Feldspar.Core.ValueInfo
   , topInfoST
   ) where
 
+import Feldspar.Core.Types (WordN)
 import Feldspar.Core.UntypedRepresentation
 import Feldspar.Range
 
@@ -69,7 +70,6 @@ data ValueInfo = VIBool   (Range Int) -- ^ We represent False as 0 and True as 1
                | VIInt16  (Range Int16)
                | VIInt32  (Range Int32)
                | VIInt64  (Range Int64)
-               | VIIntN   (Range IntN)
                | VIWord8  (Range Word8)
                | VIWord16 (Range Word16)
                | VIWord32 (Range Word32)
@@ -96,7 +96,6 @@ instance Show ValueInfo where
   show (VIInt16 r)  = "VIInt16 " ++ show r
   show (VIInt32 r)  = "VIInt32 " ++ show r
   show (VIInt64 r)  = "VIInt64 " ++ show r
-  show (VIIntN r)   = "VIIntN " ++ show r
   show (VIWord8 r)  = "VIWord8 " ++ show r
   show (VIWord16 r) = "VIWord16 " ++ show r
   show (VIWord32 r) = "VIWord32 " ++ show r
@@ -210,7 +209,6 @@ prettyVI _ (VIInt8 r)   = show r
 prettyVI _ (VIInt16 r)  = show r
 prettyVI _ (VIInt32 r)  = show r
 prettyVI _ (VIInt64 r)  = show r
-prettyVI _ (VIIntN r)   = show r
 prettyVI _ (VIWord8 r)  = show r
 prettyVI _ (VIWord16 r) = show r
 prettyVI _ (VIWord32 r) = show r
@@ -243,9 +241,6 @@ instance RangeVI Int32 where
 instance RangeVI Int64 where
   rangeVI l h = VIInt64 $ Range l h
 
-instance RangeVI IntN where
-  rangeVI l h = VIIntN $ Range l h
-
 instance RangeVI Word8 where
   rangeVI l h = VIWord8 $ Range l h
 
@@ -257,9 +252,6 @@ instance RangeVI Word32 where
 
 instance RangeVI Word64 where
   rangeVI l h = VIWord64 $ Range l h
-
-instance RangeVI WordN where
-  rangeVI l h = VIWordN $ Range l h
 
 instance RangeVI Float where
   rangeVI _ _ = VIFloat
@@ -295,7 +287,6 @@ bop op (VIInt32 r1)  (VIInt32 r2)  = VIInt32   (op r1 r2)
 bop op (VIWord64 r1) (VIWord64 r2) = VIWord64  (op r1 r2)
 bop op (VIInt64 r1)  (VIInt64 r2)  = VIInt64   (op r1 r2)
 bop op (VIWordN r1)  (VIWordN r2)  = VIWordN   (op r1 r2)
-bop op (VIIntN r1)   (VIIntN r2)   = VIIntN    (op r1 r2)
 bop _  VIFloat{}     VIFloat{}     = VIFloat
 bop _  VIDouble{}    VIDouble{}    = VIDouble
 bop op (VIProd l1)   (VIProd l2)   = VIProd    (zipWith (bop op) l1 l2)
@@ -313,7 +304,6 @@ uop op (VIInt32 r)                = VIInt32   (op r)
 uop op (VIWord64 r)               = VIWord64  (op r)
 uop op (VIInt64 r)                = VIInt64   (op r)
 uop op (VIWordN r)                = VIWordN   (op r)
-uop op (VIIntN r)                 = VIIntN    (op r)
 uop _  VIFloat{}                  = VIFloat
 uop _  VIDouble{}                 = VIDouble
 uop op (VIProd l)                 = VIProd    (map (uop op) l)

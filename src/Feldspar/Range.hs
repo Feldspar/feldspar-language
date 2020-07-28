@@ -6,7 +6,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 --
 -- Copyright (c) 2009-2011, ERICSSON AB
@@ -40,18 +39,9 @@
 
 module Feldspar.Range where
 
-import qualified Data.Array.IO as IO
 import Data.Bits
 import Data.Int
 import Data.Word
-import Data.Default
-import Data.Hash
-import qualified Test.QuickCheck as Q
-import System.Plugins.MultiStage (Reference(..), Marshal(..))
-import System.Random (Random(..))
-
-import Control.DeepSeq (NFData(..))
-import Foreign.Storable (Storable)
 import Language.Haskell.TH.Syntax (Lift(..))
 
 import Feldspar.Lattice
@@ -78,47 +68,11 @@ instance (Show a, Bounded a, Eq a) => Show (Range a)
 -- * Integers
 --------------------------------------------------------------------------------
 
--- FIXME: These types are declared here to be able to close UnsignedRep.
-
--- | Target-dependent unsigned integers
-newtype WordN = WordN Word32
-  deriving
-    ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded
-    , Q.Arbitrary, Random, Storable, NFData, Default
-    , FiniteBits, Hashable, Lift
-    )
-
--- | Target-dependent signed integers
-newtype IntN = IntN Int32
-  deriving
-    ( Eq, Ord, Num, Enum, IO.Ix, Real, Integral, Bits, Bounded
-    , Q.Arbitrary, Random, Storable, NFData, Default
-    , FiniteBits, Hashable
-    )
-
-instance Show WordN where
-    show (WordN a) = show a
-
-instance Show IntN where
-    show (IntN a) = show a
-
-instance Reference WordN where
-  type Ref WordN       = WordN
-
-instance Reference IntN where
-  type Ref IntN        = IntN
-
-instance Marshal WordN where
-  type Rep WordN = WordN
-
-instance Marshal IntN where
-  type Rep IntN        = IntN
-
 -- | Convenience alias for bounded integers
 type BoundedInt a = (Ord a, Bounded a, Integral a, FiniteBits a,
                      Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
 
--- | Type famliy to determine the bit representation of a type
+-- | Type family to determine the bit representation of a type
 type family UnsignedRep a where
   UnsignedRep Int8   = Word8
   UnsignedRep Word8  = Word8
@@ -128,8 +82,6 @@ type family UnsignedRep a where
   UnsignedRep Word32 = Word32
   UnsignedRep Int64  = Word64
   UnsignedRep Word64 = Word64
-  UnsignedRep WordN  = Word32
-  UnsignedRep IntN   = Word32
 
 -- | A convenience function for defining range propagation.
 --   @handleSign propU propS@ chooses @propU@ for unsigned types and

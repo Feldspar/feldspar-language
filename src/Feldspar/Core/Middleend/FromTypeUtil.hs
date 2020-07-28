@@ -42,4 +42,3 @@ convSize N8      = U.S8
 convSize N16     = U.S16
 convSize N32     = U.S32
 convSize N64     = U.S64
-convSize NNative = U.S32
