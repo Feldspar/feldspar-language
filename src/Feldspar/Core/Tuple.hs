@@ -34,8 +34,10 @@
 {-# OPTIONS_GHC -Wall #-}
 
 module Feldspar.Core.Tuple
-  ( -- * Taking tuples apart
-    sel1
+  ( -- * Converting tuples to nested tuples
+    Tuply(..)
+    -- * Taking tuples apart
+  , sel1
   , sel2
   , sel3
   , sel4
