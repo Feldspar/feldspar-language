@@ -129,20 +129,6 @@ type Length = WordN
 type Index  = WordN
 
 --------------------------------------------------------------------------------
--- * Monadic Types
---------------------------------------------------------------------------------
-
--- | This class is used to allow constructs to be abstract in the monad
-class MonadType m
-  where
-    voidTypeRep :: TypeRep (m ())
-  -- TODO Since the `Mut` monad is already abstract, this class is probably only
-  --      needed if we want to be able to use monadic constructs with different
-  --      monad types.
-
-
-
---------------------------------------------------------------------------------
 -- * Mutable data
 --------------------------------------------------------------------------------
 
@@ -163,11 +149,6 @@ instance Show (MArr a)
   where
     show _ = "MArr"
 
-instance MonadType Mut
-  where
-    voidTypeRep = MutType UnitType
-
-
 --------------------------------------------------------------------------------
 -- * Par Monad
 --------------------------------------------------------------------------------
@@ -181,10 +162,6 @@ type IV = MonadPar.IVar
 instance Show (IV a)
   where
     show _ = "IVar"
-
-instance MonadType Par
-  where
-    voidTypeRep = ParType UnitType
 
 --------------------------------------------------------------------------------
 -- * Elements Language
