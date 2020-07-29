@@ -42,7 +42,6 @@ module Feldspar
 
   -- * Feldspar types
   , Range (..)
-  , BoundedInt
   , module Feldspar.Core.Types
 
   -- * Frontend
