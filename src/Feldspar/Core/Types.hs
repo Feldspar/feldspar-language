@@ -58,8 +58,6 @@ import Data.Word
 import qualified Control.Monad.Par as MonadPar
 import GHC.TypeLits
 
-import Data.Patch
-
 import Feldspar.Core.Tuple (Tuply(..))
 import Feldspar.Lattice
 import Feldspar.Range
@@ -533,19 +531,3 @@ type family Size a where
   Size (Tuple '[])     = Size ()
   Size (IV a)          = Size a
   Size (FVal a)        = Size a
-
-
-tIntN :: Patch IntN IntN
-tIntN = id
-
-tWordN :: Patch WordN WordN
-tWordN = id
-
-tIndex :: Patch Index Index
-tIndex  = id
-
-tLength :: Patch Length Length
-tLength = id
-
-tArr :: Patch a a -> Patch [a] [a]
-tArr _ = id
