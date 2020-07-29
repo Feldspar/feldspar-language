@@ -305,39 +305,6 @@ instance Show (TypeRep a)
     show (IVarType ta)                   = unwords ["IVar", show ta]
     show (FValType ta)                   = unwords ["FVal", show ta]
 
-defaultSize :: TypeRep a -> Size a
-defaultSize UnitType = universal
-defaultSize BoolType = universal
-defaultSize (IntType _ _) = universal
-defaultSize FloatType = universal
-defaultSize DoubleType = universal
-defaultSize (ComplexType _) = universal
-defaultSize (ArrayType t) = universal :> defaultSize t
-defaultSize (Tup2Type t) = defaultSize t
-defaultSize (Tup3Type t) = defaultSize t
-defaultSize (Tup4Type t) = defaultSize t
-defaultSize (Tup5Type t) = defaultSize t
-defaultSize (Tup6Type t) = defaultSize t
-defaultSize (Tup7Type t) = defaultSize t
-defaultSize (Tup8Type t) = defaultSize t
-defaultSize (Tup9Type t) = defaultSize t
-defaultSize (Tup10Type t) = defaultSize t
-defaultSize (Tup11Type t) = defaultSize t
-defaultSize (Tup12Type t) = defaultSize t
-defaultSize (Tup13Type t) = defaultSize t
-defaultSize (Tup14Type t) = defaultSize t
-defaultSize (Tup15Type t) = defaultSize t
-defaultSize (FunType ta tb) = (defaultSize ta, defaultSize tb)
-defaultSize (MutType ta) = defaultSize ta
-defaultSize (RefType ta) = defaultSize ta
-defaultSize (MArrType ta) = universal :> defaultSize ta
-defaultSize (ParType ta) = defaultSize ta
-defaultSize (ElementsType ta) = universal :> defaultSize ta
-defaultSize (ConsType ta tb) = (defaultSize ta, defaultSize tb)
-defaultSize NilType = universal
-defaultSize (IVarType ta) = defaultSize ta
-defaultSize (FValType ta) = defaultSize ta
-
 -- | The set of supported types
 class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a), TypeF a) => Type a
   where

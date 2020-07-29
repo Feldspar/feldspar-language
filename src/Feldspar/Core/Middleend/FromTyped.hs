@@ -45,7 +45,7 @@ module Feldspar.Core.Middleend.FromTyped
   ) where
 
 import qualified Feldspar.Core.UntypedRepresentation as U
-import Feldspar.Core.Types (TypeRep(..), defaultSize, TypeF(..), (:>)(..))
+import Feldspar.Core.Types (TypeRep(..), TypeF(..), (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
 import Feldspar.Core.ValueInfo (ValueInfo(..))
@@ -53,6 +53,7 @@ import Feldspar.Range (Range(..))
 import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr(..), Expr(..))
 import Data.Complex (Complex(..))
+import Feldspar.Lattice (universal)
 
 toU :: AExpr a -> UntypedFeld ValueInfo
 toU (((R.Info i) :: R.Info a) :& e)
@@ -228,13 +229,20 @@ convSize T.N16     = U.S16
 convSize T.N32     = U.S32
 convSize T.N64     = U.S64
 
+-- | Default size for numeric types
+defaultNumSize :: TypeRep a -> T.Size a
+defaultNumSize IntType{} = universal
+defaultNumSize FloatType = universal
+defaultNumSize DoubleType = universal
+defaultNumSize t = error $ "defaultNumSize: missing numeric type: " ++ show t
+
 untypeType :: TypeRep a -> T.Size a -> U.Type
 untypeType UnitType _               = U.TupType []
 untypeType BoolType _               = 1 U.:# U.BoolType
 untypeType (IntType s n) _          = 1 U.:# U.IntType (convSign s) (convSize n)
 untypeType FloatType _              = 1 U.:# U.FloatType
 untypeType DoubleType _             = 1 U.:# U.DoubleType
-untypeType (ComplexType t) _        = 1 U.:# U.ComplexType (untypeType t (defaultSize t))
+untypeType (ComplexType t) _        = 1 U.:# U.ComplexType (untypeType t (defaultNumSize t))
 untypeType (Tup2Type t) sz          = U.TupType $ untypeTup t sz
 untypeType (Tup3Type t) sz          = U.TupType $ untypeTup t sz
 untypeType (Tup4Type t) sz          = U.TupType $ untypeTup t sz
@@ -278,8 +286,8 @@ literal DoubleType      _  a = LDouble a
 literal (ArrayType t) (_ :> sz) a = LArray t' $ map (literal t sz) a
   where t' = untypeType t sz
 literal (ComplexType t) _ (r :+ i) = LComplex re ie
-  where re = literal t (defaultSize t) r
-        ie = literal t (defaultSize t) i
+  where re = literal t (defaultNumSize t) r
+        ie = literal t (defaultNumSize t) i
 literal _ _ _ = error "Missing pattern: FromTyped.hs: literal"
 
 -- | Construct a ValueInfo from a TypeRep and a Size
