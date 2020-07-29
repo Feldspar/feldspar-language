@@ -46,6 +46,7 @@ module Feldspar.Core.Middleend.FromTyped
   ) where
 
 import qualified Feldspar.Core.UntypedRepresentation as U
+import qualified Feldspar.Core.NestedTuples as T
 import Feldspar.Core.Types (TypeRep(..), TypeF(..), (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
