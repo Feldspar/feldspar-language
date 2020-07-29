@@ -63,7 +63,7 @@ module Feldspar.Core.Representation
   ) where
 
 import Feldspar.Compiler.Options (Pretty(..))
-import Feldspar.Core.Types (AnySize, BoundedInt, Elements, FVal, Length, Index,
+import Feldspar.Core.Types (BoundedInt, Elements, FVal, Length, Index,
                             IntN, IV, MArr, Mut, Par, Size, Tuple(..), Type(..),
                             TypeF(..), TypeRep(..))
 import Feldspar.Range (Range)
@@ -369,8 +369,8 @@ data Op a where
     ConditionM :: (Monad m, Type a) => Op (Bool :-> m a :-> m a :-> Full (m a))
 
     -- | LoopM
-    While :: (Monad m, Size (m ()) ~ AnySize) => Op (m Bool :-> m a :-> Full (m ()))
-    For   :: (Monad m, Size (m ()) ~ AnySize) => Op (Length :-> (Index -> m a) :-> Full (m ()))
+    While :: (Monad m, Size (m ()) ~ Size ()) => Op (m Bool :-> m a :-> Full (m ()))
+    For   :: (Monad m, Size (m ()) ~ Size ()) => Op (Length :-> (Index -> m a) :-> Full (m ()))
 
     -- | Mutable
     Return :: (Monad m, Size (m a) ~ Size a)         => Op (a    :-> Full (m a))
