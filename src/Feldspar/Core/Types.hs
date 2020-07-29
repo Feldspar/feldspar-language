@@ -287,7 +287,7 @@ class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a), TypeF a) => Ty
     typeRep  :: TypeRep a
     sizeOf   :: a -> Size a
 
-instance Type ()      where typeRep = UnitType;          sizeOf _ = AnySize
+instance Type ()      where typeRep = UnitType;          sizeOf = singletonRange
 instance Type Bool    where typeRep = BoolType;          sizeOf = singletonRange
 instance Type Word8   where typeRep = IntType U N8;      sizeOf = singletonRange
 instance Type Int8    where typeRep = IntType S N8;      sizeOf = singletonRange
@@ -464,7 +464,7 @@ instance Lattice AnySize
     (/\) = anySizeFun2
 
 type family Size a where
-  Size ()              = AnySize
+  Size ()              = Range ()
   Size Bool            = Range Bool
   Size Word8           = Range Word8
   Size Int8            = Range Int8
