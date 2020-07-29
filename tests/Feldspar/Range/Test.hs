@@ -337,7 +337,7 @@ prop_rangeLessEq t r1 r2 =
 -- ** Propagation
 --------------------------------------------------------------------------------
 
-prop_propagation1 :: (Show t, Bounded t, Ord t, Num t, FiniteBits t, Random t) =>
+prop_propagation1 :: (Show t, Bounded t, Ord t, Num t, Num (Range t), Random t) =>
                      t -> (forall a . Num a => a -> a) -> Range t -> Property
 prop_propagation1 _ op r =
     not (isEmpty r) ==>
@@ -389,7 +389,7 @@ rangePropSafety1 t op rop ran =
   where _ = ran `rangeTy` t
 
 prop_propagation2
-    :: (Show t, Bounded t, Ord t, Num t, FiniteBits t, Random t) => t -> (forall a . Num a => a -> a -> a)
+    :: (Show t, Bounded t, Ord t, Num t, Num (Range t), Random t) => t -> (forall a . Num a => a -> a -> a)
     -> Range t -> Range t -> Property
 prop_propagation2 t op = rangePropagationSafety t op op
 
