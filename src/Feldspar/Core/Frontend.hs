@@ -88,6 +88,11 @@ module Feldspar.Core.Frontend
     , tData
     , tArr1
     , tArr2
+    , tIntN
+    , tWordN
+    , tIndex
+    , tLength
+    , tArr
 
     -- * Functions
     , ilog2
@@ -275,6 +280,20 @@ tArr1 _ = id
 tArr2 :: Patch a a -> Patch (Data [[a]]) (Data [[a]])
 tArr2 _ = id
 
+tIntN :: Patch IntN IntN
+tIntN = id
+
+tWordN :: Patch WordN WordN
+tWordN = id
+
+tIndex :: Patch Index Index
+tIndex  = id
+
+tLength :: Patch Length Length
+tLength = id
+
+tArr :: Patch a a -> Patch [a] [a]
+tArr _ = id
 
 --------------------------------------------------------------------------------
 -- * Functions
