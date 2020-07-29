@@ -270,26 +270,17 @@ convSign T.U       = Unsigned
 convSign T.S       = Signed
 
 literal :: TypeRep a -> T.Size a -> a -> Lit
-literal t@UnitType        sz a = literalConst t sz a
-literal t@BoolType        sz a = literalConst t sz a
-literal t@IntType{}       sz a = literalConst t sz a
-literal t@FloatType       sz a = literalConst t sz a
-literal t@DoubleType      sz a = literalConst t sz a
-literal t@ComplexType{}   sz a = literalConst t sz a
-literal t@ArrayType{}     sz a = literalConst t sz a
-literal _ _ _ = error "Missing pattern: FromTyped.hs: literal"
-
-literalConst :: TypeRep a -> T.Size a -> a -> Lit
-literalConst UnitType        _  ()     = LTup []
-literalConst BoolType        _  a      = LBool a
-literalConst (IntType s n)   _  a      = LInt (convSign s) (convSize n) (toInteger a)
-literalConst FloatType       _  a      = LFloat a
-literalConst DoubleType      _  a      = LDouble a
-literalConst (ArrayType t) (_ :> sz) a = LArray t' $ map (literalConst t sz) a
+literal UnitType        _ () = LTup []
+literal BoolType        _  a = LBool a
+literal (IntType s n)   _  a = LInt (convSign s) (convSize n) (toInteger a)
+literal FloatType       _  a = LFloat a
+literal DoubleType      _  a = LDouble a
+literal (ArrayType t) (_ :> sz) a = LArray t' $ map (literal t sz) a
   where t' = untypeType t sz
-literalConst (ComplexType t) _  (r:+i) = LComplex re ie
-  where re = literalConst t (defaultSize t) r
-        ie = literalConst t (defaultSize t) i
+literal (ComplexType t) _ (r :+ i) = LComplex re ie
+  where re = literal t (defaultSize t) r
+        ie = literal t (defaultSize t) i
+literal _ _ _ = error "Missing pattern: FromTyped.hs: literal"
 
 -- | Construct a ValueInfo from a TypeRep and a Size
 toValueInfo :: TypeRep a -> T.Size a -> ValueInfo
