@@ -41,6 +41,7 @@
 
 module Feldspar.Core.Language where
 
+import Feldspar.Core.NestedTuples (Tuple(..), build, tuple)
 import Feldspar.Core.Reify
 import Feldspar.Core.Representation as R
 import Feldspar.Core.Types as T

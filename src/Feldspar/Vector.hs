@@ -82,7 +82,6 @@ import Feldspar hiding (desugar,sugar,resugar)
 import qualified Feldspar as F
 import Feldspar.Core.Language
 import Feldspar.Core.Tuple
-import Feldspar.Core.NestedTuples (nfst, nsnd, twotup)
 import Feldspar.Vector.Shape
 
 import Control.Monad (zipWithM_)

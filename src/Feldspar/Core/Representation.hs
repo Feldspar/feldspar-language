@@ -63,8 +63,9 @@ module Feldspar.Core.Representation
   ) where
 
 import Feldspar.Compiler.Options (Pretty(..))
+import Feldspar.Core.NestedTuples (Tuple)
 import Feldspar.Core.Types (BoundedInt, Elements, FVal, Length, Index,
-                            IntN, IV, MArr, Mut, Par, Size, Tuple(..), Type(..),
+                            IntN, IV, MArr, Mut, Par, Size, Type(..),
                             TypeF(..), TypeRep(..))
 import Feldspar.Range (Range)
 

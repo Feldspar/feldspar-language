@@ -46,6 +46,7 @@ module Feldspar
 
   -- * Frontend
   , module Feldspar.Core.Frontend
+  , module Feldspar.Core.NestedTuples
   , module Feldspar.Core.Collection
   ) where
 
@@ -60,6 +61,10 @@ import Data.Int hiding (Int)
 import Data.Word
 
 import Feldspar.Range
+-- The names for selectors collide with the ones for ordinary tuples.
+import Feldspar.Core.NestedTuples hiding (sel1, sel2, sel3, sel4, sel5, sel6,
+                                          sel7, sel8, sel9, sel10, sel11, sel12,
+                                          sel13, sel14, sel15)
 import Feldspar.Core.Types
 import Feldspar.Core.Frontend
 import Feldspar.Core.Collection

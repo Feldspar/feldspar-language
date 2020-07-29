@@ -43,7 +43,6 @@
 
 module Feldspar.Core.Types
        ( module Feldspar.Core.Types
-       , Tuple(..), build, tuple -- From NestedTuples
        ) where
 
 
