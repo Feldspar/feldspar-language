@@ -47,7 +47,7 @@ import Feldspar.Core.Representation
 import Feldspar.Core.Types (Size, Type, (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Range
-import Feldspar.Lattice (Lattice, top, bot, (\/), (/\))
+import Feldspar.Lattice (Lattice, top, bot, (\/), (/\), universal)
 
 import qualified Data.Map.Strict as M (empty)
 
@@ -181,10 +181,12 @@ spA vm (_ :& Sym F2I :@ a)
   = Info top :& Sym F2I :@ spA vm a
 spA vm (_ :& Sym op@I2N :@ a)
   | a1@(Info ai1 :& _) <- spA vm a
-  = Info (spI2N op ai1) :& Sym I2N :@ a1
+  = Info (rangeToSize (resultType op) $ mapMonotonic toInteger ai1)
+    :& Sym I2N :@ a1
 spA vm (_ :& Sym op@B2I :@ a)
   | a1@(Info ai1 :& _) <- spA vm a
-  = Info (spB2I op ai1) :& Sym B2I :@ a1
+  = Info (rangeToSize (resultType op) $ mapMonotonic (toInteger . fromEnum) ai1)
+    :& Sym B2I :@ a1
 spA vm (_ :& Sym Round :@ a)
   = Info top :& Sym Round :@ spA vm a
 spA vm (_ :& Sym Ceiling :@ a)
@@ -483,23 +485,14 @@ spA vm (_ :& Sym When :@ a :@ b)
 
 -- | Support functions
 
-spB2I :: Type b => Op (Bool -> b) -> Range Bool -> Size b
-spB2I op r = rangeToSize (resultType op) $ mapMonotonic (toInteger . fromEnum) r
-
-spI2N :: (Type b, Integral a) => Op (a -> b) -> Range a -> Size b
-spI2N op r = rangeToSize (resultType op) $ mapMonotonic toInteger r
-
-rangeToSize :: Lattice (Size a) => T.TypeRep a -> Range Integer -> Size a
-rangeToSize (T.IntType _ _) r = rangeProp r
-rangeToSize _               _ = top
-
-rangeProp :: forall a . (Bounded a, Integral a) => Range Integer -> Range a
-rangeProp (Range l u)
+rangeToSize :: forall a . Lattice (Size a) => T.TypeRep a -> Range Integer -> Size a
+rangeToSize (T.IntType _ _) (Range l u)
     | withinBounds l && withinBounds u
         = range (fromIntegral l) (fromIntegral u)
-    | otherwise = range minBound maxBound
+    | otherwise = universal
   where withinBounds i = toInteger (minBound :: a) <= i &&
                          i <= toInteger (maxBound :: a)
+rangeToSize _               _ = top
 
 resultType :: Type b => Op (a -> b) -> T.TypeRep b
 resultType _ = T.typeRep
