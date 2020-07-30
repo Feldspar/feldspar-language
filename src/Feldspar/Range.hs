@@ -44,7 +44,7 @@ import Data.Int
 import Data.Word
 import Language.Haskell.TH.Syntax (Lift(..))
 
-import Feldspar.Lattice (Lattice(..))
+import Feldspar.Lattice (Lattice(..), universal)
 
 --------------------------------------------------------------------------------
 -- * Definition
@@ -57,12 +57,11 @@ data Range a = Range
   }
     deriving (Eq, Lift)
 
-instance (Show a, Bounded a, Eq a) => Show (Range a)
-  where
-    show (Range l u) = "[" ++ sl ++ "," ++ su ++ "]"
-      where
-        sl = if l == minBound then "*" else show l
-        su = if u == maxBound then "*" else show u
+instance (Show a, Lattice (Range a), Eq a) => Show (Range a) where
+  show (Range l u) = "[" ++ sl ++ "," ++ su ++ "]"
+    where
+      sl = if l == lowerBound universal then "*" else show l
+      su = if u == upperBound universal then "*" else show u
 
 -- | Type family to determine the bit representation of a type
 type family UnsignedRep a where
