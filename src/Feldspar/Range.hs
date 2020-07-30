@@ -220,7 +220,7 @@ rangeIntersection = rangeOp2 intersection
 
 -- | @disjoint r1 r2@ returns true when @r1@ and @r2@ have no elements in
 --   common.
-disjoint :: (Bounded a, Ord a) => Range a -> Range a -> Bool
+disjoint :: (Lattice (Range a), Ord a) => Range a -> Range a -> Bool
 disjoint r1 r2 = isEmpty (r1 /\ r2)
 
 -- | @rangeByRange ra rb@: Computes the range of the following set
@@ -684,7 +684,7 @@ instance Ord a => Ord (Range a)
 
 -- | Propagates range information through 'mod'.
 -- Note that we assume Haskell semantics for 'mod'.
-rangeMod :: (Bounded a, Ord a, Enum a, Num a, Bits a)
+rangeMod :: (Bounded a, Ord a, Enum a, Num a, Bits a, Lattice (Range a))
          => Range a -> Range a -> Range a
 rangeMod d r
     | isSigned (lowerBound d) &&
@@ -700,7 +700,7 @@ rangeMod _ (Range l u) = Range (succ l) (pred u)
 
 -- | Propagates range information through 'rem'.
 -- Note that we assume Haskell semantics for 'rem'.
-rangeRem :: (Bounded a, Ord a, Enum a, Num a, Bits a)
+rangeRem :: (Bounded a, Ord a, Enum a, Num a, Bits a, Lattice (Range a))
          => Range a -> Range a -> Range a
 rangeRem d r
     | isSigned (lowerBound d) &&
