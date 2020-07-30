@@ -54,7 +54,7 @@ import Feldspar.Range (Range(..))
 import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr(..), Expr(..))
 import Data.Complex (Complex(..))
-import Feldspar.Lattice (universal)
+import Feldspar.Lattice (Lattice, universal)
 
 toU :: AExpr a -> UntypedFeld ValueInfo
 toU (((R.Info i) :: R.Info a) :& e)
@@ -231,7 +231,7 @@ convSize T.N32     = U.S32
 convSize T.N64     = U.S64
 
 -- | Default size for numeric types
-defaultNumSize :: TypeRep a -> T.Size a
+defaultNumSize :: Lattice (Range a) => TypeRep a -> T.Size a
 defaultNumSize IntType{} = universal
 defaultNumSize FloatType = universal
 defaultNumSize DoubleType = universal
