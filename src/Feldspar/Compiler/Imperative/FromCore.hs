@@ -71,7 +71,8 @@ import Feldspar.Core.UntypedRepresentation
          , collectLetBinders
          )
 import qualified Feldspar.Core.UntypedRepresentation as Ut
-import Feldspar.Range (fullRange, upperBound)
+import Feldspar.Lattice (universal)
+import Feldspar.Range (upperBound)
 
 import Feldspar.Compiler.Imperative.Frontend
 import Feldspar.Compiler.Imperative.Representation
@@ -462,7 +463,7 @@ compileType opt (Ut.MArrType rs a)
 compileType opt (Ut.ParType a)         = compileType opt a
 compileType opt (Ut.ElementsType a)
  | useNativeArrays opt = NativeArray Nothing $ compileType opt a
- | otherwise           = mkAwLType fullRange $ compileType opt a
+ | otherwise           = mkAwLType universal $ compileType opt a
 compileType opt (Ut.IVarType a)        = IVarType $ compileType opt a
 compileType opt (Ut.FunType _ b)       = compileType opt b
 compileType opt (Ut.FValType a)        = IVarType $ compileType opt a

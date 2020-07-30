@@ -42,7 +42,7 @@ import Feldspar.Compiler.Imperative.Representation
          Expression(..), Variable(..), Type(..), ScalarType(..),
          HasType(..), Size(..), Signedness(..))
 import Feldspar.Compiler.Options (Options(..))
-import Feldspar.Range (fullRange)
+import Feldspar.Lattice (universal)
 
 import Control.Monad.Writer (censor, runWriter, tell)
 import Data.List (concatMap, isPrefixOf, nub)
@@ -64,9 +64,9 @@ mkCopyArrayPos opts t = Proc name False args (typeof dstVar) (Just body)
         body = Block decls prog
         decls = []
         ixVar = Variable intT "i"
-        srcVar = Variable (ArrayType fullRange t) "src"
+        srcVar = Variable (ArrayType universal t) "src"
         srcLVar = Variable intT "srcLen"
-        dstVar = Variable (ArrayType fullRange t) "dst"
+        dstVar = Variable (ArrayType universal t) "dst"
         dstLVar = Variable intT "dstLen"
         posVar = Variable intT "pos"
         prog = Sequence
@@ -83,15 +83,15 @@ mkCopyArray :: Type -> Entity
 mkCopyArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "copyArray" t
         args = [dstVar, dstLVar, srcVar, srcLVar]
-        srcVar = Variable (ArrayType fullRange t) "src"
+        srcVar = Variable (ArrayType universal t) "src"
         srcLVar = Variable intT "srcLen"
-        dstVar = Variable (ArrayType fullRange t) "dst"
+        dstVar = Variable (ArrayType universal t) "dst"
         dstLVar = Variable intT "dstLen"
         body = Block decls prog
         decls = []
         prog = Sequence
                [ Assign (VarExpr dstVar)
-                        (fun (ArrayType fullRange t)
+                        (fun (ArrayType universal t)
                              (variant "copyArrayPos" t)
                              [VarExpr dstVar, VarExpr dstLVar, VarExpr srcVar, VarExpr srcLVar, zero])
                , call "return" [ValueParameter $ VarExpr dstVar]
@@ -102,9 +102,9 @@ mkInitCopyArray :: Type -> Entity
 mkInitCopyArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "initCopyArray" t
         args = [dstVar, dstLVar, srcVar, srcLVar]
-        srcVar = Variable (ArrayType fullRange t) "src"
+        srcVar = Variable (ArrayType universal t) "src"
         srcLVar = Variable intT "srcLen"
-        dstVar = Variable (ArrayType fullRange t) "dst"
+        dstVar = Variable (ArrayType universal t) "dst"
         dstLVar = Variable intT "dstLen"
         body = Block decls prog
         decls = []
@@ -112,7 +112,7 @@ mkInitCopyArray t = Proc name False args (typeof dstVar) (Just body)
                [ Assign (VarExpr dstVar) (arrayFun "initArray" [VarExpr dstVar, VarExpr dstLVar, VarExpr srcLVar])
                , Assign (VarExpr dstLVar) (VarExpr srcLVar)
                , Assign (VarExpr dstVar)
-                        (fun (ArrayType fullRange t)
+                        (fun (ArrayType universal t)
                              (variant "copyArrayPos" t)
                              [VarExpr dstVar, VarExpr dstLVar, VarExpr srcVar, VarExpr srcLVar, zero])
                , call "return" [ValueParameter $ VarExpr dstVar]
@@ -123,7 +123,7 @@ mkInitArray :: Type -> Entity
 mkInitArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "initArray" t
         args = [dstVar, oldLen, newLen]
-        dstVar = Variable (ArrayType fullRange t) "dst"
+        dstVar = Variable (ArrayType universal t) "dst"
         oldLen = Variable lengthT "oldLen"
         newLen = Variable lengthT "newLen"
         body = Block [] prog
@@ -148,13 +148,13 @@ mkInitArray t = Proc name False args (typeof dstVar) (Just body)
 
         ixVar = Variable intT "i"
         nullVar t' n = Variable t' ("null_arr_" ++ show n)
-        arrT = ArrayType fullRange t
+        arrT = ArrayType universal t
 
 -- | Free an array
 mkFreeArray :: Type -> Entity
 mkFreeArray t = Proc name False [srcVar, srcLVar] VoidType (Just body)
   where name = variant "freeArray" t
-        srcVar = Variable (ArrayType fullRange t) "src"
+        srcVar = Variable (ArrayType universal t) "src"
         srcLVar = Variable intT "srcLen"
         body = Block [] $ Sequence stms
         stms = [ for Parallel ixVar zero (VarExpr srcLVar) one loopBody'

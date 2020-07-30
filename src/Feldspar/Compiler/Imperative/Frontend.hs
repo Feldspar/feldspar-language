@@ -95,7 +95,8 @@ module Feldspar.Compiler.Imperative.Frontend
 import Feldspar.Compiler.Imperative.Representation
 import Feldspar.Core.Types (Length)
 import Feldspar.Core.UntypedRepresentation (Fork(..))
-import Feldspar.Range
+import Feldspar.Lattice (universal)
+import Feldspar.Range (Range(..), isSingleton)
 
 import Data.Char (toLower)
 import Data.List (stripPrefix)
@@ -513,9 +514,9 @@ decodeType = goL []
                       where (ts', s') = go s
              structGo _ _ _ = error "decodeType: pattern match failure"
              h' = take (length h - length t'') h
-    go (stripPrefix "arr_"     -> Just t) = (ArrayType fullRange tt, t')
+    go (stripPrefix "arr_"     -> Just t) = (ArrayType universal tt, t')
       where (tt, t') = go t
-    go (stripPrefix "awl_"     -> Just t) = (mkAwLType fullRange tt, t')
+    go (stripPrefix "awl_"     -> Just t) = (mkAwLType universal tt, t')
       where (tt, t') = go t
     go s = error ("decodeType: " ++ s)
 

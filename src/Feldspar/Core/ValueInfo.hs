@@ -55,6 +55,7 @@ module Feldspar.Core.ValueInfo
 
 import Feldspar.Core.Types (WordN)
 import Feldspar.Core.UntypedRepresentation
+import Feldspar.Lattice (empty, universal)
 import Feldspar.Range
 
 import Data.Int
@@ -113,8 +114,8 @@ elementsVI :: ValueInfo -> ValueInfo -> ValueInfo
 elementsVI idx val = VIProd [idx, val]
 
 -- | Forcing a range to an integer type given by a signedness and a size.
-constantIntRange :: Signedness -> Size -> (forall a . Bounded a => Range a)
-                 -> ValueInfo
+constantIntRange :: Signedness -> Size
+                 -> (forall a . (Bounded a, Ord a) => Range a) -> ValueInfo
 constantIntRange Signed   S8   r = VIInt8 r
 constantIntRange Signed   S16  r = VIInt16 r
 constantIntRange Signed   S32  r = VIInt32 r
@@ -155,7 +156,7 @@ literalVI (LTup xs) = VIProd $ map literalVI xs
 botInfoST :: ScalarType -> ValueInfo
 botInfoST BoolType         = VIBool $ Range 1 0
 botInfoST BitType          = VIWord8 $ Range 1 0 -- Provisionally
-botInfoST (IntType sgn sz) = constantIntRange sgn sz emptyRange
+botInfoST (IntType sgn sz) = constantIntRange sgn sz empty
 botInfoST FloatType        = VIFloat
 botInfoST DoubleType       = VIDouble
 botInfoST (ComplexType t)  = VIProd [botInfo t, botInfo t]
@@ -180,7 +181,7 @@ botInfo (FValType t)     = botInfo t
 topInfoST :: ScalarType -> ValueInfo
 topInfoST BoolType         = VIBool $ Range 0 1
 topInfoST BitType          = VIWord8 $ Range 0 1 -- Provisionally
-topInfoST (IntType sgn sz) = constantIntRange sgn sz fullRange
+topInfoST (IntType sgn sz) = constantIntRange sgn sz universal
 topInfoST FloatType        = VIFloat
 topInfoST DoubleType       = VIDouble
 topInfoST (ComplexType t)  = VIProd [topInfo t, topInfo t]
