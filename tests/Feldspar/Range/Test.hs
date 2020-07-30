@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -173,7 +174,9 @@ instance (Bounded a, Ord a, Enum a, Arbitrary a) => Arbitrary (Range a)
       [ Range x y' | y' <- shrink y ]
 
 newtype EmptyRange a = EmptyRange {getEmpty :: Range a}
-  deriving (Eq, Show)
+  deriving Eq
+
+deriving instance (Eq a, Lattice (Range a), Show a) => Show (EmptyRange a)
 
 instance (Arbitrary a, Random a, Ord a, Bounded a) => Arbitrary (EmptyRange a) where
     arbitrary = do
@@ -181,7 +184,9 @@ instance (Arbitrary a, Random a, Ord a, Bounded a) => Arbitrary (EmptyRange a) w
       return $ EmptyRange $ Range l minBound
 
 newtype NonEmptyRange a = NonEmptyRange {getNonEmpty :: Range a}
-  deriving (Eq, Show)
+  deriving Eq
+
+deriving instance (Eq a, Lattice (Range a), Show a) => Show (NonEmptyRange a)
 
 instance (Arbitrary a, Random a, Ord a, Bounded a) => Arbitrary (NonEmptyRange a) where
     arbitrary = do

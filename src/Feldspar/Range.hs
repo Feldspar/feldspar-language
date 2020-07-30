@@ -110,8 +110,40 @@ mapMonotonic2 f (Range l1 u1) (Range l2 u2) = Range (f l1 l2) (f u1 u2)
 -- * Lattice operations
 --------------------------------------------------------------------------------
 
+{-
+
+Instance overloading resolution
+-------
+
+GHC does not look at instance heads when resolving overloading so we cannot
+use the Bounded in:
+
 instance (Bounded a, Ord a) => Lattice (Range a)
-  where
+
+to select a different Lattice instance for Float/Double.
+
+We might consider creating Bounded instances for Float/Double
+with +-Inf as the max/minBound since those are the values we want,
+but all the Range tests willl fail since that will cause QuickCheck
+to generate NaN all over the place.
+
+-}
+
+-- | Lattice instance for Float ranges. Note [Instance overloading resolution].
+instance Lattice (Range Float) where
+  bot  = Range (1 / 0) ((-1) / 0)
+  top  = Range ((-1) / 0) (1 / 0)
+  (\/) = rangeUnion
+  (/\) = rangeIntersection
+
+-- | Lattice instance for Double ranges. Note [Instance overloading resolution].
+instance Lattice (Range Double) where
+  bot  = Range (1 / 0) ((-1) / 0)
+  top  = Range ((-1) / 0) (1 / 0)
+  (\/) = rangeUnion
+  (/\) = rangeIntersection
+
+instance {-# OVERLAPPABLE #-} (Bounded a, Ord a) => Lattice (Range a) where
     bot  = emptyRange
     top  = fullRange
     (\/) = rangeUnion
@@ -265,10 +297,30 @@ rangeLessEq (Range _ u1) (Range l2 _) = u1 <= l2
 -- * Propagation
 --------------------------------------------------------------------------------
 
+-- | Num instance for Float ranges. Note [Instance overloading resolution].
+instance Num (Range Float) where
+  fromInteger = singletonRange . fromInteger
+  abs = const universal
+  signum = const universal
+  negate = const universal
+  (+) = const . const universal
+  (-) = const . const universal
+  (*) = const . const universal
+
+-- | Num instance for Double ranges. Note [Instance overloading resolution].
+instance Num (Range Double) where
+  fromInteger = singletonRange . fromInteger
+  abs = const universal
+  signum = const universal
+  negate = const universal
+  (+) = const . const universal
+  (-) = const . const universal
+  (*) = const . const universal
+
 -- | Implements 'fromInteger' as a 'singletonRange', and implements correct
 -- range propagation for arithmetic operations.
-instance (Bounded a, Ord a, Num a, FiniteBits a) => Num (Range a)
-  where
+instance {-# OVERLAPPABLE #-} (Bounded a, Ord a, Num a, FiniteBits a)
+         => Num (Range a) where
     fromInteger = singletonRange . fromInteger
     abs         = rangeAbs
     signum      = rangeSignum

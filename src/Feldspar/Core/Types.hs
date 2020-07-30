@@ -297,8 +297,8 @@ instance Type Word32  where typeRep = IntType U N32;     sizeOf = singletonRange
 instance Type Int32   where typeRep = IntType S N32;     sizeOf = singletonRange
 instance Type Word64  where typeRep = IntType U N64;     sizeOf = singletonRange
 instance Type Int64   where typeRep = IntType S N64;     sizeOf = singletonRange
-instance Type Float   where typeRep = FloatType;         sizeOf _ = AnySize
-instance Type Double  where typeRep = DoubleType;        sizeOf _ = AnySize
+instance Type Float   where typeRep = FloatType;         sizeOf = singletonRange
+instance Type Double  where typeRep = DoubleType;        sizeOf = singletonRange
 
 instance (Type a, RealFloat a) => Type (Complex a)
   where
@@ -474,8 +474,8 @@ type family Size a where
   Size Int32           = Range Int32
   Size Word64          = Range Word64
   Size Int64           = Range Int64
-  Size Float           = AnySize
-  Size Double          = AnySize
+  Size Float           = Range Float
+  Size Double          = Range Double
   Size (Complex a)     = AnySize
   Size [a]             = Range Length :> Size a
   Size (a, b)          = Size (Tuple '[a, b])
