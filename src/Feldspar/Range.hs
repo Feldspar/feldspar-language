@@ -44,7 +44,7 @@ import Data.Int
 import Data.Word
 import Language.Haskell.TH.Syntax (Lift(..))
 
-import Feldspar.Lattice
+import Feldspar.Lattice (Lattice(..))
 
 --------------------------------------------------------------------------------
 -- * Definition
@@ -429,7 +429,7 @@ rangeMulUnsigned r1 r2
     | bits (upperBound r1) + bits (upperBound r2)
       <= finiteBitSize (undefined :: a)
         = mapMonotonic2 (*) r1 r2
-    | otherwise = universal
+    | otherwise = fullRange
 
 -- | Returns the position of the highest bit set to 1. Counting starts at 1.
 bits :: forall a . FiniteBits a => a -> Int
@@ -444,8 +444,8 @@ rangeExp = handleSign rangeExpUnsigned rangeExpSigned
 rangeExpUnsigned :: (Bounded a, Integral a, FiniteBits a)
                  => Range a -> Range a -> Range a
 rangeExpUnsigned m@(Range l1 u1) e@(Range l2 u2)
-    | toInteger (bits u1) * toInteger u2 > toInteger (finiteBitSize l1) + 1 = universal
-    | toInteger u1 ^ toInteger u2 > toInteger (maxBound `asTypeOf` l1) = universal
+    | toInteger (bits u1) * toInteger u2 > toInteger (finiteBitSize l1) + 1 = fullRange
+    | toInteger u1 ^ toInteger u2 > toInteger (maxBound `asTypeOf` l1) = fullRange
     | 0 `inRange` m && 0 `inRange` e = range 0 (max b1 b2)
     | otherwise = range b1 b2
   where b1 = l1 ^ l2
@@ -454,7 +454,7 @@ rangeExpUnsigned m@(Range l1 u1) e@(Range l2 u2)
 -- | Signed case for 'rangeExp'
 rangeExpSigned :: (Bounded a, Num a, Ord a) => Range a -> Range a -> Range a
 rangeExpSigned m _ | m == singletonRange (-1) = range (-1) 1
-rangeExpSigned _ _ = universal
+rangeExpSigned _ _ = fullRange
 
 -- | @a \`maxPlus\` b@ adds @a@ and @b@ but if the addition overflows then
 --   'maxBound' is returned.
@@ -615,7 +615,7 @@ rangeAndSigned (Range a b) (Range c d) =
 -- | Propagating range information through 'xor'.
 rangeXor :: forall a . (Bounded a, Ord a, Num a, FiniteBits a)
                        => Range a -> Range a -> Range a
-rangeXor = handleSign rangeXorUnsigned (\_ _ -> universal)
+rangeXor = handleSign rangeXorUnsigned (\_ _ -> fullRange)
 
 -- | Accurate range propagation through 'xor' for unsigned types
 rangeXorUnsigned :: (Ord a, Num a, FiniteBits a) => Range a -> Range a -> Range a
@@ -625,21 +625,21 @@ rangeXorUnsigned (Range a b) (Range c d) =
 -- | Propagating range information through 'shiftLU'.
 rangeShiftLU :: (Bounded a, Integral a, FiniteBits a, Integral b)
              => Range a -> Range b -> Range a
-rangeShiftLU = handleSign rangeShiftLUUnsigned (\_ _ -> universal)
+rangeShiftLU = handleSign rangeShiftLUUnsigned (\_ _ -> fullRange)
 -- TODO: improve accuracy
 
 -- | Unsigned case for 'rangeShiftLU'.
 rangeShiftLUUnsigned :: (Bounded a, Ord a, Num a, FiniteBits a, Integral b)
                      => Range a -> Range b -> Range a
 rangeShiftLUUnsigned (Range _ u1) (Range _ u2)
-    | toInteger (bits u1) + fromIntegral u2 > toInteger (finiteBitSize u1) = universal
+    | toInteger (bits u1) + fromIntegral u2 > toInteger (finiteBitSize u1) = fullRange
 rangeShiftLUUnsigned (Range l1 u1) (Range l2 u2)
     = range (shiftL l1 (fromIntegral l2)) (shiftL u1 (fromIntegral u2))
 
 -- | Propagating range information through 'shiftRU'.
 rangeShiftRU :: (Num a, Bits a, Ord a, Ord b, Integral b, Bounded a)
              => Range a -> Range b -> Range a
-rangeShiftRU = handleSign rangeShiftRUUnsigned (\_ _ -> universal)
+rangeShiftRU = handleSign rangeShiftRUUnsigned (\_ _ -> fullRange)
 -- TODO: improve accuracy
 
 -- | Unsigned case for 'rangeShiftRU'.
@@ -722,20 +722,20 @@ predAbs l | l == minBound = abs (succ l)
 
 -- | Propagates range information through 'div'
 rangeDiv :: (Bounded a, Integral a, Bits a) => Range a -> Range a -> Range a
-rangeDiv = handleSign rangeDivU (\_ _ -> universal)
+rangeDiv = handleSign rangeDivU (\_ _ -> fullRange)
 
 -- | Unsigned case for 'rangeDiv'
 rangeDivU :: (Bounded a, Integral a, Eq a) => Range a -> Range a -> Range a
-rangeDivU (Range _  _ ) (Range l2 u2) | l2 == 0 || u2 == 0 = universal
+rangeDivU (Range _  _ ) (Range l2 u2) | l2 == 0 || u2 == 0 = fullRange
 rangeDivU (Range l1 u1) (Range l2 u2) = Range (l1 `quot` u2) (u1 `quot`l2)
 
 -- | Propagates range information through 'quot'.
 rangeQuot :: (Bounded a, Integral a, Bits a) => Range a -> Range a -> Range a
-rangeQuot = handleSign rangeQuotU (\_ _ -> universal)
+rangeQuot = handleSign rangeQuotU (\_ _ -> fullRange)
 
 -- | Unsigned case for 'rangeQuot'.
 rangeQuotU :: (Bounded a, Integral a) => Range a -> Range a -> Range a
-rangeQuotU (Range _  _ ) (Range l2 u2) | l2 == 0 || u2 == 0 = universal
+rangeQuotU (Range _  _ ) (Range l2 u2) | l2 == 0 || u2 == 0 = fullRange
 rangeQuotU (Range l1 u1) (Range l2 u2) = Range (l1 `quot` u2) (u1 `quot` l2)
 
 -- | Writing @d \`rangeLess\` abs r@ doesn't mean what you think it does because
