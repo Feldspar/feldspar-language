@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wall #-}
@@ -242,7 +243,11 @@ untypeType BoolType _               = 1 U.:# U.BoolType
 untypeType (IntType s n) _          = 1 U.:# U.IntType (convSign s) (convSize n)
 untypeType FloatType _              = 1 U.:# U.FloatType
 untypeType DoubleType _             = 1 U.:# U.DoubleType
-untypeType (ComplexType t) _        = 1 U.:# U.ComplexType (untypeType t (defaultNumSize t))
+untypeType (ComplexType t) _        = 1 U.:# U.ComplexType
+  (case t of
+    FloatType -> untypeType t (defaultNumSize t)
+    DoubleType -> untypeType t (defaultNumSize t)
+    _ -> error $ "untypeType: Missing complex type:" ++ show t)
 untypeType (Tup2Type t) sz          = U.TupType $ untypeTup t sz
 untypeType (Tup3Type t) sz          = U.TupType $ untypeTup t sz
 untypeType (Tup4Type t) sz          = U.TupType $ untypeTup t sz
@@ -285,9 +290,13 @@ literal FloatType       _  a = LFloat a
 literal DoubleType      _  a = LDouble a
 literal (ArrayType t) (_ :> sz) a = LArray t' $ map (literal t sz) a
   where t' = untypeType t sz
-literal (ComplexType t) _ (r :+ i) = LComplex re ie
-  where re = literal t (defaultNumSize t) r
-        ie = literal t (defaultNumSize t) i
+literal (ComplexType t) _ (r :+ i)
+  = case t of
+     FloatType -> LComplex (literal t (defaultNumSize t) r)
+                           (literal t (defaultNumSize t) i)
+     DoubleType -> LComplex (literal t (defaultNumSize t) r)
+                            (literal t (defaultNumSize t) i)
+     _ -> error $ "literal: Missing complex type: " ++ show t
 literal _ _ _ = error "Missing pattern: FromTyped.hs: literal"
 
 -- | Construct a ValueInfo from a TypeRep and a Size

@@ -55,7 +55,7 @@ module Feldspar.Core.ValueInfo
 
 import Feldspar.Core.Types (WordN)
 import Feldspar.Core.UntypedRepresentation
-import Feldspar.Lattice (empty, universal)
+import Feldspar.Lattice (Lattice, empty, universal)
 import Feldspar.Range
 
 import Data.Int
@@ -115,7 +115,7 @@ elementsVI idx val = VIProd [idx, val]
 
 -- | Forcing a range to an integer type given by a signedness and a size.
 constantIntRange :: Signedness -> Size
-                 -> (forall a . (Bounded a, Ord a) => Range a) -> ValueInfo
+                 -> (forall a . Lattice (Range a) => Range a) -> ValueInfo
 constantIntRange Signed   S8   r = VIInt8 r
 constantIntRange Signed   S16  r = VIInt16 r
 constantIntRange Signed   S32  r = VIInt32 r
