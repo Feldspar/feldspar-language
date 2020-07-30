@@ -45,6 +45,7 @@ import Feldspar.Core.Reify
 import Feldspar.Core.Representation as R
 import Feldspar.Core.Types as T
 
+import Feldspar.Lattice (Lattice, universal)
 import Feldspar.Range
 import Feldspar.Core.Collection
 
@@ -991,15 +992,15 @@ cap :: Type a => Size a -> SizeCap a
 cap sz = sizeProp (const sz) (Data $ desugar ())
 
 -- | @notAbove a b@: A guarantee that @b <= a@ holds
-notAbove :: (Type a, Bounded a, Size a ~ Range a) => Data a -> SizeCap a
-notAbove = sizeProp (Range minBound . upperBound)
+notAbove :: (Type a, Lattice (Range a), Size a ~ Range a) => Data a -> SizeCap a
+notAbove = sizeProp (Range (lowerBound universal) . upperBound)
 
 -- | @notBelow a b@: A guarantee that @b >= a@ holds
-notBelow :: (Type a, Bounded a, Size a ~ Range a) => Data a -> SizeCap a
-notBelow = sizeProp (flip Range maxBound . lowerBound)
+notBelow :: (Type a, Lattice (Range a), Size a ~ Range a) => Data a -> SizeCap a
+notBelow = sizeProp (flip Range (upperBound universal) . lowerBound)
 
 -- | @between l u a@: A guarantee that @l <= a <= u@ holds
-between :: (Type a, Bounded a, Size a ~ Range a) =>
+between :: (Type a, Lattice (Range a), Size a ~ Range a) =>
     Data a -> Data a -> SizeCap a
 between l u = notBelow l . notAbove u
 
