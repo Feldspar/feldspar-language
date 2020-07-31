@@ -74,7 +74,7 @@ import Data.Hash (Hashable)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 
-import Data.Bits (Bits)
+import Data.Bits (Bits, FiniteBits)
 import Data.Complex (Complex)
 import Data.Ix
 import Data.IORef (IORef)
@@ -280,11 +280,11 @@ data Op a where
     Await    :: Type a => Op (FVal a :-> Full a)
 
     -- | Integral
-    Quot :: (Type a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    Rem  :: (Type a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    Div  :: (Type a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    Mod  :: (Type a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    IExp :: (Type a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    Quot :: (Type a, Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    Rem  :: (Type a, Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    Div  :: (Type a, Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    Mod  :: (Type a, Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    IExp :: (Type a, Bounded a, Integral a, FiniteBits a, Size a ~ Range a) => Op (a :-> a :-> Full a)
 
     -- | Literal
     Literal :: (Type a, Hashable a) => a -> Op (Full a)
