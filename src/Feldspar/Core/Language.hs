@@ -147,8 +147,9 @@ infixr 0 $<
 infixl 5 .<<.,.>>.
 infixl 4 ⊕
 
-class (Type a, B.Bits a, Integral a, Bounded a, Size a ~ Range a) => Bits a
-  where
+class (Type a, Bounded a, B.FiniteBits a, Integral a, Size a ~ Range a,
+       P.Integral (UnsignedRep a), B.FiniteBits (UnsignedRep a))
+      => Bits a where
     -- * Logical operations
     (.&.)         :: Data a -> Data a -> Data a
     (.&.)         = sugarSym2 BAnd
@@ -556,7 +557,7 @@ await = sugarSym1 Await
 -- Integral.hs
 --------------------------------------------------
 
-class (Ord a, Numeric a, BoundedInt a, P.Integral a, Size a ~ Range a) => Integral a
+class (Bounded a, B.FiniteBits a, Ord a, Numeric a, P.Integral a, Size a ~ Range a) => Integral a
   where
     quot :: Data a -> Data a -> Data a
     quot = sugarSym2 Quot
