@@ -86,7 +86,7 @@ instance (Lattice a, Lattice b) => Lattice (a :> b)
 --------------------------------------------------------------------------------
 
 -- | Convenience alias for bounded integers
-type BoundedInt a = (Ord a, Bounded a, Integral a, FiniteBits a,
+type BoundedInt a = (Bounded a, Integral a, FiniteBits a,
                      Integral (UnsignedRep a), FiniteBits (UnsignedRep a))
 
 -- | Witness for a type level literal. Native is encoded as 0.
