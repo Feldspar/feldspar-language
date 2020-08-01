@@ -188,50 +188,51 @@ data Op a where
     Let :: Op (a :-> (a -> b) :-> Full b)
 
     -- | Bits
-    BAnd          :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    BOr           :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    BXor          :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    Complement    :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :->       Full a)
+    BAnd          :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    BOr           :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    BXor          :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    Complement    :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :->       Full a)
 
-    Bit           :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (Index :->       Full a)
-    SetBit        :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
-    ClearBit      :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
-    ComplementBit :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
-    TestBit       :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full Bool)
+    Bit           :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (Index :->       Full a)
+    SetBit        :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
+    ClearBit      :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
+    ComplementBit :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
+    TestBit       :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full Bool)
 
-    ShiftLU       :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
-    ShiftRU       :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
-    ShiftL        :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> IntN  :-> Full a)
-    ShiftR        :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> IntN  :-> Full a)
-    RotateLU      :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
-    RotateRU      :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
-    RotateL       :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> IntN  :-> Full a)
-    RotateR       :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> IntN  :-> Full a)
-    ReverseBits   :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :->           Full a)
+    ShiftLU       :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
+    ShiftRU       :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
+    ShiftL        :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> IntN  :-> Full a)
+    ShiftR        :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> IntN  :-> Full a)
+    RotateLU      :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
+    RotateRU      :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Index :-> Full a)
+    RotateL       :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> IntN  :-> Full a)
+    RotateR       :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> IntN  :-> Full a)
+    ReverseBits   :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :->           Full a)
 
-    BitScan       :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Full Index)
-    BitCount      :: (Type a, Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Full Index)
+    BitScan       :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Full Index)
+    BitCount      :: (Bits a, BoundedInt a, Size a ~ Range a) => Op (a :-> Full Index)
 
     -- | Complex
-    MkComplex :: (Type a, RealFloat a) => Op (a :-> a :-> Full (Complex a))
-    RealPart  :: (Type a, RealFloat a) => Op (Complex a :-> Full a)
-    ImagPart  :: (Type a, RealFloat a) => Op (Complex a :-> Full a)
-    Conjugate :: (Type a, RealFloat a) => Op (Complex a :-> Full (Complex a))
-    MkPolar   :: (Type a, RealFloat a) => Op (a :-> a :-> Full (Complex a))
-    Magnitude :: (Type a, RealFloat a) => Op (Complex a :-> Full a)
-    Phase     :: (Type a, RealFloat a) => Op (Complex a :-> Full a)
-    Cis       :: (Type a, RealFloat a) => Op (a :-> Full (Complex a))
+    MkComplex :: RealFloat a => Op (a :-> a :-> Full (Complex a))
+    RealPart  :: RealFloat a => Op (Complex a :-> Full a)
+    ImagPart  :: RealFloat a => Op (Complex a :-> Full a)
+    Conjugate :: RealFloat a => Op (Complex a :-> Full (Complex a))
+    MkPolar   :: RealFloat a => Op (a :-> a :-> Full (Complex a))
+    Magnitude :: RealFloat a => Op (Complex a :-> Full a)
+    Phase     :: RealFloat a => Op (Complex a :-> Full a)
+    Cis       :: RealFloat a => Op (a :-> Full (Complex a))
 
     -- | Condition
     Condition  ::                      Op (Bool :-> a :-> a :-> Full a)
 
     -- | Conversion
-    F2I     :: (Type a, Integral a, RealFloat b)                     => Op (b :-> Full a)
-    I2N     :: (Type a, Type b, Integral a, Num b, Size a ~ Range a) => Op (a :-> Full b)
-    B2I     :: (Type a, Integral a)                                  => Op (Bool  :-> Full a)
-    Round   :: (Type a, Integral a, RealFloat b)                     => Op (b :-> Full a)
-    Ceiling :: (Type a, Integral a, RealFloat b)                     => Op (b :-> Full a)
-    Floor   :: (Type a, Integral a, RealFloat b)                     => Op (b :-> Full a)
+    F2I     :: (Integral a, RealFloat b)                     => Op (b :-> Full a)
+    -- Type a required for resultType in SizeProp.hs.
+    I2N     :: (Type b, Integral a, Num b, Size a ~ Range a) => Op (a :-> Full b)
+    B2I     :: (Type a, Integral a)                          => Op (Bool  :-> Full a)
+    Round   :: (Integral a, RealFloat b)                     => Op (b :-> Full a)
+    Ceiling :: (Integral a, RealFloat b)                     => Op (b :-> Full a)
+    Floor   :: (Integral a, RealFloat b)                     => Op (b :-> Full a)
 
     -- | Elements
     EMaterialize :: Type a => Op (Length :-> Elements a :-> Full [a])
@@ -241,8 +242,8 @@ data Op a where
     EparFor      :: Type a => Op (Length :-> (Index -> Elements a) :-> Full (Elements a))
 
     -- | Eq
-    Equal    :: (Type a, Eq a) => Op (a :-> a :-> Full Bool)
-    NotEqual :: (Type a, Eq a) => Op (a :-> a :-> Full Bool)
+    Equal     :: Eq a => Op (a :-> a :-> Full Bool)
+    NotEqual  :: Eq a => Op (a :-> a :-> Full Bool)
 
     -- | Error
     Undefined :: Type a => Op (Full a)
@@ -253,38 +254,38 @@ data Op a where
     --              => String -> Denotation a -> Op a
 
     -- | Floating
-    Pi      :: (Type a, Floating a) => Op (Full a)
-    Exp     :: (Type a, Floating a) => Op (a :-> Full a)
-    Sqrt    :: (Type a, Floating a) => Op (a :-> Full a)
-    Log     :: (Type a, Floating a) => Op (a :-> Full a)
-    Pow     :: (Type a, Floating a) => Op (a :-> a :-> Full a)
-    LogBase :: (Type a, Floating a) => Op (a :-> a :-> Full a)
-    Sin     :: (Type a, Floating a) => Op (a :-> Full a)
-    Tan     :: (Type a, Floating a) => Op (a :-> Full a)
-    Cos     :: (Type a, Floating a) => Op (a :-> Full a)
-    Asin    :: (Type a, Floating a) => Op (a :-> Full a)
-    Atan    :: (Type a, Floating a) => Op (a :-> Full a)
-    Acos    :: (Type a, Floating a) => Op (a :-> Full a)
-    Sinh    :: (Type a, Floating a) => Op (a :-> Full a)
-    Tanh    :: (Type a, Floating a) => Op (a :-> Full a)
-    Cosh    :: (Type a, Floating a) => Op (a :-> Full a)
-    Asinh   :: (Type a, Floating a) => Op (a :-> Full a)
-    Atanh   :: (Type a, Floating a) => Op (a :-> Full a)
-    Acosh   :: (Type a, Floating a) => Op (a :-> Full a)
+    Pi      :: Floating a => Op (Full a)
+    Exp     :: Floating a => Op (a :-> Full a)
+    Sqrt    :: Floating a => Op (a :-> Full a)
+    Log     :: Floating a => Op (a :-> Full a)
+    Pow     :: Floating a => Op (a :-> a :-> Full a)
+    LogBase :: Floating a => Op (a :-> a :-> Full a)
+    Sin     :: Floating a => Op (a :-> Full a)
+    Tan     :: Floating a => Op (a :-> Full a)
+    Cos     :: Floating a => Op (a :-> Full a)
+    Asin    :: Floating a => Op (a :-> Full a)
+    Atan    :: Floating a => Op (a :-> Full a)
+    Acos    :: Floating a => Op (a :-> Full a)
+    Sinh    :: Floating a => Op (a :-> Full a)
+    Tanh    :: Floating a => Op (a :-> Full a)
+    Cosh    :: Floating a => Op (a :-> Full a)
+    Asinh   :: Floating a => Op (a :-> Full a)
+    Atanh   :: Floating a => Op (a :-> Full a)
+    Acosh   :: Floating a => Op (a :-> Full a)
 
     -- | Fractional
-    DivFrac :: (Type a, Fractional a) => Op (a :-> a :-> Full a)
+    DivFrac :: Fractional a => Op (a :-> a :-> Full a)
 
     -- | Future
     MkFuture :: Type a => Op (a :-> Full (FVal a))
     Await    :: Type a => Op (FVal a :-> Full a)
 
     -- | Integral
-    Quot :: (Type a, Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    Rem  :: (Type a, Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    Div  :: (Type a, Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    Mod  :: (Type a, Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
-    IExp :: (Type a, Bounded a, Integral a, FiniteBits a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    Quot :: (Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    Rem  :: (Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    Div  :: (Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    Mod  :: (Bits a, Bounded a, Integral a, Size a ~ Range a) => Op (a :-> a :-> Full a)
+    IExp :: (Bounded a, Integral a, FiniteBits a, Size a ~ Range a) => Op (a :-> a :-> Full a)
 
     -- | Literal
     Literal :: (Type a, Hashable a) => a -> Op (Full a)
@@ -329,19 +330,19 @@ data Op a where
     NoInline :: Type a => Op (a :-> Full a)
 
     -- | Num
-    Abs  :: (Type a, Num a, Num (Size a)) => Op (a :-> Full a)
-    Sign :: (Type a, Num a, Num (Size a)) => Op (a :-> Full a)
-    Add  :: (Type a, Num a, Num (Size a)) => Op (a :-> a :-> Full a)
-    Sub  :: (Type a, Num a, Num (Size a)) => Op (a :-> a :-> Full a)
-    Mul  :: (Type a, Num a, Num (Size a)) => Op (a :-> a :-> Full a)
+    Abs  :: (Num a, Num (Size a)) => Op (a :-> Full a)
+    Sign :: (Num a, Num (Size a)) => Op (a :-> Full a)
+    Add  :: (Num a, Num (Size a)) => Op (a :-> a :-> Full a)
+    Sub  :: (Num a, Num (Size a)) => Op (a :-> a :-> Full a)
+    Mul  :: (Num a, Num (Size a)) => Op (a :-> a :-> Full a)
 
     -- | Ord
-    LTH :: (Type a, Ord a, Ord (Size a)) => Op (a :-> a :-> Full Bool)
-    GTH :: (Type a, Ord a, Ord (Size a)) => Op (a :-> a :-> Full Bool)
-    LTE :: (Type a, Ord a, Ord (Size a)) => Op (a :-> a :-> Full Bool)
-    GTE :: (Type a, Ord a, Ord (Size a)) => Op (a :-> a :-> Full Bool)
-    Min :: (Type a, Ord a, Ord (Size a)) => Op (a :-> a :-> Full a)
-    Max :: (Type a, Ord a, Ord (Size a)) => Op (a :-> a :-> Full a)
+    LTH :: (Ord a, Ord (Size a)) => Op (a :-> a :-> Full Bool)
+    GTH :: (Ord a, Ord (Size a)) => Op (a :-> a :-> Full Bool)
+    LTE :: (Ord a, Ord (Size a)) => Op (a :-> a :-> Full Bool)
+    GTE :: (Ord a, Ord (Size a)) => Op (a :-> a :-> Full Bool)
+    Min :: (Ord a, Ord (Size a)) => Op (a :-> a :-> Full a)
+    Max :: (Ord a, Ord (Size a)) => Op (a :-> a :-> Full a)
 
     -- | Par
     ParRun    :: Type a => Op (Par a :-> Full a)
@@ -352,7 +353,7 @@ data Op a where
     ParYield  ::           Op (Full (Par ()))
 
     -- | RealFloat
-    Atan2   :: (Type a, RealFloat a) => Op (a :-> a :-> Full a)
+    Atan2     :: RealFloat a => Op (a :-> a :-> Full a)
 
     -- | Save
     Save :: Type a => Op (a :-> Full a)
@@ -366,7 +367,7 @@ data Op a where
     Switch :: Type b => Op (b :-> Full b)
 
     -- | ConditionM
-    ConditionM :: (Monad m, Type a) => Op (Bool :-> m a :-> m a :-> Full (m a))
+    ConditionM :: Monad m => Op (Bool :-> m a :-> m a :-> Full (m a))
 
     -- | LoopM
     While :: (Monad m, Size (m ()) ~ Size ()) => Op (m Bool :-> m a :-> Full (m ()))
