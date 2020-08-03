@@ -29,7 +29,18 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-module Feldspar.Core.Middleend.PassManager where
+module Feldspar.Core.Middleend.PassManager
+  ( Prog(..)
+  , addWrBefore
+  , addWrAfter
+  , setStopBefore
+  , setStopAfter
+  , addSkip
+  , passC
+  , passS
+  , passT
+  , evalPasses
+  ) where
 
 import Feldspar.Compiler.Options (Pass, PassCtrl(..), Pretty(..))
 
@@ -60,13 +71,10 @@ prOrStop pos prs stop pass (Prog (Just p) ss s)
 prOrStop _ _ _ _ prog = prog
 
 runPassC :: Eq b => [b] -> b -> (a -> a) -> Prog a c -> Prog a c
-runPassC skips pass f (Prog (Just p) ss s)
-  = Prog (Just $ if pass `elem` skips then p else f p) ss s
-runPassC _ _ _ prog = prog
+runPassC skips pass f p = if pass `elem` skips then p else runPassT f p
 
 runPassT :: (a -> b) -> Prog a c -> Prog b c
-runPassT f (Prog (Just p) ss s) = Prog (Just $ f p) ss s
-runPassT _ (Prog Nothing ss s)  = Prog Nothing ss s
+runPassT f (Prog p ss s) = Prog (fmap f p) ss s
 
 runPassS :: Eq b => [b] -> b -> ((c,a) -> (c,a)) -> Prog a c -> Prog a c
 runPassS skips pass f (Prog (Just p) ss s)
