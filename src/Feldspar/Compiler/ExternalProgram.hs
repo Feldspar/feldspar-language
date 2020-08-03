@@ -37,7 +37,7 @@ compileFile fileName outFile opts = do
   case comp of
     (Nothing, _) -> print $ "Could not parse " ++ hfilename
     (_, Nothing) -> putStrLn $ "Could not parse " ++ cfilename
-    (Just hprg, Just cprg) -> writeFiles opts prg outFile
+    (Just hprg, Just cprg) -> writeFiles opts outFile prg
       where prg = SplitModule cprg hprg
 
 compileFile' :: Options -> (String, B.ByteString) -> (String, B.ByteString)

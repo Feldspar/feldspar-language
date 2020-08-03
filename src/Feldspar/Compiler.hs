@@ -55,6 +55,7 @@ module Feldspar.Compiler
 import Control.Monad (when, unless)
 import Control.Monad.State (evalState)
 import Data.Char (toUpper)
+import Data.Foldable (forM_)
 import Data.List (partition)
 import Data.Maybe (fromMaybe)
 import System.Console.GetOpt (ArgDescr(..), ArgOrder(..), OptDescr(..),
@@ -137,17 +138,17 @@ renameExp :: UntypedFeld a -> UntypedFeld a
 renameExp e = evalState (rename e) 0
 
 compile :: Syntactic t => t -> FilePath -> String -> Options -> IO ()
-compile prg fileName funName opts = writeFiles opts compRes fileName
+compile prg fileName funName opts = writeFiles opts fileName compRes
   where compRes = compileToCCore funName opts prg
 
 compileUT :: UntypedFeld ValueInfo -> FilePath -> String -> Options -> IO ()
-compileUT prg fileName funName opts = writeFiles opts compRes fileName
+compileUT prg fileName funName opts = writeFiles opts fileName compRes
   where compRes = fromMaybe (error "compileUT: compilation failed")
                 $ snd $ frontend opts' (Right . Right . Left $ prg)
         opts' = opts{functionName = funName}
 
-writeFiles :: Options -> SplitModule -> FilePath -> IO ()
-writeFiles opts prg fileName
+writeFiles :: Options -> FilePath -> SplitModule -> IO ()
+writeFiles opts fileName prg
   | "c" == codeGenerator (platform opts) = do
     writeFile cfile $ unlines [ "#include \"" ++ takeFileName hfile ++ "\""
                               , "\n"
@@ -208,9 +209,7 @@ programComp pc opts args = do
       p <- pc nonopts
       let (strs,mProgs) = translate opts1 p
       unless (null strs) $ writeFileLB (passFileName opts1) (concat strs)
-      case mProgs of
-        Nothing -> return ()
-        Just prog -> writeFiles opts1 prog (outFileName opts1)
+      forM_ mProgs (writeFiles opts1 (outFileName opts1))
 
 optsFromName :: Options -> String -> Options
 optsFromName opts name' = opts{ passFileName = name' ++ ".passes"
