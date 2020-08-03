@@ -3,8 +3,7 @@ version:        0.6.1.0
 synopsis:       A functional embedded language for DSP and parallelism
 description:    Feldspar (Functional Embedded Language for DSP and PARallelism)
                 is an embedded DSL for describing digital signal processing
-                algorithms. This package contains the language front-end and an
-                interpreter.
+                algorithms.
 category:       Language
 copyright:      Copyright (c) 2013 Emil Axelsson, Peter Jonsson,
                                    Anders Persson, Josef Svenningsson
@@ -131,8 +130,6 @@ library
     data-default                >= 0.5.3  && < 0.8,
     data-hash                   >= 0.2.0.1 && < 100,
     tree-view
-
-  cpp-options: -DCABAL_IS_USED
 
   c-sources:
     clib/taskpool.c
