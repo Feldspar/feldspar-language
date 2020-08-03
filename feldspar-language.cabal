@@ -96,7 +96,6 @@ library
     Feldspar.Compiler.Backend.C.RuntimeLibrary
     Feldspar.Compiler.Plugin
     Feldspar.Compiler.Marshal
-    Feldspar.Compiler.ExternalProgram
 
   default-language: Haskell2010
 
