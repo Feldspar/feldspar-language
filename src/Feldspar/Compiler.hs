@@ -193,19 +193,19 @@ icompile' opts fName prg = do
 
 -- | Compile a C file and print the result
 icompileFile :: FilePath -> IO ()
-icompileFile filename = do
-  let hfilename = filename <.> "h"
-      cfilename = filename <.> "c"
-  h <- B.readFile hfilename
-  c <- B.readFile cfilename
-  case compileFile' defaultOptions (hfilename, h) (cfilename, c) of
-    (Nothing, _) -> putStrLn $ "Could not parse " ++ hfilename
-    (_, Nothing) -> putStrLn $ "Could not parse " ++ cfilename
-    (_, Just cprg) -> putStrLn $ sourceCode cprg
+icompileFile fileName
+  = compileFileHelper defaultOptions fileName ""
+      (\_ _ (SplitModule cprg _) -> putStrLn $ sourceCode cprg)
 
 -- | Compile a C file and write the result to a file
 compileFile :: FilePath -> FilePath -> Options -> IO ()
-compileFile fileName outFile opts = do
+compileFile fileName outFile opts
+  = compileFileHelper opts fileName outFile writeFiles
+
+-- | Helper function containing IO for the compileFile family of functions
+compileFileHelper :: Options -> FilePath -> FilePath
+                  -> (Options -> FilePath -> SplitModule -> IO ()) -> IO ()
+compileFileHelper opts fileName outFile f = do
   let hfilename = fileName <.> "h"
       cfilename = fileName <.> "c"
   h <- B.readFile hfilename
@@ -213,8 +213,9 @@ compileFile fileName outFile opts = do
   case compileFile' opts (hfilename, h) (cfilename, c) of
     (Nothing, _) -> putStrLn $ "Could not parse " ++ hfilename
     (_, Nothing) -> putStrLn $ "Could not parse " ++ cfilename
-    (Just hprg, Just cprg) -> writeFiles opts outFile (SplitModule cprg hprg)
+    (Just hprg, Just cprg) -> f opts outFile (SplitModule cprg hprg)
 
+-- | Pure function for parsing and compiling C source code
 compileFile' :: Options -> (String, B.ByteString) -> (String, B.ByteString)
             -> (Maybe CompiledModule, Maybe CompiledModule)
 compileFile' opts (hfilename, hfile) (cfilename, cfile) =
