@@ -42,12 +42,12 @@ import qualified Prelude
 import Control.Applicative
 import Test.QuickCheck
 
-import Feldspar.Core.Reify (Syntactic(..), resugar)
+import Feldspar.Core.Reify (Syntactic(..))
 import Feldspar.Core.Tuple
 
 import Feldspar.Range (rangeSubSat)
 import qualified Feldspar
-import Feldspar hiding (sugar,desugar,resugar)
+import Feldspar hiding (desugar, sugar)
 
 import Data.Tuple.Curry
 import Data.Hash (Hashable)

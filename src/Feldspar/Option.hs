@@ -39,8 +39,8 @@ import qualified Prelude
 import Control.Applicative (Applicative(..))
 import Control.Monad
 
-import Feldspar.Core.Reify (Syntactic(..), resugar)
-import Feldspar hiding (sugar,desugar,resugar)
+import Feldspar.Core.Reify (Syntactic(..))
+import Feldspar hiding (desugar, sugar)
 import Feldspar.Mutable
 
 

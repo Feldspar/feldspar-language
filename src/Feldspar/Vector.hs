@@ -77,8 +77,8 @@ module Feldspar.Vector (
 
 import qualified Prelude as P
 
-import Feldspar.Core.Reify (Syntactic(..), resugar)
-import Feldspar hiding (desugar,sugar,resugar)
+import Feldspar.Core.Reify (Syntactic(..))
+import Feldspar hiding (desugar, sugar)
 import qualified Feldspar as F
 import Feldspar.Core.Language
 import Feldspar.Core.Tuple
