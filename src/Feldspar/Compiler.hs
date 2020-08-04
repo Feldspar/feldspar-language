@@ -48,10 +48,6 @@ module Feldspar.Compiler
   , program
   , programOpts
   , programOptsArgs
-  -- * Internal functions
-  , writeFiles
-  , CompiledModule(..)
-  , SplitModule(..)
   ) where
 
 import Control.Monad (when, unless)
