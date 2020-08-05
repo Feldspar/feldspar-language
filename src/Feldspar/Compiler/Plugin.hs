@@ -171,7 +171,7 @@ feldsparBuilder fopts Config{..} fun = do
         opts' = opts ++ map ("-I"++) db
     normalB [|unsafeLocalState $ do
                 createDirectoryIfMissing True wdir
-                $(varE 'compile) $(varE fun) basename base fopts
+                $(varE 'compile) $(varE fun) base fopts{outFileName = basename}
                 compileAndLoad fopts basename opts'
                 lookupSymbol symbol
             |]
