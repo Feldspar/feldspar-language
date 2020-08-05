@@ -110,7 +110,7 @@ frontend :: Options
 frontend opts = evalPasses 0
                    ( codegen opts
                    . pc BPAdapt    (either (Left . adaptTic64x opts) Right)
-                   . pc BPRename   (either (Left . ML.rename opts False) Right)
+                   . pc BPRename   (either (Left . ML.rename opts) Right)
                    . pc BPArrayOps (either (Left . arrayOps opts) Right)
                    . pt BPFromCore (either (Left . fromCoreUT opts) id)
                    . pc FPCreateTasks      (either (Left . createTasks opts) Right)
