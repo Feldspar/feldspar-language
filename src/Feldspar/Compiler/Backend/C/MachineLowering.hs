@@ -10,7 +10,6 @@ import qualified Data.Map.Strict as M
 
 import Feldspar.Compiler.Imperative.Representation
 import Feldspar.Compiler.Imperative.Frontend
-import Feldspar.Compiler.Backend.C.RuntimeLibrary
 import Feldspar.Compiler.Options
 
 -- | This module does function renaming as well as copy expansion, in a single
@@ -21,18 +20,14 @@ import Feldspar.Compiler.Options
 --   by -1 gives crazy results due to overflow.
 
 -- | External interface for renaming.
-rename :: Options -> Bool -> Module -> Module
-rename opts addRuntimeLib m | null x = m
-                            | otherwise = rename' opts addRuntimeLib x m
+rename :: Options -> Module -> Module
+rename opts m | null x = m
+              | otherwise = rename' opts x m
   where x = M.fromList . platformRenames . platform $ opts
 
 -- | Internal interface for renaming.
-rename' :: Options -> Bool -> M.Map String [(Which, Destination)] -> Module
-        -> Module
-rename' opts addRuntimeLib m (Module ents) = Module ents'
-  where ents' = extra ++ map (renameEnt opts m) ents
-        extra | addRuntimeLib = machineLibrary opts
-              | otherwise     = []
+rename' :: Options -> M.Map String [(Which, Destination)] -> Module -> Module
+rename' opts m (Module ents) = Module $ map (renameEnt opts m) ents
 
 -- | Rename entities.
 renameEnt :: Options -> M.Map String [(Which, Destination)] -> Entity -> Entity
