@@ -205,33 +205,19 @@ compileFileHelper opts fileName f = do
       cfilename = fileName <.> "c"
   h <- B.readFile hfilename
   c <- B.readFile cfilename
-  case compileFile' opts (hfilename, h) (cfilename, c) of
-    (Nothing, _) -> putStrLn $ "Could not parse " ++ hfilename
-    (_, Nothing) -> putStrLn $ "Could not parse " ++ cfilename
-    (Just hprg, Just cprg) -> f opts (SplitModule cprg hprg)
+  f opts $ compileFile' opts (hfilename, h) (cfilename, c)
 
 -- | Pure function for parsing and compiling C source code
 compileFile' :: Options -> (String, B.ByteString) -> (String, B.ByteString)
-            -> (Maybe CompiledModule, Maybe CompiledModule)
+            -> SplitModule
 compileFile' opts (hfilename, hfile) (cfilename, cfile) =
   case parseFile hfilename hfile [] of
-    Nothing -> (Nothing, Nothing)
+    Nothing -> error $ "Could not parse " ++ hfilename
     Just hprg -> case parseFile cfilename cfile (entities hprg) of
-                   Nothing -> (Just hres, Nothing)
-                   Just cprg -> (Just hres', Just cres)
-                     where res = fromMaybe (error "Failed parsing C file")
-                               $ snd $ frontend opts
+                   Nothing -> error $ "Could not parse " ++ cfilename
+                   Just cprg -> fromMaybe (error "Failed parsing C file")
+                                $ snd $ frontend opts
                                    (Right . Right . Right . Left $ cprg)
-                           cres = implementation res
-                           -- Un-duplicated hres.
-                           hres' = interface res
-      where -- Will result in duplicate function declarations, but we
-            -- just failed parsing the c file and return nothing for
-            -- that so the user is probably not that picky on
-            -- potential duplicate declarations if they had succeeded.
-            hres = interface $ fromMaybe (error "Failed parsing H file") $ snd
-                 $ frontend opts (Right . Right . Right . Left $ hprg)
-
 
 program :: Syntactic a => a -> IO ()
 program p = programOpts p defaultOptions
