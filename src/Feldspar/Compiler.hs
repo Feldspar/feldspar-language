@@ -137,28 +137,28 @@ reifyFeld = desugar
 renameExp :: UntypedFeld a -> UntypedFeld a
 renameExp e = evalState (rename e) 0
 
-compile :: Syntactic t => t -> FilePath -> String -> Options -> IO ()
-compile prg fileName funName opts = writeFiles opts fileName compRes
+compile :: Syntactic t => t -> String -> Options -> IO ()
+compile prg funName opts = writeFiles opts compRes
   where compRes = compileToCCore funName opts prg
 
-compileUT :: UntypedFeld ValueInfo -> FilePath -> String -> Options -> IO ()
-compileUT prg fileName funName opts = writeFiles opts fileName compRes
+compileUT :: UntypedFeld ValueInfo -> String -> Options -> IO ()
+compileUT prg funName opts = writeFiles opts compRes
   where compRes = fromMaybe (error "compileUT: compilation failed")
                 $ snd $ frontend opts' (Right . Right . Left $ prg)
         opts' = opts{functionName = funName}
 
-writeFiles :: Options -> FilePath -> SplitModule -> IO ()
-writeFiles opts fileName prg
+writeFiles :: Options -> SplitModule -> IO ()
+writeFiles opts prg
   | "c" == codeGenerator (platform opts) = do
     writeFile cfile $ unlines [ "#include \"" ++ takeFileName hfile ++ "\""
                               , "\n"
                               , sourceCode $ implementation prg
                               ]
     writeFile hfile $ withIncludeGuard $ sourceCode $ interface prg
-  | otherwise = writeFile fileName $ sourceCode $ implementation prg
+  | otherwise = writeFile (outFileName opts) $ sourceCode $ implementation prg
   where
-    hfile = fileName <.> "h"
-    cfile = fileName <.> "c"
+    hfile = outFileName opts <.> "h"
+    cfile = outFileName opts <.> "c"
 
     withIncludeGuard code = unlines [ "#ifndef " ++ guardName
                                     , "#define " ++ guardName
@@ -190,18 +190,17 @@ icompile' opts fName prg = do
 -- | Compile a C file and print the result
 icompileFile :: FilePath -> IO ()
 icompileFile fileName
-  = compileFileHelper defaultOptions fileName ""
-      (\_ _ (SplitModule cprg _) -> putStrLn $ sourceCode cprg)
+  = compileFileHelper defaultOptions fileName
+      (\_ (SplitModule cprg _) -> putStrLn $ sourceCode cprg)
 
 -- | Compile a C file and write the result to a file
-compileFile :: FilePath -> FilePath -> Options -> IO ()
-compileFile fileName outFile opts
-  = compileFileHelper opts fileName outFile writeFiles
+compileFile :: FilePath -> Options -> IO ()
+compileFile fileName opts = compileFileHelper opts fileName writeFiles
 
 -- | Helper function containing IO for the compileFile family of functions
-compileFileHelper :: Options -> FilePath -> FilePath
-                  -> (Options -> FilePath -> SplitModule -> IO ()) -> IO ()
-compileFileHelper opts fileName outFile f = do
+compileFileHelper :: Options -> FilePath
+                  -> (Options -> SplitModule -> IO ()) -> IO ()
+compileFileHelper opts fileName f = do
   let hfilename = fileName <.> "h"
       cfilename = fileName <.> "c"
   h <- B.readFile hfilename
@@ -209,7 +208,7 @@ compileFileHelper opts fileName outFile f = do
   case compileFile' opts (hfilename, h) (cfilename, c) of
     (Nothing, _) -> putStrLn $ "Could not parse " ++ hfilename
     (_, Nothing) -> putStrLn $ "Could not parse " ++ cfilename
-    (Just hprg, Just cprg) -> f opts outFile (SplitModule cprg hprg)
+    (Just hprg, Just cprg) -> f opts (SplitModule cprg hprg)
 
 -- | Pure function for parsing and compiling C source code
 compileFile' :: Options -> (String, B.ByteString) -> (String, B.ByteString)
@@ -256,7 +255,7 @@ programComp pc opts args = do
       p <- pc nonopts
       let (strs,mProgs) = translate opts1 p
       unless (null strs) $ writeFileLB (passFileName opts1) (concat strs)
-      forM_ mProgs (writeFiles opts1 (outFileName opts1))
+      forM_ mProgs (writeFiles opts1)
 
 optsFromName :: Options -> String -> Options
 optsFromName opts name' = opts{ passFileName = name' ++ ".passes"

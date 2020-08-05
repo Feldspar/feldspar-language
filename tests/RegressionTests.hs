@@ -497,7 +497,7 @@ mkGoldTest :: Syntactic a => a -> Prelude.FilePath -> Options -> TestTree
 mkGoldTest fun n opts = do
     let ref = goldDir <> n
         new = testDir <> n
-        act = compile fun new n opts
+        act = compile fun n opts{outFileName = new}
         cmp = simpleCmp $ printf "Files '%s.{c,h}' and '%s.{c,h}' differ" ref new
         upd = LB.writeFile ref
     goldenTest n (vgReadFiles ref) (liftIO act >> vgReadFiles new) cmp upd
@@ -507,7 +507,7 @@ mkGoldTestUT :: UT.UntypedFeld ValueInfo -> Prelude.FilePath -> Options -> TestT
 mkGoldTestUT untyped n opts = do
     let ref = goldDir <> n
         new = testDir <> n
-        act = compileUT untyped new n opts
+        act = compileUT untyped n opts{outFileName = new}
         cmp = simpleCmp $ printf "Files '%s.{c,h}' and '%s.{c,h}' differ" ref new
         upd = LB.writeFile ref
     goldenTest n (vgReadFiles ref) (liftIO act >> vgReadFiles new) cmp upd
@@ -521,7 +521,7 @@ mkParseTest :: Prelude.FilePath -> Options -> TestTree
 mkParseTest n opts = do
     let ref = goldDir <> n
         new = testDir <> "ep-" <> n
-        act = compileFile ref new opts
+        act = compileFile ref opts{outFileName = new}
         cmp = fuzzyCmp $ printf "Files '%s.{c,h}' and '%s.{c,h}' differ" ref new
         upd = LB.writeFile ref
     goldenTest n (vgReadFiles ref) (liftIO act >> vgReadFiles new) cmp upd
@@ -541,7 +541,7 @@ mkBuildTest :: Syntactic a => a -> Prelude.FilePath -> Options -> TestTree
 mkBuildTest fun n opts = do
     let new = testDir <> n <> "_build_test"
         cfile = new <> ".c"
-        act = do compile fun new n opts
+        act = do compile fun n opts{outFileName = new}
                  let ghcArgs = [cfile, "-c", "-optc -Iclib", "-optc -std=c99", "-Wall"]
                  (ex, _, _) <- readProcessWithExitCode ghc ghcArgs ""
                  case ex of
