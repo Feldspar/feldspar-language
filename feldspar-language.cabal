@@ -95,13 +95,15 @@ library
     Feldspar.Compiler.Plugin
     Feldspar.Compiler.Marshal
 
+  other-modules:
+    Paths_feldspar_language
+
   default-language: Haskell2010
 
   build-depends:
     array,
     base                        >= 4.9.1  && < 5.9,
     bytestring                  >= 0.10   && < 0.11,
-    Cabal,
     containers                  >= 0.4    && < 0.7,
     data-default                >= 0.5,
     directory                   >= 1.1,
@@ -131,8 +133,8 @@ library
     tree-view
 
   c-sources:
-    clib/taskpool.c
-    clib/ivar.c
+    src/clib/include/taskpool.c
+    src/clib/include/ivar.c
 
   cc-options: -std=c99 -Wall -fPIC
 
@@ -150,7 +152,7 @@ library
       -- pthread needed on Emil's Ubuntu (15.04), but apparently not on Travis
 
   include-dirs:
-    ./clib
+    ./src/clib/include
 
   install-includes:
     feldspar_array.h
@@ -263,7 +265,6 @@ test-suite regression
     feldspar-language,
     mtl,
     base,
-    Cabal,
     ghc-paths,
     process,
     bytestring       >= 0.9 && < 0.11,

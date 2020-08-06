@@ -542,10 +542,11 @@ mkBuildTest fun n opts = do
     let new = testDir <> n <> "_build_test"
         cfile = new <> ".c"
         act = do compile fun n opts{outFileName = new}
-                 let ghcArgs = [cfile, "-c", "-optc -Iclib", "-optc -std=c99", "-Wall"]
-                 (ex, _, _) <- readProcessWithExitCode ghc ghcArgs ""
+                 let ghcArgs = [cfile, "-c", "-optc -Isrc/clib/include", "-optc -std=c99", "-Wall"]
+                 (ex, stdout, stderr) <- readProcessWithExitCode ghc ghcArgs ""
                  case ex of
-                   ExitFailure{} -> Prelude.error (show ex)
+                   ExitFailure{} ->
+                    Prelude.error $ Prelude.unlines [show ex, stdout, stderr]
                    _ -> return ()
         cmp _ _ = return Nothing
         upd _ = return ()
