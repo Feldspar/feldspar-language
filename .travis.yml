@@ -50,6 +50,7 @@ script:
  # There is no "cabal new-test" in Cabal 1.24 so run tests/benchmarks manually.
  # The path for build outputs has also changed so special-case on the cabal version.
  # Regression is most likely to break from variable number changes so start with that.
+ - export feldspar_language_libdir="$PWD/src/clib"
  - if [ "$CABALVER" != "1.24" ]; then $TESTBASE/build/regression/regression; else $TESTBASE/regression/regression; fi
  - if [ "$CABALVER" != "1.24" ]; then $TESTBASE/build/tutorial/tutorial; else $TESTBASE/tutorial/tutorial; fi
  - cabal check
