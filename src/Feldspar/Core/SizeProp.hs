@@ -2,16 +2,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -Wall #-}
 -- Compilation times are measured in minutes without these warnings
 -- disabled in GHC 8.6 and later.
 -- https://gitlab.haskell.org/ghc/ghc/-/issues/14987
 {-# OPTIONS_GHC -Wno-overlapping-patterns -Wno-incomplete-record-updates #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 806
 {-# OPTIONS_GHC -Wno-inaccessible-code #-}
-#endif
 
 --
 -- Copyright (c) 2019, ERICSSON AB

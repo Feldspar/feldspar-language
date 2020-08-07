@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -19,10 +18,7 @@ module Feldspar.Compiler.Plugin
   )
   where
 
-import GHCi.ObjLink (initObjLinker, loadObj, resolveObjs)
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 802
-import GHCi.ObjLink (ShouldRetainCAFs(..))
-#endif
+import GHCi.ObjLink (ShouldRetainCAFs(..), initObjLinker, loadObj, resolveObjs)
 import GHC.Paths (ghc)
 import System.Plugins.MultiStage hiding (ref)
 
@@ -178,11 +174,7 @@ compileAndLoad opts name args = do
     exists <- doesFileExist oname
     when exists $ removeFile oname
     compileC opts cname oname args
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 802
     initObjLinker RetainCAFs
-#else
-    initObjLinker
-#endif
     _ <- loadObj oname
     res <- resolveObjs
     unless res $ error $ "Symbols in " ++ oname ++ " could not be resolved"
