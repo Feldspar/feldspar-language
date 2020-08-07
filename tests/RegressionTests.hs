@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
@@ -6,6 +7,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Top level module to test Feldspar. All tests should be in @tests@
 --   to keep the total runtime for tests as short as possible.
@@ -16,6 +18,9 @@ import Test.Tasty.Golden (goldenVsFile)
 import Test.Tasty.Golden.Advanced
 import Test.Tasty.QuickCheck
 
+#ifdef windows_HOST_OS
+import System.Win32.Console (getConsoleCP, setConsoleCP)
+#endif
 import qualified Prelude
 import Feldspar
 import qualified Feldspar.Core.UntypedRepresentation as UT
@@ -36,6 +41,7 @@ import Feldspar.Stream.Test (streamTests, vector1D)
 import Feldspar.Tuple.Test
 import Feldspar.Vector.Test
 
+import Control.Exception (catch, throwIO)
 import Control.Monad
 import Control.Monad.Except (liftIO)
 import Data.Monoid ((<>))
@@ -476,7 +482,20 @@ externalProgramTests = testGroup "ExternalProgram-RegressionTests"
 
 -- | The main function
 main :: IO ()
-main = defaultMain tests
+main = do
+#ifdef windows_HOST_OS
+  -- Set the codepage to a UTF-8 capable one. This is required for the
+  -- non-ASCII characters in the decoration tests.
+  -- The WinIO manager in GHC 8.12 will remove the need for this workaround.
+  cp <- getConsoleCP
+  setConsoleCP 65001
+#endif
+  defaultMain tests
+   `catch` (\(e :: ExitCode)-> do
+#ifdef windows_HOST_OS
+    setConsoleCP cp -- Restore codepage before exit.
+#endif
+    throwIO e)
 
 -- Helper functions
 testDir, goldDir :: Prelude.FilePath
