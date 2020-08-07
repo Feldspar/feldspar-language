@@ -132,10 +132,6 @@ library
     data-hash                   >= 0.2.0.1 && < 100,
     tree-view
 
-  c-sources:
-    src/clib/include/taskpool.c
-    src/clib/include/ivar.c
-
   cc-options: -std=c99 -Wall -fPIC
 
   -- MonoLocalBinds is the "Let should not be generalized" paper. Our binds
