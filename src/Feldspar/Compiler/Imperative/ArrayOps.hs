@@ -45,7 +45,7 @@ import Feldspar.Compiler.Options (Options(..))
 import Feldspar.Lattice (universal)
 
 import Control.Monad.Writer (censor, runWriter, tell)
-import Data.List (concatMap, isPrefixOf, nub)
+import Data.List (isPrefixOf, nub)
 
 -- | Main interface for adding needed array operations to a module.
 arrayOps :: Options -> Module -> Module

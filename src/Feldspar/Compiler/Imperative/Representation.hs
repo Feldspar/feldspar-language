@@ -60,7 +60,6 @@ module Feldspar.Compiler.Imperative.Representation (
 
 import Data.List (nub)
 import Data.Maybe (fromMaybe)
-import Data.Semigroup (Semigroup(..))
 import Language.Haskell.TH.Syntax (Lift(..))
 
 import Feldspar.Range (Range)
