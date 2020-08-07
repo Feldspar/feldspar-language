@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -8,9 +7,7 @@
 -- in GHC 8.4. https://gitlab.haskell.org/ghc/ghc/-/issues/14987
 {-# OPTIONS_GHC -Wno-overlapping-patterns -Wno-incomplete-record-updates #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 806
 {-# OPTIONS_GHC -Wno-inaccessible-code #-}
-#endif
 
 --
 -- Copyright (c) 2019, ERICSSON AB
