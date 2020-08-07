@@ -143,10 +143,6 @@ library
   default-extensions:
     MonoLocalBinds
 
-  if os(linux)
-    extra-libraries: gcc_s pthread
-      -- pthread needed on Emil's Ubuntu (15.04), but apparently not on Travis
-
   include-dirs:
     ./src/clib/include
 
