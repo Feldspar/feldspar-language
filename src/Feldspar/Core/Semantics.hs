@@ -40,7 +40,6 @@ import Control.Monad
 import Control.Monad.Par.Scheds.TraceInternal (yield)
 import Data.Array.IArray
 import Data.Array.IO
-import Data.Array.MArray (freeze)
 import Data.Array.Unsafe (unsafeFreeze)
 import Data.Bits
 import Data.Complex

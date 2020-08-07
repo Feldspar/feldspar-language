@@ -63,7 +63,6 @@ import Control.Monad.RWS hiding ((<>))
 import Data.Char (toLower)
 import Data.List (find, intercalate, isPrefixOf, nub)
 import Data.Maybe (fromJust, isJust)
-import Data.Semigroup (Semigroup(..))
 
 import Feldspar.Core.UntypedRepresentation
          ( VarId(..), UntypedFeld, Term(..), Lit(..)
