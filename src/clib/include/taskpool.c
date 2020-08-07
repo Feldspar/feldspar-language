@@ -160,5 +160,5 @@ void *worker() {
          , self, pool->act_threads, pool->num_threads);
     pthread_mutex_unlock(&(pool->mutex));
     log_1("worker %d - leave\n", self);
-    pthread_exit(NULL);
+    return NULL;
 }
