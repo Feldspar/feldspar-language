@@ -18,7 +18,7 @@ import Test.Tasty.Golden (goldenVsFile)
 import Test.Tasty.Golden.Advanced
 import Test.Tasty.QuickCheck
 
-#ifdef windows_HOST_OS
+#ifdef mingw32_HOST_OS
 import System.Win32.Console (getConsoleCP, setConsoleCP)
 #endif
 import qualified Prelude
@@ -483,7 +483,7 @@ externalProgramTests = testGroup "ExternalProgram-RegressionTests"
 -- | The main function
 main :: IO ()
 main = do
-#ifdef windows_HOST_OS
+#ifdef mingw32_HOST_OS
   -- Set the codepage to a UTF-8 capable one. This is required for the
   -- non-ASCII characters in the decoration tests.
   -- The WinIO manager in GHC 8.12 will remove the need for this workaround.
@@ -492,7 +492,7 @@ main = do
 #endif
   defaultMain tests
    `catch` (\(e :: ExitCode)-> do
-#ifdef windows_HOST_OS
+#ifdef mingw32_HOST_OS
     setConsoleCP cp -- Restore codepage before exit.
 #endif
     throwIO e)
