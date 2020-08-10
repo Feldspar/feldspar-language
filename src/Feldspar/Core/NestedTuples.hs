@@ -75,6 +75,7 @@ module Feldspar.Core.NestedTuples
   , seventup
   ) where
 
+import Data.Hash (Hash, Hashable(..), combine, hashInt)
 import Data.Kind
 import Data.Proxy
 import GHC.TypeLits
@@ -101,6 +102,19 @@ instance (Show a, Show (Tuple b)) => Show (Tuple (a ': b)) where
 
 instance Show (Tuple '[]) where
   show TNil = "TNil"
+
+class HashTup a where
+  hashTup :: Tuple a -> Hash
+
+instance HashTup '[] where
+  hashTup _ = hashInt 1
+
+instance (Hashable h, HashTup t) => HashTup (h ': t) where
+  hashTup (x :* xs) = hashInt 2 `combine` hash x `combine` hash xs
+
+-- This instance is needed to allow nested tuples as literals (by the value function)
+instance HashTup a => Hashable (Tuple a) where
+  hash = hashTup
 
 -- | Selecting components of a tuple
 --     sel (Proxy @0)

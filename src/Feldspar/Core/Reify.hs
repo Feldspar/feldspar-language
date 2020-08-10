@@ -63,7 +63,6 @@ import Feldspar.Core.Representation (Var(..), AExpr(..), Info(..), Expr(..),
                                      bvId, mkLets, sharable)
 import qualified Feldspar.Core.Types as T
 import Feldspar.Lattice (top)
-import Feldspar.Core.NestedTuples
 
 import Control.Monad.Cont (Cont, ap)
 import Data.Complex (Complex(..))
@@ -361,19 +360,6 @@ instance KnownSymbol a => Hashable (T.Signedness a) where
 
 instance KnownNat a => Hashable (T.BitWidth a) where
   hash = hashInt . fromIntegral . natVal
-
--- This instance is needed to allow nested tuples as literals (by the value function)
-instance HashTup a => Hashable (Tuple a) where
-  hash = hashTup
-
-class HashTup a where
-  hashTup :: Tuple a -> Hash
-
-instance HashTup '[] where
-  hashTup _ = hashInt 1
-
-instance (Hashable h, HashTup t) => HashTup (h ': t) where
-  hashTup (x :* xs) = hashInt 2 # x # xs
 
 infixl 5 #
 (#) :: Hashable a => Hash -> a -> Hash
