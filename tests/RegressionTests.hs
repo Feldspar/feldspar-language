@@ -30,7 +30,6 @@ import qualified Feldspar.SimpleVector.Push as SP
 import qualified Feldspar.SimpleVector as S
 import Feldspar.Compiler
 import Feldspar.Compiler.Plugin
-import Feldspar.Core.NestedTuples
 
 import Examples.Simple.Basics
 import Feldspar.Applications.TFModel (tfModel)
