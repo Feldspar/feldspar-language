@@ -49,6 +49,7 @@ module Feldspar.Core.Types
 import Data.Array.IO (IOArray)
 import Data.Bits
 import Data.Complex
+import Data.Hash (Hashable(..), combine, hashInt, Hash)
 import Data.Int
 import Data.IORef
 import Data.List
@@ -95,10 +96,16 @@ data BitWidth (n :: Nat) where
     N32     :: BitWidth 32
     N64     :: BitWidth 64
 
+instance KnownNat a => Hashable (BitWidth a) where
+  hash = hashInt . fromIntegral . natVal
+
 -- | Witness for 'U' or 'S'
 data Signedness (s :: Symbol) where
     U :: Signedness "U"
     S :: Signedness "S"
+
+instance KnownSymbol a => Hashable (Signedness a) where
+  hash = hash . symbolVal
 
 signedness :: Signedness s -> String
 signedness U = "Word"
@@ -279,6 +286,43 @@ instance Show (TypeRep a)
     show (IVarType ta)                   = unwords ["IVar", show ta]
     show (FValType ta)                   = unwords ["FVal", show ta]
 
+infixl 5 #
+(#) :: Hashable a => Hash -> a -> Hash
+h # x = h `combine` hash x
+
+instance Hashable (TypeRep a) where
+  hash UnitType              = hashInt 1
+  hash BoolType              = hashInt 2
+  hash (IntType sgn sz)      = hashInt 3 # sgn # sz
+  hash FloatType             = hashInt 4
+  hash DoubleType            = hashInt 5
+  hash (ComplexType t)       = hashInt 6 # t
+  hash (ArrayType t)         = hashInt 7 # t
+  hash (Tup2Type t)          = hashInt 8 # t
+  hash (Tup3Type t)          = hashInt 9 # t
+  hash (Tup4Type t)          = hashInt 10 # t
+  hash (Tup5Type t)          = hashInt 11 # t
+  hash (Tup6Type t)          = hashInt 12 # t
+  hash (Tup7Type t)          = hashInt 13 # t
+  hash (Tup8Type t)          = hashInt 14 # t
+  hash (Tup9Type t)          = hashInt 15 # t
+  hash (Tup10Type t)         = hashInt 16 # t
+  hash (Tup11Type t)         = hashInt 17 # t
+  hash (Tup12Type t)         = hashInt 18 # t
+  hash (Tup13Type t)         = hashInt 19 # t
+  hash (Tup14Type t)         = hashInt 20 # t
+  hash (Tup15Type t)         = hashInt 21 # t
+  hash (FunType a b)         = hashInt 22 # a # b
+  hash (MutType t)           = hashInt 23 # t
+  hash (RefType t)           = hashInt 24 # t
+  hash (MArrType t)          = hashInt 25 # t
+  hash (ParType t)           = hashInt 26 # t
+  hash (ElementsType t)      = hashInt 27 # t
+  hash (ConsType a b)        = hashInt 28 # a # b
+  hash NilType               = hashInt 29
+  hash (IVarType t)          = hashInt 30 # t
+  hash (FValType t)          = hashInt 31 # t
+
 -- | The set of supported types
 class (Eq a, Show a, Typeable a, Show (Size a), Lattice (Size a), TypeF a) => Type a
   where
@@ -298,6 +342,9 @@ instance Type Word64  where typeRep = IntType U N64;     sizeOf = singletonRange
 instance Type Int64   where typeRep = IntType S N64;     sizeOf = singletonRange
 instance Type Float   where typeRep = FloatType;         sizeOf = singletonRange
 instance Type Double  where typeRep = DoubleType;        sizeOf = singletonRange
+
+instance Hashable a => Hashable (Complex a) where
+  hash (re :+ im) = hash re `combine` hash im
 
 instance (Type a, RealFloat a) => Type (Complex a)
   where
