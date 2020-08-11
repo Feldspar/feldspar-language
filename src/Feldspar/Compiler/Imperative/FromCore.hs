@@ -443,7 +443,6 @@ compileProgTop a = do
 -- is why the function takes and 'Options' argument.
 compileType :: Options -> Ut.Type -> Type
 compileType _   (n Ut.:# Ut.BoolType)      = n :# BoolType
-compileType _   (n Ut.:# Ut.BitType)       = n :# BitType
 compileType _   (n Ut.:# Ut.IntType s sz)  = n :# NumType s sz
 compileType _   (n Ut.:# Ut.FloatType)     = n :# FloatType
 compileType _   (n Ut.:# Ut.DoubleType)    = n :# DoubleType

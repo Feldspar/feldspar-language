@@ -282,7 +282,6 @@ instance Monoid Block where
 
 data ScalarType =
       BoolType
-    | BitType
     | FloatType
     | DoubleType
     | NumType Signedness Size
@@ -315,7 +314,6 @@ instance Eq Type where
 -- | Render a C representation of a scalar type
 renderScalarType :: ScalarType -> String
 renderScalarType BoolType = "bool"
-renderScalarType BitType = error "renderScalarType: No support for BitType"
 renderScalarType FloatType = "float"
 renderScalarType DoubleType = "double"
 renderScalarType (NumType sg sz) = toInt sg ++ toSize sz ++ "_t"

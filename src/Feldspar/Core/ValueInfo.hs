@@ -155,7 +155,6 @@ literalVI (LTup xs) = VIProd $ map literalVI xs
 -- | The bottom (most informative) elements of the info domains for each scalar type.
 botInfoST :: ScalarType -> ValueInfo
 botInfoST BoolType         = VIBool $ Range 1 0
-botInfoST BitType          = VIWord8 $ Range 1 0 -- Provisionally
 botInfoST (IntType sgn sz) = constantIntRange sgn sz empty
 botInfoST FloatType        = VIFloat
 botInfoST DoubleType       = VIDouble
@@ -180,7 +179,6 @@ botInfo (FValType t)     = botInfo t
 -- | The top (least informative) elements of the info domains for each scalar type.
 topInfoST :: ScalarType -> ValueInfo
 topInfoST BoolType         = VIBool $ Range 0 1
-topInfoST BitType          = VIWord8 $ Range 0 1 -- Provisionally
 topInfoST (IntType sgn sz) = constantIntRange sgn sz universal
 topInfoST FloatType        = VIFloat
 topInfoST DoubleType       = VIDouble
