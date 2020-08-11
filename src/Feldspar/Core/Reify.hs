@@ -11,8 +11,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wall #-}
--- Hashable instances give orphan warnings.
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 --
 -- Copyright (c) 2019, ERICSSON AB
@@ -65,7 +63,6 @@ import qualified Feldspar.Core.Types as T
 import Feldspar.Lattice (top)
 
 import Control.Monad.Cont (Cont, ap)
-import Data.Complex (Complex(..))
 import Data.Typeable (Typeable, typeOf)
 import Data.Hash (Hashable(..), asWord64, combine, hashInt, Hash)
 
@@ -77,7 +74,6 @@ import Data.Char (chr)
 import Data.List (partition)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
-import GHC.TypeLits
 
 {-
 
@@ -347,58 +343,6 @@ normalizeTypeRep s = out -- Note [Debugging test output differences].
         out' = LB.replace (B.pack "(:*)") (B.pack ":*") s02
         s01 = LB.replace (B.pack "(->)") (B.pack "->") (LB.pack s)
         s02 = LB.replace (B.pack "('[] *)") (B.pack "'[]") s01
-
---------------------------------------------------------------------------------
--- * Hashing
---------------------------------------------------------------------------------
-
-instance Hashable a => Hashable (Complex a) where
-  hash (re :+ im) = hash re `combine` hash im
-
-instance KnownSymbol a => Hashable (T.Signedness a) where
-  hash = hash . symbolVal
-
-instance KnownNat a => Hashable (T.BitWidth a) where
-  hash = hashInt . fromIntegral . natVal
-
-infixl 5 #
-(#) :: Hashable a => Hash -> a -> Hash
-h # x = h `combine` hash x
-
-instance Hashable (T.TypeRep a) where
-  hash T.UnitType                   = hashInt 1
-  hash T.BoolType                   = hashInt 2
-  hash (T.IntType sgn sz)           = hashInt 3 # sgn # sz
-  hash T.FloatType                  = hashInt 4
-  hash T.DoubleType                 = hashInt 5
-  hash (T.ComplexType t)            = hashInt 6 # t
-  hash (T.ArrayType t)              = hashInt 7 # t
-  hash (T.Tup2Type t)               = hashInt 8 # t
-  hash (T.Tup3Type t)               = hashInt 9 # t
-  hash (T.Tup4Type t)               = hashInt 10 # t
-  hash (T.Tup5Type t)               = hashInt 11 # t
-  hash (T.Tup6Type t)               = hashInt 12 # t
-  hash (T.Tup7Type t)               = hashInt 13 # t
-  hash (T.Tup8Type t)               = hashInt 14 # t
-  hash (T.Tup9Type t)               = hashInt 15 # t
-  hash (T.Tup10Type t)              = hashInt 16 # t
-  hash (T.Tup11Type t)              = hashInt 17 # t
-  hash (T.Tup12Type t)              = hashInt 18 # t
-  hash (T.Tup13Type t)              = hashInt 19 # t
-  hash (T.Tup14Type t)              = hashInt 20 # t
-  hash (T.Tup15Type t)              = hashInt 21 # t
-  -- Index 22 available.
-  hash (T.FunType a b)    = hashInt 23 # a # b
-  hash (T.MutType t)      = hashInt 24 # t
-  hash (T.RefType t)      = hashInt 25 # t
-  hash (T.MArrType t)     = hashInt 26 # t
-  hash (T.ParType t)      = hashInt 27 # t
-  hash (T.ElementsType t) = hashInt 28 # t
-  hash (T.ConsType a b)   = hashInt 31 # a # b
-  hash  T.NilType         = hashInt 32
-  -- Index 33 avalable.
-  hash (T.IVarType t)     = hashInt 29 # t
-  hash (T.FValType t)     = hashInt 30 # t
 
 appHash :: Int
 appHash = 655360 + 40960 + 2560 + 160 + 10 + 17
