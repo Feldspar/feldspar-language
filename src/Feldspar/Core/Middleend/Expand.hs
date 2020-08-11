@@ -121,9 +121,9 @@ catch bs e = (fbs ++ concatMap biBindIs pbs, mkLets (map biBind pbs, e))
 
 legalLoops :: S.Set Var -> [AbsInfo] -> [(Bool, AbsInfo)]
 legalLoops vs (a@AbsI{absVars = avs} : ais)
-    | disjoint vs avs = (False, a) : legalLoops vs ais
+    | S.disjoint vs avs = (False, a) : legalLoops vs ais
 legalLoops vs (a@LoopI{absVars = avs, ixVar = ixv, trip = (trvs,_)} : ais)
-    | disjoint vs avs = (S.notMember ixv vs, a) : legalLoops vs1 ais
+    | S.disjoint vs avs = (S.notMember ixv vs, a) : legalLoops vs1 ais
   where vs1 = trvs `S.union` (ixv `S.delete` vs)
 legalLoops _  _ = []
 
@@ -220,8 +220,9 @@ appCost ai vm = go
 
 ixAndInv :: [AbsInfo] -> Var -> S.Set Var -> Bool
 ixAndInv ai v vs = go ai
-  where go (LoopI{ixVar = ix, absVars = avs} : ai) = disjoint vvs avs && (ix == v || go ai)
-        go (AbsI{absVars = avs} : ai) = disjoint vvs avs && go ai
+  where go (LoopI{ixVar = ix, absVars = avs} : ai) =
+          S.disjoint vvs avs && (ix == v || go ai)
+        go (AbsI{absVars = avs} : ai) = S.disjoint vvs avs && go ai
         go [] = True
         vvs = v `S.insert` vs
 
@@ -232,6 +233,3 @@ simpleArrRef (In _ (App GetIx _ [In _ (Variable _), e])) = simpleIdxE e
         simpleIdxE (In _ (App op _ es)) = op `elem` [Add,Sub,Mul] && all simpleIdxE es
         simpleIdxE _ = False
 simpleArrRef _ = False
-
-disjoint :: Ord a => S.Set a -> S.Set a -> Bool
-disjoint xs ys = S.null $ S.intersection xs ys
