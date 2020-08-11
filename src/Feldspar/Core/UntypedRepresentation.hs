@@ -139,7 +139,6 @@ data Fork = None | Future | Par | Loop
 
 data ScalarType =
      BoolType
-   | BitType
    | IntType Signedness Size
    | FloatType
    | DoubleType
@@ -425,7 +424,6 @@ instance (Show e) => Show (UntypedFeldF e) where
 -- | Compute a compact text representation of a scalar type
 prTypeST :: ScalarType -> String
 prTypeST BoolType         = "bool"
-prTypeST BitType          = "bit"
 prTypeST (IntType s sz)   = prS s ++ prSz sz
   where prS Signed   = "i"
         prS Unsigned = "u"
