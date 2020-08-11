@@ -29,67 +29,111 @@
 
 module Main where
 
-import Onnx.ModelProto
-import Onnx.GraphProto as G
-import Onnx.NodeProto as N
-import Onnx.ValueInfoProto as V
-import Onnx.AttributeProto as A
-import Onnx.TypeProto as T
-import Onnx.TypeProto.Value as TV
-import Onnx.TypeProto.Tensor as TT
-import Onnx.TypeProto.Sequence as TS
-import Onnx.TypeProto.Map as TM
-import Onnx.TensorProto as TP
-import Onnx.TensorProto.DataType as TD
-import Onnx.TensorShapeProto as TSP
-import Onnx.TensorShapeProto.Dimension as TSP
-import Onnx.TensorShapeProto.Dimension.Value as TSP
+import qualified Onnx.AttributeProto as A
+import qualified Onnx.GraphProto as G
+import qualified Onnx.ModelProto as O
+import qualified Onnx.NodeProto as N
+import qualified Onnx.TensorProto as TP
+import qualified Onnx.TensorProto.DataType as TD
+import qualified Onnx.TensorShapeProto as TSP
+import qualified Onnx.TensorShapeProto.Dimension as TSP
+import qualified Onnx.TensorShapeProto.Dimension.Value as TSP
+import qualified Onnx.TypeProto as T
+import qualified Onnx.TypeProto.Tensor as TT
+import qualified Onnx.TypeProto.Value as TV
+import qualified Onnx.ValueInfoProto as V
 
-import Text.ProtocolBuffers
+import Text.ProtocolBuffers (messageGet)
 import Text.ProtocolBuffers.Header as H (Utf8(..))
 
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.UTF8 as U
+import qualified Data.ByteString.Builder as B
 
-import Data.Either (either)
-import qualified Data.Foldable as D (toList)
+import qualified Data.Foldable as D (toList, foldMap)
+import qualified Data.Set as S
 import Data.List (intercalate)
-import Data.Maybe (maybe, fromJust, fromMaybe)
+import Data.Maybe (fromJust, fromMaybe)
 import System.Environment (getArgs)
+import System.FilePath (takeBaseName, (<.>))
+import System.IO (IOMode(WriteMode), BufferMode(BlockBuffering), openFile, hClose, hPutStr
+                 , hSetBuffering, hSetBinaryMode)
 
 main :: IO ()
 main = do args <- getArgs
           let [modelFileName] = take 1 args -- First argument is file name
-          -- putStrLn modelFileName
+              modelBaseName = takeBaseName modelFileName
+              dataFileName = modelBaseName <.> "data"
+              progFileName = modelBaseName <.> "hs"
           modelBinary <- L.readFile modelFileName
-          -- putStrLn "Read it!"
           let model = either (\s -> error $ "Error: " ++ s) fst $ messageGet modelBinary
-              gr = fromMaybe (error "No graph in model") $ graph model
-          -- putStrLn $ maybe (error "Graph has no name") toStr $ G.name gr
-          let graphNodes = D.toList $ node gr
-          -- putStrLn $ show $ length graphNodes
-          -- putStrLn "module Inits where"
-          -- putStrLn "import Feldspar"
-          -- putStr   "-- Num graph initializers "
-          -- putStrLn $ show $ length $ D.toList $ G.initializer gr
-          -- putStrLn "-- Graph initializers"
-          -- putStrLn "typedef float Float;"
-          -- putStrLn $ unlines $ map showGIc $ take 1000 $ D.toList $ G.initializer gr
-          putStrLn "Graph inputs"
-          putStrLn $ unlines $ map showVI $ D.toList $ G.input gr
-          putStrLn "Graph nodes"
-          putStr $ unlines $ map showNode graphNodes
+              gr = fromMaybe (error "No graph in model") $ O.graph model
 
-showNode :: NodeProto -> String
-showNode n = "  " ++ outs ++ " = " ++ op ++ " " ++ ins ++ "\n" ++ attrs
-  where ins = unwords $ map toStr $ D.toList $ N.input n
-        -- nameStr = maybe (error "No name string") toStr $ N.name n
-        op = "onnx" ++ toStr (fromJust $ N.op_type n)
-        outs = unwords $ map toStr $ D.toList $ N.output n
-        attrs = unlines $ map showAttribute $ D.toList $ N.attribute n
+          -- Write the weights
+          dfile <- openFile dataFileName WriteMode
+          hSetBinaryMode dfile True
+          hSetBuffering dfile $ BlockBuffering Nothing
+          B.hPutBuilder dfile $ D.foldMap buildInitTensor $ G.initializer gr
+          hClose dfile
 
-showAttribute :: AttributeProto -> String
-showAttribute a = "  -- " ++ nStr ++ " " ++ val nStr
+          -- Write the program
+          pfile <- openFile progFileName WriteMode
+          hPutStr pfile $ mkProgramFile gr
+          hClose pfile
+
+-- | Extract initialized tensors
+buildInitTensor :: TP.TensorProto -> B.Builder
+buildInitTensor t = B.stringUtf8 (unwords $ showElemT dt : show (length ds) : map show ds)
+                    <> B.string8 "\n"
+                    <> buildValues dt t
+  where ds = D.toList $ TP.dims t
+        dt = int2elemT $ fromJust $ TP.data_type t
+
+
+-- | Print the elements of a tensor
+buildValues :: TD.DataType -> TP.TensorProto -> B.Builder
+buildValues TD.FLOAT t = D.foldMap (\ x -> B.floatDec x <> B.string8 "\n") $ TP.float_data t
+buildValues t _ = error $ "onnxToFeld.buildValues: unknown element type " ++ show t
+
+-- | Construct a Feldspar program corresponding to the ONNX graph
+mkProgramFile :: G.GraphProto -> String
+mkProgramFile gr 
+  = unlines [ "module Main where"
+            , ""
+            , "import Feldspar"
+            , "import Feldspar.Compiler (program)"
+            , "import Feldspar.Onnx.Operators"
+            , ""
+            , "main = program " ++ name
+            , ""
+            , name ++ " " ++ unwords params ++ " = " ++ tuplify (map (mangle . vipName) $ D.toList $ G.output gr)
+            , "  where "
+              ++ intercalate "\n        " ("-- Nodes " : concatMap mkNode nodes)
+            ]
+  where name = "model" -- strFromJ $ G.name gr
+        wName = "weights"
+        initVs = map (toStr . fromJust . TP.name) $ D.toList $ G.initializer gr
+        initSet = S.fromList initVs
+        params = wName : map mkParam inps
+        mkParam p = mangle $ vipName p
+        inps = filter (\ p -> vipName p `S.notMember` initSet) $ D.toList $ G.input gr
+        nodes = D.toList $ G.node gr
+
+-- | Construct a Feldspar pattern binding for an ONNX graph node
+mkNode :: N.NodeProto -> [String]
+mkNode n = [outs ++ " = " ++ op ++ " " ++ attrs]
+         ++ [ "    " ++ mangle (toStr v) | v <- D.toList $ N.input n]
+         ++ [""]
+  where outs = tuplify $ map (mangle . toStr) $ D.toList $ N.output n
+        op = "onnx" ++ toStr (fromJust $ N.op_type n) ++ "_" ++ show (length $ D.toList $ N.input n)
+        attrs = "[" ++ intercalate ", " (map showAttribute $ D.toList $ N.attribute n) ++ "]"
+
+-- | Mngle an ONNX node mane to a Feldspar identifier
+mangle :: String -> String
+mangle s = "m_" ++ s
+
+showAttribute :: A.AttributeProto -> String
+showAttribute a = "(\"" ++ nStr ++ "\", " ++ val nStr ++ ")"
   where nStr = toStr (fromJust $ A.name a)
         val "dilations"    = showAttrInts a
         val "group"        = showAttrInt a
@@ -107,51 +151,38 @@ showAttribute a = "  -- " ++ nStr ++ " " ++ val nStr
         val "transB"       = showAttrInt a
         val _ = "_|_"
 
-showAttrInts :: AttributeProto -> String
-showAttrInts  a = unwords $ map show $ D.toList $ ints a
+showAttrInts :: A.AttributeProto -> String
+showAttrInts a = "AAInts " ++ listify (map show $ D.toList $ A.ints a)
 
-showAttrInt :: AttributeProto -> String
-showAttrInt a = show $ fromJust $ i a
+showAttrInt :: A.AttributeProto -> String
+showAttrInt a = "AAInt " ++ show (fromJust $ A.i a)
 
-showAttrFloat :: AttributeProto -> String
-showAttrFloat a = show $ fromJust $ f a
-
-showGI :: TensorProto -> String
-showGI t = toStr (fromJust $ TP.name t) ++ " :: "
-           ++ showTensorType (TP.data_type t) (D.toList $ TP.dims t) ++ "\n"
-           ++ toStr (fromJust $ TP.name t) ++ " = value [" ++ elems ++ "]"
-  where elems = intercalate ", " (map show $ D.toList $ TP.float_data t)
-
-showGIc :: TensorProto -> String
-showGIc t | length (D.toList $ TP.float_data t) < 100000
-          = showElemT (int2elemT $ fromJust $ TP.data_type t) ++ " " ++ toStr (fromJust $ TP.name t) ++ "[] = {"
-            ++ intercalate ", " (map show $ D.toList $ TP.float_data t) ++ "};"
-          | otherwise
-          = "// omitted "
+showAttrFloat :: A.AttributeProto -> String
+showAttrFloat a = "AAFloat " ++ show (fromJust $ A.f a)
 
 showTensorType :: (Integral a, Show b) => Maybe a -> [b] -> String
 showTensorType t dims = "Data [" ++ t' ++ "]" ++ " -- " ++ unwords sh
   where t' = showElemT (int2elemT $ fromJust t)
         sh = map show dims
 
-int2elemT :: Integral a => a -> DataType
+int2elemT :: Integral a => a -> TD.DataType
 int2elemT i = toEnum $ fromIntegral i :: TD.DataType
 
-showElemT :: DataType -> String
-showElemT FLOAT = "Float"
+showElemT :: TD.DataType -> String
+showElemT TD.FLOAT = "Float"
 showElemT t = error $ "Type " ++ show t ++ " not implemented"
 
-showVI :: ValueInfoProto -> String
+showVI :: V.ValueInfoProto -> String
 showVI v = nStr ++ " : " ++ tyStr
   where nStr = toStr $ fromJust $ V.name v
         tyStr = showType $ fromJust $ T.value $ fromJust $ V.type' v
 
 showType :: TV.Value -> String
-showType Tensor_type{TV.tensor_type = t}
+showType TV.Tensor_type{TV.tensor_type = t}
   = showTensorType (TT.elem_type t)
                    (map TSP.value $ D.toList $ TSP.dim $ fromJust $ TT.shape t)
-showType Sequence_type{} = "Sequence"
-showType Map_type{} = "Map"
+showType TV.Sequence_type{} = "Sequence"
+showType TV.Map_type{} = "Map"
 
 showDim :: Maybe TSP.Value -> String
 showDim (Just (TSP.Dim_value i)) = show i
@@ -160,3 +191,20 @@ showDim Nothing = "*"
 
 toStr :: H.Utf8 -> String
 toStr (H.Utf8 s) = U.toString s
+
+-- | Peel off a Just and convert to a String
+strFromJ :: Maybe H.Utf8 -> String
+strFromJ = toStr . fromJust
+
+-- | Get the name of a ValueInfoProto
+vipName :: V.ValueInfoProto -> String
+vipName = strFromJ . V.name
+
+-- | Make a tuple expression out of a non-singleton list
+tuplify :: [String] -> String
+tuplify [s] = s
+tuplify ss  = "(" ++ intercalate ", " ss ++ ")"
+
+-- | Make a list expression
+listify :: [String] -> String
+listify ss = "[" ++ intercalate ", " ss ++ "]"
