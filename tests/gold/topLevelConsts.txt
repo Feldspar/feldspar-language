@@ -2,17 +2,17 @@ Lambda v1 : 1xu32
  └╴Lambda v2 : 1xu32
     └╴Let
        ├╴Var v5 : 1xu32 = 
-       │  └╴Add {1xu32 in VIWord32 [*,*]}
-       │     ├╴v2 : 1xu32 in VIWord32 [*,*]
+       │  └╴Add {1xu32 in [*,*]}
+       │     ├╴v2 : 1xu32 in [*,*]
        │     └╴5 : 1xu32
        └╴In
-          └╴Condition {1xu32 in VIWord32 [1,6]}
-             ├╴LTH {1xbool in VIBool [0,1]}
-             │  ├╴v1 : 1xu32 in VIWord32 [*,*]
+          └╴Condition {1xu32 in [1,6]}
+             ├╴LTH {1xbool in [0,1]}
+             │  ├╴v1 : 1xu32 in [*,*]
              │  └╴5 : 1xu32
-             ├╴GetIx {1xu32 in VIWord32 [2,6]}
+             ├╴GetIx {1xu32 in [2,6]}
              │  ├╴[2,3,4,5,6] : a1xu32
-             │  └╴v5 : 1xu32 in VIWord32 [*,*]
-             └╴GetIx {1xu32 in VIWord32 [1,5]}
+             │  └╴v5 : 1xu32 in [*,*]
+             └╴GetIx {1xu32 in [1,5]}
                 ├╴[1,2,3,4,5] : a1xu32
-                └╴v5 : 1xu32 in VIWord32 [*,*]
+                └╴v5 : 1xu32 in [*,*]

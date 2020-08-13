@@ -1,17 +1,17 @@
 Lambda v0 : 1xi32
  └╴Let
     ├╴Var v2 : 1xi32 = 
-    │  └╴Add {1xi32 in VIInt32 [*,*]}
-    │     ├╴v0 : 1xi32 in VIInt32 [*,*]
+    │  └╴Add {1xi32 in [*,*]}
+    │     ├╴v0 : 1xi32 in [*,*]
     │     └╴20 : 1xi32
     └╴In
-       └╴Condition {1xi32 in VIInt32 [*,*]}
-          ├╴LTH {1xbool in VIBool [0,1]}
-          │  ├╴v0 : 1xi32 in VIInt32 [*,*]
+       └╴Condition {1xi32 in [*,*]}
+          ├╴LTH {1xbool in [0,1]}
+          │  ├╴v0 : 1xi32 in [*,*]
           │  └╴5 : 1xi32
-          ├╴Mul {1xi32 in VIInt32 [*,*]}
+          ├╴Mul {1xi32 in [*,*]}
           │  ├╴3 : 1xi32
-          │  └╴v2 : 1xi32 in VIInt32 [*,*]
-          └╴Mul {1xi32 in VIInt32 [*,*]}
+          │  └╴v2 : 1xi32 in [*,*]
+          └╴Mul {1xi32 in [*,*]}
              ├╴30 : 1xi32
-             └╴v2 : 1xi32 in VIInt32 [*,*]
+             └╴v2 : 1xi32 in [*,*]

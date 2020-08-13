@@ -1,28 +1,28 @@
 Lambda v0 : 1xu32
- └╴Run {1xu32 in VIWord32 [*,*]}
-    └╴Bind {M1xu32 in VIWord32 [*,*]}
-       ├╴NewRef {MR1xu32 in VIWord32 [*,*]}
-       │  └╴v0 : 1xu32 in VIWord32 [*,*]
+ └╴Run {1xu32 in [*,*]}
+    └╴Bind {M1xu32 in [*,*]}
+       ├╴NewRef {MR1xu32 in [*,*]}
+       │  └╴v0 : 1xu32 in [*,*]
        └╴Lambda v1 : R1xu32
-          └╴Bind {M1xu32 in VIWord32 [*,*]}
-             ├╴GetRef {M1xu32 in VIWord32 [*,*]}
-             │  └╴v1 : R1xu32 in VIWord32 [*,*]
+          └╴Bind {M1xu32 in [*,*]}
+             ├╴GetRef {M1xu32 in [*,*]}
+             │  └╴v1 : R1xu32 in [*,*]
              └╴Lambda v2 : 1xu32
                 └╴Let
                    ├╴Var v3 : 1xu32 = 
-                   │  └╴Add {1xu32 in VIWord32 [*,*]}
-                   │     ├╴v2 : 1xu32 in VIWord32 [*,*]
+                   │  └╴Add {1xu32 in [*,*]}
+                   │     ├╴v2 : 1xu32 in [*,*]
                    │     └╴3 : 1xu32
                    └╴In
-                      └╴Bind {M1xu32 in VIWord32 [*,*]}
-                         ├╴NewRef {MR1xu32 in VIWord32 [*,*]}
-                         │  └╴v3 : 1xu32 in VIWord32 [*,*]
+                      └╴Bind {M1xu32 in [*,*]}
+                         ├╴NewRef {MR1xu32 in [*,*]}
+                         │  └╴v3 : 1xu32 in [*,*]
                          └╴Lambda v4 : R1xu32
-                            └╴Bind {M1xu32 in VIWord32 [*,*]}
-                               ├╴GetRef {M1xu32 in VIWord32 [*,*]}
-                               │  └╴v4 : R1xu32 in VIWord32 [*,*]
+                            └╴Bind {M1xu32 in [*,*]}
+                               ├╴GetRef {M1xu32 in [*,*]}
+                               │  └╴v4 : R1xu32 in [*,*]
                                └╴Lambda v5 : 1xu32
-                                  └╴Return {M1xu32 in VIWord32 [*,*]}
-                                     └╴Add {1xu32 in VIWord32 [*,*]}
-                                        ├╴v5 : 1xu32 in VIWord32 [*,*]
-                                        └╴v3 : 1xu32 in VIWord32 [*,*]
+                                  └╴Return {M1xu32 in [*,*]}
+                                     └╴Add {1xu32 in [*,*]}
+                                        ├╴v5 : 1xu32 in [*,*]
+                                        └╴v3 : 1xu32 in [*,*]

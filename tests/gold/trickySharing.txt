@@ -1,22 +1,22 @@
 Lambda v0 : 1xu32
  └╴Let
     ├╴Var v4 : 1xu32 = 
-    │  └╴Add {1xu32 in VIWord32 [*,*]}
-    │     ├╴Mul {1xu32 in VIWord32 [*,*]}
-    │     │  ├╴v0 : 1xu32 in VIWord32 [*,*]
+    │  └╴Add {1xu32 in [*,*]}
+    │     ├╴Mul {1xu32 in [*,*]}
+    │     │  ├╴v0 : 1xu32 in [*,*]
     │     │  └╴3 : 1xu32
-    │     └╴Mul {1xu32 in VIWord32 [*,*]}
-    │        ├╴v0 : 1xu32 in VIWord32 [*,*]
+    │     └╴Mul {1xu32 in [*,*]}
+    │        ├╴v0 : 1xu32 in [*,*]
     │        └╴5 : 1xu32
     ├╴Var v5 : 1xu32 = 
-    │  └╴Add {1xu32 in VIWord32 [*,*]}
-    │     ├╴v4 : 1xu32 in VIWord32 [*,*]
-    │     └╴Mul {1xu32 in VIWord32 [*,*]}
-    │        ├╴v0 : 1xu32 in VIWord32 [*,*]
+    │  └╴Add {1xu32 in [*,*]}
+    │     ├╴v4 : 1xu32 in [*,*]
+    │     └╴Mul {1xu32 in [*,*]}
+    │        ├╴v0 : 1xu32 in [*,*]
     │        └╴7 : 1xu32
     └╴In
-       └╴Add {1xu32 in VIWord32 [*,*]}
-          ├╴Add {1xu32 in VIWord32 [*,*]}
-          │  ├╴v5 : 1xu32 in VIWord32 [*,*]
-          │  └╴v4 : 1xu32 in VIWord32 [*,*]
-          └╴v5 : 1xu32 in VIWord32 [*,*]
+       └╴Add {1xu32 in [*,*]}
+          ├╴Add {1xu32 in [*,*]}
+          │  ├╴v5 : 1xu32 in [*,*]
+          │  └╴v4 : 1xu32 in [*,*]
+          └╴v5 : 1xu32 in [*,*]

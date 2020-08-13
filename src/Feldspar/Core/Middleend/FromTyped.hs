@@ -47,7 +47,7 @@ import qualified Feldspar.Core.NestedTuples as T
 import Feldspar.Core.Types (TypeRep(..), TypeF(..), (:>)(..))
 import qualified Feldspar.Core.Types as T
 import Feldspar.Core.UntypedRepresentation hiding (Type(..), ScalarType(..))
-import Feldspar.Core.ValueInfo (ValueInfo(..))
+import Feldspar.Core.ValueInfo (ValueInfo(..), ValueKind(..))
 import Feldspar.Range (Range(..))
 import qualified Feldspar.Core.Representation as R
 import Feldspar.Core.Representation (AExpr(..), Expr(..))
@@ -299,7 +299,7 @@ literal _ _ _ = error "Missing pattern: FromTyped.hs: literal"
 
 -- | Construct a ValueInfo from a TypeRep and a Size
 toValueInfo :: TypeRep a -> T.Size a -> ValueInfo
-toValueInfo UnitType          _             = VIProd []
+toValueInfo UnitType          _             = VIProd ProdKind []
 -- FIXME: No range for boolean types yet.
 toValueInfo BoolType          _             = VIBool    (Range 0 1)
 toValueInfo (IntType T.U T.N8)      r       = VIWord8   r
@@ -313,7 +313,7 @@ toValueInfo (IntType T.S T.N64)     r       = VIInt64   r
 -- FIXME: No range for FP types and ComplexType yet.
 toValueInfo FloatType         _             = VIFloat
 toValueInfo DoubleType        _             = VIDouble
-toValueInfo (ComplexType _)   _             = VIProd []
+toValueInfo (ComplexType _)   _             = VIProd ProdKind []
 toValueInfo (Tup2Type t) sz                 = toValueInfo t sz
 toValueInfo (Tup3Type t) sz                 = toValueInfo t sz
 toValueInfo (Tup4Type t) sz                 = toValueInfo t sz
@@ -331,15 +331,15 @@ toValueInfo (Tup15Type t) sz                = toValueInfo t sz
 toValueInfo (MutType a) sz                  = toValueInfo a sz
 toValueInfo (RefType a) sz                  = toValueInfo a sz
 toValueInfo (ArrayType a) (Range l r :> es)
-  = VIProd [VIWord32 (Range l r), toValueInfo a es]
+  = VIProd RangeKind [VIWord32 (Range l r), toValueInfo a es]
 toValueInfo (MArrType a) (Range l r :> es)
-  = VIProd [VIWord32 (Range l r), toValueInfo a es]
+  = VIProd RangeKind [VIWord32 (Range l r), toValueInfo a es]
 toValueInfo (ParType a) sz                  = toValueInfo a sz
 toValueInfo (ElementsType a) (Range l r :> es)
-  = VIProd [VIWord32 (Range l r), toValueInfo a es]
-toValueInfo (ConsType a b) (sa,sb) = VIProd $ toValueInfo a sa : ss
-  where VIProd ss = toValueInfo b sb
-toValueInfo NilType _ = VIProd []
+  = VIProd RangeKind [VIWord32 (Range l r), toValueInfo a es]
+toValueInfo (ConsType a b) (sa,sb) = VIProd TupleKind $ toValueInfo a sa : ss
+  where VIProd _ ss = toValueInfo b sb
+toValueInfo NilType _ = VIProd TupleKind []
 toValueInfo (IVarType a) sz                 = toValueInfo a sz
 -- TODO: Maybe keep argument information for FunType.
 toValueInfo (FunType a _) (sa, _)           = toValueInfo a sa
