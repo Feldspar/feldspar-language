@@ -216,7 +216,7 @@ prettyVI _ VIFloat{}    = "[*,*]"
 prettyVI _ VIDouble{}   = "[*,*]"
 prettyVI t' (VIProd vs')  = pr t' vs'
   where pr (ArrayType _ t)  [v1,v2] = prettyVI indexType v1 ++ " :> " ++ prettyVI t v2
-        pr (ElementsType t) [v1,v2] = prettyVI indexType v1 ++ " :>> " ++ prettyVI t v2
+        pr (ElementsType t) [v1,v2] = prettyVI indexType v1 ++ " :> " ++ prettyVI t v2
         pr (TupType ts)     vs      = "(" ++ intercalate ", " (zipWith prettyVI ts vs) ++ ")"
         pr _                vs      = "VIProd " ++ show vs
 
