@@ -1,7 +1,7 @@
-Tup {((1xu32,1xu32),(1xu32,1xu32)) in VIProd [VIProd [VIWord32 [1,1],VIWord32 [2,2]],VIProd [VIWord32 [3,3],VIWord32 [2,2]]]}
- ├╴Tup {(1xu32,1xu32) in VIProd [VIWord32 [1,1],VIWord32 [2,2]]}
+Tup {((1xu32,1xu32),(1xu32,1xu32)) in (([1,1], [2,2]), ([3,3], [2,2]))}
+ ├╴Tup {(1xu32,1xu32) in ([1,1], [2,2])}
  │  ├╴1 : 1xu32
  │  └╴2 : 1xu32
- └╴Tup {(1xu32,1xu32) in VIProd [VIWord32 [3,3],VIWord32 [2,2]]}
+ └╴Tup {(1xu32,1xu32) in ([3,3], [2,2])}
     ├╴3 : 1xu32
     └╴2 : 1xu32
