@@ -7,7 +7,7 @@ Lambda v1 : 1xu32
        │     └╴5 : 1xu32
        └╴In
           └╴Condition {1xu32 in [1,6]}
-             ├╴LTH {1xbool in [0,1]}
+             ├╴LTH {1xbool in [*,*]}
              │  ├╴v1 : 1xu32 in [*,*]
              │  └╴5 : 1xu32
              ├╴GetIx {1xu32 in [2,6]}

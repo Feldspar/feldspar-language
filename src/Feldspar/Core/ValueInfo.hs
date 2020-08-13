@@ -66,7 +66,7 @@ import Data.Word
 -- | The ValueInfo type wraps ranges of various types as well as cartesian
 --   products into a universal domain.
 --   The value info of a function is the value info of its return value.
-data ValueInfo = VIBool   (Range Int) -- ^ We represent False as 0 and True as 1.
+data ValueInfo = VIBool   (Range Bool)
                | VIInt8   (Range Int8)
                | VIInt16  (Range Int16)
                | VIInt32  (Range Int32)
@@ -162,7 +162,7 @@ literalVI (LTup xs) = VIProd TupleKind $ map literalVI xs
 
 -- | The bottom (most informative) elements of the info domains for each scalar type.
 botInfoST :: ScalarType -> ValueInfo
-botInfoST BoolType         = VIBool $ Range 1 0
+botInfoST BoolType         = VIBool $ Range True False
 botInfoST (IntType sgn sz) = constantIntRange sgn sz empty
 botInfoST FloatType        = VIFloat
 botInfoST DoubleType       = VIDouble
@@ -186,7 +186,7 @@ botInfo (FValType t)     = botInfo t
 
 -- | The top (least informative) elements of the info domains for each scalar type.
 topInfoST :: ScalarType -> ValueInfo
-topInfoST BoolType         = VIBool $ Range 0 1
+topInfoST BoolType         = VIBool $ Range False True
 topInfoST (IntType sgn sz) = constantIntRange sgn sz universal
 topInfoST FloatType        = VIFloat
 topInfoST DoubleType       = VIDouble
@@ -213,7 +213,7 @@ class RangeVI a where
   rangeVI :: a -> a -> ValueInfo
 
 instance RangeVI Bool where
-  rangeVI l h = VIBool $ Range (fromEnum l) (fromEnum h)
+  rangeVI l h = VIBool $ Range l h
 
 instance RangeVI Int8 where
   rangeVI l h = VIInt8 $ Range l h
@@ -260,7 +260,6 @@ setLB l = uop (\ r -> r{lowerBound = fromIntegral l})
 -- | Apply a binary operation to two ValueInfos
 bop :: (forall a . (Ord a, Num (Range a)) => Range a -> Range a -> Range a)
     -> ValueInfo -> ValueInfo -> ValueInfo
-bop op (VIBool r1)   (VIBool r2)   = VIBool    (op r1 r2)
 bop op (VIWord8 r1)  (VIWord8 r2)  = VIWord8   (op r1 r2)
 bop op (VIInt8 r1)   (VIInt8 r2)   = VIInt8    (op r1 r2)
 bop op (VIWord16 r1) (VIWord16 r2) = VIWord16  (op r1 r2)
@@ -278,7 +277,8 @@ bop _ _ _ = error "ValueInfo.hs:bop: mismatched patttern."
 
 -- | Apply a unary operation to a ValueInfo
 uop :: (forall a . Integral a => Range a -> Range a) -> ValueInfo -> ValueInfo
-uop op (VIBool r)                 = VIBool    (op r)
+uop _ VIBool{}
+  = error "ValueInfo.hs:uop: Bool is not an integral type"
 uop op (VIWord8 r)                = VIWord8   (op r)
 uop op (VIInt8 r)                 = VIInt8    (op r)
 uop op (VIWord16 r)               = VIWord16  (op r)
