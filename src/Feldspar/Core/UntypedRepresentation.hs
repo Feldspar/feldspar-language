@@ -69,7 +69,6 @@ module Feldspar.Core.UntypedRepresentation (
   , subst
   , stringTree
   , stringTreeExp
-  , prettyExp
   , indexType
   , sharable
   , legalToShare
@@ -89,6 +88,7 @@ import Data.List (nubBy, intercalate)
 import Data.Tree
 import Language.Haskell.TH.Syntax (Lift(..))
 
+import Feldspar.Compiler.Options (Pretty(..))
 import Feldspar.Core.Representation (VarId(..))
 
 import Feldspar.Range (Range(..), singletonRange)
@@ -109,6 +109,9 @@ data Term a f = In a (f (Term a f))
 deriving instance (Eq a, Eq (f (Term a f))) => Eq (Term a f)
 instance (Show (f (Term a f))) => Show (Term a f) where
   show (In _ f) = show f
+
+instance Pretty a => Pretty (UntypedFeld a) where
+  pretty = prettyExp pretty
 
 -- | Extract the annotation part of an UntypedFeld
 getAnnotation :: UntypedFeld a -> a
@@ -467,7 +470,7 @@ stringTreeExp prA = go
     prP t r = " {" ++ prType t ++ prA r ++ "}"
     prC t   = " : " ++ prType t
 
-prettyExp :: (Type -> a -> String) -> UntypedFeld a -> String
+prettyExp :: (a -> String) -> UntypedFeld a -> String
 prettyExp prA e = render (pr 0 0 e)
   where pr p i (In r e) = pe p i r e
         pe _ i _ (Variable v) = line i $ show v
@@ -488,9 +491,9 @@ prettyExp prA e = render (pr 0 0 e)
                = join (line (i+2) (pv Nothing v ++ " =") ++ pr 0 (i+4) eRhs) ++ pLet i e
         pLet i e = line i "in" ++ pr 0 (i+2) e
 
-        pv mr v = show v ++ prC (typeof v) ++ maybe "" (prA $ typeof v) mr
+        pv mr v = show v ++ prC (typeof v) ++ maybe "" ((++) " | " . prA) mr
 
-        prP t r = " {" ++ prType t ++ prA t r ++ "}"
+        prP t r = " {" ++ prType t ++ " | " ++ prA r ++ "}"
         prC t   = " : " ++ prType t
 
         par _ _ [] = error "UntypedRepresentation.prettyExp: parethesisizing empty text"

@@ -93,6 +93,14 @@ encodeFunctionName fName = replace (replace fName "_" "__") "'" "_prime"
 class Pretty a where
   pretty :: a -> String
 
+-- | Pretty instance for pairs, prints the components and tuple structure
+instance (Pretty a, Pretty b) => Pretty (a, b) where
+  pretty (x,y) = "(" ++ pretty x ++ ", " ++ pretty y ++ ")"
+
+-- | Pretty instance for Either, only prints the value stored in @Left@/@Right@
+instance (Pretty a, Pretty b) => Pretty (Either a b) where
+  pretty = either pretty pretty
+
 -- * Option handling data structures and utils.
 
 -- | Record controlling pass behavior

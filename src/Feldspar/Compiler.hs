@@ -86,14 +86,8 @@ import Feldspar.Core.Middleend.UniqueVars
 import qualified Feldspar.Core.SizeProp as SP
 import Feldspar.Core.Representation (AExpr)
 import Feldspar.Core.Reify (ASTF, Syntactic(..), desugar, unASTF)
-import Feldspar.Core.UntypedRepresentation (UntypedFeld, prettyExp, rename)
-import Feldspar.Core.ValueInfo (PrettyInfo(..), ValueInfo)
-
--- The front-end driver.
-
-instance PrettyInfo a => Pretty (UntypedFeld a) where
-  pretty = prettyExp f
-     where f t x = " | " ++ prettyInfo t x
+import Feldspar.Core.UntypedRepresentation (UntypedFeld, rename)
+import Feldspar.Core.ValueInfo (ValueInfo)
 
 -- | Front-end driver
 frontend :: Options
@@ -357,18 +351,12 @@ compileToCCore n opts p = fromMaybe err $ snd p'
   where err = error "compileToCCore: translate failed"
         p' = translate opts{functionName = n} p
 
-instance (Pretty a, Pretty b) => Pretty (a, b) where
-  pretty (x,y) = "(" ++ pretty x ++ ", " ++ pretty y ++ ")"
-
 instance Pretty Module where
   pretty m = compToCWithInfos defaultOptions m
 
 instance Pretty SplitModule where
   pretty (SplitModule impl intf) = "// Interface\n" ++ sourceCode intf ++
                                    "\n// Implementation\n" ++ sourceCode impl
-
-instance (Pretty a, Pretty b) => Pretty (Either a b) where
-  pretty = either pretty pretty
 
 codegen :: Options
         -> Prog (Either Module

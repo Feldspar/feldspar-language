@@ -41,7 +41,6 @@
 module Feldspar.Core.ValueInfo
   ( ValueInfo(..)
   , ValueKind(..)
-  , PrettyInfo(..)
   , aLit
   , elementsVI
   , setLB
@@ -54,6 +53,7 @@ module Feldspar.Core.ValueInfo
   , topInfoST
   ) where
 
+import Feldspar.Compiler.Options (Pretty(..))
 import Feldspar.Core.Types (WordN)
 import Feldspar.Core.UntypedRepresentation
 import Feldspar.Lattice (Lattice, empty, universal)
@@ -87,16 +87,6 @@ data ValueKind = ProdKind -- ^ Used for everything except tuples and arrays
                | TupleKind -- ^ Used for tuples
   deriving Eq
 
--- | Overloaded pretty printing of annotations (for instance range information)
-class PrettyInfo a where
-  prettyInfo :: Type -> a -> String
-
-instance PrettyInfo ValueInfo where
-  prettyInfo = prettyVI
-
-instance PrettyInfo () where
-  prettyInfo _ _ = ""
-
 instance Show ValueInfo where
   show (VIBool r)   = show r
   show (VIInt8 r)   = show r
@@ -119,6 +109,9 @@ instance Show ValueInfo where
     = case vs of
         [] -> error "Faulty ValueInfo range information."
         h:t -> show h ++ " :> " ++ show t
+
+instance Pretty ValueInfo where
+  pretty = show
 
 -- | Annotate a literal with value info.
 aLit :: Lit -> UntypedFeld ValueInfo
@@ -214,26 +207,6 @@ topInfo (ElementsType t) = VIProd RangeKind [topInfo indexType, topInfo t]
 topInfo (IVarType t)     = topInfo t
 topInfo (FunType _ t)    = topInfo t
 topInfo (FValType t)     = topInfo t
-
--- | Pretty printing a value info given a type
-prettyVI :: Type -> ValueInfo -> String
-prettyVI _ (VIBool r)   = show r
-prettyVI _ (VIInt8 r)   = show r
-prettyVI _ (VIInt16 r)  = show r
-prettyVI _ (VIInt32 r)  = show r
-prettyVI _ (VIInt64 r)  = show r
-prettyVI _ (VIWord8 r)  = show r
-prettyVI _ (VIWord16 r) = show r
-prettyVI _ (VIWord32 r) = show r
-prettyVI _ (VIWord64 r) = show r
-prettyVI _ (VIWordN r)  = show r
-prettyVI _ VIFloat{}    = "[*,*]"
-prettyVI _ VIDouble{}   = "[*,*]"
-prettyVI t' (VIProd _ vs')  = pr t' vs'
-  where pr (ArrayType _ t)  [v1,v2] = prettyVI indexType v1 ++ " :> " ++ prettyVI t v2
-        pr (ElementsType t) [v1,v2] = prettyVI indexType v1 ++ " :> " ++ prettyVI t v2
-        pr (TupType ts)     vs      = "(" ++ intercalate ", " (zipWith prettyVI ts vs) ++ ")"
-        pr _                vs      = "VIProd " ++ show vs
 
 -- | Overloaded construction of value info ranges
 class RangeVI a where
