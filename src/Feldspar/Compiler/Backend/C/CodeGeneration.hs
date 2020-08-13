@@ -30,11 +30,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -Wall #-}
 
+-- | Converts a @Module@ to C Syntax
 module Feldspar.Compiler.Backend.C.CodeGeneration
-  ( CodeGen(..)
-  , compToCWithInfos
-  , PrintEnv(..)
-  , penv0
+  ( compToCWithInfos
   ) where
 
 import Prelude hiding (Semigroup(..), (<>), init)
@@ -52,6 +50,7 @@ data PrintEnv = PEnv
     , parNestLevel :: Int
     }
 
+-- | Convert a @Module@ to C syntax
 compToCWithInfos :: Options -> Module -> String
 compToCWithInfos opts procedure = render $ cgen (penv0 opts) procedure
 
