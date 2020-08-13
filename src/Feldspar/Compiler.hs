@@ -244,7 +244,7 @@ programComp pc opts args = do
       forM_ mProgs (writeFiles opts1)
 
 optsFromName :: Options -> String -> Options
-optsFromName opts name' = opts{ passFileName = name' ++ ".passes"
+optsFromName opts name' = opts{ passFileName = name' <.> "passes"
                               , outFileName = name'
                               , functionName = name'}
 

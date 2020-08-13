@@ -34,7 +34,7 @@ import Control.Monad (join, (>=>), when, unless)
 import Language.Haskell.TH
 
 import System.Directory (doesFileExist, removeFile, createDirectoryIfMissing)
-import System.FilePath ((</>))
+import System.FilePath ((</>), (<.>))
 import System.Process (readProcessWithExitCode)
 import System.Info (os)
 
@@ -169,8 +169,8 @@ feldsparBuilder fopts Config{..} fun = do
 
 compileAndLoad :: Options -> String -> [String] -> IO ()
 compileAndLoad opts name args = do
-    let cname = name ++ ".c"
-        oname = name ++ ".o"
+    let cname = name <.> "c"
+        oname = name <.> "o"
     exists <- doesFileExist oname
     when exists $ removeFile oname
     compileC opts cname oname args

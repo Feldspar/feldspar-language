@@ -260,6 +260,7 @@ test-suite regression
     feldspar-language,
     mtl,
     base,
+    filepath,
     ghc-paths,
     process,
     bytestring       >= 0.9 && < 0.11,
