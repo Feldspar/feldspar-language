@@ -23,19 +23,19 @@
                 (Min {1xu32 | [*,*]}
                   (Min {1xu32 | [*,*]}
                     (Condition {1xu32 | [*,*]}
-                      (Equal {1xbool | [0,1]} v72 -1)
+                      (Equal {1xbool | [*,*]} v72 -1)
                       v72
                       v72)
                     (Condition {1xu32 | [*,*]}
-                      (Equal {1xbool | [0,1]} v95 -1)
+                      (Equal {1xbool | [*,*]} v95 -1)
                       v95
                       v95))
                   (Condition {1xu32 | [*,*]}
-                    (Equal {1xbool | [0,1]} v122 -1)
+                    (Equal {1xbool | [*,*]} v122 -1)
                     v122
                     v122))
                 (Condition {1xu32 | [*,*]}
-                  (Equal {1xbool | [0,1]} v149 -1)
+                  (Equal {1xbool | [*,*]} v149 -1)
                   v149
                   v149)
             v418 : 1xu32 = Min {1xu32 | [*,*]} v174 v409
@@ -102,11 +102,11 @@
                             EWrite {e1xf32 | [*,*] :> [[*,*]]}
                               (Add {1xu32 | [*,*]} v194 v30195)
                               (Condition {1xf32 | [*,*]}
-                                (LTH {1xbool | [0,1]} v30195 3)
+                                (LTH {1xbool | [*,*]} v30195 3)
                                 (Condition {1xf32 | [*,*]}
-                                  (LTH {1xbool | [0,1]} v30195 2)
+                                  (LTH {1xbool | [*,*]} v30195 2)
                                   (Condition {1xf32 | [*,*]}
-                                    (LTH {1xbool | [0,1]} v30195 1)
+                                    (LTH {1xbool | [*,*]} v30195 1)
                                     (GetIx {1xf32 | [*,*]}
                                       v1
                                       (Quot {1xu32 | [*,*]} (Add {1xu32 | [*,*]} v184 v30195) 1))
@@ -372,11 +372,11 @@
           in
             Tup {(1xf32,1xf32,1xf32,1xi32) | ([*,*], [*,*], [*,*], [400,400])}
               (Condition {1xf32 | [*,*]}
-                (GTH {1xbool | [0,1]} v496 0.0)
+                (GTH {1xbool | [*,*]} v496 0.0)
                 (let
-                  v424 : 1xbool = Equal {1xbool | [0,1]} v420 1
-                  v417 : 1xbool = Equal {1xbool | [0,1]} v409 1
-                  v408 : 1xbool = Equal {1xbool | [0,1]} v174 1
+                  v424 : 1xbool = Equal {1xbool | [*,*]} v420 1
+                  v417 : 1xbool = Equal {1xbool | [*,*]} v409 1
+                  v408 : 1xbool = Equal {1xbool | [*,*]} v174 1
                   v379 : a1xi32 =
                     EMaterialize {a1xi32 | [*,*] :> [[*,*]]}
                       v174
@@ -406,7 +406,7 @@
                                     (\ v10368 : 1xu32 ->
                                       \ v369 : 1xu32 ->
                                         Condition {1xu32 | [*,*]}
-                                          (GTH {1xbool | [0,1]}
+                                          (GTH {1xbool | [*,*]}
                                             (GetIx {1xf32 | [*,*]}
                                               v364
                                               (Add {1xu32 | [*,*]}
@@ -437,7 +437,7 @@
                                     Add {1xf32 | [*,*]}
                                       v504
                                       (Condition {1xf32 | [*,*]}
-                                        (Equal {1xbool | [0,1]}
+                                        (Equal {1xbool | [*,*]}
                                           (GetIx {1xi32 | [*,*]} v379 v501)
                                           (GetIx {1xi32 | [*,*]} v5 v502))
                                         1.0
@@ -445,9 +445,9 @@
                     v496)
                 0.0)
               (Condition {1xf32 | [*,*]}
-                (GTH {1xbool | [0,1]} v542 0.0)
+                (GTH {1xbool | [*,*]} v542 0.0)
                 (let
-                  v482 : 1xbool = Equal {1xbool | [0,1]} v418 1
+                  v482 : 1xbool = Equal {1xbool | [*,*]} v418 1
                 in
                   DivFrac {1xf32 | [*,*]}
                     (ForLoop {1xf32 | [*,*]}

@@ -301,7 +301,7 @@ literal _ _ _ = error "Missing pattern: FromTyped.hs: literal"
 toValueInfo :: TypeRep a -> T.Size a -> ValueInfo
 toValueInfo UnitType          _             = VIProd ProdKind []
 -- FIXME: No range for boolean types yet.
-toValueInfo BoolType          _             = VIBool    (Range 0 1)
+toValueInfo BoolType                r       = VIBool    r
 toValueInfo (IntType T.U T.N8)      r       = VIWord8   r
 toValueInfo (IntType T.S T.N8)      r       = VIInt8    r
 toValueInfo (IntType T.U T.N16)     r       = VIWord16  r

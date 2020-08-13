@@ -6,7 +6,7 @@ Lambda v0 : 1xi32
     │     └╴20 : 1xi32
     └╴In
        └╴Condition {1xi32 in [*,*]}
-          ├╴LTH {1xbool in [0,1]}
+          ├╴LTH {1xbool in [*,*]}
           │  ├╴v0 : 1xi32 in [*,*]
           │  └╴5 : 1xi32
           ├╴Mul {1xi32 in [*,*]}
