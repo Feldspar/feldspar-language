@@ -1,0 +1,16 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "feldspar-language:lib"
+    - path: "./.stack-work/dist/x86_64-linux/Cabal-3.0.1.0/build/autogen"
+      component: "feldspar-language:lib"
+    - path: "./src"
+      component: "feldspar-language:exe:onnxToFeld"
+    - path: "./tests"
+      component: "feldspar-language:test:regression"
+    - path: "./tests/TutorialTest.hs"
+      component: "feldspar-language:test:tutorial"
+    - path: "./benchs/CRC.hs"
+      component: "feldspar-language:bench:crc"
+    - path: "./benchs/FFT.hs"
+      component: "feldspar-language:bench:fft"
