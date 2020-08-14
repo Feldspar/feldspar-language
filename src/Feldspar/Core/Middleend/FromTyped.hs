@@ -219,7 +219,13 @@ trOp (R.PropSize _)    = PropSize
 -- trOp R.SourceInfo      = SourceInfo
 trOp R.Switch          = Switch
 -- trOp R.Call            = Call
-trOp op                = error $ "FromTyped.trOp: unknown op: " ++ show op
+trOp (R.Variable _)    = error "trOp: Variable"
+trOp (R.Lambda _)      = error "trOp: Lambda"
+trOp (R.Literal _)     = error "trOp: Literal"
+trOp R.Cons            = error "trOp: Cons"
+trOp R.Car             = error "trOp: Car"
+trOp R.Cdr             = error "trOp: Cdr"
+trOp R.Tup             = error "trOp: Tup"
 
 -- | Convert a BitWidth to an untyped Size
 convSize :: T.BitWidth a -> U.Size
