@@ -59,7 +59,7 @@ import Text.Printf
 
 -- | Read the header and C file and concatenate their contents for comparisons
 vgReadFiles :: String -> IO LB.ByteString
-vgReadFiles base = liftM LB.concat $ mapM (LB.readFile . (base<.>)) ["h","c"]
+vgReadFiles base = LB.concat <$> mapM (LB.readFile . (base <.>)) ["h", "c"]
 
 -- Compile and load example9 as c_example9 (using plugins)
 loadFun ['example9]
@@ -158,7 +158,7 @@ fut1 :: Future (Data IntN) -> Future (Data IntN)
 fut1 x  = forLoop 20 x (\_ e -> future $ force $ await e)
 
 not1 :: Data Bool -> Data Bool
-not1 x = not x
+not1 = not
 
 issue128_ex1 :: Data WordN -> Data WordN
 issue128_ex1 a = share (switch 45 [(1,10)] a) $ \b -> 1 == a ? b $ a
