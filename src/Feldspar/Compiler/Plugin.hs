@@ -33,7 +33,8 @@ import Control.Monad (join, (>=>), when, unless)
 
 import Language.Haskell.TH
 
-import System.Directory (doesFileExist, removeFile, createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing)
+import System.Exit (ExitCode(..))
 import System.FilePath ((</>), (<.>))
 import System.Process (readProcessWithExitCode)
 import System.Info (os)
@@ -171,8 +172,6 @@ compileAndLoad :: Options -> String -> [String] -> IO ()
 compileAndLoad opts name args = do
     let cname = name <.> "c"
         oname = name <.> "o"
-    exists <- doesFileExist oname
-    when exists $ removeFile oname
     compileC opts cname oname args
     initObjLinker RetainCAFs
     _ <- loadObj oname
@@ -181,12 +180,14 @@ compileAndLoad opts name args = do
 
 compileC :: Options -> String -> String -> [String] -> IO ()
 compileC opts srcfile objfile args' = do
-    let args = [ "-w", "-c" ]
+    let args = [ "-w", "-c", "-o", objfile, srcfile ]
                ++ map ("-optc " ++) (compilerFlags $ platform opts)
                ++ args'
-    (_,stdout,stderr) <- readProcessWithExitCode ghc (args ++ ["-o",objfile,srcfile]) ""
-    let output = stdout ++ stderr
-    unless (null output) $ putStrLn output
+    (ex, stdout, stderr) <- readProcessWithExitCode ghc args ""
+    case ex of
+      ExitFailure{} -> error $ unlines [show ex, stdout, stderr]
+      _ -> do let output = stdout ++ stderr
+              unless (null output) $ putStrLn output
 
 lookupSymbol :: String -> IO (Ptr a)
 lookupSymbol symbol = do
