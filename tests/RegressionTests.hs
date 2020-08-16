@@ -571,13 +571,9 @@ mkBuildTest :: Syntactic a => a -> Prelude.FilePath -> Options -> TestTree
 mkBuildTest fun n opts = do
     let new = testDir (n <> "_build_test")
         cfile = new <.> "c"
+        ofile = new <.> "o"
         act = do compile fun n opts{outFileName = new}
-                 let ghcArgs = [cfile, "-c", "-optc -Isrc/clib/include", "-optc -std=c99", "-Wall"]
-                 (ex, stdout, stderr) <- readProcessWithExitCode ghc ghcArgs ""
-                 case ex of
-                   ExitFailure{} ->
-                    Prelude.error $ Prelude.unlines [show ex, stdout, stderr]
-                   _ -> return ()
+                 compileC opts cfile ofile []
         cmp _ _ = return Nothing
         upd _ = return ()
     goldenTest n (return "") (liftIO act >> return "") cmp upd
