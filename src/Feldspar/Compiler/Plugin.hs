@@ -15,6 +15,7 @@ module Feldspar.Compiler.Plugin
   , defaultConfig
   , pack   -- from MultiStage
   , unpack -- from MultiStage
+  , compileC
   )
   where
 
@@ -156,8 +157,7 @@ feldsparBuilder fopts Config{..} fun = do
     normalB [|unsafeLocalState $ do
                 createDirectoryIfMissing True wdir
                 $(varE 'compile) $(varE fun) base fopts{outFileName = basename}
-                incDir <- fmap (</> "include") getLibDir
-                compileAndLoad fopts basename $ opts ++ ["-I" ++ incDir]
+                compileAndLoad fopts basename opts
                 lookupSymbol symbol
             |]
   where
@@ -178,9 +178,11 @@ compileAndLoad opts name args = do
     res <- resolveObjs
     unless res $ error $ "Symbols in " ++ oname ++ " could not be resolved"
 
+-- | Compile a Feldspar C file
 compileC :: Options -> String -> String -> [String] -> IO ()
 compileC opts srcfile objfile args' = do
-    let args = [ "-w", "-c", "-o", objfile, srcfile ]
+    incDir <- fmap (</> "include") getLibDir
+    let args = [ "-w", "-c", "-o", objfile, srcfile, "-I" ++ incDir]
                ++ map ("-optc " ++) (compilerFlags $ platform opts)
                ++ args'
     (ex, stdout, stderr) <- readProcessWithExitCode ghc args ""
