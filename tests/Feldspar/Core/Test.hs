@@ -13,6 +13,7 @@ import qualified Data.List as DL
 import Feldspar
 import Feldspar.Mutable
 
+coreTests :: TestTree
 coreTests = $(testGroupGenerator)
 
 deinterleave :: (Type a) => Data [a] -> Data [a]
