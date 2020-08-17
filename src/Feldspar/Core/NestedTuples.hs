@@ -80,6 +80,7 @@ import Data.Kind
 import Data.Proxy
 import GHC.TypeLits
 import System.Plugins.MultiStage (Marshal(..))
+import Test.QuickCheck (Arbitrary(..))
 
 -- | Data and type constructor for nested tuples
 infixr 5 :*
@@ -115,6 +116,15 @@ instance (Hashable h, HashTup t) => HashTup (h ': t) where
 -- This instance is needed to allow nested tuples as literals (by the value function)
 instance HashTup a => Hashable (Tuple a) where
   hash = hashTup
+
+-- | Arbitrary instances for nested tuples
+instance Arbitrary (Tuple '[]) where
+  arbitrary = return TNil
+
+instance (Arbitrary a, Arbitrary (Tuple b)) => Arbitrary (Tuple (a ': b)) where
+  arbitrary = do a <- arbitrary
+                 b <- arbitrary
+                 return (a :* b)
 
 -- | Selecting components of a tuple
 --     sel (Proxy @0)
