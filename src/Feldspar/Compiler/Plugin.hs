@@ -162,7 +162,7 @@ feldsparBuilder fopts Config{..} fun = do
             |]
   where
     base     = nameBase fun ++ suffix
-    basename = wdir ++ "/" ++ base
+    basename = wdir </> base
     symbol   = ldprefix ++ encodeFunctionName base
     ldprefix = case os of
                  "darwin" -> "_"
