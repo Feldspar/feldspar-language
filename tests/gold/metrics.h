@@ -1,5 +1,5 @@
-#ifndef TESTS_METRICS_H
-#define TESTS_METRICS_H
+#ifndef TMP2_METRICS_H
+#define TMP2_METRICS_H
 
 #include "feldspar_c99.h"
 
@@ -39,4 +39,4 @@ void freeArray_awl_signedS32(struct awl_signedS32 * src, int32_t srcLen);
 
 void metrics(struct awl_signedS32 * v1, struct awl_signedS32 * v2, struct awl_awl_s_2_unsignedS32_unsignedS32 * v3, struct awl_awl_signedS32 * out);
 
-#endif // TESTS_METRICS_H
+#endif // TMP2_METRICS_H

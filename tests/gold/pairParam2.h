@@ -1,5 +1,5 @@
-#ifndef TESTS_PAIRPARAM2_H
-#define TESTS_PAIRPARAM2_H
+#ifndef TMP2_PAIRPARAM2_H
+#define TMP2_PAIRPARAM2_H
 
 #include "feldspar_c99.h"
 
@@ -17,4 +17,4 @@ struct s_2_s_2_signedS16_signedS16_s_2_signedS16_signedS16
 
 void pairParam2(struct s_2_signedS16_signedS16 * v0, struct s_2_s_2_signedS16_signedS16_s_2_signedS16_signedS16 * out);
 
-#endif // TESTS_PAIRPARAM2_H
+#endif // TMP2_PAIRPARAM2_H

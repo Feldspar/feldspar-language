@@ -1,5 +1,5 @@
-#ifndef TESTS_CONCATV_H
-#define TESTS_CONCATV_H
+#ifndef TMP2_CONCATV_H
+#define TMP2_CONCATV_H
 
 #include "feldspar_c99.h"
 
@@ -17,4 +17,4 @@ struct awl_awl_signedS32
 
 void concatV(struct awl_awl_signedS32 * v1, struct awl_signedS32 * out);
 
-#endif // TESTS_CONCATV_H
+#endif // TMP2_CONCATV_H
