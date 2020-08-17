@@ -1,5 +1,5 @@
-#ifndef TESTS_COMPLEXWHILECOND_H
-#define TESTS_COMPLEXWHILECOND_H
+#ifndef TMP2_COMPLEXWHILECOND_H
+#define TMP2_COMPLEXWHILECOND_H
 
 #include "feldspar_c99.h"
 
@@ -11,4 +11,4 @@ struct s_2_signedS32_signedS32
 
 void complexWhileCond(int32_t v0, struct s_2_signedS32_signedS32 * out);
 
-#endif // TESTS_COMPLEXWHILECOND_H
+#endif // TMP2_COMPLEXWHILECOND_H

@@ -1,5 +1,5 @@
-#ifndef TESTS_SCANLPUSH_H
-#define TESTS_SCANLPUSH_H
+#ifndef TMP2_SCANLPUSH_H
+#define TMP2_SCANLPUSH_H
 
 #include "feldspar_c99.h"
 
@@ -21,4 +21,4 @@ void freeArray_awl_unsignedS32(struct awl_unsignedS32 * src, int32_t srcLen);
 
 void scanlPush(struct awl_unsignedS32 * v0, struct awl_unsignedS32 * v1, struct awl_awl_unsignedS32 * out);
 
-#endif // TESTS_SCANLPUSH_H
+#endif // TMP2_SCANLPUSH_H

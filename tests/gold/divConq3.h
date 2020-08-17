@@ -1,5 +1,5 @@
-#ifndef TESTS_DIVCONQ3_H
-#define TESTS_DIVCONQ3_H
+#ifndef TMP2_DIVCONQ3_H
+#define TMP2_DIVCONQ3_H
 
 #include "feldspar_c99.h"
 
@@ -21,4 +21,4 @@ void task0(void * params);
 
 void divConq3(struct awl_signedS32 * v1, struct awl_signedS32 * out);
 
-#endif // TESTS_DIVCONQ3_H
+#endif // TMP2_DIVCONQ3_H

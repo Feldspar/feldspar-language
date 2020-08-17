@@ -1,5 +1,5 @@
-#ifndef TESTS_ARRAYINSTRUCTINSTRUCT_H
-#define TESTS_ARRAYINSTRUCTINSTRUCT_H
+#ifndef TMP2_ARRAYINSTRUCTINSTRUCT_H
+#define TMP2_ARRAYINSTRUCTINSTRUCT_H
 
 #include "feldspar_c99.h"
 
@@ -23,4 +23,4 @@ struct s_2_unsignedS32_s_2_unsignedS32_awl_unsignedS32
 
 void arrayInStructInStruct(struct s_2_unsignedS32_s_2_unsignedS32_awl_unsignedS32 * v0, struct s_2_unsignedS32_s_2_unsignedS32_awl_unsignedS32 * out);
 
-#endif // TESTS_ARRAYINSTRUCTINSTRUCT_H
+#endif // TMP2_ARRAYINSTRUCTINSTRUCT_H

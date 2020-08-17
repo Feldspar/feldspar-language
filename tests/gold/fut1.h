@@ -1,5 +1,5 @@
-#ifndef TESTS_FUT1_H
-#define TESTS_FUT1_H
+#ifndef TMP2_FUT1_H
+#define TMP2_FUT1_H
 
 #include "feldspar_c99.h"
 
@@ -9,4 +9,4 @@ void task0(void * params);
 
 void fut1(struct ivar v0, struct ivar * out);
 
-#endif // TESTS_FUT1_H
+#endif // TMP2_FUT1_H

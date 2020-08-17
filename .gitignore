@@ -17,8 +17,5 @@ cabal.sandbox.config
 .stack-work/
 src/Onnx.hs
 
-tests/*.[hc]
-tests/*.txt
-tests/gold/ep-*.[hc]
-tests/gold/*_build_test.[hc]
 tmp
+tmp2

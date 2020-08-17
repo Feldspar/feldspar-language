@@ -50,6 +50,7 @@ import Data.Monoid ((<>))
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Lazy.Search as LB
+import System.Directory (createDirectoryIfMissing)
 import System.Exit (ExitCode)
 import System.FilePath ((</>), (<.>))
 import Text.Printf
@@ -381,29 +382,29 @@ tests = testGroup "RegressionTests" $
 decorationTests :: TestTree
 decorationTests = testGroup "DecorationTests"
     [ goldenVsFile "example9"
-      (goldDir "example9.txt") (testDir "example9.txt")
-      $ writeFile (testDir "example9.txt") $ showDecor example9
+      (goldDir "example9.txt") (tmpDir "example9.txt")
+      $ writeFile (tmpDir "example9.txt") $ showDecor example9
     , goldenVsFile "topLevelConsts"
-      (goldDir "topLevelConsts.txt") (testDir "topLevelConsts.txt")
-      $ writeFile (testDir "topLevelConsts.txt") $ showDecor topLevelConsts
+      (goldDir "topLevelConsts.txt") (tmpDir "topLevelConsts.txt")
+      $ writeFile (tmpDir "topLevelConsts.txt") $ showDecor topLevelConsts
     , goldenVsFile "monadicSharing"
-      (goldDir "monadicSharing.txt") (testDir "monadicSharing.txt")
-      $ writeFile (testDir "monadicSharing.txt") $ showDecor monadicSharing
+      (goldDir "monadicSharing.txt") (tmpDir "monadicSharing.txt")
+      $ writeFile (tmpDir "monadicSharing.txt") $ showDecor monadicSharing
     , goldenVsFile "trickySharing"
-      (goldDir "trickySharing.txt") (testDir "trickySharing.txt")
-      $ writeFile (testDir "trickySharing.txt") $ showDecor trickySharing
+      (goldDir "trickySharing.txt") (tmpDir "trickySharing.txt")
+      $ writeFile (tmpDir "trickySharing.txt") $ showDecor trickySharing
     , goldenVsFile "noshareT"
-      (goldDir "noshareT.txt") (testDir "noshareT.txt")
-      $ writeFile (testDir "noshareT.txt") $ showDecor noshareT
+      (goldDir "noshareT.txt") (tmpDir "noshareT.txt")
+      $ writeFile (tmpDir "noshareT.txt") $ showDecor noshareT
     , goldenVsFile "shareT"
-      (goldDir "shareT.txt") (testDir "shareT.txt")
-      $ writeFile (testDir "shareT.txt") $ showDecor shareT
+      (goldDir "shareT.txt") (tmpDir "shareT.txt")
+      $ writeFile (tmpDir "shareT.txt") $ showDecor shareT
     , goldenVsFile "selectT"
-      (goldDir "selectT.txt") (testDir "selectT.txt")
-      $ writeFile (testDir "selectT.txt") $ showDecor selectT
+      (goldDir "selectT.txt") (tmpDir "selectT.txt")
+      $ writeFile (tmpDir "selectT.txt") $ showDecor selectT
     , goldenVsFile "tfModel"
-      (goldDir "tfModel.txt") (testDir "tfModel.txt")
-      $ writeFile (testDir "tfModel.txt") $ showUntyped defaultOptions tfModel
+      (goldDir "tfModel.txt") (tmpDir "tfModel.txt")
+      $ writeFile (tmpDir "tfModel.txt") $ showUntyped defaultOptions tfModel
     ]
 
 -- | Tests for calling convention
@@ -529,6 +530,7 @@ main = do
   cp <- getConsoleCP
   setConsoleCP 65001
 #endif
+  createDirectoryIfMissing True "tmp2"
   defaultMain tests
    `catch` (\(e :: ExitCode)-> do
 #ifdef mingw32_HOST_OS
@@ -536,13 +538,14 @@ main = do
 #endif
     throwIO e)
 
--- | Prepend the test directory to a @FilePath@
-testDir :: Prelude.FilePath -> Prelude.FilePath
-testDir = (</>) "tests"
+-- | Prepend the tmp output directory to a @FilePath@. Must be different
+--   from the Plugins tmp directory which is "tmp".
+tmpDir :: Prelude.FilePath -> Prelude.FilePath
+tmpDir = (</>) "tmp2"
 
 -- | Prepend the gold directory to a @FilePath@
 goldDir :: Prelude.FilePath -> Prelude.FilePath
-goldDir = (</>) (testDir "gold")
+goldDir = (</>) ("tests" </> "gold")
 
 nativeOpts :: Options
 nativeOpts = defaultOptions{useNativeArrays=True}
@@ -557,7 +560,7 @@ openMPOpts = c99OpenMpPlatformOptions
 mkGoldTest :: Syntactic a => a -> Prelude.FilePath -> Options -> TestTree
 mkGoldTest fun n opts = do
     let ref = goldDir n
-        new = testDir n
+        new = tmpDir n
         act = compile fun n opts{outFileName = new}
         cmp = simpleCmp $ printf "Files '%s.{c,h}' and '%s.{c,h}' differ" ref new
         upd = LB.writeFile ref
@@ -567,7 +570,7 @@ mkGoldTest fun n opts = do
 mkGoldTestUT :: UT.UntypedFeld ValueInfo -> Prelude.FilePath -> Options -> TestTree
 mkGoldTestUT untyped n opts = do
     let ref = goldDir n
-        new = testDir n
+        new = tmpDir n
         act = compileUT untyped n opts{outFileName = new}
         cmp = simpleCmp $ printf "Files '%s.{c,h}' and '%s.{c,h}' differ" ref new
         upd = LB.writeFile ref
@@ -581,7 +584,7 @@ simpleCmp e x y =
 mkParseTest :: Prelude.FilePath -> Options -> TestTree
 mkParseTest n opts = do
     let ref = goldDir n
-        new = testDir ("ep-" <> n)
+        new = tmpDir ("ep-" <> n)
         act = compileFile ref opts{outFileName = new}
         cmp = fuzzyCmp $ printf "Files '%s.{c,h}' and '%s.{c,h}' differ" ref new
         upd = LB.writeFile ref
@@ -594,13 +597,13 @@ fuzzyCmp e x y =
 
 -- | Removes "EP-"-related prefixes from the generated output.
 filterEp :: LB.ByteString -> LB.ByteString
-filterEp xs = LB.replace (B.pack "TESTS_EP-") (B.pack "TESTS_") xs'
+filterEp xs = LB.replace (B.pack "TMP2_EP-") (B.pack "TMP2_") xs'
   where xs' = LB.replace (B.pack "#include \"ep-") (B.pack "#include \"") xs
 
 -- | Make a build test for a Feldspar expression
 mkBuildTest :: Syntactic a => a -> Prelude.FilePath -> Options -> TestTree
 mkBuildTest fun n opts = do
-    let new = testDir (n <> "_build_test")
+    let new = tmpDir (n <> "_build_test")
         cfile = new <.> "c"
         ofile = new <.> "o"
         act = do compile fun n opts{outFileName = new}
