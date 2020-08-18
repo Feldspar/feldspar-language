@@ -182,7 +182,7 @@ instance Functor (Pull sh)
 type family InternalShape sh a where
     InternalShape Z         a = Internal a
     InternalShape (Z  :. l) a = [Internal a]
-    InternalShape (sh :. l) a = Tuple '[Internal (Tuple (ShapeTupT (sh :. l))), [Internal a]]
+    InternalShape sh a = Tuple '[[Internal a], Internal (Tuple (ShapeTupT sh))]
 
 class ShapeTup a where
   type ShapeTupT a :: [*]
@@ -241,8 +241,8 @@ arrToPull sh arr = Pull (\ix -> arr ! toIndex sh ix) sh
 
 -- | Store a vector and its shape to memory
 freezePull :: (Type a, Shapely sh, ShapeTup sh, SyntacticTup (ShapeTupT sh))
-           => DPull sh a -> Tuple '[Tuple (ShapeTupT sh), Data [a]]
-freezePull v = twotup (toTup $ extent v) (fromPull v)
+           => DPull sh a -> Tuple '[Data [a], Tuple (ShapeTupT sh)]
+freezePull v = twotup (fromPull v) (toTup $ extent v)
 
 freezePull1 :: (Type a) => DPull DIM1 a -> Data [a]
 freezePull1 = fromPull
@@ -255,8 +255,8 @@ fromList ls = materialize (value $ genericLength ls)
 
 -- | Restore a vector and its shape from memory
 thawPull :: (Type a, Shapely sh, ShapeTup sh)
-         => Tuple '[Tuple (ShapeTupT sh), Data [a]] -> DPull sh a
-thawPull tarr = arrToPull (fromTup $ nfst tarr) (nsnd tarr)
+         => Tuple '[Data [a], Tuple (ShapeTupT sh)] -> DPull sh a
+thawPull tarr = arrToPull (fromTup $ nsnd tarr) (nfst tarr)
 
 -- | Restore a vector and its shape from memory
 thawPull1 :: Type a => Data [a] -> DPull DIM1 a
@@ -978,10 +978,10 @@ enumFrom m = enumFromTo m (value maxBound)
 (...) = enumFromTo
 
 scan :: (Syntax a, Syntax b) => (a -> b -> a) -> a -> Pull DIM1 b -> Pull DIM1 a
-scan f init bs = toPull $ arrToManifest (build $ tuple (length bs),
-  F.sugar $ sequential (length bs) (F.desugar init) $ \i s ->
+scan f init bs = toPull $ arrToManifest
+  (F.sugar $ sequential (length bs) (F.desugar init) $ \i s ->
     let s' = F.desugar $ f (F.sugar s) (bs!!i)
-    in  (s',s'))
+    in  (s',s'), build $ tuple (length bs))
 
 -- | Transform all the elements of a vector
 map :: Functor vec => (a -> b) -> vec a -> vec b
@@ -1277,21 +1277,19 @@ fromPush (Push ixf l) = materialize (size l) $
                           ixf (\ix a -> write (toIndex l ix) a)
 
 freezePush :: (Type a, Shapely sh, ShapeTup sh) =>
-              Push sh (Data a) -> Tuple '[Tuple (ShapeTupT sh), Data [a]]
-freezePush v = twotup (toTup $ extent v) (fromPush v)
+              Push sh (Data a) -> Tuple '[Data [a], Tuple (ShapeTupT sh)]
+freezePush v = twotup (fromPush v) (toTup $ extent v)
 
 freezePush1 :: Type a => Push DIM1 (Data a) -> Data [a]
 freezePush1 = fromPush
 
 thawPush :: forall a sh . (Type a, Shapely sh, ShapeTup sh) =>
-              Tuple '[Tuple (ShapeTupT sh), Data [a]] -> Push sh (Data a)
+              Tuple '[Data [a], Tuple (ShapeTupT sh)] -> Push sh (Data a)
 thawPush larr = Push f sh
-  where l = nfst larr
-        arr = nsnd larr
-        sh = fromTup l
+  where sh = fromTup $ nsnd larr
         f :: PushK sh (Data a)
         f k = parForShape sh $ \i ->
-                k i (arr ! toIndex sh i)
+                k i (nfst larr ! toIndex sh i)
 
 thawPush1 :: Type a => Data [a] -> Push DIM1 (Data a)
 thawPush1 = toPush . thawPull1
@@ -1416,15 +1414,15 @@ manifestToArr1 :: Syntax a => Manifest DIM1 a -> Data [Internal a]
 manifestToArr1 (Manifest arr _) = arr
 
 manifestToArr :: (Syntax a, ShapeTup sh)
-              => Manifest sh a -> (Tuple (ShapeTupT sh), Data [Internal a])
-manifestToArr (Manifest arr sh) = (toTup sh, arr)
+              => Manifest sh a -> (Data [Internal a], Tuple (ShapeTupT sh))
+manifestToArr (Manifest arr sh) = (arr, toTup sh)
 
 arrToManifest1 :: Syntax a => Data [Internal a] -> Manifest DIM1 a
 arrToManifest1 arr = Manifest arr (Z:.getLength arr)
 
 arrToManifest :: (Syntax a, Shapely sh, ShapeTup sh)
-              => (Tuple (ShapeTupT sh), Data [Internal a]) -> Manifest sh a
-arrToManifest (ls,arr) = Manifest arr (fromTup ls)
+              => (Data [Internal a], Tuple (ShapeTupT sh)) -> Manifest sh a
+arrToManifest (arr, ls) = Manifest arr (fromTup ls)
 
 -- | A typeclass for types of array elements which can be flattened. An example
 --   is an array of pairs, which can be flattened into a pair of arrays.

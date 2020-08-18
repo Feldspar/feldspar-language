@@ -348,16 +348,18 @@ unsafeVectorToStream vec = Stream $ do
 streamAsVector :: (Syntax a, Syntax b) =>
                   (Stream a -> Stream b)
                -> (Pull DIM1 a -> Pull DIM1 b)
-streamAsVector f v = toPull $ arrToManifest (build $ tuple lv, take lv $ f $ unsafeVectorToStream v)
+streamAsVector f v = toPull $ arrToManifest (arr, build $ tuple lv)
   where lv = length v
+        arr = take lv $ f $ unsafeVectorToStream v
 
 -- | Similar to 'streamAsVector' except the size of the output array is computed by the second argument
 --   which is given the size of the input vector as a result.
 streamAsVectorSize :: (Syntax a, Syntax b) =>
                       (Stream a -> Stream b) -> (Data Length -> Data Length)
                    -> (Pull DIM1 a -> Pull DIM1 b)
-streamAsVectorSize f s v = toPull $ arrToManifest (build $ tuple lv, take lv $ f $ cycle v)
+streamAsVectorSize f s v = toPull $ arrToManifest (arr, build $ tuple lv)
   where lv = s $ length v
+        arr = take lv $ f $ cycle v
 
 -- | A combinator for descibing recurrence equations, or feedback loops.
 --   The recurrence equation may refer to previous outputs of the stream,
