@@ -14,6 +14,7 @@ data Version = U'START_VERSION
              | IR_VERSION_2017_11_3
              | IR_VERSION_2019_1_22
              | IR_VERSION_2019_3_18
+             | IR_VERSION_2019_9_19
              | IR_VERSION
                deriving (Prelude'.Read, Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data,
                          Prelude'.Generic)
@@ -34,7 +35,8 @@ toMaybe'Enum 2 = Prelude'.Just IR_VERSION_2017_10_30
 toMaybe'Enum 3 = Prelude'.Just IR_VERSION_2017_11_3
 toMaybe'Enum 4 = Prelude'.Just IR_VERSION_2019_1_22
 toMaybe'Enum 5 = Prelude'.Just IR_VERSION_2019_3_18
-toMaybe'Enum 6 = Prelude'.Just IR_VERSION
+toMaybe'Enum 6 = Prelude'.Just IR_VERSION_2019_9_19
+toMaybe'Enum 7 = Prelude'.Just IR_VERSION
 toMaybe'Enum _ = Prelude'.Nothing
 
 instance Prelude'.Enum Version where
@@ -44,21 +46,24 @@ instance Prelude'.Enum Version where
   fromEnum IR_VERSION_2017_11_3 = 3
   fromEnum IR_VERSION_2019_1_22 = 4
   fromEnum IR_VERSION_2019_3_18 = 5
-  fromEnum IR_VERSION = 6
+  fromEnum IR_VERSION_2019_9_19 = 6
+  fromEnum IR_VERSION = 7
   toEnum = P'.fromMaybe (Prelude'.error "hprotoc generated code: toEnum failure for type Onnx.Version") . toMaybe'Enum
   succ U'START_VERSION = IR_VERSION_2017_10_10
   succ IR_VERSION_2017_10_10 = IR_VERSION_2017_10_30
   succ IR_VERSION_2017_10_30 = IR_VERSION_2017_11_3
   succ IR_VERSION_2017_11_3 = IR_VERSION_2019_1_22
   succ IR_VERSION_2019_1_22 = IR_VERSION_2019_3_18
-  succ IR_VERSION_2019_3_18 = IR_VERSION
+  succ IR_VERSION_2019_3_18 = IR_VERSION_2019_9_19
+  succ IR_VERSION_2019_9_19 = IR_VERSION
   succ _ = Prelude'.error "hprotoc generated code: succ failure for type Onnx.Version"
   pred IR_VERSION_2017_10_10 = U'START_VERSION
   pred IR_VERSION_2017_10_30 = IR_VERSION_2017_10_10
   pred IR_VERSION_2017_11_3 = IR_VERSION_2017_10_30
   pred IR_VERSION_2019_1_22 = IR_VERSION_2017_11_3
   pred IR_VERSION_2019_3_18 = IR_VERSION_2019_1_22
-  pred IR_VERSION = IR_VERSION_2019_3_18
+  pred IR_VERSION_2019_9_19 = IR_VERSION_2019_3_18
+  pred IR_VERSION = IR_VERSION_2019_9_19
   pred _ = Prelude'.error "hprotoc generated code: pred failure for type Onnx.Version"
 
 instance P'.Wire Version where
@@ -79,11 +84,11 @@ instance P'.ReflectEnum Version where
    = [(0, "U'START_VERSION", U'START_VERSION), (1, "IR_VERSION_2017_10_10", IR_VERSION_2017_10_10),
       (2, "IR_VERSION_2017_10_30", IR_VERSION_2017_10_30), (3, "IR_VERSION_2017_11_3", IR_VERSION_2017_11_3),
       (4, "IR_VERSION_2019_1_22", IR_VERSION_2019_1_22), (5, "IR_VERSION_2019_3_18", IR_VERSION_2019_3_18),
-      (6, "IR_VERSION", IR_VERSION)]
+      (6, "IR_VERSION_2019_9_19", IR_VERSION_2019_9_19), (7, "IR_VERSION", IR_VERSION)]
   reflectEnumInfo _
    = P'.EnumInfo (P'.makePNF (P'.pack ".onnx.Version") [] ["Onnx"] "Version") ["Onnx", "Version.hs"]
       [(0, "U'START_VERSION"), (1, "IR_VERSION_2017_10_10"), (2, "IR_VERSION_2017_10_30"), (3, "IR_VERSION_2017_11_3"),
-       (4, "IR_VERSION_2019_1_22"), (5, "IR_VERSION_2019_3_18"), (6, "IR_VERSION")]
+       (4, "IR_VERSION_2019_1_22"), (5, "IR_VERSION_2019_3_18"), (6, "IR_VERSION_2019_9_19"), (7, "IR_VERSION")]
       Prelude'.False
 
 instance P'.TextType Version where
