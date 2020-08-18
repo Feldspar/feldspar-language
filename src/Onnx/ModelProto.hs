@@ -10,31 +10,35 @@ import qualified Text.ProtocolBuffers.Header as P'
 import qualified Onnx.GraphProto as Onnx (GraphProto)
 import qualified Onnx.OperatorSetIdProto as Onnx (OperatorSetIdProto)
 import qualified Onnx.StringStringEntryProto as Onnx (StringStringEntryProto)
+import qualified Onnx.TrainingInfoProto as Onnx (TrainingInfoProto)
 
 data ModelProto = ModelProto{ir_version :: !(P'.Maybe P'.Int64), opset_import :: !(P'.Seq Onnx.OperatorSetIdProto),
                              producer_name :: !(P'.Maybe P'.Utf8), producer_version :: !(P'.Maybe P'.Utf8),
                              domain :: !(P'.Maybe P'.Utf8), model_version :: !(P'.Maybe P'.Int64),
                              doc_string :: !(P'.Maybe P'.Utf8), graph :: !(P'.Maybe Onnx.GraphProto),
-                             metadata_props :: !(P'.Seq Onnx.StringStringEntryProto)}
+                             metadata_props :: !(P'.Seq Onnx.StringStringEntryProto),
+                             training_info :: !(P'.Seq Onnx.TrainingInfoProto)}
                   deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 
 instance P'.Mergeable ModelProto where
-  mergeAppend (ModelProto x'1 x'2 x'3 x'4 x'5 x'6 x'7 x'8 x'9) (ModelProto y'1 y'2 y'3 y'4 y'5 y'6 y'7 y'8 y'9)
+  mergeAppend (ModelProto x'1 x'2 x'3 x'4 x'5 x'6 x'7 x'8 x'9 x'10) (ModelProto y'1 y'2 y'3 y'4 y'5 y'6 y'7 y'8 y'9 y'10)
    = ModelProto (P'.mergeAppend x'1 y'1) (P'.mergeAppend x'2 y'2) (P'.mergeAppend x'3 y'3) (P'.mergeAppend x'4 y'4)
       (P'.mergeAppend x'5 y'5)
       (P'.mergeAppend x'6 y'6)
       (P'.mergeAppend x'7 y'7)
       (P'.mergeAppend x'8 y'8)
       (P'.mergeAppend x'9 y'9)
+      (P'.mergeAppend x'10 y'10)
 
 instance P'.Default ModelProto where
   defaultValue
    = ModelProto P'.defaultValue P'.defaultValue P'.defaultValue P'.defaultValue P'.defaultValue P'.defaultValue P'.defaultValue
       P'.defaultValue
       P'.defaultValue
+      P'.defaultValue
 
 instance P'.Wire ModelProto where
-  wireSize ft' self'@(ModelProto x'1 x'2 x'3 x'4 x'5 x'6 x'7 x'8 x'9)
+  wireSize ft' self'@(ModelProto x'1 x'2 x'3 x'4 x'5 x'6 x'7 x'8 x'9 x'10)
    = case ft' of
        10 -> calc'Size
        11 -> P'.prependMessageSize calc'Size
@@ -46,8 +50,9 @@ instance P'.Wire ModelProto where
              + P'.wireSizeOpt 1 3 x'6
              + P'.wireSizeOpt 1 9 x'7
              + P'.wireSizeOpt 1 11 x'8
-             + P'.wireSizeRep 1 11 x'9)
-  wirePutWithSize ft' self'@(ModelProto x'1 x'2 x'3 x'4 x'5 x'6 x'7 x'8 x'9)
+             + P'.wireSizeRep 1 11 x'9
+             + P'.wireSizeRep 2 11 x'10)
+  wirePutWithSize ft' self'@(ModelProto x'1 x'2 x'3 x'4 x'5 x'6 x'7 x'8 x'9 x'10)
    = case ft' of
        10 -> put'Fields
        11 -> put'FieldsSized
@@ -57,7 +62,8 @@ instance P'.Wire ModelProto where
          = P'.sequencePutWithSize
             [P'.wirePutOptWithSize 8 3 x'1, P'.wirePutOptWithSize 18 9 x'3, P'.wirePutOptWithSize 26 9 x'4,
              P'.wirePutOptWithSize 34 9 x'5, P'.wirePutOptWithSize 40 3 x'6, P'.wirePutOptWithSize 50 9 x'7,
-             P'.wirePutOptWithSize 58 11 x'8, P'.wirePutRepWithSize 66 11 x'2, P'.wirePutRepWithSize 114 11 x'9]
+             P'.wirePutOptWithSize 58 11 x'8, P'.wirePutRepWithSize 66 11 x'2, P'.wirePutRepWithSize 114 11 x'9,
+             P'.wirePutRepWithSize 162 11 x'10]
         put'FieldsSized
          = let size' = Prelude'.fst (P'.runPutM put'Fields)
                put'Size
@@ -85,6 +91,8 @@ instance P'.Wire ModelProto where
                     (P'.wireGet 11)
              114 -> Prelude'.fmap (\ !new'Field -> old'Self{metadata_props = P'.append (metadata_props old'Self) new'Field})
                      (P'.wireGet 11)
+             162 -> Prelude'.fmap (\ !new'Field -> old'Self{training_info = P'.append (training_info old'Self) new'Field})
+                     (P'.wireGet 11)
              _ -> let (field'Number, wire'Type) = P'.splitWireTag wire'Tag in P'.unknown field'Number wire'Type old'Self
 
 instance P'.MessageAPI msg' (msg' -> ModelProto) ModelProto where
@@ -93,10 +101,11 @@ instance P'.MessageAPI msg' (msg' -> ModelProto) ModelProto where
 instance P'.GPB ModelProto
 
 instance P'.ReflectDescriptor ModelProto where
-  getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList []) (P'.fromDistinctAscList [8, 18, 26, 34, 40, 50, 58, 66, 114])
+  getMessageInfo _
+   = P'.GetMessageInfo (P'.fromDistinctAscList []) (P'.fromDistinctAscList [8, 18, 26, 34, 40, 50, 58, 66, 114, 162])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".onnx.ModelProto\", haskellPrefix = [], parentModule = [MName \"Onnx\"], baseName = MName \"ModelProto\"}, descFilePath = [\"Onnx\",\"ModelProto.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.ir_version\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"ir_version\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 8}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 3}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.opset_import\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"opset_import\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 8}, wireTag = WireTag {getWireTag = 66}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".onnx.OperatorSetIdProto\", haskellPrefix = [], parentModule = [MName \"Onnx\"], baseName = MName \"OperatorSetIdProto\"}), hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.producer_name\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"producer_name\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 9}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.producer_version\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"producer_version\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 3}, wireTag = WireTag {getWireTag = 26}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 9}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.domain\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"domain\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 4}, wireTag = WireTag {getWireTag = 34}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 9}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.model_version\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"model_version\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 5}, wireTag = WireTag {getWireTag = 40}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 3}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.doc_string\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"doc_string\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 6}, wireTag = WireTag {getWireTag = 50}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 9}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.graph\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"graph\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 7}, wireTag = WireTag {getWireTag = 58}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".onnx.GraphProto\", haskellPrefix = [], parentModule = [MName \"Onnx\"], baseName = MName \"GraphProto\"}), hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.metadata_props\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"metadata_props\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 14}, wireTag = WireTag {getWireTag = 114}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".onnx.StringStringEntryProto\", haskellPrefix = [], parentModule = [MName \"Onnx\"], baseName = MName \"StringStringEntryProto\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False, jsonInstances = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".onnx.ModelProto\", haskellPrefix = [], parentModule = [MName \"Onnx\"], baseName = MName \"ModelProto\"}, descFilePath = [\"Onnx\",\"ModelProto.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.ir_version\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"ir_version\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 8}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 3}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.opset_import\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"opset_import\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 8}, wireTag = WireTag {getWireTag = 66}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".onnx.OperatorSetIdProto\", haskellPrefix = [], parentModule = [MName \"Onnx\"], baseName = MName \"OperatorSetIdProto\"}), hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.producer_name\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"producer_name\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 9}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.producer_version\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"producer_version\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 3}, wireTag = WireTag {getWireTag = 26}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 9}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.domain\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"domain\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 4}, wireTag = WireTag {getWireTag = 34}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 9}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.model_version\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"model_version\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 5}, wireTag = WireTag {getWireTag = 40}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 3}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.doc_string\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"doc_string\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 6}, wireTag = WireTag {getWireTag = 50}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 9}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.graph\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"graph\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 7}, wireTag = WireTag {getWireTag = 58}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".onnx.GraphProto\", haskellPrefix = [], parentModule = [MName \"Onnx\"], baseName = MName \"GraphProto\"}), hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.metadata_props\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"metadata_props\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 14}, wireTag = WireTag {getWireTag = 114}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".onnx.StringStringEntryProto\", haskellPrefix = [], parentModule = [MName \"Onnx\"], baseName = MName \"StringStringEntryProto\"}), hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".onnx.ModelProto.training_info\", haskellPrefix' = [], parentModule' = [MName \"Onnx\",MName \"ModelProto\"], baseName' = FName \"training_info\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 20}, wireTag = WireTag {getWireTag = 162}, packedTag = Nothing, wireTagLength = 2, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".onnx.TrainingInfoProto\", haskellPrefix = [], parentModule = [MName \"Onnx\"], baseName = MName \"TrainingInfoProto\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False, jsonInstances = False}"
 
 instance P'.TextType ModelProto where
   tellT = P'.tellSubMessage
@@ -114,12 +123,13 @@ instance P'.TextMsg ModelProto where
        P'.tellT "doc_string" (doc_string msg)
        P'.tellT "graph" (graph msg)
        P'.tellT "metadata_props" (metadata_props msg)
+       P'.tellT "training_info" (training_info msg)
   textGet
    = do
        mods <- P'.sepEndBy
                 (P'.choice
                   [parse'ir_version, parse'opset_import, parse'producer_name, parse'producer_version, parse'domain,
-                   parse'model_version, parse'doc_string, parse'graph, parse'metadata_props])
+                   parse'model_version, parse'doc_string, parse'graph, parse'metadata_props, parse'training_info])
                 P'.spaces
        Prelude'.return (Prelude'.foldl (\ v f -> f v) P'.defaultValue mods)
     where
@@ -168,3 +178,8 @@ instance P'.TextMsg ModelProto where
             (do
                v <- P'.getT "metadata_props"
                Prelude'.return (\ o -> o{metadata_props = P'.append (metadata_props o) v}))
+        parse'training_info
+         = P'.try
+            (do
+               v <- P'.getT "training_info"
+               Prelude'.return (\ o -> o{training_info = P'.append (training_info o) v}))

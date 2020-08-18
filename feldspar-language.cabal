@@ -191,6 +191,7 @@ executable onnxToFeld
     Onnx.TensorShapeProto
     Onnx.TensorShapeProto.Dimension
     Onnx.TensorShapeProto.Dimension.Value
+    Onnx.TrainingInfoProto
     Onnx.TypeProto
     Onnx.TypeProto.Map
     Onnx.TypeProto.Sequence
