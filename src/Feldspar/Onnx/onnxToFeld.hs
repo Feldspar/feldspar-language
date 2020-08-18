@@ -52,16 +52,49 @@ import qualified Data.ByteString.Builder as B
 
 import qualified Data.Foldable as D (toList, foldMap)
 import qualified Data.Set as S
+import Control.Monad (when)
 import Data.List (intercalate)
 import Data.Maybe (fromJust, fromMaybe)
+import System.Console.GetOpt
 import System.Environment (getArgs)
+import System.Exit (die, exitSuccess)
 import System.FilePath (takeBaseName, (<.>))
 import System.IO (IOMode(WriteMode), BufferMode(BlockBuffering), openFile, hClose, hPutStr
                  , hSetBuffering, hSetBinaryMode)
 
+-- | Type of options record
+data Options = Options { writeInit :: Bool
+                       , showHelp :: Bool
+                       }
+
+-- | Default options
+defaultOptions :: Options
+defaultOptions = Options
+  { writeInit = False
+  , showHelp = False
+  }
+
+-- | Option descriptons
+optDescrs :: [OptDescr (Options -> Options)]
+optDescrs
+  = [ Option "w" ["writeInits"] (NoArg $ \ o -> o{writeInit = True}) "Write model initializers to file"
+    , Option "h" ["help"]       (NoArg $ \ o -> o{showHelp = True})  "Show usage info"
+    ]
+
+-- | Usage info
+usageStr :: String
+usageStr = usageInfo "Usage: onnxToFeld <options> <model>" optDescrs
+
+-- | Main entry point
 main :: IO ()
 main = do args <- getArgs
-          let [modelFileName] = take 1 args -- First argument is file name
+          let (fs, nonOpts, errs) = getOpt RequireOrder optDescrs args
+              opts = foldl (flip ($)) defaultOptions fs
+          when (not (null errs) || null nonOpts) $ die usageStr
+          when (showHelp opts) $ do
+            putStr usageStr
+            exitSuccess
+          let [modelFileName] = take 1 nonOpts -- First argument is file name
               modelBaseName = takeBaseName modelFileName
               dataFileName = modelBaseName <.> "data"
               progFileName = modelBaseName <.> "hs"
@@ -70,11 +103,12 @@ main = do args <- getArgs
               gr = fromMaybe (error "No graph in model") $ O.graph model
 
           -- Write the weights
-          dfile <- openFile dataFileName WriteMode
-          hSetBinaryMode dfile True
-          hSetBuffering dfile $ BlockBuffering Nothing
-          B.hPutBuilder dfile $ D.foldMap buildInitTensor $ G.initializer gr
-          hClose dfile
+          when (writeInit opts) $ do
+            dfile <- openFile dataFileName WriteMode
+            hSetBinaryMode dfile True
+            hSetBuffering dfile $ BlockBuffering Nothing
+            B.hPutBuilder dfile $ D.foldMap buildInitTensor $ G.initializer gr
+            hClose dfile
 
           -- Write the program
           pfile <- openFile progFileName WriteMode
