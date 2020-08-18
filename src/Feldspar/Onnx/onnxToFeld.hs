@@ -48,7 +48,7 @@ import Text.ProtocolBuffers.Header as H (Utf8(..))
 
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.UTF8 as U
-import qualified Data.ByteString.Builder as B
+import qualified Data.ByteString.Lazy.Builder as B
 
 import qualified Data.Foldable as D (toList, foldMap)
 import qualified Data.Set as S
@@ -91,9 +91,15 @@ buildInitTensor t = B.stringUtf8 (unwords $ showElemT dt : show (length ds) : ma
 
 
 -- | Print the elements of a tensor
+-- The TensorProto does not carry data for all element types
 buildValues :: TD.DataType -> TP.TensorProto -> B.Builder
-buildValues TD.FLOAT t = D.foldMap (\ x -> B.floatDec x <> B.string8 "\n") $ TP.float_data t
-buildValues t _ = error $ "onnxToFeld.buildValues: unknown element type " ++ show t
+buildValues TD.FLOAT      t = D.foldMap (\ x -> B.floatDec x       <> B.string8 "\n") $ TP.float_data t
+buildValues TD.DOUBLE     t = D.foldMap (\ x -> B.doubleDec x      <> B.string8 "\n") $ TP.double_data t
+buildValues TD.INT32      t = D.foldMap (\ x -> B.int32Dec x       <> B.string8 "\n") $ TP.int32_data t
+buildValues TD.UINT64     t = D.foldMap (\ x -> B.word64Dec x      <> B.string8 "\n") $ TP.uint64_data t
+buildValues TD.INT64      t = D.foldMap (\ x -> B.int64Dec x       <> B.string8 "\n") $ TP.int64_data t
+buildValues TD.STRING     t = D.foldMap (\ x -> B.lazyByteString x     <> B.string8 "\n") $ TP.string_data t
+buildValues td            _ = error $ "onnxToFeld.buildValues: unsupported element type " ++ showElemT td
 
 -- | Construct a Feldspar program corresponding to the ONNX graph
 mkProgramFile :: G.GraphProto -> String
@@ -169,8 +175,23 @@ int2elemT :: Integral a => a -> TD.DataType
 int2elemT i = toEnum $ fromIntegral i :: TD.DataType
 
 showElemT :: TD.DataType -> String
-showElemT TD.FLOAT = "Float"
-showElemT t = error $ "Type " ++ show t ++ " not implemented"
+showElemT TD.FLOAT16    = error $ "onnxToFeld.showElemT: FLOAT16 not implemented"
+showElemT TD.BFLOAT16   = error $ "onnxToFeld.showElemT: BFLOAT16 not implemented"
+showElemT TD.FLOAT      = "Float"
+showElemT TD.DOUBLE     = "Double"
+showElemT TD.UINT8      = "Word8"
+showElemT TD.INT8       = "Int8"
+showElemT TD.UINT16     = "Word16"
+showElemT TD.INT16      = "Int16"
+showElemT TD.UINT32     = "Word32"
+showElemT TD.INT32      = "Int32"
+showElemT TD.UINT64     = "Word64"
+showElemT TD.INT64      = "Int64"
+showElemT TD.COMPLEX64  = "(Complex Float)"
+showElemT TD.COMPLEX128 = "(Complex Double)"
+showElemT TD.STRING     = "String"
+showElemT TD.BOOL       = "Bool"
+showElemT TD.UNDEFINED  = error $ "onnxToFeld.showElemT: UNDEFINED not implemented"
 
 showVI :: V.ValueInfoProto -> String
 showVI v = nStr ++ " : " ++ tyStr
