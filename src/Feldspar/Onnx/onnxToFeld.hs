@@ -91,7 +91,8 @@ buildInitTensor t = B.stringUtf8 (unwords $ showElemT dt : show (length ds) : ma
 
 
 -- | Print the elements of a tensor
--- The TensorProto does not carry data for all element types
+-- This function handles only those element types that have native representation
+-- for initialization in the ONNX specification.
 buildValues :: TD.DataType -> TP.TensorProto -> B.Builder
 buildValues TD.FLOAT      t = D.foldMap (\ x -> B.floatDec x       <> B.string8 "\n") $ TP.float_data t
 buildValues TD.DOUBLE     t = D.foldMap (\ x -> B.doubleDec x      <> B.string8 "\n") $ TP.double_data t
