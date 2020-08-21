@@ -36,9 +36,10 @@ import Distribution.Simple.Program.Types
 import Distribution.Verbosity (verbose)
 import Distribution.PackageDescription
 
-import System.Process ( readProcessWithExitCode )
-import System.FilePath ( replaceExtension )
-import Control.Monad ( unless )
+import Control.Monad (unless)
+import System.Exit (ExitCode(..))
+import System.FilePath (replaceExtension)
+import System.Process (readProcessWithExitCode)
 
 main = defaultMainWithHooks simpleUserHooks{ buildHook = buildH }
 
@@ -80,6 +81,8 @@ compile lbi bench cc_name opts inc_dirs srcfile = do
     (ghcProg,_) <- requireProgram verbose ghcProgram (withPrograms lbi)
     let ghc = programPath ghcProg
     print $ unwords $ ["Calling:",ghc] ++ fullargs
-    (_, stdout, stderr) <- readProcessWithExitCode ghc fullargs ""
-    let output = stdout ++ stderr
-    unless (null output) $ putStrLn output
+    (ex, stdout, stderr) <- readProcessWithExitCode ghc fullargs ""
+    case ex of
+      ExitFailure{} -> error $ unlines [show ex, stdout, stderr]
+      _ -> do let output = stdout ++ stderr
+              unless (null output) $ putStrLn output
