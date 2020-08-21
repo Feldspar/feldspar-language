@@ -163,8 +163,6 @@ library
 
   hs-source-dirs: src examples
 
-  ghc-options: -freduction-depth=100
-
 executable onnxToFeld
 
   main-is: onnxToFeld.hs
