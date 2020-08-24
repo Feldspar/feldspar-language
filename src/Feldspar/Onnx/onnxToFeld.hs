@@ -26,8 +26,12 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 {-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
+
+import Prelude hiding (show)
+import qualified Prelude as P
 
 import qualified Onnx.AttributeProto as A
 import qualified Onnx.GraphProto as G
@@ -43,20 +47,20 @@ import qualified Onnx.TypeProto.Tensor as TT
 import qualified Onnx.TypeProto.Value as TV
 import qualified Onnx.ValueInfoProto as V
 
-import Text.ProtocolBuffers (messageGet)
-import Text.ProtocolBuffers.Header as H (Utf8(..))
+import Text.ProtocolBuffers (Utf8, messageGet, utf8)
 
 import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.ByteString.Lazy.UTF8 as U
 import qualified Data.ByteString.Lazy.Builder as B
 
-import qualified Data.Foldable as D (toList, foldMap)
+import qualified Data.Foldable as D (toList, foldMap, length, concatMap)
 import qualified Data.Set as S
-import Data.List (intercalate)
 import Data.Maybe (fromJust, fromMaybe)
+import Data.String (IsString(..))
 import System.Environment (getArgs)
 import System.FilePath (takeBaseName, (<.>))
-import System.IO (IOMode(WriteMode), BufferMode(BlockBuffering), openFile, hClose, hPutStr
+import System.IO (IOMode(WriteMode), BufferMode(BlockBuffering), openFile, hClose
                  , hSetBuffering, hSetBinaryMode)
 
 main :: IO ()
@@ -78,12 +82,12 @@ main = do args <- getArgs
 
           -- Write the program
           pfile <- openFile progFileName WriteMode
-          hPutStr pfile $ mkProgramFile gr
+          L.hPutStr pfile $ mkProgramFile gr
           hClose pfile
 
 -- | Extract initialized tensors
 buildInitTensor :: TP.TensorProto -> B.Builder
-buildInitTensor t = B.stringUtf8 (unwords $ showElemT dt : show (length ds) : map show ds)
+buildInitTensor t = B.lazyByteString (L.unwords $ showElemT dt : show (length ds) : map show ds)
                     <> B.string8 "\n"
                     <> buildValues dt t
   where ds = D.toList $ TP.dims t
@@ -99,49 +103,48 @@ buildValues TD.DOUBLE     t = D.foldMap (\ x -> B.doubleDec x      <> B.string8 
 buildValues TD.INT32      t = D.foldMap (\ x -> B.int32Dec x       <> B.string8 "\n") $ TP.int32_data t
 buildValues TD.UINT64     t = D.foldMap (\ x -> B.word64Dec x      <> B.string8 "\n") $ TP.uint64_data t
 buildValues TD.INT64      t = D.foldMap (\ x -> B.int64Dec x       <> B.string8 "\n") $ TP.int64_data t
-buildValues TD.STRING     t = D.foldMap (\ x -> B.lazyByteString x     <> B.string8 "\n") $ TP.string_data t
-buildValues td            _ = error $ "onnxToFeld.buildValues: unsupported element type " ++ showElemT td
+buildValues TD.STRING     t = D.foldMap (\ x -> B.lazyByteString x <> B.string8 "\n") $ TP.string_data t
+buildValues td            _ = error $ "onnxToFeld.buildValues: unsupported element type " ++ U.toString (showElemT td)
 
 -- | Construct a Feldspar program corresponding to the ONNX graph
-mkProgramFile :: G.GraphProto -> String
+mkProgramFile :: G.GraphProto -> L.ByteString
 mkProgramFile gr 
-  = unlines [ "module Main where"
+  = L.unlines [ "module Main where"
             , ""
             , "import Feldspar"
             , "import Feldspar.Compiler (program)"
             , "import Feldspar.Onnx.Operators"
             , ""
-            , "main = program " ++ name
+            , "main = program " <> name
             , ""
-            , name ++ " " ++ unwords params ++ " = " ++ tuplify (map (mangle . vipName) $ D.toList $ G.output gr)
+            , name <> " " <> L.unwords params <> " = " <> tuplify (map (mangle . vipName) $ D.toList $ G.output gr)
             , "  where "
-              ++ intercalate "\n        " ("-- Nodes " : concatMap mkNode nodes)
+              <> L.intercalate "\n        " ("-- Nodes " : D.concatMap mkNode (G.node gr))
             ]
   where name = "model" -- strFromJ $ G.name gr
         wName = "weights"
-        initVs = map (toStr . fromJust . TP.name) $ D.toList $ G.initializer gr
+        initVs = map (fromJust . TP.name) $ D.toList $ G.initializer gr
         initSet = S.fromList initVs
         params = wName : map mkParam inps
         mkParam p = mangle $ vipName p
         inps = filter (\ p -> vipName p `S.notMember` initSet) $ D.toList $ G.input gr
-        nodes = D.toList $ G.node gr
 
 -- | Construct a Feldspar pattern binding for an ONNX graph node
-mkNode :: N.NodeProto -> [String]
-mkNode n = [outs ++ " = " ++ op ++ " " ++ attrs]
-         ++ [ "    " ++ mangle (toStr v) | v <- D.toList $ N.input n]
+mkNode :: N.NodeProto -> [L.ByteString]
+mkNode n = [outs <> " = " <> op <> " " <> attrs]
+         ++ [ "    " <> mangle v | v <- D.toList $ N.input n]
          ++ [""]
-  where outs = tuplify $ map (mangle . toStr) $ D.toList $ N.output n
-        op = "onnx" ++ toStr (fromJust $ N.op_type n) ++ "_" ++ show (length $ D.toList $ N.input n)
-        attrs = "[" ++ intercalate ", " (map showAttribute $ D.toList $ N.attribute n) ++ "]"
+  where outs = tuplify $ map mangle $ D.toList $ N.output n
+        op = "onnx" <> strFromJ (N.op_type n) <> "_" <> show (D.length $ N.input n)
+        attrs = "[" <> L.intercalate ", " (map showAttribute $ D.toList $ N.attribute n) <> "]"
 
 -- | Mngle an ONNX node mane to a Feldspar identifier
-mangle :: String -> String
-mangle s = "m_" ++ s
+mangle :: Utf8 -> L.ByteString
+mangle s = "m_" <> utf8 s
 
-showAttribute :: A.AttributeProto -> String
-showAttribute a = "(\"" ++ nStr ++ "\", " ++ val nStr ++ ")"
-  where nStr = toStr (fromJust $ A.name a)
+showAttribute :: A.AttributeProto -> L.ByteString
+showAttribute a = "(\"" <> nStr <> "\", " <> val nStr <> ")"
+  where nStr = strFromJ $ A.name a
         val "dilations"    = showAttrInts a
         val "group"        = showAttrInt a
         val "kernel_shape" = showAttrInts a
@@ -158,24 +161,24 @@ showAttribute a = "(\"" ++ nStr ++ "\", " ++ val nStr ++ ")"
         val "transB"       = showAttrInt a
         val _ = "_|_"
 
-showAttrInts :: A.AttributeProto -> String
-showAttrInts a = "AAInts " ++ listify (map show $ D.toList $ A.ints a)
+showAttrInts :: A.AttributeProto -> L.ByteString
+showAttrInts a = "AAInts " <> listify (map show $ D.toList $ A.ints a)
 
-showAttrInt :: A.AttributeProto -> String
-showAttrInt a = "AAInt " ++ show (fromJust $ A.i a)
+showAttrInt :: A.AttributeProto -> L.ByteString
+showAttrInt a = "AAInt " <> show (fromJust $ A.i a)
 
-showAttrFloat :: A.AttributeProto -> String
-showAttrFloat a = "AAFloat " ++ show (fromJust $ A.f a)
+showAttrFloat :: A.AttributeProto -> L.ByteString
+showAttrFloat a = "AAFloat " <> show (fromJust $ A.f a)
 
-showTensorType :: (Integral a, Show b) => Maybe a -> [b] -> String
-showTensorType t dims = "Data [" ++ t' ++ "]" ++ " -- " ++ unwords sh
+showTensorType :: (Integral a, Show b) => Maybe a -> [b] -> L.ByteString
+showTensorType t dims = "Data [" <> t' <> "]" <> " -- " <> L.unwords sh
   where t' = showElemT (int2elemT $ fromJust t)
         sh = map show dims
 
 int2elemT :: Integral a => a -> TD.DataType
 int2elemT i = toEnum $ fromIntegral i :: TD.DataType
 
-showElemT :: TD.DataType -> String
+showElemT :: TD.DataType -> L.ByteString
 showElemT TD.FLOAT16    = error $ "onnxToFeld.showElemT: FLOAT16 not implemented"
 showElemT TD.BFLOAT16   = error $ "onnxToFeld.showElemT: BFLOAT16 not implemented"
 showElemT TD.FLOAT      = "Float"
@@ -194,39 +197,40 @@ showElemT TD.STRING     = "String"
 showElemT TD.BOOL       = "Bool"
 showElemT TD.UNDEFINED  = error $ "onnxToFeld.showElemT: UNDEFINED not implemented"
 
-showVI :: V.ValueInfoProto -> String
-showVI v = nStr ++ " : " ++ tyStr
-  where nStr = toStr $ fromJust $ V.name v
+showVI :: V.ValueInfoProto -> L.ByteString
+showVI v = nStr <> " : " <> tyStr
+  where nStr = strFromJ $ V.name v
         tyStr = showType $ fromJust $ T.value $ fromJust $ V.type' v
 
-showType :: TV.Value -> String
+showType :: TV.Value -> L.ByteString
 showType TV.Tensor_type{TV.tensor_type = t}
   = showTensorType (TT.elem_type t)
                    (map TSP.value $ D.toList $ TSP.dim $ fromJust $ TT.shape t)
 showType TV.Sequence_type{} = "Sequence"
 showType TV.Map_type{} = "Map"
 
-showDim :: Maybe TSP.Value -> String
+showDim :: Maybe TSP.Value -> L.ByteString
 showDim (Just (TSP.Dim_value i)) = show i
-showDim (Just (TSP.Dim_param p)) = toStr p
+showDim (Just (TSP.Dim_param p)) = utf8 p
 showDim Nothing = "*"
 
-toStr :: H.Utf8 -> String
-toStr (H.Utf8 s) = U.toString s
-
 -- | Peel off a Just and convert to a String
-strFromJ :: Maybe H.Utf8 -> String
-strFromJ = toStr . fromJust
+strFromJ :: Maybe Utf8 -> L.ByteString
+strFromJ = utf8 . fromJust
 
 -- | Get the name of a ValueInfoProto
-vipName :: V.ValueInfoProto -> String
-vipName = strFromJ . V.name
+vipName :: V.ValueInfoProto -> Utf8
+vipName = fromJust . V.name
 
 -- | Make a tuple expression out of a non-singleton list
-tuplify :: [String] -> String
+tuplify :: [L.ByteString] -> L.ByteString
 tuplify [s] = s
-tuplify ss  = "(" ++ intercalate ", " ss ++ ")"
+tuplify ss  = "(" <> L.intercalate ", " ss <> ")"
 
 -- | Make a list expression
-listify :: [String] -> String
-listify ss = "[" ++ intercalate ", " ss ++ "]"
+listify :: [L.ByteString] -> L.ByteString
+listify ss = "[" <> L.intercalate ", " ss <> "]"
+
+-- | An IsString-enabled version of show
+show :: (Show a, IsString s) => a -> s
+show = fromString . P.show
