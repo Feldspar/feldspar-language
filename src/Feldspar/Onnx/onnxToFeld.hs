@@ -128,9 +128,9 @@ mkProgramFile gr
             , ""
             , name <> " " <> L.unwords params <> " = " <> tuplify (map (mangle . vipName) $ D.toList $ G.output gr)
             , "  where "
-              <> L.intercalate "\n        " ("-- Nodes " : D.concatMap mkNode (G.node gr))
+              <> L.intercalate "\n        " ("-- Nodes" : D.concatMap mkNode (G.node gr))
             ]
-  where name = "model" -- strFromJ $ G.name gr
+  where name = mangle $ fromJust $ G.name gr
         wName = "weights"
         initVs = map (fromJust . TP.name) $ D.toList $ G.initializer gr
         initSet = S.fromList initVs
