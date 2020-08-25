@@ -188,8 +188,8 @@ int2elemT :: Integral a => a -> TD.DataType
 int2elemT i = toEnum $ fromIntegral i :: TD.DataType
 
 showElemT :: TD.DataType -> L.ByteString
-showElemT TD.FLOAT16    = error $ "onnxToFeld.showElemT: FLOAT16 not implemented"
-showElemT TD.BFLOAT16   = error $ "onnxToFeld.showElemT: BFLOAT16 not implemented"
+showElemT TD.FLOAT16    = error "onnxToFeld.showElemT: FLOAT16 not implemented"
+showElemT TD.BFLOAT16   = error "onnxToFeld.showElemT: BFLOAT16 not implemented"
 showElemT TD.FLOAT      = "Float"
 showElemT TD.DOUBLE     = "Double"
 showElemT TD.UINT8      = "Word8"
@@ -204,7 +204,7 @@ showElemT TD.COMPLEX64  = "(Complex Float)"
 showElemT TD.COMPLEX128 = "(Complex Double)"
 showElemT TD.STRING     = "String"
 showElemT TD.BOOL       = "Bool"
-showElemT TD.UNDEFINED  = error $ "onnxToFeld.showElemT: UNDEFINED not implemented"
+showElemT TD.UNDEFINED  = error "onnxToFeld.showElemT: UNDEFINED not implemented"
 
 showVI :: V.ValueInfoProto -> L.ByteString
 showVI v = nStr <> " : " <> tyStr
