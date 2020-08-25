@@ -207,6 +207,7 @@ executable onnxToFeld
     bytestring                  >= 0.10,
     containers,
     filepath,
+    floatshow,
     protocol-buffers            >= 2,
     utf8-string                 >= 0.3.7
 

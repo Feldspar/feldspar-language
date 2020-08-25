@@ -62,6 +62,7 @@ import System.Environment (getArgs)
 import System.FilePath (takeBaseName, (<.>))
 import System.IO (IOMode(WriteMode), BufferMode(BlockBuffering), openFile, hClose
                  , hSetBuffering, hSetBinaryMode)
+import Text.FShow.RealFloat (fshow)
 
 main :: IO ()
 main = do args <- getArgs
@@ -95,16 +96,24 @@ buildInitTensor t = B.lazyByteString (L.unwords $ showElemT dt : show (length ds
 
 
 -- | Print the elements of a tensor
--- This function handles only those element types that have native representation
--- for initialization in the ONNX specification.
+-- This function handles only those element types that have specialized
+-- representation for initialization in the ONNX specification, other types
+-- are packed into raw_data.
 buildValues :: TD.DataType -> TP.TensorProto -> B.Builder
-buildValues TD.FLOAT      t = D.foldMap (\ x -> B.floatDec x       <> B.string8 "\n") $ TP.float_data t
-buildValues TD.DOUBLE     t = D.foldMap (\ x -> B.doubleDec x      <> B.string8 "\n") $ TP.double_data t
-buildValues TD.INT32      t = D.foldMap (\ x -> B.int32Dec x       <> B.string8 "\n") $ TP.int32_data t
-buildValues TD.UINT64     t = D.foldMap (\ x -> B.word64Dec x      <> B.string8 "\n") $ TP.uint64_data t
-buildValues TD.INT64      t = D.foldMap (\ x -> B.int64Dec x       <> B.string8 "\n") $ TP.int64_data t
-buildValues TD.STRING     t = D.foldMap (\ x -> B.lazyByteString x <> B.string8 "\n") $ TP.string_data t
-buildValues td            _ = error $ "onnxToFeld.buildValues: unsupported element type " ++ U.toString (showElemT td)
+buildValues TD.FLOAT =
+  D.foldMap (\ x -> (B.string7 . fshow $ x) <> B.string8 "\n") . TP.float_data
+buildValues TD.DOUBLE =
+  D.foldMap (\ x -> (B.string7 . fshow $ x) <> B.string8 "\n") . TP.double_data
+buildValues TD.INT32 =
+  D.foldMap (\ x -> B.int32Dec x            <> B.string8 "\n") . TP.int32_data
+buildValues TD.UINT64 =
+  D.foldMap (\ x -> B.word64Dec x           <> B.string8 "\n") . TP.uint64_data
+buildValues TD.INT64 =
+  D.foldMap (\ x -> B.int64Dec x            <> B.string8 "\n") . TP.int64_data
+buildValues TD.STRING =
+  D.foldMap (\ x -> B.lazyByteString x      <> B.string8 "\n") . TP.string_data
+buildValues td =
+  error $ "onnxToFeld.buildValues: unsupported element type " ++ U.toString (showElemT td)
 
 -- | Construct a Feldspar program corresponding to the ONNX graph
 mkProgramFile :: G.GraphProto -> L.ByteString
