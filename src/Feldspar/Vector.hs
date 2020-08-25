@@ -143,17 +143,17 @@ data Slice ss where
   SAny  :: Slice (Any sl)
 
 
-type family FullShape ss
-type instance FullShape Z                   = Z
-type instance FullShape (Any sh)            = sh
-type instance FullShape (sl :. Data Length) = FullShape sl :. Data Length
-type instance FullShape (sl :. All)         = FullShape sl :. Data Length
+type family FullShape ss where
+  FullShape Z                   = Z
+  FullShape (Any sh)            = sh
+  FullShape (sl :. Data Length) = FullShape sl :. Data Length
+  FullShape (sl :. All)         = FullShape sl :. Data Length
 
-type family SliceShape ss
-type instance SliceShape Z                   = Z
-type instance SliceShape (Any sh)            = sh
-type instance SliceShape (sl :. Data Length) = SliceShape sl
-type instance SliceShape (sl :. All)         = SliceShape sl :. Data Length
+type family SliceShape ss where
+  SliceShape Z                   = Z
+  SliceShape (Any sh)            = sh
+  SliceShape (sl :. Data Length) = SliceShape sl
+  SliceShape (sl :. All)         = SliceShape sl :. Data Length
 
 -- | Compute a slice shape from a full shape
 sliceOfFull :: Slice ss -> Shape (FullShape ss) -> Shape (SliceShape ss)
