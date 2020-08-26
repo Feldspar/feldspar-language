@@ -3,8 +3,8 @@
 
 void arrayInStruct__openMP(struct awl_unsignedS32 * v0, struct awl_unsignedS32 * out)
 {
-  struct s_2_unsignedS32_awl_unsignedS32 e0 = { 0 };
-  struct s_2_unsignedS32_awl_unsignedS32 v6 = { 0 };
+  struct s_2_1xunsignedS32_1xawl_unsignedS32 e0 = { 0 };
+  struct s_2_1xunsignedS32_1xawl_unsignedS32 v6 = { 0 };
   bool v3;
   
   (e0).member1 = (*v0).length;

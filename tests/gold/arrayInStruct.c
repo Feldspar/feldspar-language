@@ -3,8 +3,8 @@
 
 void arrayInStruct(struct awl_unsignedS32 * v0, struct awl_unsignedS32 * out)
 {
-  struct s_2_unsignedS32_awl_unsignedS32 e0 = { 0 };
-  struct s_2_unsignedS32_awl_unsignedS32 v6 = { 0 };
+  struct s_2_1xunsignedS32_1xawl_unsignedS32 e0 = { 0 };
+  struct s_2_1xunsignedS32_1xawl_unsignedS32 v6 = { 0 };
   uint32_t len1;
   struct awl_unsignedS32 e2 = { 0 };
   bool v3;

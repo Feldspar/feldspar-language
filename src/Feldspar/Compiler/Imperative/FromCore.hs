@@ -61,7 +61,7 @@ module Feldspar.Compiler.Imperative.FromCore
 import Control.Arrow hiding (arr)
 import Control.Monad.RWS hiding ((<>))
 import Data.Char (toLower)
-import Data.List (find, intercalate, isPrefixOf, nub)
+import Data.List (find, isPrefixOf, nub)
 import Data.Maybe (fromJust, isJust)
 
 import Feldspar.Core.UntypedRepresentation
@@ -117,12 +117,6 @@ instance Monoid CodeParts where
 --------------------------------------------------------------------------------
 -- * Utility functions
 --------------------------------------------------------------------------------
-
--- | Make a struct type from a list of field names and their types
-mkStructType :: [(String, Type)] -> Type
-mkStructType trs = StructType n trs
-  where
-    n = "s_" ++ intercalate "_" (show (length trs):map (encodeType . snd) trs)
 
 -- | Construct an array indexing expression
 mkArrayElem :: Expression -> [Expression] -> Expression

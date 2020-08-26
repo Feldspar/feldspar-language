@@ -5,9 +5,9 @@ LOOP_BODY_2(wool0,
             LARGE_BODY,
             uint32_t,
             v10,
-            struct s_2_unsignedS32_awl_unsignedS32,
+            struct s_2_1xunsignedS32_1xawl_unsignedS32,
             e0,
-            struct s_2_unsignedS32_awl_unsignedS32,
+            struct s_2_1xunsignedS32_1xawl_unsignedS32,
             v6)
 {
   ((v6).member2).buffer[v10] = (((e0).member2).buffer[v10] + 5);
@@ -15,8 +15,8 @@ LOOP_BODY_2(wool0,
 
 void arrayInStruct__wool(struct awl_unsignedS32 * v0, struct awl_unsignedS32 * out)
 {
-  struct s_2_unsignedS32_awl_unsignedS32 e0 = { 0 };
-  struct s_2_unsignedS32_awl_unsignedS32 v6 = { 0 };
+  struct s_2_1xunsignedS32_1xawl_unsignedS32 e0 = { 0 };
+  struct s_2_1xunsignedS32_1xawl_unsignedS32 v6 = { 0 };
   bool v3;
   
   (e0).member1 = (*v0).length;

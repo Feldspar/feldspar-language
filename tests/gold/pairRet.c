@@ -1,7 +1,7 @@
 #include "pairRet.h"
 
 
-void pairRet(uint32_t v1, struct s_2_unsignedS32_unsignedS32 * out)
+void pairRet(uint32_t v1, struct s_2_2xunsignedS32 * out)
 {
   if ((v1 > 3))
   {
