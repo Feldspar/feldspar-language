@@ -88,6 +88,7 @@ module Feldspar.Compiler.Imperative.Frontend
   , for
   , while
   , mkSequence
+  , mkStructType
   , encodeType
   , decodeType
   ) where
@@ -99,7 +100,7 @@ import Feldspar.Lattice (universal)
 import Feldspar.Range (Range(..), isSingleton)
 
 import Data.Char (toLower)
-import Data.List (stripPrefix)
+import Data.List (stripPrefix, intercalate, group)
 
 toBlock :: Program -> Block
 toBlock (BlockProgram b) = b
@@ -452,9 +453,20 @@ Encoded format is:
 
 Where the type tag is some unique prefix except for the scalar
 types. The tag for StructTypes include the number of elements in the
-struct to simplify the job for decodeType.
+struct to simplify the job for decodeType. The field types are
+run-length encoded, reducing the size of tags for types with many
+consequtive fields of the same type.
 
 -}
+
+-- | Make a struct type from a list of field names and their types
+mkStructType :: [(String, Type)] -> Type
+mkStructType trs = StructType n trs
+  where
+    n = "s_" ++ intercalate "_" (show (length trs):map encodeFieldGroup gts)
+    gts = group $ map snd trs
+    encodeFieldGroup ts@(t:_) = show (length ts) ++ 'x' : encodeType t
+    encodeFieldGroup _        = error "Impossible: Data.List.group returned empty group"
 
 encodeType :: Type -> String
 encodeType = go
@@ -508,8 +520,9 @@ decodeType = goL []
              Just (n, t') = decodeLen t
              (ts, t'') = structGo n t' []
              structGo 0 s acc = (reverse acc, s)
-             structGo n' ('_':s) acc = structGo (n' - 1) s' (ts':acc)
-                      where (ts', s') = go s
+             structGo n' ('_':s) acc = structGo (n' - 1) s' (replicate m ts' ++ acc)
+                      where (ts', s') = go rs
+                            Just (m, 'x':rs) = decodeLen s
              structGo _ _ _ = error "decodeType: pattern match failure"
              h' = take (length h - length t'') h
     go (stripPrefix "arr_"     -> Just t) = (ArrayType universal tt, t')

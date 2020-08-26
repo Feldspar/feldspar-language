@@ -21,7 +21,7 @@ struct awl_awl_awl_unsignedS32
   uint32_t length;
 };
 
-struct s_2_awl_awl_awl_unsignedS32_awl_awl_awl_unsignedS32
+struct s_2_2xawl_awl_awl_unsignedS32
 {
   struct awl_awl_awl_unsignedS32 member1;
   struct awl_awl_awl_unsignedS32 member2;
@@ -47,6 +47,6 @@ struct awl_unsignedS32 * initArray_awl_unsignedS32(struct awl_unsignedS32 * dst,
 
 void freeArray_awl_unsignedS32(struct awl_unsignedS32 * src, int32_t srcLen);
 
-void deepArrayCopy(struct awl_awl_awl_unsignedS32 * v0, struct s_2_awl_awl_awl_unsignedS32_awl_awl_awl_unsignedS32 * out);
+void deepArrayCopy(struct awl_awl_awl_unsignedS32 * v0, struct s_2_2xawl_awl_awl_unsignedS32 * out);
 
 #endif // TMP2_DEEPARRAYCOPY_H

@@ -9,7 +9,7 @@ struct awl_unsignedS32
   uint32_t length;
 };
 
-struct s_2_unsignedS32_awl_unsignedS32
+struct s_2_1xunsignedS32_1xawl_unsignedS32
 {
   uint32_t member1;
   struct awl_unsignedS32 member2;

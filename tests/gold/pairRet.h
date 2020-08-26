@@ -3,12 +3,12 @@
 
 #include "feldspar_c99.h"
 
-struct s_2_unsignedS32_unsignedS32
+struct s_2_2xunsignedS32
 {
   uint32_t member1;
   uint32_t member2;
 };
 
-void pairRet(uint32_t v1, struct s_2_unsignedS32_unsignedS32 * out);
+void pairRet(uint32_t v1, struct s_2_2xunsignedS32 * out);
 
 #endif // TMP2_PAIRRET_H

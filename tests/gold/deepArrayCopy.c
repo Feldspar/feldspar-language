@@ -119,7 +119,7 @@ void freeArray_awl_unsignedS32(struct awl_unsignedS32 * src, int32_t srcLen)
   freeArray(src);
 }
 
-void deepArrayCopy(struct awl_awl_awl_unsignedS32 * v0, struct s_2_awl_awl_awl_unsignedS32_awl_awl_awl_unsignedS32 * out)
+void deepArrayCopy(struct awl_awl_awl_unsignedS32 * v0, struct s_2_2xawl_awl_awl_unsignedS32 * out)
 {
   ((*out).member1).buffer = initCopyArray_awl_awl_unsignedS32(((*out).member1).buffer, ((*out).member1).length, (*v0).buffer, (*v0).length);
   ((*out).member1).length = (*v0).length;
