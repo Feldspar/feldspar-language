@@ -130,7 +130,7 @@ semantics Undefined    = Sem "undefined" undefined
 semantics (Assert msg) = Sem "assert"
         (\cond a -> if cond then a else error ("Assert failed: " ++ msg))
 -- Feldspar.Core.Constructs.FFI
--- semantics (ForeignImport name f) = Sem name f
+semantics (ForeignImport name f) = Sem name $ unEqBox f
 -- Feldspar.Core.Constructs.Floating
 semantics Pi      = Sem "pi"      Prelude.pi
 semantics Exp     = Sem "exp"     Prelude.exp

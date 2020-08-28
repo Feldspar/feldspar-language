@@ -250,9 +250,8 @@ data Op a where
     Undefined :: Type a => Op (Full a)
     Assert    :: Type a => String -> Op (Bool :-> a :-> Full a)
 
-    -- FFI
-    -- ForeignImport :: (Type (DenResult a))
-    --              => String -> Denotation a -> Op a
+    -- | FFI
+    ForeignImport :: String -> EqBox a -> Op (Full a)
 
     -- | Floating
     Pi      :: Floating a => Op (Full a)
