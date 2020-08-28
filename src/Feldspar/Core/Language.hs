@@ -444,14 +444,84 @@ err msg = assertMsg msg false undef
 -- FFI.hs
 --------------------------------------------------
 
-{- Omitted
-foreignImport :: ( Type (DenResult a)
-                 , SyntacticN c b
-                 , ApplySym a b FeldDomain
-                 )
-              => String -> Denotation a -> c
-foreignImport name f = sugarSymF (ForeignImport name f)
--}
+-- | Arity specific functions for FFI
+-- | Arity 0
+foreignImport0 :: Syntax r => String -> Internal r -> r
+foreignImport0 s f = sugarSym0 (ForeignImport s (EqBox f))
+
+-- | Arity 1
+foreignImport1 :: (Syntax r, Syntactic a, Typeable (Internal a))
+               => String -> (Internal a -> Internal r) -> a -> r
+foreignImport1 s f = sugarSym1 (ForeignImport s (EqBox f))
+
+-- | Arity 2
+foreignImport2 :: (Syntax r, Syntactic a, Syntactic b,
+                   Typeable (Internal a), Typeable (Internal b))
+               => String -> (Internal a -> Internal b -> Internal r) -> a -> b -> r
+foreignImport2 s f = sugarSym2 (ForeignImport s (EqBox f))
+
+-- | Arity 3
+foreignImport3 :: (Syntax r, Syntactic a, Syntactic b, Syntactic c,
+                   Typeable (Internal a), Typeable (Internal b), Typeable (Internal c))
+               => String -> (Internal a -> Internal b -> Internal c -> Internal r) -> a -> b -> c -> r
+foreignImport3 s f = sugarSym3 (ForeignImport s (EqBox f))
+
+-- | Arity 4
+foreignImport4 :: ( Syntax r
+                  , Syntactic a
+                  , Syntactic b
+                  , Syntactic c
+                  , Syntactic d
+                  , Typeable (Internal a)
+                  , Typeable (Internal b)
+                  , Typeable (Internal c)
+                  , Typeable (Internal d)
+                  )
+               => String
+               -> (Internal a -> Internal b -> Internal c -> Internal d -> Internal r)
+               -> a -> b -> c -> d
+               -> r
+foreignImport4 s f a b c d = unFull $ sugarSym (ForeignImport s (EqBox f)) a b c d
+
+-- | Arity 5
+foreignImport5 :: ( Syntax r
+                  , Syntactic a
+                  , Syntactic b
+                  , Syntactic c
+                  , Syntactic d
+                  , Syntactic e
+                  , Typeable (Internal a)
+                  , Typeable (Internal b)
+                  , Typeable (Internal c)
+                  , Typeable (Internal d)
+                  , Typeable (Internal e)
+                  )
+               => String
+               -> (Internal a -> Internal b -> Internal c -> Internal d -> Internal e -> Internal r)
+               -> a -> b -> c -> d -> e
+               -> r
+foreignImport5 s f a b c d e = unFull $ sugarSym (ForeignImport s (EqBox f)) a b c d e
+
+-- | Arity 6
+foreignImport6 :: ( Syntax r
+                  , Syntactic a
+                  , Syntactic b
+                  , Syntactic c
+                  , Syntactic d
+                  , Syntactic e
+                  , Syntactic f
+                  , Typeable (Internal a)
+                  , Typeable (Internal b)
+                  , Typeable (Internal c)
+                  , Typeable (Internal d)
+                  , Typeable (Internal e)
+                  , Typeable (Internal f)
+                  )
+               => String
+               -> (Internal a -> Internal b -> Internal c -> Internal d -> Internal e -> Internal f -> Internal r)
+               -> a -> b -> c -> d -> e -> f
+               -> r
+foreignImport6 s x a b c d e f = unFull $ sugarSym (ForeignImport s (EqBox x)) a b c d e f
 
 --------------------------------------------------
 -- Floating.hs

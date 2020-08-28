@@ -281,6 +281,9 @@ vectorInPair (v, a) = (a, v)
 vectorInVector :: Pull DIM1 (Pull1 WordN) -> Data WordN
 vectorInVector v = fromZero $ sum $ map (fromZero . sum) v
 
+ffiTest :: Data Float -> Data Float
+ffiTest x = foreignImport1 "increment" (+1) x
+
 {-
 -- FIXME: This test fails because of duplicate symbols with vectorInPair
 vectorInPairInVector :: Data WordN -> Pull DIM1 (Data WordN, Pull1 WordN)
@@ -467,6 +470,7 @@ compilerTests = testGroup "Compiler-RegressionTests"
     , mkGoldTestUT foreignEffect "foreignEffect" defaultOptions
     , mkGoldTest tuples "tuples" defaultOptions
     , mkGoldTest deepArrayCopy "deepArrayCopy" defaultOptions
+    , mkGoldTest ffiTest "ffiTest" defaultOptions
    -- Build tests.
     , mkBuildTest pairParam "pairParam" defaultOptions
     , mkBuildTest pairParam "pairParam_ret" nativeRetOpts

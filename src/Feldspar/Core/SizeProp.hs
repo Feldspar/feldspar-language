@@ -223,6 +223,23 @@ spA vm (_ :& Sym (Assert s) :@ a :@ b)
   | b1@(Info bi1 :& _) <- spA vm b
   = Info bi1 :& Sym (Assert s) :@ spA vm a :@ b1
 
+-- | FFI
+-- Multiple cases are needed since ForeignImport is (the only) variadic operator.
+spA _ (_ :& Sym (ForeignImport s x))
+  = Info top :& Sym (ForeignImport s x)
+spA vm (_ :& Sym ffi@ForeignImport{} :@ a)
+  = Info top :& Sym ffi :@ spA vm a
+spA vm (_ :& Sym ffi@ForeignImport{} :@ a :@ b)
+  = Info top :& Sym ffi :@ spA vm a :@ spA vm b
+spA vm (_ :& Sym ffi@ForeignImport{} :@ a :@ b :@ c)
+  = Info top :& Sym ffi :@ spA vm a :@ spA vm b :@ spA vm c
+spA vm (_ :& Sym ffi@ForeignImport{} :@ a :@ b :@ c :@ d)
+  = Info top :& Sym ffi :@ spA vm a :@ spA vm b :@ spA vm c :@ spA vm d
+spA vm (_ :& Sym ffi@ForeignImport{} :@ a :@ b :@ c :@ d :@ e)
+  = Info top :& Sym ffi :@ spA vm a :@ spA vm b :@ spA vm c :@ spA vm d :@ spA vm e
+spA vm (_ :& Sym ffi@ForeignImport{} :@ a :@ b :@ c :@ d :@ e :@ f)
+  = Info top :& Sym ffi :@ spA vm a :@ spA vm b :@ spA vm c :@ spA vm d :@ spA vm e :@ spA vm f
+
 -- | Floating
 spA _ (_ :& Sym Pi)
   = Info top :& Sym Pi
