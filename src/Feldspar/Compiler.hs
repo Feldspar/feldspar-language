@@ -99,7 +99,7 @@ frontend :: Options
                   (UntypedFeld ValueInfo)
                   (Either
                     Module
-                    (Either (Module, Module) SplitModule))))
+                    SplitModule)))
          -> ([String], Maybe SplitModule)
 frontend opts = evalPasses 0
                    ( codegen opts
@@ -333,8 +333,9 @@ splitModule m = (Module (hdr ++ createProcDecls (entities m)), Module body)
     defToDecl (Proc n False inp rtype _) = [Proc n False inp rtype Nothing]
     defToDecl _ = []
 
-compileSplitModule :: Options -> (Module, Module) -> SplitModule
-compileSplitModule opts (hmdl, cmdl)
+-- | Translates a module into a compiled module
+compileModule :: Options -> Module -> SplitModule
+compileModule opts mdl
   = SplitModule
     { interface = CompiledModule { sourceCode  = compToCWithInfos opts hmdl
                                  , debugModule = hmdl
@@ -343,6 +344,7 @@ compileSplitModule opts (hmdl, cmdl)
                                       , debugModule = cmdl
                                       }
     }
+  where (hmdl, cmdl) = splitModule mdl
 
 -- | Compiler core.
 -- Everything should call this function and only do a trivial interface adaptation.
@@ -360,13 +362,11 @@ instance Pretty SplitModule where
                                    "\n// Implementation\n" ++ sourceCode impl
 
 codegen :: Options
-        -> Prog (Either Module
-                (Either (Module, Module) SplitModule)) Int
+        -> Prog (Either Module SplitModule) Int
         -> Prog SplitModule Int
 codegen opts
   | "c" == codeGenerator (platform opts)
-  = passT ctrl BPCompile  (either (compileSplitModule opts) id)
-  . passT ctrl BPSplit    (either (Left . splitModule) id)
+  = passT ctrl BPCompile (either (compileModule opts) id)
   | otherwise
   = error $ "Compiler.codegen: unknown code generator " ++
              codeGenerator (platform opts)

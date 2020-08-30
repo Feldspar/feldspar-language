@@ -129,7 +129,6 @@ data Pass
   | BPArrayOps
   | BPRename
   | BPAdapt
-  | BPSplit
   | BPCompile
   | BPUnsplit
   deriving (Bounded, Enum, Eq, Lift, Read, Show)
