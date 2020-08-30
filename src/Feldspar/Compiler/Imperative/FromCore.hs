@@ -379,7 +379,8 @@ fromCoreUT opt uast = Module defs
     Block ds p = block results
     outDecl    = Declaration outParam Nothing
     paramTypes = getTypeDefs $ map (`Declaration` Nothing) formals
-    defs       = nub (def results ++ paramTypes) ++ topProc
+    inc        = Include "feldspar_c99.h"
+    defs       = inc:nub (def results ++ paramTypes) ++ topProc
     funname    = encodeFunctionName $ functionName opt
 
     (rtype, outs, ds', returns) -- Note [Fast returns].

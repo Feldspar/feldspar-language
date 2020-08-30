@@ -78,7 +78,10 @@ data Module = Module
     deriving (Eq, Show)
 
 data Entity
-    = StructDef
+    = Include
+        { includeFile              :: FilePath
+        }
+     | StructDef
         { structName                :: String
         , structMembers             :: [StructMember]
         }

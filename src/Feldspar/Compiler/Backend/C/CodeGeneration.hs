@@ -67,6 +67,7 @@ instance CodeGen Module where
     cgenList env = vcat . map (cgen env)
 
 instance CodeGen Entity where
+    cgen _ Include{..} = text "#include \"" <> text includeFile <> char '"'
     cgen env StructDef{..} = text "struct"   <+> text structName     $+$ block env (cgenList env structMembers) <> semi
     cgen env TypeDef{..}   = text "typedef"  <+> cgen env actualType <+> text typeName <> semi
     cgen env Proc{..}
