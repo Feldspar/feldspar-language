@@ -209,9 +209,13 @@ compileFile' opts (hfilename, hfile) (cfilename, cfile) =
     Nothing -> error $ "Could not parse " ++ hfilename
     Just hprg -> case parseFile cfilename cfile (entities hprg) of
                    Nothing -> error $ "Could not parse " ++ cfilename
-                   Just cprg -> fromMaybe (error "Failed parsing C file")
+                   -- FIXME: Hardcoded include line.
+                   --        Look at parsing #pragma in language-c-quote
+                   --        and add support for parsing #include the same way.
+                   Just (Module defs) -> fromMaybe (error "Failed parsing C file")
                                 $ snd $ frontend opts
-                                   (Right . Right . Right . Left $ cprg)
+                                   (Right . Right . Right . Left $
+                                    Module $ Include "feldspar_c99.h":defs)
 
 program :: Syntactic a => a -> IO ()
 program p = programOpts p defaultOptions
@@ -317,6 +321,7 @@ splitModule m = (Module (hdr ++ createProcDecls (entities m)), Module body)
   where
     (hdr, body) = partition belongsToHeader (entities m)
     belongsToHeader :: Entity -> Bool
+    belongsToHeader Include{}                       = True
     belongsToHeader StructDef{}                     = True
     belongsToHeader Proc{..} | Nothing <- procBody  = True
     belongsToHeader _                               = False
@@ -331,17 +336,13 @@ splitModule m = (Module (hdr ++ createProcDecls (entities m)), Module body)
 compileSplitModule :: Options -> (Module, Module) -> SplitModule
 compileSplitModule opts (hmdl, cmdl)
   = SplitModule
-    { interface = CompiledModule { sourceCode  = incls ++ hres
+    { interface = CompiledModule { sourceCode  = compToCWithInfos opts hmdl
                                  , debugModule = hmdl
                                  }
-    , implementation = CompiledModule { sourceCode  = cres
+    , implementation = CompiledModule { sourceCode  = compToCWithInfos opts cmdl
                                       , debugModule = cmdl
                                       }
     }
-  where
-    hres = compToCWithInfos opts hmdl
-    cres = compToCWithInfos opts cmdl
-    incls = "#include \"feldspar_c99.h\"\n\n"
 
 -- | Compiler core.
 -- Everything should call this function and only do a trivial interface adaptation.
