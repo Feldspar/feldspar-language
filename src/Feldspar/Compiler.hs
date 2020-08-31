@@ -337,10 +337,10 @@ splitModule m = (Module (hdr ++ createProcDecls (entities m)), Module body)
 compileModule :: Options -> Module -> SplitModule
 compileModule opts mdl
   = SplitModule
-    { interface = CompiledModule { sourceCode  = compToCWithInfos opts hmdl
+    { interface = CompiledModule { sourceCode  = compToTarget opts hmdl
                                  , debugModule = hmdl
                                  }
-    , implementation = CompiledModule { sourceCode  = compToCWithInfos opts cmdl
+    , implementation = CompiledModule { sourceCode  = compToTarget opts cmdl
                                       , debugModule = cmdl
                                       }
     }
@@ -355,12 +355,14 @@ compileToCCore n opts p = fromMaybe err $ snd p'
         p' = translate opts{functionName = n} p
 
 instance Pretty Module where
-  pretty m = compToCWithInfos defaultOptions m
+  pretty m = compToTarget defaultOptions m
 
 instance Pretty SplitModule where
   pretty (SplitModule impl intf) = "// Interface\n" ++ sourceCode intf ++
                                    "\n// Implementation\n" ++ sourceCode impl
 
+-- FIXME: Move this switch into compToTarget and remove this function by
+--        inlining the "passT" line into frontend.
 codegen :: Options
         -> Prog (Either Module SplitModule) Int
         -> Prog SplitModule Int

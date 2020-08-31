@@ -32,7 +32,7 @@
 
 -- | Converts a @Module@ to C Syntax
 module Feldspar.Compiler.Backend.C.CodeGeneration
-  ( compToCWithInfos
+  ( compToTarget
   ) where
 
 import Prelude hiding (Semigroup(..), (<>), init)
@@ -50,9 +50,15 @@ data PrintEnv = PEnv
     , parNestLevel :: Int
     }
 
--- | Convert a @Module@ to C syntax
-compToCWithInfos :: Options -> Module -> String
-compToCWithInfos opts procedure = render $ cgen (penv0 opts) procedure
+-- | Compile a @Module@ to target code
+compToTarget :: Options -> Module -> String
+compToTarget opts procedure
+  | "c" == codeGenerator (platform opts)
+  = render $ cgen (penv0 opts) procedure
+  | "ba" == codeGenerator (platform opts)
+  = error "TODO"
+  | otherwise = error $ "compToTarget: unknown code generator " ++
+                         codeGenerator (platform opts)
 
 penv0 :: Options -> PrintEnv
 penv0 opts = PEnv opts 0
