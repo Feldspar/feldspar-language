@@ -17,8 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-16.8
-compiler: ghc-8.8.4
+resolver: lts-16.12
 
 ghc-options:
     # Somewhere deep inside there is a call to ghc --make, pass -j3 to
