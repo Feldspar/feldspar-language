@@ -227,6 +227,7 @@ c99 = Platform {
 -- | Predefined C99+OpenMP platform options
 c99OpenMp :: Platform
 c99OpenMp = c99 { platformName = "c99OpenMp"
+                , compilerFlags = "-fopenmp":compilerFlags c99
                 , varFloating = False
                 }
 
