@@ -24,6 +24,7 @@ import GHC.Paths (ghc)
 import System.Plugins.MultiStage hiding (ref)
 
 import Data.Default
+import Data.List (isPrefixOf)
 import Foreign.Ptr
 import Foreign.Marshal (with)
 import Foreign.Marshal.Unsafe (unsafeLocalState)
@@ -188,8 +189,14 @@ compileC opts srcfile objfile args' = do
     (ex, stdout, stderr) <- readProcessWithExitCode ghc args ""
     case ex of
       ExitFailure{} -> error $ unlines [show ex, stdout, stderr]
-      _ -> do let output = stdout ++ stderr
-              unless (null output) $ putStrLn output
+      _ -> do
+        -- GHC 8.8.4 prints "Loaded package environment from .." even with
+        -- -v0. Filter it out to avoid noise in our tests.
+        let stderr' =
+              filter (not . isPrefixOf "Loaded package environment from ")
+                    $ lines stderr
+            output = unlines stderr' ++ stdout
+        unless (null output) $ putStrLn output
 
 lookupSymbol :: String -> IO (Ptr a)
 lookupSymbol symbol = do
