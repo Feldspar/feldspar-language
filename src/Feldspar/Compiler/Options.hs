@@ -141,10 +141,11 @@ data Target = Wool | BA
 inTarget :: Target -> Options -> Bool
 inTarget t opts = t `elem` (targets . platform $ opts)
 
+-- | Compiler options
 data Options = Options
-  { platform          :: Platform
-  , printHeader       :: Bool
-  , useNativeArrays   :: Bool
+  { platform          :: Platform -- ^ Target platform information
+  , printHeader       :: Bool     -- ^ Whether icompile prints the header.
+  , useNativeArrays   :: Bool     -- ^ Use C array types
   , useNativeReturns  :: Bool     -- ^ Should the generated function return by value or by
                                   --   reference (fast return)? This option will be ignored for
                                   --   types that can't be fast-returned.
@@ -157,7 +158,7 @@ data Options = Options
   , printHelp         :: Bool     -- ^ Print help
   } deriving Lift
 
--- | Predefined options
+-- | Predefined default options
 defaultOptions :: Options
 defaultOptions
     = Options
@@ -174,18 +175,23 @@ defaultOptions
     , printHelp         = False
     }
 
+-- | Predefined C99 options
 c99PlatformOptions :: Options
 c99PlatformOptions              = defaultOptions
 
+-- | Predefined C99+OpenMP options
 c99OpenMpPlatformOptions :: Options
 c99OpenMpPlatformOptions        = defaultOptions { platform = c99OpenMp }
 
+-- | Predefined C99+Wool options
 c99WoolPlatformOptions :: Options
 c99WoolPlatformOptions          = defaultOptions { platform = c99Wool }
 
+-- | Predefined TIC64x options
 tic64xPlatformOptions :: Options
 tic64xPlatformOptions           = defaultOptions { platform = tic64x }
 
+-- | Platform options
 data Platform = Platform {
   platformName    :: String,    -- ^ Name of the platform
   targets         :: [Target],  -- ^ Targets for the platform
@@ -195,14 +201,17 @@ data Platform = Platform {
   codeGenerator   :: String     -- ^ Name of the code generator
 } deriving (Lift, Show)
 
+-- | Available platforms
 availablePlatforms :: [Platform]
 availablePlatforms = [ c99, c99OpenMp, c99Wool, ba, tic64x ]
 
+-- | Translate a name to a platform
 platformFromName :: String -> Platform
 platformFromName str
   = head $ [pf | pf <- availablePlatforms, platformName pf == str]
              ++ error ("platformFromName: No platform named " ++ str)
 
+-- | Predefined C99 platform options
 c99 :: Platform
 c99 = Platform {
     platformName = "c99",
@@ -215,11 +224,13 @@ c99 = Platform {
     codeGenerator = "c"
 }
 
+-- | Predefined C99+OpenMP platform options
 c99OpenMp :: Platform
 c99OpenMp = c99 { platformName = "c99OpenMp"
                 , varFloating = False
                 }
 
+-- | Predefined C99+Wool platform options
 c99Wool :: Platform
 c99Wool = c99 { platformName = "c99Wool"
               , targets = Wool:targets c99
@@ -227,12 +238,14 @@ c99Wool = c99 { platformName = "c99Wool"
               , varFloating = False
               }
 
+-- | Predefined BA platform options
 ba :: Platform
 ba = c99 { platformName = "ba"
          , targets = BA:targets c99
          , codeGenerator = "ba"
          }
 
+-- | Predefined TIC64X platform options
 tic64x :: Platform
 tic64x = c99 { platformName = "tic64x"
              , platformRenames = tic64xlist ++ platformRenames c99
