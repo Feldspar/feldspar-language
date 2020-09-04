@@ -170,7 +170,7 @@ executable onnxToFeld
   default-extensions:
     MonoLocalBinds
 
-  hs-source-dirs: src src/Feldspar/Onnx
+  hs-source-dirs: onnx
 
   other-modules:
     Onnx.AttributeProto
