@@ -1,6 +1,6 @@
-The files in src/Onnx and its subdirectories are generated from the ONNX
-protobuf specification file 'onnx.proto' located in src/Feldspar/Onnx using
-the command 'hprotoc Feldspar/Onnx/onnx.proto' given from the src directory.
-The generated file src/Onnx.hs is not committed.
+The files in src/Onnx/Onnx and its subdirectories are generated from the
+ONNX protobuf specification file 'onnx.proto' located in src/Onnx using
+the command 'hprotoc onnx.proto' given from the src/Onnx directory.
+The generated file src/Onnx/Onnx.hs is not committed.
 
 The 'hprotoc' command comes from the 'hprotoc-2.4.13' package on Hackage.
