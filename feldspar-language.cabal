@@ -165,12 +165,12 @@ library
 
 executable onnxToFeld
 
-  main-is: onnxToFeld.hs
+  main-is: OnnxToFeld.hs
 
   default-extensions:
     MonoLocalBinds
 
-  hs-source-dirs: src src/Feldspar/Onnx
+  hs-source-dirs: src/Onnx
 
   other-modules:
     Onnx.AttributeProto
@@ -203,6 +203,7 @@ executable onnxToFeld
   ghc-options: -O2
 
   build-depends:
+    feldspar-language,
     base                        >= 4.13.0  && < 5.9,
     bytestring                  >= 0.10,
     containers,
