@@ -33,14 +33,15 @@ module Feldspar.Core.Middleend.PushLets (pushLets) where
 import Feldspar.Core.UntypedRepresentation
 import Feldspar.Core.Middleend.Constructors
 
-pushLets :: UntypedFeld a -> UntypedFeld a
+pushLets :: Eq a => UntypedFeld a -> UntypedFeld a
 pushLets = toExpr . go
   where go (In _ (App Let _ [rhs, In _ (Lambda v body)]))
-           | legalToInline rhs = push v (go rhs) (toExpr $ go body)
+           | legalToInline rhs = push v (go rhs) `sapp` toExpr (go body)
            | otherwise = mkBinds ([(v, go rhs)], go body)
         go (In r (App op t es)) = aIn r $ app op t $ map go es
         go (In r (Lambda v e)) = aIn r $ lambda v $ go e
         go e = fromExpr e
+        sapp f x = if x == x then f x else undefined
 
 data OCount = OC {low, high :: Int}
   deriving (Eq, Show)
