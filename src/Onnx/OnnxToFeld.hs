@@ -212,22 +212,27 @@ mkInitReadFile hf initGroups = L.concat $ start : map initVec initGroups ++ map 
                 , "#include <inttypes.h>"
                 , ""
                 , weightRecTC <> " * "
-                , "read_constants( char* wfile_name )"
+                , "read_constants(char *wfile_name)"
                 , "{"
-                , "  FILE* wfile = fopen( wfile_name, \"r\" );"
+                , "  FILE *wfile = fopen(wfile_name, \"r\");"
+                , "  if(wfile == NULL) {"
+                , "    fprintf(stderr, \"Could not open %s for reading.\\n\", wfile_name);"
+                , "    exit(1);"
+                , "  }"
+                , ""
                 , "  " <> weightRecTC <> " *"
-                , "    w = malloc( sizeof(" <> weightRecTC <> ") );"
+                , "    w = malloc(sizeof(" <> weightRecTC <> "));"
                 , ""
                 ]
         end = L.unlines
                 [ ""
-                , "  fclose( wfile );"
+                , "  fclose(wfile);"
                 , "  return 0;"
                 , "}"
                 ]
         initVec (ti:tis) = "  w->member" <> field <> ".length = " <> show (length tis + 1) <> ";\n"
-                         <> "  w->member" <> field <> ".buffer = malloc( sizeof(" <> t <> ") * "
-                               <> "w->member" <> field <> ".length );\n"
+                         <> "  w->member" <> field <> ".buffer = malloc(sizeof(" <> t <> ") * "
+                               <> "w->member" <> field <> ".length);\n"
             where t = fromString $ renderType $ tiToType ti
                   field = show (tiField ti + 1)
         initVec [] = error "Impossible"
@@ -261,10 +266,10 @@ initTensor ti = (<>) "\n" $ L.unlines $ map ("  " <>)
         initSizes ds  = [ prefix <> ".member2.member" <> show j <> " = " <> show n <> ";"
                         | (n,j) <- zip ds [1 :: Int ..]
                         ] ++ [awlPrefix <> ".length = " <> show (product dims) <> ";"]
-        readDims = "fscanf( wfile, \" " <> elemTH <> " " <> show (length dims) <> " " <> L.unwords (map show dims) <> "\" );"
-        alloc awl = awl <> ".buffer = malloc( " <> awl <> ".length * sizeof(" <> elemTC <> ") );"
-        readElems awl = [ "for( int i = 0; i < " <> awl <> ".length; i++ ) {"
-                        , "  fscanf( wfile, " <> scanFormat elemTT <> ", " <> awl <> ".buffer + i );"
+        readDims = "fscanf(wfile, \" " <> elemTH <> " " <> show (length dims) <> " " <> L.unwords (map show dims) <> "\");"
+        alloc awl = awl <> ".buffer = malloc(" <> awl <> ".length * sizeof(" <> elemTC <> "));"
+        readElems awl = [ "for(int i = 0; i < " <> awl <> ".length; i++) {"
+                        , "  fscanf(wfile, " <> scanFormat elemTT <> ", " <> awl <> ".buffer + i);"
                         , "}"
                         ]
 
