@@ -33,8 +33,9 @@ module Main where
 import Prelude hiding (show)
 import qualified Prelude as P
 
-import Feldspar.Compiler.Imperative.Frontend (mkStructType, mkAwLType)
+import Feldspar.Compiler.Imperative.Frontend (mkStructType, mkAwLType, uint32)
 import Feldspar.Compiler.Imperative.Representation
+import Feldspar.Compiler.Options (encodeFunctionName)
 import Feldspar.Lattice (universal)
 
 import qualified Onnx.AttributeProto as A
@@ -46,6 +47,7 @@ import qualified Onnx.TensorProto.DataType as TD
 import qualified Onnx.TensorShapeProto as TSP
 import qualified Onnx.TensorShapeProto.Dimension as TSP
 import qualified Onnx.TensorShapeProto.Dimension.Value as TSP
+import qualified Onnx.TypeProto as T
 import qualified Onnx.TypeProto.Tensor as TT
 import qualified Onnx.TypeProto.Value as TV
 import qualified Onnx.ValueInfoProto as V
@@ -80,14 +82,18 @@ data TensorInfo = TI { tiField :: Int         -- ^ The zero based index of the g
 main :: IO ()
 main = do args <- getArgs
           let [modelFileName] = take 1 args -- First argument is file name
-              modelBaseName = takeBaseName modelFileName
+              modelBaseName = map noHyphen $ takeBaseName modelFileName
               dataFileName = modelBaseName <.> "data"
               progFileName = modelBaseName <.> "hs"
-              initFileName = modelBaseName <> "-init" <.> "c"
+              initBaseName = modelBaseName <> "_init"
+              initFileName = initBaseName <.> "c"
               cHdrFileName = modelBaseName <.> "h"
+              mainBaseName = modelBaseName <> "_main"
+              mainFileName = mainBaseName <.> "c"
+              noHyphen c = if c == '-' then '_' else c
           modelBinary <- L.readFile modelFileName
-          let model = either (\s -> error $ "Error: " ++ s) fst $ messageGet modelBinary
-              gr = fromMaybe (error "No graph in model") $ O.graph model
+          let model = either (\s -> error $ "onnxToFeld.main: " ++ s) fst $ messageGet modelBinary
+              gr = fromMaybe (error "onnxToFeld.main: No graph in model") $ O.graph model
               proj t = (TP.data_type t, D.length $ TP.dims t)
               ordInits = D.sortBy (comparing proj) $ G.initializer gr
               initGroups = groupBy (\ x y -> proj x == proj y) $ D.toList ordInits
@@ -97,6 +103,12 @@ main = do args <- getArgs
                                let ty = int2elemT $ TP.data_type $ head tps]
               allUses = group $ D.toList $ D.sort $ foldMap N.input $ G.node gr
               multiUses = S.fromList $ map head $ filter ((>1) . length) allUses
+              weightRecTC = fromString $ renderType $ mkStructType $ map toFieldType iTensorInfo
+              toFieldType (ti:_) = ("member" ++ show (tiField ti + 1), mkAwLType universal $ tiToType ti)
+              toFieldType []     = error "onnxToFeld.toFieldType: Impossible"
+              initSet = S.fromList $ map tiName $ concat iTensorInfo
+              outputs = D.toList $ G.output gr
+              inputs = [p | p <- D.toList $ G.input gr, vipName p `S.notMember` initSet]
 
           -- Write the weights
           dfile <- openFile dataFileName WriteMode
@@ -107,17 +119,22 @@ main = do args <- getArgs
 
           -- Write the program
           pfile <- openFile progFileName WriteMode
-          L.hPutStr pfile $ mkProgramFile gr iTensorInfo multiUses
+          L.hPutStr pfile $ mkProgramFile gr iTensorInfo inputs multiUses
           hClose pfile
 
           -- Write the init module
           mfile <- openFile initFileName WriteMode
-          L.hPutStr mfile $ mkInitReadFile cHdrFileName iTensorInfo
+          L.hPutStr mfile $ mkInitReadFile cHdrFileName weightRecTC iTensorInfo
           hClose mfile
+
+          -- Write the main program
+          mpfile <- openFile mainFileName WriteMode
+          L.hPutStr mpfile $ mkMainFile modelBaseName cHdrFileName dataFileName weightRecTC outputs inputs
+          hClose mpfile
 
 -- | Extract initialized tensors
 buildInitTensor :: TP.TensorProto -> B.Builder
-buildInitTensor t = B.lazyByteString (L.unwords $ showElemT dt : show (length ds) : map show ds)
+buildInitTensor t = B.lazyByteString (L.unwords $ show (length ds) : map show ds)
                     <> B.string8 "\n"
                     <> buildValues dt t
   where ds = D.toList $ TP.dims t
@@ -145,8 +162,8 @@ buildValues td =
   error $ "onnxToFeld.buildValues: unsupported element type " ++ U.toString (showElemT td)
 
 -- | Construct a Feldspar program corresponding to the ONNX graph
-mkProgramFile :: G.GraphProto -> [[TensorInfo]] -> S.Set Utf8 -> L.ByteString
-mkProgramFile gr initGroups multiUses
+mkProgramFile :: G.GraphProto -> [[TensorInfo]] -> [V.ValueInfoProto] -> S.Set Utf8 -> L.ByteString
+mkProgramFile gr initGroups inputs multiUses
   = L.unlines
             [ "{-# LANGUAGE DataKinds #-}"
             , "{-# LANGUAGE TypeOperators #-}"
@@ -174,9 +191,7 @@ mkProgramFile gr initGroups multiUses
               <> L.intercalate "\n        " (accesses ++ "-- Nodes" : D.concatMap (mkNode multiUses) (G.node gr))
             ]
   where name = mangle $ fromJust $ G.name gr
-        initSet = S.fromList $ map tiName $ concat initGroups
-        params = "(weights :: WeightRec)" : map (mangle . vipName) inps
-        inps = filter (\ p -> vipName p `S.notMember` initSet) $ D.toList $ G.input gr
+        params = "(weights :: WeightRec)" : map (mangle . vipName) inputs
         accesses = map mkAccess $ concat initGroups
 
 -- | Compute a string representation of the Haskell type of a group of initialized tensors
@@ -192,7 +207,9 @@ mkNode mUses n = [outs <> " = " <> forcing <> op <> " " <> attrs]
               ++ [ "    " <> mangle v | v <- D.toList $ N.input n]
               ++ [""]
   where outs = tuplify $ map mangle $ D.toList $ N.output n
-        op = "onnx" <> strFromJ (N.op_type n) <> "_" <> show (D.length $ N.input n)
+        op = "onnx" <> opStr <> if opStr `elem` optArgOps then "_" <> show (D.length $ N.input n) else ""
+        opStr = strFromJ (N.op_type n)
+        optArgOps = ["Conv"]
         attrs = "[" <> L.intercalate ", " (map showAttribute $ D.toList $ N.attribute n) <> "]"
         forcing = if any (flip S.member mUses) $ N.output n then "force $ " else ""
 
@@ -202,8 +219,8 @@ mkAccess ti = vname <> " = sel (Proxy @" <> show (tiField ti) <> ") weights ! (Z
   where vname = mangle $ tiName ti
 
 -- | Constuct the C code to read initialized tensors
-mkInitReadFile :: FilePath -> [[TensorInfo]] -> L.ByteString
-mkInitReadFile hf initGroups = L.concat $ start : map initVec initGroups ++ map initTensor (concat initGroups) ++ [end]
+mkInitReadFile :: FilePath -> L.ByteString -> [[TensorInfo]] -> L.ByteString
+mkInitReadFile hf weightRecTC initGroups = L.concat $ start : map initVec initGroups ++ map initTensor (concat initGroups) ++ [end]
   where start = L.unlines
                 [ "#include \"" <> fromString hf <> "\""
                 , ""
@@ -211,11 +228,12 @@ mkInitReadFile hf initGroups = L.concat $ start : map initVec initGroups ++ map 
                 , "#include <stdio.h>"
                 , "#include <inttypes.h>"
                 , ""
+                , checkFun
+                , ""
                 , weightRecTC <> " * "
-                , "read_constants(char *wfile_name)"
-                , "{"
+                , "read_constants(char *wfile_name) {"
                 , "  FILE *wfile = fopen(wfile_name, \"r\");"
-                , "  if(wfile == NULL) {"
+                , "  if (wfile == NULL) {"
                 , "    fprintf(stderr, \"Could not open %s for reading.\\n\", wfile_name);"
                 , "    exit(1);"
                 , "  }"
@@ -227,7 +245,7 @@ mkInitReadFile hf initGroups = L.concat $ start : map initVec initGroups ++ map 
         end = L.unlines
                 [ ""
                 , "  fclose(wfile);"
-                , "  return 0;"
+                , "  return w;"
                 , "}"
                 ]
         initVec (ti:tis) = "  w->member" <> field <> ".length = " <> show (length tis + 1) <> ";\n"
@@ -235,43 +253,146 @@ mkInitReadFile hf initGroups = L.concat $ start : map initVec initGroups ++ map 
                                <> "w->member" <> field <> ".length);\n"
             where t = fromString $ renderType $ tiToType ti
                   field = show (tiField ti + 1)
-        initVec [] = error "Impossible"
-        weightRecTC = fromString $ renderType $ mkStructType $ map toFieldType initGroups
-        toFieldType (ti:_) = ("member" ++ show (tiField ti + 1), mkAwLType universal $ tiToType ti)
-        toFieldType []     = error "Impossible"
+        initVec [] = error "onnxToFeld.initVec: Impossible"
+
+-- | Construct a main program
+mkMainFile :: FilePath -> FilePath -> FilePath -> L.ByteString -> [V.ValueInfoProto] -> [V.ValueInfoProto]-> L.ByteString
+mkMainFile bname hf weightFile weightRecTC outputs inputs = start
+  where start = L.unlines $
+                [ "#include \"" <> fromString hf <> "\""
+                , ""
+                , "#include <stdlib.h>"
+                , "#include <stdio.h>"
+                , "#include <inttypes.h>"
+                , ""
+                , checkFun
+                , ""
+                , "typedef " <> weightRecTC
+                , "  weight_rec_t;"
+                , ""
+                , "weight_rec_t* read_constants(const char *wfile_name);"
+                , ""
+                , "int main(int argc, char** argv) {"
+                , "  weight_rec_t * w = read_constants(\"" <> fromString weightFile <> "\");"
+                , ""
+                ]
+                ++ concat (zipWith mkArgRead inputs [1..]) ++
+                [ "  " <> ot <> " " <> ov <> " = {0};"
+                , ""
+                , "  " <> functionName <> "(w, " <> inArgs <> ", &" <> ov <> ");"
+                , ""
+                , oCode
+                , ""
+                , "  return 0;"
+                , "}"
+                ]
+        (ov, ot, oCode) = mkOutput outputs
+        inArgs = L.intercalate ", " ["&" <> mangle (vipName v) | v <- inputs]
+        functionName = fromString $ encodeFunctionName bname
+
+-- | Generate code to read the argument tensors from file
+mkArgRead :: V.ValueInfoProto -> Int -> [L.ByteString]
+mkArgRead vip i = [ "  FILE* " <> fname <> " = fopen(argv[" <> show i <> "], \"r\");"
+                  , "  " <> tenTypeS <> " " <> vname <> ";"
+                  , ""
+                  , allocReadTensor fname vname n elemT
+                  ]
+  where vname = mangle $ vipName vip
+        fname = "f" <> vname
+        (n, elemT) = vipType vip
+        tenTypeS = fromString $ renderType $ tensorToType n elemT
 
 -- | Compute the (Program) Type that corresponds to a tensor
 tiToType :: TensorInfo -> Type
-tiToType ti = goDim (D.length $ tiDims ti) (toType $ tiType ti)
-  where goDim 0 _  = error "Zero dimensional tensor not implemented"
+tiToType ti = tensorToType (D.length $ tiDims ti) (tiType ti)
+
+-- | Compute the (Program) type corresponding to a tensor with the given dimensionality and element type
+tensorToType :: Int -> TD.DataType -> Type
+tensorToType n t = goDim n $ toType t
+  where goDim 0 _  = error "onnxToFeld.goDim: Zero dimensional tensor not implemented"
         goDim 1 tt = mkAwLType universal tt
-        goDim n tt = mkStructType
+        goDim m tt = mkStructType
                        [("member1", mkAwLType universal tt),
-                        ("member2", mkStructType $ map dimField [1 .. n])
+                        ("member2", mkStructType $ map dimField [1 .. m])
                        ]
-        dimField n = ("member" ++ show n, 1 :# NumType Unsigned S32)
+        dimField i = ("member" ++ show i, uint32)
 
 -- | Compute code for initializing one component of the weight record
 initTensor :: TensorInfo -> L.ByteString
-initTensor ti = (<>) "\n" $ L.unlines $ map ("  " <>)
-              $ [readDims] ++ initSizes dims ++ [alloc awlPrefix] ++ readElems awlPrefix
+initTensor ti = allocReadTensor "wfile" prefix (D.length $ tiDims ti) (tiType ti)
   where prefix = "w->member" <> show (tiField ti + 1) <> ".buffer[" <> show (tiIdx ti) <> "]"
-        awlPrefix = if length dims > 1 then prefix <> ".member1" else prefix
-        elemTH = showElemT elemTT
+
+-- | Allocate memory for the elements of a tensor and read the contents from a file
+allocReadTensor :: L.ByteString -> L.ByteString -> Int -> TD.DataType -> L.ByteString
+allocReadTensor file prefix nDims elemTT = L.unlines code <> "\n"
+  where code = map ("  " <>) $ readDims ++ [alloc] ++ readElems
         elemTC = showCElemT elemTT
-        elemTT = tiType ti
-        dims = D.toList $ tiDims ti
-        initSizes []  = error "Zero dimensional tensor not implemented"
-        initSizes [d] = [awlPrefix <> ".length = " <> show d <> ";"]
-        initSizes ds  = [ prefix <> ".member2.member" <> show j <> " = " <> show n <> ";"
-                        | (n,j) <- zip ds [1 :: Int ..]
-                        ] ++ [awlPrefix <> ".length = " <> show (product dims) <> ";"]
-        readDims = "fscanf(wfile, \" " <> elemTH <> " " <> show (length dims) <> " " <> L.unwords (map show dims) <> "\");"
-        alloc awl = awl <> ".buffer = malloc(" <> awl <> ".length * sizeof(" <> elemTC <> "));"
-        readElems awl = [ "for(int i = 0; i < " <> awl <> ".length; i++) {"
-                        , "  fscanf(wfile, " <> scanFormat elemTT <> ", " <> awl <> ".buffer + i);"
-                        , "}"
-                        ]
+        (awlPrefix, readDims) = initTensorDims file prefix nDims
+        alloc = awlPrefix <> ".buffer = malloc(" <> awlPrefix <> ".length * sizeof(" <> elemTC <> "));"
+        readElems = [ "for (int i = 0; i < " <> awlPrefix <> ".length; i++) {"
+                    , "  check(fscanf(" <> file <> ", " <> scanFormat elemTT <> ", " <> awlPrefix <> ".buffer + i), 1);"
+                    , "}"
+                    ]
+
+-- | Initialize the size of tensor from the dimensions in a file
+initTensorDims :: L.ByteString -> L.ByteString -> Int -> (L.ByteString, [L.ByteString])
+initTensorDims file prefix nDims = go nDims
+  where go 1 = (prefix, [mkScanf file [prefix <> ".length"]])
+        go n = (prefix <> ".member1",
+                [mkScanf file $ reverse vars, -- The Syntactic instance for Pull stores extents in reverse order
+                 prefix <> ".member1.length = " <> L.intercalate " * " vars <> ";"])
+           where vars = [prefix <> ".member2.member" <> show i | i <- [1 :: Int .. n]]
+
+-- | Generate a call to fscanf reading the tensor dimensions
+mkScanf :: L.ByteString -> [L.ByteString] -> L.ByteString
+mkScanf file vars = "check(fscanf(" <> file <> ", " <> format <> ptrs <> "), " <> show n <> ");"
+  where format = "\" " <> show n <> L.concat (replicate n " %u") <> "\""
+        ptrs = L.concat [", &" <> v | v <- vars]
+        n = length vars
+
+-- | Generate a variable name, a type and code for printing output
+mkOutput :: [V.ValueInfoProto] -> (L.ByteString, L.ByteString, L.ByteString)
+mkOutput outputs = go outputs
+  where go [vip] = (v, fromString $ renderType t, printTensor "stdout" v dt)
+          where dt = vipType vip
+                t = uncurry tensorToType dt
+                v = mangle $ vipName vip
+        go _ = error "onnxToFeld.mkOutput: Only a single output currently supported"
+
+-- | Generate code to print a text representation of a tensor to a file
+printTensor :: L.ByteString -> L.ByteString -> (Int, TD.DataType) -> L.ByteString
+printTensor file prefix (1,t) = printTensorDims file 1 [prefix <> ".length"]
+                             <> printTensorElems file prefix t
+printTensor file prefix (n,t) = printTensorDims file n vars
+                             <> printTensorElems file (prefix <> ".member1") t
+  where vars = [prefix <> ".member2.member" <> show i | i <- reverse [1..n]]
+
+-- | Generate code to print the tensor dimensions to a file
+printTensorDims :: L.ByteString -> Int -> [L.ByteString] -> L.ByteString
+printTensorDims file n vars = "  fprintf(" <> file <> ", " <> format <> ", " <> args <> ");\n"
+  where format = "\"" <> show n <> L.concat (replicate n " %u") <> "\\n\""
+        args = L.intercalate ", " vars
+
+-- | Generate code to print the elements of a tensor to a file
+printTensorElems :: L.ByteString -> L.ByteString -> TD.DataType -> L.ByteString
+printTensorElems file prefix t = L.unlines ls
+  where ls = [ "  for (int i = 0; i < " <> prefix <> ".length; i++) {"
+             , "    fprintf(" <> file <> ", " <> printFormat t <> " \"\\n\", " <> prefix <> ".buffer[i]);"
+             , "  }"
+             ]
+
+checkFun :: L.ByteString
+checkFun = L.unlines
+         [ "static inline void check(int n, int ref) {"
+         , "  static int items = 0;"
+         , "  if (n != ref) {"
+         , "    fprintf(stderr, \"I/O error: check failed, n = %d ref = %d after reading %d items\\n\","
+         , "                    n, ref, items );"
+         , "    exit(1);"
+         , "  }"
+         , "  items++;"
+         , "}"
+         ]
 
 -- | Mangle an ONNX node mane to a Feldspar identifier
 mangle :: Utf8 -> L.ByteString
@@ -331,6 +452,24 @@ scanFormat TD.INT64  = "\"%\" SCNd64"
 scanFormat TD.UNDEFINED  = error "onnxToFeld.scanFormat: UNDEFINED not implemented"
 scanFormat t        = error $ "onnxTFeld.scanFormat: type not implemented:" ++ show t
 
+-- | The printf() format string to write one element of the given type, including the quote marks.
+--   The inttypes.h macros for format conversions of fixed width types are used.
+printFormat :: TD.DataType -> L.ByteString
+printFormat TD.FLOAT16    = error "onnxToFeld.printFormat: FLOAT16 not implemented"
+printFormat TD.BFLOAT16   = error "onnxToFeld.printFormat: BFLOAT16 not implemented"
+printFormat TD.FLOAT  = "\"%f\""
+printFormat TD.DOUBLE = "\"%lf\""
+printFormat TD.UINT8  = "\"%\" PRIu8"
+printFormat TD.INT8   = "\"%\" PRId8"
+printFormat TD.UINT16 = "\"%\" PRIu16"
+printFormat TD.INT16  = "\"%\" PRId16"
+printFormat TD.UINT32 = "\"%\" PRIu32"
+printFormat TD.INT32  = "\"%\" PRId32"
+printFormat TD.UINT64 = "\"%\" PRIu64"
+printFormat TD.INT64  = "\"%\" PRId64"
+printFormat TD.UNDEFINED  = error "onnxToFeld.printFormat: UNDEFINED not implemented"
+printFormat t        = error $ "onnxTFeld.printFormat: type not implemented:" ++ show t
+
 -- | Map an ONNX DataType to the corresponding Type in Feldspar compiler
 toType :: TD.DataType -> Type
 toType TD.FLOAT16    = error "onnxToFeld.toType: FLOAT16 not implemented"
@@ -374,6 +513,13 @@ showElemT TD.UNDEFINED  = error "onnxToFeld.showElemT: UNDEFINED not implemented
 -- | Map an ONNX DataType to a ByteString representation of the corresponding C type
 showCElemT :: TD.DataType -> L.ByteString
 showCElemT t = fromString $ renderType $ toType t
+
+-- | Find the dimension (shape length) and element type of a ValueInfoProto
+vipType :: V.ValueInfoProto -> (Int, TD.DataType)
+vipType = go . fromJust . T.value . fromJust . V.type'
+  where go TV.Tensor_type{TV.tensor_type = t}
+           = (D.length $ TSP.dim $ fromJust $ TT.shape t, int2elemT $ TT.elem_type t)
+        go _ = error "onnxToFeld.vipType: not a tensor"
 
 showType :: TV.Value -> L.ByteString
 showType TV.Tensor_type{TV.tensor_type = t}
