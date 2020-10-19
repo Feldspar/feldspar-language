@@ -48,6 +48,8 @@ import Feldspar
 import Feldspar.Vector hiding (splitShape)
 import qualified Feldspar.Vector as V
 
+import Data.Hash
+
 -- | A list of attributes (key-value pair)
 type Attrs = [(AttrName, AttrArg)]
 
@@ -214,7 +216,7 @@ onnxDivF :: (Fractional a, ShapelyU sh1 sh2)
 onnxDivF _ = bcDivF
 
 -- | Implementation of ONNX tensor integral division
-onnxDivI :: (Integral a, ShapelyU sh1 sh2) 
+onnxDivI :: (Integral a, ShapelyU sh1 sh2)
          => Attrs -> DPull sh1 a -> DPull sh2 a -> DPull (UnionShape sh1 sh2) a
 onnxDivI _ = bcDivI
 
@@ -259,8 +261,11 @@ onnxBatchNormalization attrs xs gamma beta mean var = ys
         epsilon = value $ P.realToFrac $ getAttr attrs aaFloat 1e-5 "epsilon"
 
 -- | Flatten a tensor to a matrix
-onnxFlatten :: Pushy vec => Attrs -> vec a -> Push DIM2 a
-onnxFlatten attrs vec = flatPush (P.fromIntegral $ getAttr attrs aaInt 1 "axis") $ toPush vec
+--   We use Push vectors for flattening even though fusion is lost since flattening based on
+--   Pull vectors leads to index expressions containing division and modulus that have a greater
+--   performance impact than the loss of fusion.
+onnxFlatten :: (Pushy vec, Syntax a) => Attrs -> vec a -> Pull DIM2 a
+onnxFlatten attrs vec = toPull $ store $ flatPush (P.fromIntegral $ getAttr attrs aaInt 1 "axis") $ toPush vec
 
 -- | Flattening a Push vector to two dimensions
 flatPush :: forall sh a . Int -> Push sh a -> Push DIM2 a
@@ -284,12 +289,13 @@ takeDropShape i sh = P.splitAt j es
         j = if i P.< 0 then i + P.length es else i
 
 -- | Matrix multiplication of two dimensional temsors
-onnxGemm3 :: (RealFloat a, Numeric a, Pully vec, VecShape vec ~ DIM2)
-          => Attrs -> vec (Data a) -> vec (Data a) -> vec (Data a) -> DPull DIM2 a
-onnxGemm3 attrs vA vB vC = bcZipWith (+) (mmT vAT vBnT) $ toPull vC
-  where vA' = if alpha P.== 1.0 then toPull vA else map (* value alpha) $ toPull vA
+onnxGemm :: (RealFloat a, Numeric a, Pully vec, VecShape vec ~ DIM2, Pully vec2,
+             UnionShape DIM2 (VecShape vec2) ~ DIM2, Storable vec)
+         => Attrs -> vec (Data a) -> vec (Data a) -> vec2 (Data a) -> DPull DIM2 a
+onnxGemm attrs vA vB vC = bcZipWith (+) (mmT vAT vBnT) $ toPull vC
+  where vA' = if alpha P.== 1.0 then toPull $ store vA else map (* value alpha) $ toPull $ store vA
         vAT = if transA P.== 1 then transpose vA' else vA'
-        vB' = toPull vB
+        vB' = toPull $ store vB
         vBnT = if transA P.== transB then transpose vB' else vB' -- The mmT routine wants its second argument transposed
         alpha = P.realToFrac $ getAttr attrs aaFloat 1.0 "alpha"
         transA = getAttr attrs aaInt 0 "transA"
@@ -297,7 +303,10 @@ onnxGemm3 attrs vA vB vC = bcZipWith (+) (mmT vAT vBnT) $ toPull vC
 
 -- | Matrix multiplication that transposes its second argument
 mmT :: (Syntax a, Num a) => Pull DIM2 a -> Pull DIM2 a -> Pull DIM2 a
-mmT vecA vecBT = vvmap dim1 (\ rowA -> vvmap dim1 (sum . zipWith (*) rowA) vecBT) vecA
+mmT vecA vecBT = Pull ixf $ Z :. iL :. jL
+  where ixf (Z :. i :. j) = fromZero $ sum $ zipWith (*) (vecA !# (ZZ :! i :.. (0,kL))) (vecBT !# (ZZ :! j :.. (0,kL)))
+        [iL, kL] = P.reverse $ toList $ extent vecA
+        [jL, _]  = P.reverse $ toList $ extent vecBT
 
 -- | Summing over the three rightmost dimensions
 sum3D :: (Num a, Syntax a, Shapely sh)
@@ -314,10 +323,17 @@ infixl 5 <!
 (<!) :: Pull sh a -> Data Length -> Pull (sh :. Data Length) a
 Pull ixf ext <! n = Pull (\ (ix :. _) -> ixf ix) (ext :. n)
 
--- | Implementation of ONNX convolution operator
-onnxConv :: (Num a, Syntax a)
-         => Attrs -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM1 a -> Pull DIM4 a
-onnxConv attrs xs = onnxConvNP (value $ map fromInteger strides) pXs
+-- | Implementation of ONNX convolution operator for 2 inputs
+onnxConv_2 :: (Num a, Syntax a)
+           => Attrs -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM4 a
+onnxConv_2 attrs xs ws = onnxConv_3 attrs xs ws bs
+  where bs = constant (Z :. m) 0
+        Z :. m :. _ :. _ :. _ = extent ws
+
+-- | Implementation of ONNX convolution operator for 3 inputs
+onnxConv_3 :: (Num a, Syntax a)
+           => Attrs -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM1 a -> Pull DIM4 a
+onnxConv_3 attrs xs = onnxConvNP (value $ map fromInteger strides) pXs
   where -- dilations    = getAttr  attrs aaInts [1, 1]    "dilations" -- Currently unused
         -- group        = getAttr  attrs aaInt  1         "group"     -- Currently unused
         -- kernel_shape = getAttrM attrs aaInts           "kernel_shape" -- Currently unused
@@ -326,7 +342,7 @@ onnxConv attrs xs = onnxConvNP (value $ map fromInteger strides) pXs
         strides      = getAttr  attrs aaInts [1,1]     "strides"
         doPad = P.any (P./= 0) pads
         dPads = value $ map fromInteger pads :: Data [Length]
-        pXs = if doPad then toPull $ store $ pad dPads xs else xs
+        pXs = if doPad then toPull $ store $ pad dPads 0 xs else xs
 
 -- | Convolution with no padding
 onnxConvNP :: (Num a, Syntax a)
@@ -343,21 +359,47 @@ onnxConvNP ss xs ws bs = Pull ixf (Z :. nLen :. mLen :. h1 :. w1) `bcAdd` (bs <!
 
 -- | Implementation of ONNX global average pooling
 onnxGlobalAveragePool :: Fraction a => Attrs -> DPull DIM4 a -> DPull DIM4 a
-onnxGlobalAveragePool _ = vvmap dim2 avgF
-  where avgF vec = map (/ (i2n $ size $ extent vec)) (sum $ sum vec) <! 1 <! 1 
+onnxGlobalAveragePool _ vec@(Pull _ (Z :. n :. c :. h :. w)) = Pull ixf' (Z :. n :. c :. 1 :. 1)
+  where ixf' (Z :. nx :. cx :. _ :. _) = avgF $ vec !# (ZZ :! nx :! cx :.. (0,h) :.. (0,w))
+        avgF xs = (fromZero $ sum $ sum xs) / (i2n $ size $ extent xs)
+
+-- | Implementation of ONNX Relu
+onnxRelu :: (Numeric a, Ord a) => Attrs -> DPull sh a -> DPull sh a
+onnxRelu _ = fmap (max 0)
+
+-- | Implementation of ONNX MaxPool
+onnxMaxPool :: (Numeric a, Ord a, OnnxBounded a) => Attrs -> DPull DIM4 a -> DPull DIM4 a
+onnxMaxPool attrs xs = pool2d max onnxMinBound kernel_shape strides
+                     $ toPull $ store
+                     $ pad (value $ map fromInteger pads) onnxMinBound
+                     $ xs
+  where pads         = getAttr  attrs aaInts [0,0,0,0] "pads"
+        strides      = getAttr  attrs aaInts [1,1]     "strides"
+        kernel_shape = getAttr  attrs aaInts undefined "kernel_shape"
+
+-- | Two dimensional pooling combinator
+pool2d :: Type a => (Data a -> Data a -> Data a) -> Data a -> [Integer] -> [Integer] -> DPull DIM4 a -> DPull DIM4 a
+pool2d f z ks ss xs = Pull ixf (Z :. nLen :. mLen :. h1 :. w1)
+  where ixf (Z :. m :. n :. y :. x) = fromZero $ f2d $ xs !# (ZZ :! m :! n :.. (y*sY, kH) :.. (x*sX, kW))
+        [kH,kW] = map (value . fromInteger) ks :: [Data Length]
+        [sY,sX] = map (value . fromInteger) ss :: [Data Length]
+        f2d = fold f z . fold f z
+        [nLen, mLen, h, w] = P.reverse $ toList $ extent xs
+        h1 = (h - kH) `div` sY + 1
+        w1 = (w - kW) `div` sX + 1
 
 -- | Padding a multi dimensional vector
 pad :: forall a vec sh . (Syntax a, Num a, Pushy vec,
                           VecShape vec ~ (sh :. Data Length :. Data Length))
-    => Data [Length] -> vec a -> Push (sh :. Data Length :. Data Length) a
-pad ps vec
+    => Data [Length] -> a -> vec a -> Push (sh :. Data Length :. Data Length) a
+pad ps x vec
   = bpadding `vconc` (lpadding `hconc` pvec `hconc` rpadding) `vconc` tpadding
     where pvec = toPush vec
           (ext,m,n) = case extent pvec of sh :. i :. j -> (sh, i, j)
-          bpadding = toPush $ zeros (ext :. pB :. n1)
-          tpadding = toPush $ zeros (ext :. pT :. n1)
-          lpadding = toPush $ zeros (ext :. m :. pL)
-          rpadding = toPush $ zeros (ext :. m :. pR)
+          bpadding = toPush $ constant (ext :. pB :. n1) x
+          tpadding = toPush $ constant (ext :. pT :. n1) x
+          lpadding = toPush $ constant (ext :. m :. pL)  x
+          rpadding = toPush $ constant (ext :. m :. pR)  x
           (pB,pT,pL,pR) = (ps!0, ps!1, ps!2, ps!3)
           n1 = n + pL + pR
           vconc = V.conc (V.NotThis V.This)
@@ -442,3 +484,27 @@ vZipWith f vec1 vec2
 -- | Construct a Pull vector with an undefined index function and a given extent
 fromExt :: Shape sh -> Pull sh a
 fromExt = Pull (P.error "Extent of result depends on index function of argument.")
+
+{- The rationale for the definitions below is mainly max and min pooling in combination
+   with padding. ONNX specifies that the padding should not contribute to the max or min
+   value within a pooling window near the edge.
+-}
+
+class OnnxBounded a where
+  onnxMinBound :: a
+  onnxMaxBound :: a
+
+-- | OnnxBounded instances for Float
+instance OnnxBounded Float where
+  onnxMinBound = -(1/0)
+  onnxMaxBound =  (1/0)
+
+-- | OnnxBounded instance for Double
+instance OnnxBounded Double where
+  onnxMinBound = -(1/0)
+  onnxMaxBound =  (1/0)
+
+-- | OnnxBounded instance for Data
+instance (Hashable a, Type a, OnnxBounded a) => OnnxBounded (Data a) where
+  onnxMinBound = value onnxMinBound
+  onnxMaxBound = value onnxMaxBound
