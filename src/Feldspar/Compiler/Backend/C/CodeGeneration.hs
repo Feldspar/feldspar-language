@@ -218,8 +218,8 @@ instance CodeGen Variable where
 
 instance CodeGen Constant where
     cgen _   (IntConst c _)     = integer c
-    cgen _   (DoubleConst c)    = double c
-    cgen _   (FloatConst c)     = float c
+    cgen _   (DoubleConst c)    = cgRF c
+    cgen _   (FloatConst c)     = cgRF c
     cgen _   (BoolConst False)  = text "false"
     cgen _   (BoolConst True)   = text "true"
     cgen _   (StringConst s)    = text s
@@ -230,6 +230,12 @@ instance CodeGen Constant where
       where cmplxCnst = cgen env realPartComplexValue <+> char '+' <+>
                         cgen env imagPartComplexValue <> char 'i'
     cgenList env = sep . punctuate comma . map (cgen env)
+
+-- | Pretty print a floating point value so that Inf becomes valid c99
+cgRF :: (Show a, RealFloat a) => a -> Doc
+cgRF x | isInfinite x && x > 0 = text "INFINITY"
+       | isInfinite x && x < 0 = text "(-INFINITY)"
+       | otherwise = text $ show x
 
 instance CodeGen (Maybe String, Constant)
   where
