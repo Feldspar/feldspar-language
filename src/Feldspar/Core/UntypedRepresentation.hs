@@ -52,6 +52,7 @@ module Feldspar.Core.UntypedRepresentation (
   , Type(..)
   , Lit(..)
   , Var(..)
+  , AddressSpace(..)
   , Size(..)
   , Signedness(..)
   , Fork(..)
@@ -120,6 +121,10 @@ getAnnotation (In r _) = r
 -- | Drop the annotation part of an UntypedFeld
 dropAnnotation :: UntypedFeld a -> UntypedFeldF (UntypedFeld a)
 dropAnnotation (In _ e) = e
+
+-- | Indication of where an object is sored
+data AddressSpace = Local | Global
+    deriving (Eq,Show,Enum,Lift)
 
 data Size = S8 | S16 | S32 | S40 | S64
           | S128 -- Used by SICS.

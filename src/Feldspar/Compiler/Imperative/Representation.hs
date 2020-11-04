@@ -66,7 +66,7 @@ import Feldspar.Range (Range)
 import Feldspar.Compiler.Options (ErrorClass(..), handleError)
 import Feldspar.Core.Types (Length)
 import Feldspar.Core.UntypedRepresentation
-        (Signedness(..), Size(..), HasType(..))
+        (AddressSpace(..), Signedness(..), Size(..), HasType(..))
 
 --------------------------------------------------------------------------------
 -- * Representation of imperative programs
@@ -296,8 +296,8 @@ data Type =
       VoidType
     | Length :# ScalarType -- Machine SIMD vectors; xmm registers in x86.
     | StringType
-    | ArrayType (Range Length) Type
-    | NativeArray (Maybe Length) Type
+    | ArrayType AddressSpace (Range Length) Type
+    | NativeArray AddressSpace (Maybe Length) Type
     | StructType String [(String, Type)]
     | IVarType Type
     deriving (Lift, Show)
@@ -307,8 +307,8 @@ data Type =
 instance Eq Type where
    VoidType              == VoidType              = True
    (l1 :# t1)            == (l2 :# t2)            = l1 == l2 && t1 == t2
-   (ArrayType _ t1)      == (ArrayType _ t2)      = t1 == t2
-   (NativeArray l1 t1)   == (NativeArray l2 t2)   = l1 == l2 && t1 == t2
+   (ArrayType a1 _ t1)   == (ArrayType a2 _ t2)   = a1 == a2 && t1 == t2
+   (NativeArray a1 l1 t1)== (NativeArray a2 l2 t2)= a1 == a2 && l1 == l2 && t1 == t2
    (StructType _ l1)     == (StructType _ l2)     = l1 == l2
    (IVarType t1)         == (IVarType t2)         = t1 == t2
    StringType            == StringType            = True
@@ -337,10 +337,15 @@ renderType VoidType = "void"
 renderType (1 :# t) = renderScalarType t
 renderType (_ :# _) = error "renderType: No support for SIMD vector output"
 renderType StringType = "char *"
-renderType (ArrayType _ t) = renderType t ++ " *"
-renderType (NativeArray _ t) = renderType t
+renderType (ArrayType as _ t) = renderAddressSpace as ++ renderType t ++ " *"
+renderType (NativeArray as _ t) = renderAddressSpace as ++ renderType t
 renderType (StructType n _) = "struct " ++ n
 renderType IVarType{} = "struct ivar"
+
+-- | Render a C representation of an address space
+renderAddressSpace :: AddressSpace -> String
+renderAddressSpace Global = "global "
+renderAddressSpace Local  = "local "
 
 -- | Extend a helper function for the platform
 extend :: String -> Type -> String
@@ -361,7 +366,7 @@ instance HasType Constant where
     typeof FloatConst{}      = 1 :# FloatType
     typeof BoolConst{}       = 1 :# BoolType
     typeof StringConst{}     = StringType
-    typeof ArrayConst{..}    = NativeArray (Just (fromIntegral $ length arrayValues)) arrayType
+    typeof ArrayConst{..}    = NativeArray Global (Just (fromIntegral $ length arrayValues)) arrayType
     typeof StructConst{..}   = structType
     typeof ComplexConst{..}  = 1 :# ComplexType (typeof realPartComplexValue)
 
@@ -371,8 +376,8 @@ instance HasType Expression where
     typeof ArrayElem{..} = decrArrayDepth $ typeof array
       where
         decrArrayDepth :: Type -> Type
-        decrArrayDepth (ArrayType _ t)               = t
-        decrArrayDepth (NativeArray _ t)             = t
+        decrArrayDepth (ArrayType _ _ t)             = t
+        decrArrayDepth (NativeArray _ _ t)           = t
         -- Allow indexing of int* with [].
         decrArrayDepth (1 :# Pointer t)              = t
         decrArrayDepth t                             = reprError InternalError $ "Non-array variable is indexed! " ++ show array ++ " :: " ++ show t

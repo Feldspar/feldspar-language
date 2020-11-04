@@ -5,13 +5,13 @@
 
 struct awl_signedS32
 {
-  int32_t * buffer;
+  global int32_t * buffer;
   uint32_t length;
 };
 
 struct awl_awl_signedS32
 {
-  struct awl_signedS32 * buffer;
+  global struct awl_signedS32 * buffer;
   uint32_t length;
 };
 
@@ -23,19 +23,19 @@ struct s_2_2xunsignedS32
 
 struct awl_s_2_2xunsignedS32
 {
-  struct s_2_2xunsignedS32 * buffer;
+  global struct s_2_2xunsignedS32 * buffer;
   uint32_t length;
 };
 
 struct awl_awl_s_2_2xunsignedS32
 {
-  struct awl_s_2_2xunsignedS32 * buffer;
+  global struct awl_s_2_2xunsignedS32 * buffer;
   uint32_t length;
 };
 
-struct awl_signedS32 * initArray_awl_signedS32(struct awl_signedS32 * dst, uint32_t oldLen, uint32_t newLen);
+global struct awl_signedS32 * initArray_awl_signedS32(global struct awl_signedS32 * dst, uint32_t oldLen, uint32_t newLen);
 
-void freeArray_awl_signedS32(struct awl_signedS32 * src, int32_t srcLen);
+void freeArray_awl_signedS32(global struct awl_signedS32 * src, int32_t srcLen);
 
 void metrics(struct awl_signedS32 * v1, struct awl_signedS32 * v2, struct awl_awl_s_2_2xunsignedS32 * v3, struct awl_awl_signedS32 * out);
 

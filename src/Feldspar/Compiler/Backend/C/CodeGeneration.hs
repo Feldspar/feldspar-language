@@ -193,7 +193,7 @@ instance CodeGen Expression where
     cgen env VarExpr{..} = cgen env varExpr
     cgen env ArrayElem{..}
      | c@ConstExpr{} <- array
-     , (NativeArray _ t) <- typeof c
+     , (NativeArray _ _ t) <- typeof c
      = parens (parens (cgen env t <> brackets empty) <> cgen env c)
        <> hcat (map (brackets . cgen env) arrayIndex)
      | otherwise
@@ -284,8 +284,8 @@ blockComment ds = vcat (zipWith (<+>) (text "/*" : repeat (text " *")) ds)
                   $$ text " */"
 
 sizeInBrackets :: Type -> Doc
-sizeInBrackets (NativeArray l t) = brackets (maybe empty (text . show) l) <> sizeInBrackets t
-sizeInBrackets _                 = empty
+sizeInBrackets (NativeArray _ l t) = brackets (maybe empty (text . show) l) <> sizeInBrackets t
+sizeInBrackets _                   = empty
 
 stmt :: Doc -> Doc
 stmt = (<>semi)

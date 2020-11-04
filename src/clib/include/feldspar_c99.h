@@ -56,6 +56,11 @@
 #include "ivar.h"
 #include "taskpool.h"
 
+#if (defined(__i386) || defined(__x86_64)) && !defined(OpenCL)
+#define global
+#define local
+#endif
+
 #define min(X, Y)  ((X) < (Y) ? (X) : (Y))
 #define max(X, Y)  ((X) > (Y) ? (X) : (Y))
 

@@ -38,7 +38,7 @@ import Debug.Trace
 -- | Parse a file and return a Module representing the file
 parseFile :: FilePath -> B.ByteString -> [Entity] -> Maybe Module
 parseFile filename s hDefs =
-  case P.parse [C99] builtinTypes P.parseUnit s' (Just $ startPos filename) of
+  case P.parse [C99,OpenCL] builtinTypes P.parseUnit s' (Just $ startPos filename) of
       Left _ -> Nothing
       Right defs -> Just (Module $ fhDefs ++ toProgram hDefs defs)
    where s' = massageInput s
@@ -342,7 +342,7 @@ expToExpression' env tcontext (FnCall (Var (Id "at" _) _) [e1, e2] _)
   = ArrayElem (expToExpression env' e1) [expToExpression env' e2]
    where env' | (Var name _) <- e1
               , Just t <- tcontext
-              , Just (Variable (ArrayType _ VoidType) _) <- lookup (unId name) (vars env)
+              , Just (Variable (ArrayType _ _ VoidType) _) <- lookup (unId name) (vars env)
               = fixupEnv env e1 t
               | otherwise = env
 expToExpression' env _ (FnCall e es _)
@@ -488,7 +488,7 @@ typSpecToType env (Tstruct Nothing mfg _ _)
   = StructType fakeName (concatMap (fieldGroupToType env) (fromJust mfg))
 -- Array types are incomplete so fake one. We recover the type elsewhere.
 typSpecToType _ (Tstruct (Just (Id "array" _)) _ _ _)
-  = ArrayType universal fakeType
+  = ArrayType Global universal fakeType
 typSpecToType _ (Tstruct (Just (Id s _)) _ _ _)
   | "awl" `isPrefixOf` s
   , [t] <- decodeType s
@@ -533,7 +533,7 @@ declToType t DeclRoot{} = t
 declToType t (Ptr _ DeclRoot{} _) | pointedArray t = t
 declToType t (Ptr _ dcl _)  = declToType (1 :# Pointer t) dcl
 declToType _ BlockPtr{} = error "Blocks?"
-declToType t (Array _ (NoArraySize _) _ _) = NativeArray Nothing t
+declToType t (Array _ (NoArraySize _) _ _) = NativeArray Global Nothing t
 declToType _ (Array _tqs _sz _dcl _)
   = error "declToType: No support for sized native arrays yet."
 declToType t (Proto _ params _)
@@ -619,19 +619,19 @@ fixupEnv :: TPEnv -> Exp -> R.Type -> TPEnv
 fixupEnv env _ VoidType = env -- No new type information.
 fixupEnv env (UnOp Deref (Var (Id s _) _) _) tp = env { vars = goVar (vars env) }
   where goVar [] = []
-        goVar ((n, Variable (l :# (Pointer (ArrayType r _))) n'):t)
-         | s == n = (n, Variable (l :# Pointer (ArrayType r tp)) n'):goVar t
+        goVar ((n, Variable (l :# (Pointer (ArrayType as r _))) n'):t)
+         | s == n = (n, Variable (l :# Pointer (ArrayType as r tp)) n'):goVar t
         goVar (p:t) = p:goVar t
 fixupEnv _ (UnOp Deref e _) _ = error $ "fixupEnv: No support for " ++ show e
 fixupEnv env (Var (Id s _) _) tp = env { vars = goVar (vars env) }
   where goVar [] = []
-        goVar ((n, Variable (ArrayType r _) n'):t)
-         | s == n = (n, Variable (ArrayType r tp) n'):goVar t
+        goVar ((n, Variable (ArrayType as r _) n'):t)
+         | s == n = (n, Variable (ArrayType as r tp) n'):goVar t
         goVar (p:t) = p:goVar t
 fixupEnv env (FnCall (Var (Id "at" _) _) [(UnOp Deref (Var (Id s _) _) _), _] _) tp = env { vars = goVar (vars env) }
   where goVar [] = []
-        goVar ((n, Variable (k :# (Pointer (ArrayType r1 (ArrayType r2 _)))) n'):t)
-         | s == n = let nt = (k :# Pointer (ArrayType r1 (ArrayType r2 tp)))
+        goVar ((n, Variable (k :# (Pointer (ArrayType as1 r1 (ArrayType as2 r2 _)))) n'):t)
+         | s == n = let nt = (k :# Pointer (ArrayType as1 r1 (ArrayType as2 r2 tp)))
                     in (n, Variable nt n'):goVar t
         goVar (p:t) = p:goVar t
 fixupEnv env (Member (Var (Id s _) _) (Id name _) _) tp = env { vars = goStruct (vars env) }
@@ -641,8 +641,8 @@ fixupEnv env (Member (Var (Id s _) _) (Id name _) _) tp = env { vars = goStruct 
          , Just _ <- lookup name ns
          = (n, Variable (StructType s' ns') n'):goStruct t
            where ns' = map structFixup ns
-                 structFixup (mem, ArrayType r _)
-                  | mem == name = (mem, ArrayType r tp)
+                 structFixup (mem, ArrayType as r _)
+                  | mem == name = (mem, ArrayType as r tp)
                  structFixup (mem, _)
                   | mem == name = (mem, tp)
                  structFixup e = e
@@ -654,8 +654,8 @@ fixupEnv env (Member (FnCall (Var (Id "at" _) _) [Var (Id s _) _, _] _) (Id name
          , Just _ <- lookup name ns
          = (n, Variable (StructType s' ns') n'):goStructAt t
            where ns' = map structFixup ns
-                 structFixup (mem, ArrayType r _)
-                  | mem == name = (mem, ArrayType r tp)
+                 structFixup (mem, ArrayType as r _)
+                  | mem == name = (mem, ArrayType as r tp)
                  structFixup e = e
         goStructAt (p:t) = p:goStructAt t
 fixupEnv env _ _ = env
