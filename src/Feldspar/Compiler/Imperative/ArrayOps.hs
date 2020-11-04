@@ -40,7 +40,7 @@ import Feldspar.Compiler.Imperative.Representation
         (Constant(..), Module(..), Entity(..), Declaration(..), Program(..),
          Function(..), ParType(..), Block(..), ActualParameter(..),
          Expression(..), Variable(..), Type(..), ScalarType(..),
-         HasType(..), Size(..), Signedness(..))
+         HasType(..), AddressSpace(..), Size(..), Signedness(..))
 import Feldspar.Compiler.Options (Options(..))
 import Feldspar.Lattice (universal)
 
@@ -64,9 +64,9 @@ mkCopyArrayPos opts t = Proc name False args (typeof dstVar) (Just body)
         body = Block decls prog
         decls = []
         ixVar = Variable intT "i"
-        srcVar = Variable (ArrayType universal t) "src"
+        srcVar = Variable (arrayT t) "src"
         srcLVar = Variable intT "srcLen"
-        dstVar = Variable (ArrayType universal t) "dst"
+        dstVar = Variable (arrayT t) "dst"
         dstLVar = Variable intT "dstLen"
         posVar = Variable intT "pos"
         prog = Sequence
@@ -83,15 +83,15 @@ mkCopyArray :: Type -> Entity
 mkCopyArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "copyArray" t
         args = [dstVar, dstLVar, srcVar, srcLVar]
-        srcVar = Variable (ArrayType universal t) "src"
+        srcVar = Variable (arrayT t) "src"
         srcLVar = Variable intT "srcLen"
-        dstVar = Variable (ArrayType universal t) "dst"
+        dstVar = Variable (arrayT t) "dst"
         dstLVar = Variable intT "dstLen"
         body = Block decls prog
         decls = []
         prog = Sequence
                [ Assign (VarExpr dstVar)
-                        (fun (ArrayType universal t)
+                        (fun (arrayT t)
                              (variant "copyArrayPos" t)
                              [VarExpr dstVar, VarExpr dstLVar, VarExpr srcVar, VarExpr srcLVar, zero])
                , call "return" [ValueParameter $ VarExpr dstVar]
@@ -102,9 +102,9 @@ mkInitCopyArray :: Type -> Entity
 mkInitCopyArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "initCopyArray" t
         args = [dstVar, dstLVar, srcVar, srcLVar]
-        srcVar = Variable (ArrayType universal t) "src"
+        srcVar = Variable (arrayT t) "src"
         srcLVar = Variable intT "srcLen"
-        dstVar = Variable (ArrayType universal t) "dst"
+        dstVar = Variable (arrayT t) "dst"
         dstLVar = Variable intT "dstLen"
         body = Block decls prog
         decls = []
@@ -112,7 +112,7 @@ mkInitCopyArray t = Proc name False args (typeof dstVar) (Just body)
                [ Assign (VarExpr dstVar) (arrayFun "initArray" [VarExpr dstVar, VarExpr dstLVar, VarExpr srcLVar])
                , Assign (VarExpr dstLVar) (VarExpr srcLVar)
                , Assign (VarExpr dstVar)
-                        (fun (ArrayType universal t)
+                        (fun (arrayT t)
                              (variant "copyArrayPos" t)
                              [VarExpr dstVar, VarExpr dstLVar, VarExpr srcVar, VarExpr srcLVar, zero])
                , call "return" [ValueParameter $ VarExpr dstVar]
@@ -123,7 +123,7 @@ mkInitArray :: Type -> Entity
 mkInitArray t = Proc name False args (typeof dstVar) (Just body)
   where name = variant "initArray" t
         args = [dstVar, oldLen, newLen]
-        dstVar = Variable (ArrayType universal t) "dst"
+        dstVar = Variable (arrayT t) "dst"
         oldLen = Variable lengthT "oldLen"
         newLen = Variable lengthT "newLen"
         body = Block [] prog
@@ -148,13 +148,13 @@ mkInitArray t = Proc name False args (typeof dstVar) (Just body)
 
         ixVar = Variable intT "i"
         nullVar t' n = Variable t' ("null_arr_" ++ show n)
-        arrT = ArrayType universal t
+        arrT = arrayT t
 
 -- | Free an array
 mkFreeArray :: Type -> Entity
 mkFreeArray t = Proc name False [srcVar, srcLVar] VoidType (Just body)
   where name = variant "freeArray" t
-        srcVar = Variable (ArrayType universal t) "src"
+        srcVar = Variable (arrayT t) "src"
         srcLVar = Variable intT "srcLen"
         body = Block [] $ Sequence stms
         stms = [ for Parallel ixVar zero (VarExpr srcLVar) one loopBody'
@@ -172,8 +172,8 @@ boolT   = 1 :# BoolType
 
 -- | Extract all arrays nested in a type
 arrays :: Expression -> Type -> [(Expression, Type)]
-arrays e t@(StructType _ [("buffer", ArrayType _ _),_]) = [(e,t)]
-arrays e (NativeArray _ t) = [(e,t)]
+arrays e t@(StructType _ [("buffer", ArrayType _ _ _),_]) = [(e,t)]
+arrays e (NativeArray _ _ t) = [(e,t)]
 arrays e (StructType _ fs) = concat [arrays (StructField e f) t | (f,t) <- fs]
 arrays _ _                 = []
 
@@ -230,13 +230,13 @@ lower opts es' = runWriter $ censor (nub . concatMap close) $ mapM lcEnt es'
         lcAlt (p, b) = do b' <- lcBlock b
                           return (p, b')
 
-        eTypesL _ (StructType _ [("buffer", ArrayType _ t), _]) = [t]
-        eTypesL _ (NativeArray _ t) = [t]
+        eTypesL _ (StructType _ [("buffer", ArrayType _ _ t), _]) = [t]
+        eTypesL _ (NativeArray _ _ t) = [t]
         eTypesL e t = error $ "ArrayOps.eTypesL: surprising array type "
                             ++ show t ++ " with rhs\n  " ++ show e
 
-        eTypes _ (ArrayType _ t) = [t]
-        eTypes _ (NativeArray _ t) = [t]
+        eTypes _ (ArrayType _ _ t) = [t]
+        eTypes _ (NativeArray _ _ t) = [t]
         eTypes e t = error $ "ArrayOps.eTypes: surprising array type "
                            ++ show t ++ " with rhs\n  " ++ show e
 
@@ -284,3 +284,5 @@ zero :: Expression
 zero = litI32 0
 one :: Expression
 one  = litI32 1
+arrayT :: Type -> Type
+arrayT t = ArrayType Global universal t

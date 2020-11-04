@@ -1,7 +1,7 @@
 #include "deepArrayCopy.h"
 
 
-struct awl_awl_unsignedS32 * copyArrayPos_awl_awl_unsignedS32(struct awl_awl_unsignedS32 * dst, int32_t dstLen, struct awl_awl_unsignedS32 * src, int32_t srcLen, int32_t pos)
+global struct awl_awl_unsignedS32 * copyArrayPos_awl_awl_unsignedS32(global struct awl_awl_unsignedS32 * dst, int32_t dstLen, global struct awl_awl_unsignedS32 * src, int32_t srcLen, int32_t pos)
 {
   for (int32_t i = 0; i < srcLen; i += 1)
   {
@@ -11,13 +11,13 @@ struct awl_awl_unsignedS32 * copyArrayPos_awl_awl_unsignedS32(struct awl_awl_uns
   return(dst);
 }
 
-struct awl_awl_unsignedS32 * copyArray_awl_awl_unsignedS32(struct awl_awl_unsignedS32 * dst, int32_t dstLen, struct awl_awl_unsignedS32 * src, int32_t srcLen)
+global struct awl_awl_unsignedS32 * copyArray_awl_awl_unsignedS32(global struct awl_awl_unsignedS32 * dst, int32_t dstLen, global struct awl_awl_unsignedS32 * src, int32_t srcLen)
 {
   dst = copyArrayPos_awl_awl_unsignedS32(dst, dstLen, src, srcLen, 0);
   return(dst);
 }
 
-struct awl_awl_unsignedS32 * initCopyArray_awl_awl_unsignedS32(struct awl_awl_unsignedS32 * dst, int32_t dstLen, struct awl_awl_unsignedS32 * src, int32_t srcLen)
+global struct awl_awl_unsignedS32 * initCopyArray_awl_awl_unsignedS32(global struct awl_awl_unsignedS32 * dst, int32_t dstLen, global struct awl_awl_unsignedS32 * src, int32_t srcLen)
 {
   dst = initArray_awl_awl_unsignedS32(dst, dstLen, srcLen);
   dstLen = srcLen;
@@ -25,7 +25,7 @@ struct awl_awl_unsignedS32 * initCopyArray_awl_awl_unsignedS32(struct awl_awl_un
   return(dst);
 }
 
-struct awl_unsignedS32 * copyArrayPos_awl_unsignedS32(struct awl_unsignedS32 * dst, int32_t dstLen, struct awl_unsignedS32 * src, int32_t srcLen, int32_t pos)
+global struct awl_unsignedS32 * copyArrayPos_awl_unsignedS32(global struct awl_unsignedS32 * dst, int32_t dstLen, global struct awl_unsignedS32 * src, int32_t srcLen, int32_t pos)
 {
   for (int32_t i = 0; i < srcLen; i += 1)
   {
@@ -35,13 +35,13 @@ struct awl_unsignedS32 * copyArrayPos_awl_unsignedS32(struct awl_unsignedS32 * d
   return(dst);
 }
 
-struct awl_unsignedS32 * copyArray_awl_unsignedS32(struct awl_unsignedS32 * dst, int32_t dstLen, struct awl_unsignedS32 * src, int32_t srcLen)
+global struct awl_unsignedS32 * copyArray_awl_unsignedS32(global struct awl_unsignedS32 * dst, int32_t dstLen, global struct awl_unsignedS32 * src, int32_t srcLen)
 {
   dst = copyArrayPos_awl_unsignedS32(dst, dstLen, src, srcLen, 0);
   return(dst);
 }
 
-struct awl_unsignedS32 * initCopyArray_awl_unsignedS32(struct awl_unsignedS32 * dst, int32_t dstLen, struct awl_unsignedS32 * src, int32_t srcLen)
+global struct awl_unsignedS32 * initCopyArray_awl_unsignedS32(global struct awl_unsignedS32 * dst, int32_t dstLen, global struct awl_unsignedS32 * src, int32_t srcLen)
 {
   dst = initArray_awl_unsignedS32(dst, dstLen, srcLen);
   dstLen = srcLen;
@@ -49,7 +49,7 @@ struct awl_unsignedS32 * initCopyArray_awl_unsignedS32(struct awl_unsignedS32 * 
   return(dst);
 }
 
-struct awl_awl_unsignedS32 * initArray_awl_awl_unsignedS32(struct awl_awl_unsignedS32 * dst, uint32_t oldLen, uint32_t newLen)
+global struct awl_awl_unsignedS32 * initArray_awl_awl_unsignedS32(global struct awl_awl_unsignedS32 * dst, uint32_t oldLen, uint32_t newLen)
 {
   if ((oldLen != newLen))
   {
@@ -75,7 +75,7 @@ struct awl_awl_unsignedS32 * initArray_awl_awl_unsignedS32(struct awl_awl_unsign
   return(dst);
 }
 
-void freeArray_awl_awl_unsignedS32(struct awl_awl_unsignedS32 * src, int32_t srcLen)
+void freeArray_awl_awl_unsignedS32(global struct awl_awl_unsignedS32 * src, int32_t srcLen)
 {
   for (int32_t i = 0; i < srcLen; i += 1)
   {
@@ -84,7 +84,7 @@ void freeArray_awl_awl_unsignedS32(struct awl_awl_unsignedS32 * src, int32_t src
   freeArray(src);
 }
 
-struct awl_unsignedS32 * initArray_awl_unsignedS32(struct awl_unsignedS32 * dst, uint32_t oldLen, uint32_t newLen)
+global struct awl_unsignedS32 * initArray_awl_unsignedS32(global struct awl_unsignedS32 * dst, uint32_t oldLen, uint32_t newLen)
 {
   if ((oldLen != newLen))
   {
@@ -110,7 +110,7 @@ struct awl_unsignedS32 * initArray_awl_unsignedS32(struct awl_unsignedS32 * dst,
   return(dst);
 }
 
-void freeArray_awl_unsignedS32(struct awl_unsignedS32 * src, int32_t srcLen)
+void freeArray_awl_unsignedS32(global struct awl_unsignedS32 * src, int32_t srcLen)
 {
   for (int32_t i = 0; i < srcLen; i += 1)
   {

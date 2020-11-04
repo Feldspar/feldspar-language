@@ -170,7 +170,7 @@ initArray (Just arr) len
 freeArray :: Expression -> Program
 freeArray arr
   = call (variant "freeArray" t) $ map ValueParameter $ take n $ arrayBufLen arr
-   where StructType _ [("buffer", ArrayType _ t), _] = typeof arr
+   where StructType _ [("buffer", ArrayType _ _ t), _] = typeof arr
          n = if isShallow t then 1 else 2
 
 -- | Generate 'freeArray' calls for all arrays in a list of declarations
@@ -202,15 +202,15 @@ staticArrayLength :: Expression -> Maybe Length
 staticArrayLength = go []  -- TODO: Extend to handle x.member1.member2
   where go :: [String] -> Expression -> Maybe Length
         go []    (ConstExpr (ArrayConst l _)) = Just (fromIntegral $ length l)
-        go []    (VarExpr (Variable (ArrayType r _) _)) | isSingleton r = Just (upperBound r)
-        go []    (VarExpr (Variable (NativeArray (Just l) _) _)) = Just l
+        go []    (VarExpr (Variable (ArrayType _ r _) _)) | isSingleton r = Just (upperBound r)
+        go []    (VarExpr (Variable (NativeArray _ (Just l) _) _)) = Just l
         go []    (Deref e) = go [] e -- TODO: this is questionable; we now look at an expression for the address of the array
         go ss    (StructField e s) = go (s:ss) e
         go ss    (AddrOf e) = go ss e
         go (s:_) (VarExpr (Variable (StructType _ fields) _))
-          | Just (ArrayType r _) <- lookup s fields
+          | Just (ArrayType _ r _) <- lookup s fields
           , isSingleton r = Just (upperBound r)
-          | Just (NativeArray (Just l) _) <- lookup s fields
+          | Just (NativeArray _ (Just l) _) <- lookup s fields
           = Just l
         go _ _ = Nothing
 
@@ -330,7 +330,7 @@ isAwLType (StructType _ [("buffer", ArrayType{}), ("length",_)])
 isAwLType _ = False
 
 elemTyAwL :: Type -> Maybe Type
-elemTyAwL (StructType _ [("buffer", ArrayType _ t), ("length",_)]) = Just t
+elemTyAwL (StructType _ [("buffer", ArrayType _ _ t), ("length",_)]) = Just t
 elemTyAwL _ = Nothing
 
 isArray :: Type -> Bool
@@ -375,8 +375,8 @@ arrayFun name (dst:dLen:es)
   = fun arrTy (variant name eTy) (dst:dLen:addSize es eTy)
    where arrTy = typeof dst
          eTy   = elemType arrTy
-         elemType (ArrayType _ t) = t
-         elemType (StructType _ [("buffer", ArrayType _ t), _]) = t
+         elemType (ArrayType _ _ t) = t
+         elemType (StructType _ [("buffer", ArrayType _ _ t), _]) = t
          elemType t = error $ "Frontend.elemType: not an array " ++ show t
          addSize es' t | isShallow t = SizeOf t:es'
                        | otherwise   = es'
@@ -384,7 +384,7 @@ arrayFun _ _ = error "arrayFun: pattern match failure"
 
 -- | The type of an array paired with its length
 mkAwLType :: Range Length -> Type -> Type
-mkAwLType r t = StructType n [("buffer", ArrayType r t), ("length", uint32)]
+mkAwLType r t = StructType n [("buffer", ArrayType Global r t), ("length", uint32)]
   where n = "awl_" ++ encodeType t
 
 -- | Does the parameters allow a fast/cheap (in register) return.
@@ -476,9 +476,9 @@ encodeType = go
     go StringType            = "string"
     go (_ :# t)              = goScalar t
     go (IVarType t)          = "i_" ++ go t
-    go (NativeArray _ t)     = "narr_" ++ go t
+    go (NativeArray _ _ t)   = "narr_" ++ go t
     go (StructType n _)      = n
-    go (ArrayType _ t)       = "arr_" ++ go t
+    go (ArrayType _ _ t)     = "arr_" ++ go t
     goScalar BoolType        = "bool"
     goScalar FloatType       = "float"
     goScalar DoubleType      = "double"
@@ -513,7 +513,7 @@ decodeType = goL []
      where (tt, t') = go t
     go (stripPrefix "i_"       -> Just t) = (IVarType tt, t')
      where (tt, t') = go t
-    go (stripPrefix "narr_"    -> Just t) = (NativeArray Nothing tt, t')
+    go (stripPrefix "narr_"    -> Just t) = (NativeArray Global Nothing tt, t')
      where (tt, t') = go t
     go h@('s':'_':t) = (StructType h' $ zipWith mkMember [1 :: Int ..] ts, t'')
        where mkMember n' tmem = ("member" ++ show n', tmem)
@@ -525,7 +525,7 @@ decodeType = goL []
                             Just (m, 'x':rs) = decodeLen s
              structGo _ _ _ = error "decodeType: pattern match failure"
              h' = take (length h - length t'') h
-    go (stripPrefix "arr_"     -> Just t) = (ArrayType universal tt, t')
+    go (stripPrefix "arr_"     -> Just t) = (ArrayType Global universal tt, t')
       where (tt, t') = go t
     go (stripPrefix "awl_"     -> Just t) = (mkAwLType universal tt, t')
       where (tt, t') = go t

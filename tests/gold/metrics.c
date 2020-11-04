@@ -1,7 +1,7 @@
 #include "metrics.h"
 
 
-struct awl_signedS32 * initArray_awl_signedS32(struct awl_signedS32 * dst, uint32_t oldLen, uint32_t newLen)
+global struct awl_signedS32 * initArray_awl_signedS32(global struct awl_signedS32 * dst, uint32_t oldLen, uint32_t newLen)
 {
   if ((oldLen != newLen))
   {
@@ -27,7 +27,7 @@ struct awl_signedS32 * initArray_awl_signedS32(struct awl_signedS32 * dst, uint3
   return(dst);
 }
 
-void freeArray_awl_signedS32(struct awl_signedS32 * src, int32_t srcLen)
+void freeArray_awl_signedS32(global struct awl_signedS32 * src, int32_t srcLen)
 {
   for (int32_t i = 0; i < srcLen; i += 1)
   {

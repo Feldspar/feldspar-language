@@ -5,13 +5,13 @@
 
 struct awl_i_awl_signedS32
 {
-  struct ivar * buffer;
+  global struct ivar * buffer;
   uint32_t length;
 };
 
 struct awl_signedS32
 {
-  int32_t * buffer;
+  global int32_t * buffer;
   uint32_t length;
 };
 

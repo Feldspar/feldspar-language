@@ -238,7 +238,7 @@ getTypeDefs defs = nub $ concatMap mkDef comps
     mkDef (StructType n members)
       =  concatMap (mkDef . snd) members
       ++ [StructDef n (map (uncurry StructMember) members)]
-    mkDef (ArrayType _ typ)               = mkDef typ
+    mkDef (ArrayType _ _ typ)             = mkDef typ
     mkDef (_ :# (Pointer typ))            = mkDef typ
     mkDef _                               = []
 
@@ -448,14 +448,14 @@ compileType opt (Ut.TupType ts)        = mkStructType
 compileType opt (Ut.MutType a)         = compileType opt a
 compileType opt (Ut.RefType a)         = compileType opt a
 compileType opt (Ut.ArrayType rs a)
- | useNativeArrays opt = NativeArray (Just $ upperBound rs) $ compileType opt a
+ | useNativeArrays opt = NativeArray Global (Just $ upperBound rs) $ compileType opt a
  | otherwise           = mkAwLType rs $ compileType opt a
 compileType opt (Ut.MArrType rs a)
- | useNativeArrays opt = NativeArray (Just $ upperBound rs) $ compileType opt a
+ | useNativeArrays opt = NativeArray Global (Just $ upperBound rs) $ compileType opt a
  | otherwise           = mkAwLType rs $ compileType opt a
 compileType opt (Ut.ParType a)         = compileType opt a
 compileType opt (Ut.ElementsType a)
- | useNativeArrays opt = NativeArray Nothing $ compileType opt a
+ | useNativeArrays opt = NativeArray Global Nothing $ compileType opt a
  | otherwise           = mkAwLType universal $ compileType opt a
 compileType opt (Ut.IVarType a)        = IVarType $ compileType opt a
 compileType opt (Ut.FunType _ b)       = compileType opt b
