@@ -54,13 +54,13 @@ import qualified Onnx.ValueInfoProto as V
 
 import Text.ProtocolBuffers (Utf8, Int64, messageGet, utf8)
 
-import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.ByteString.Lazy.UTF8 as U
 import qualified Data.ByteString.Lazy.Builder as B
 
 import qualified Data.Foldable as D (toList, foldMap, length, concatMap)
-import qualified Data.Sequence as D (Seq, sortBy, sort)
+import qualified Data.Sequence as D (Seq, sortBy, sort, index)
+import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.List (groupBy, group)
 import Data.Maybe (fromJust, fromMaybe)
@@ -188,11 +188,14 @@ mkProgramFile gr initGroups inputs multiUses
             , ""
             , name <> " " <> L.unwords params <> " = " <> tuplify (map (mangle . vipName) $ D.toList $ G.output gr)
             , "  where "
-              <> L.intercalate "\n        " (accesses ++ "-- Nodes" : D.concatMap (mkNode multiUses) (G.node gr))
+              <> L.intercalate "\n        " (accesses ++ "-- Nodes" : D.concatMap (mkNode multiUses tEnv) (G.node gr))
             ]
   where name = mangle $ fromJust $ G.name gr
-        params = "(weights :: WeightRec)" : map (mangle . vipName) inputs
+        params = "(weights :: WeightRec)" : map mkParam inputs
         accesses = map mkAccess $ concat initGroups
+        tEnv = M.fromList [(fromJust $ TP.name t, t) | t <- D.toList $ G.initializer gr]
+        mkParam ti = "(" <> mangle (vipName ti) <> " :: " <> shTy (vipType ti) <> ")"
+        shTy (d,t) = "DPull DIM" <> show d <> " " <> showElemT t
 
 -- | Compute a string representation of the Haskell type of a group of initialized tensors
 --   with the same dimensionality and element type.
@@ -202,16 +205,24 @@ mkITH ti = "Pull DIM1 (DPull (" <> mkSh (D.toList $ tiDims ti) <> ") " <> eTyH <
         eTyH = showElemT $ tiType ti
 
 -- | Construct a Feldspar pattern binding for an ONNX graph node
-mkNode :: S.Set Utf8 -> N.NodeProto -> [L.ByteString]
-mkNode mUses n = [outs <> " = " <> forcing <> op <> " " <> attrs]
-              ++ [ "    " <> mangle v | v <- D.toList $ N.input n]
-              ++ [""]
+mkNode :: S.Set Utf8 -> M.Map Utf8 TP.TensorProto -> N.NodeProto -> [L.ByteString]
+mkNode mUses tEnv n = [outs <> " = " <> forcing <> op <> " " <> attrs]
+                   ++ [ "    " <> mangle v | v <- D.toList $ N.input n]
+                   ++ [""]
   where outs = tuplify $ map mangle $ D.toList $ N.output n
-        op = "onnx" <> opStr <> if opStr `elem` optArgOps then "_" <> show (D.length $ N.input n) else ""
+        op = "onnx" <> opStr <> variant opStr
         opStr = strFromJ (N.op_type n)
         optArgOps = ["Conv"]
         attrs = "[" <> L.intercalate ", " (map showAttribute $ D.toList $ N.attribute n) <> "]"
         forcing = if any (flip S.member mUses) $ N.output n then "force $ " else ""
+        variant "Reshape" = "_d" <>( show $ shapeToDim $ tEnv M.! (N.input n `D.index` 1))
+        variant o | o `elem` optArgOps
+                          = "_" <> show (D.length $ N.input n)
+                  | otherwise = ""
+
+-- | Compute a number of dimensions from a tensor representing a shape
+shapeToDim :: TP.TensorProto -> Int64
+shapeToDim p = TP.dims p `D.index` 0
 
 -- | Read from the weight record
 mkAccess :: TensorInfo -> L.ByteString
@@ -396,7 +407,11 @@ checkFun = L.unlines
 
 -- | Mangle an ONNX node mane to a Feldspar identifier
 mangle :: Utf8 -> L.ByteString
-mangle s = "m_" <> utf8 s
+mangle s = "m_" <> L.concatMap subst (utf8 s)
+  where subst '/'  = "\'s"
+        subst ':'  = "\'c"
+        subst '\'' = "\'\'"
+        subst c    = L.singleton c
 
 showAttribute :: A.AttributeProto -> L.ByteString
 showAttribute a = "(\"" <> nStr <> "\", " <> val nStr <> ")"
@@ -415,6 +430,9 @@ showAttribute a = "(\"" <> nStr <> "\", " <> val nStr <> ")"
         val "beta"         = showAttrFloat a
         val "transA"       = showAttrInt a
         val "transB"       = showAttrInt a
+        -- Flatten
+        val "axis"         = showAttrInt a
+        -- Not found
         val _ = "_|_"
 
 showAttrInts :: A.AttributeProto -> L.ByteString

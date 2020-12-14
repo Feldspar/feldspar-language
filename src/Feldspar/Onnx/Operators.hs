@@ -264,7 +264,7 @@ onnxBatchNormalization attrs xs gamma beta mean var = ys
 --   We use Push vectors for flattening even though fusion is lost since flattening based on
 --   Pull vectors leads to index expressions containing division and modulus that have a greater
 --   performance impact than the loss of fusion.
-onnxFlatten :: (Pushy vec, Syntax a) => Attrs -> vec a -> Pull DIM2 a
+onnxFlatten :: Syntax a => Attrs -> Pull sh a -> Pull DIM2 a
 onnxFlatten attrs vec = toPull $ store $ flatPush (P.fromIntegral $ getAttr attrs aaInt 1 "axis") $ toPush vec
 
 -- | Flattening a Push vector to two dimensions
@@ -387,6 +387,25 @@ pool2d f z ks ss xs = Pull ixf (Z :. nLen :. mLen :. h1 :. w1)
         [nLen, mLen, h, w] = P.reverse $ toList $ extent xs
         h1 = (h - kH) `div` sY + 1
         w1 = (w - kW) `div` sX + 1
+
+-- | Implementation of ONNX Identity operator
+onnxIdentity :: Attrs -> a -> a
+onnxIdentity _ x = x
+
+-- | Implementation of 3d variant of ONNX Reshape operator
+onnxReshape_d3 :: Type a => Attrs -> DPull sh a -> DPull DIM1 Int64 -> DPull DIM3 a
+onnxReshape_d3 _ (Pull ixf ext) shape = Pull ixf1 ext1
+  where lext = P.reverse $ toList ext
+        ixf1 = ixf . fromIndex ext . toIndex ext1
+        ext1 = Z :. dsize 0 :. dsize 1 :. dsize 2
+        dsize i = case P.drop (P.fromIntegral i) lext of
+                    [] -> m
+                    n : _ -> m == 0 ? n $ m
+                  where m = i2n $ shape ! (Z :. (value i :: Data Length))
+
+-- | Implementaion of ONNX MatMul operator
+onnxMatMul :: (RealFloat a, Numeric a) => Attrs -> DPull DIM2 a -> DPull DIM2 a -> DPull DIM2 a
+onnxMatMul _ a b = mmT a (transpose b)
 
 -- | Padding a multi dimensional vector
 pad :: forall a vec sh . (Syntax a, Num a, Pushy vec,
