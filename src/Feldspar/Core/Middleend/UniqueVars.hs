@@ -52,7 +52,8 @@ uniqA vm (In r e) = do e1 <- uniq vm e
                        return $ In r e1
 
 uniq :: M.Map VarId (RRExp a) -> RRExp a -> U (RRExp a)
-uniq vm (Variable v) = return $ vm M.! varNum v
+uniq vm (Variable v) = return $ M.findWithDefault err (varNum v) vm
+  where err = error $ "Did not find variable " ++ show v
 uniq vm (App op t es) = do es1 <- mapM (uniqA vm) es
                            return $ App op t es1
 uniq _ (Literal l) = return $ Literal l
