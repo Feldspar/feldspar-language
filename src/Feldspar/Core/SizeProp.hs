@@ -41,7 +41,7 @@
 module Feldspar.Core.SizeProp (sizeProp) where
 
 import Feldspar.Core.Representation
-import Feldspar.Core.Types (Size, Type, (:>)(..))
+import Feldspar.Core.Types (Size, Type, (:>)(..), Length)
 import qualified Feldspar.Core.Types as T
 import Feldspar.Range
 import Feldspar.Lattice (Lattice, top, bot, (\/), (/\), universal)
@@ -62,13 +62,13 @@ spA vm (_ :& Sym (Lambda v) :@ e)
 -- | Applications and lambdas based on head operator
 -- | Array
 spA vm (_ :& Sym Parallel :@ a :@ (_ :& Sym (Lambda v) :@ e))
-  | a1@(i1@(Info ai1) :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Sym (Variable v))) e
+  | a1@(Info ai1 :& _) <- spA vm a
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info (indexVarRange ai1) :& Sym (Variable v))) e
   = Info (ai1 :> ei1) :& Sym Parallel :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
 spA vm (_ :& Sym Sequential :@ a :@ b :@ (_ :& Sym (Lambda v) :@ (_ :& Sym (Lambda w) :@ e)))
   | a1@(Info ai1 :& _) <- spA vm a
   , b1 <- spA vm b
-  , vm' <- extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))
+  , vm' <- extendBE vm (CBind v $ Info (indexVarRange ai1) :& Sym (Variable v))
   , e1@(Info ei1@(s, _) :& _) <- spA (extendBE vm' (CBind w $ Info top :& Sym (Variable w))) e
   = Info (ai1 :> s) :& Sym Sequential :@ a1 :@ b1 :@ (Info (ai1, (top, ei1)) :& Sym (Lambda v) :@ (Info (top, ei1) :& Sym (Lambda w) :@ e1))
 spA vm (_ :& Sym Append :@ a :@ b)
@@ -193,8 +193,9 @@ spA vm (_ :& Sym Floor :@ a)
 
 -- | Elements
 spA vm (_ :& Sym EMaterialize :@ a :@ b)
-  | b1@(Info bi1 :& _) <- spA vm b
-  = Info bi1 :& Sym EMaterialize :@ spA vm a :@ b1
+  | b1@(Info (_ :> ival) :& _) <- spA vm b
+  , a1@(Info ilen :& _) <- spA vm a
+  = Info (ilen :> ival) :& Sym EMaterialize :@ a1 :@ b1
 spA vm (_ :& Sym EWrite :@ a :@ b)
   | a1@(Info ai1 :& _) <- spA vm a
   , b1@(Info bi1 :& _) <- spA vm b
@@ -206,8 +207,8 @@ spA vm (_ :& Sym EPar :@ a :@ b)
   , b1@(Info bi1 :& _) <- spA vm b
   = Info (ai1 \/ bi1) :& Sym EPar :@ a1 :@ b1
 spA vm (_ :& Sym EparFor :@ a :@ (_ :& Sym (Lambda v) :@ e))
-  | a1@(i1@(Info ai1) :& _) <- spA vm a
-  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ i1 :& Sym (Variable v))) e
+  | a1@(Info ai1 :& _) <- spA vm a
+  , e1@(Info ei1 :& _) <- spA (extendBE vm (CBind v $ Info (indexVarRange ai1) :& Sym (Variable v))) e
   = Info ei1 :& Sym EparFor :@ a1 :@ (Info (ai1, ei1) :& Sym (Lambda v) :@ e1)
 
 -- | Eq
@@ -324,7 +325,7 @@ spA vm (_ :& Sym Not :@ a)
 spA vm (_ :& Sym ForLoop :@ a :@ b :@ (_ :& Sym (Lambda v) :@ (_ :& Sym (Lambda w) :@ e)))
   | a1@(Info ai1 :& _) <- spA vm a
   , b1@(Info bi1 :& _) <- spA vm b
-  , vm' <- extendBE vm (CBind v $ Info ai1 :& Sym (Variable v))
+  , vm' <- extendBE vm (CBind v $ Info (indexVarRange ai1) :& Sym (Variable v))
   , e1@(Info ei1 :& _) <- spA (extendBE vm' (CBind w $ Info top :& Sym (Variable w))) e
   , r1 <- Info (ai1, (top, ei1)) :& Sym (Lambda v) :@ (Info (top, ei1) :& Sym (Lambda w) :@ e1)
   = Info (bi1 \/ ei1):& Sym ForLoop :@ a1 :@ b1 :@ r1
@@ -510,3 +511,8 @@ rangeToSize _               _ = top
 
 resultType :: Type b => Op (a -> b) -> T.TypeRep b
 resultType _ = T.typeRep
+
+-- | The size information of a loop index variable given the size information
+--   of the trip count
+indexVarRange :: Size Length -> Size Length
+indexVarRange (Range _ u) = Range 0 (u-1)
