@@ -23,19 +23,19 @@
                 (Min {1xu32 | [*,*]}
                   (Min {1xu32 | [*,*]}
                     (Condition {1xu32 | [*,*]}
-                      (Equal {1xbool | [*,*]} v72 -1)
+                      (Equal {1xbool | [*,*]} v72 4294967295)
                       v72
                       v72)
                     (Condition {1xu32 | [*,*]}
-                      (Equal {1xbool | [*,*]} v95 -1)
+                      (Equal {1xbool | [*,*]} v95 4294967295)
                       v95
                       v95))
                   (Condition {1xu32 | [*,*]}
-                    (Equal {1xbool | [*,*]} v122 -1)
+                    (Equal {1xbool | [*,*]} v122 4294967295)
                     v122
                     v122))
                 (Condition {1xu32 | [*,*]}
-                  (Equal {1xbool | [*,*]} v149 -1)
+                  (Equal {1xbool | [*,*]} v149 4294967295)
                   v149
                   v149)
             v421 : 1xu32 = Min {1xu32 | [*,*]} v174 v409

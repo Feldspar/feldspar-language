@@ -46,6 +46,7 @@ module Feldspar.Core.ValueInfo
   , setLB
   , addVI
   , mulVI
+  , fromSingletonVI
   -- Unused
   , botInfo
   , botInfoST
@@ -297,3 +298,22 @@ addVI :: ValueInfo -> ValueInfo -> ValueInfo
 addVI = bop (+)
 mulVI :: ValueInfo -> ValueInfo -> ValueInfo
 mulVI = bop (*)
+
+-- | Check if a ValueInfo uniquely determines a value and in that case return that value
+fromSingletonVI :: Type -> ValueInfo -> Maybe (UntypedFeld ValueInfo)
+fromSingletonVI (1 :# IntType sg sz) vi = go vi
+  where go (VIWord8  r) = fromSingletonRange f r
+        go (VIInt8   r) = fromSingletonRange f r
+        go (VIWord16 r) = fromSingletonRange f r
+        go (VIInt16  r) = fromSingletonRange f r
+        go (VIWord32 r) = fromSingletonRange f r
+        go (VIInt32  r) = fromSingletonRange f r
+        go (VIWord64 r) = fromSingletonRange f r
+        go (VIInt64  r) = fromSingletonRange f r
+        go _           = Nothing
+        f :: Integral a => a -> UntypedFeld ValueInfo
+        f = In vi . Literal . LInt sg sz . fromIntegral
+fromSingletonVI _ _ = Nothing
+
+fromSingletonRange :: Eq a => (a -> UntypedFeld ValueInfo) -> Range a -> Maybe (UntypedFeld ValueInfo)
+fromSingletonRange f r = if isSingleton r then Just $ f $ lowerBound r else Nothing

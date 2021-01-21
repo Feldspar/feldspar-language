@@ -32,7 +32,7 @@ module Feldspar.Core.Middleend.OptimizeUntyped ( optimize ) where
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Feldspar.Core.UntypedRepresentation
-import Feldspar.Core.ValueInfo (ValueInfo(..), aLit)
+import Feldspar.Core.ValueInfo (ValueInfo(..), aLit, fromSingletonVI)
 import qualified Data.Bits as B
 import Feldspar.Core.Types (WordN)
 
@@ -45,7 +45,7 @@ type UExp = UntypedFeldF AExp -- ^ Unannotated expressions
 type SM = M.Map VarId AExp -- ^ Associate a let bound variable with its value
 
 simplify :: SM -> AExp -> AExp
-simplify env' (In r e') = simp env' e'
+simplify env' (In r e') = maybe (simp env' e') id (fromSingletonVI (typeof $ In r e') r)
   where simp env (Variable v) = In r $ derefToA env v
         simp env (Lambda v e) = In r $ Lambda v $ simplify env e -- Or use mkLam
         simp _   (Literal l) = In r $ Literal l
@@ -168,7 +168,7 @@ simpApp env r op' t' es' = go op' t' es'
 
         -- Same rule as previous rule but with Elements as backing write.
         go GetIx _ [arr, In _ (Literal (LInt _ _ n))]
-         | In _ (App EMaterialize _ [In _ Literal{}, e@(In _ (App EPar _ _))]) <- arr
+         | App EMaterialize _ [In _ Literal{}, e@(In _ (App EPar _ _))] <- examine env arr
          , Just e3 <- grabWrite n e
          = e3
 
