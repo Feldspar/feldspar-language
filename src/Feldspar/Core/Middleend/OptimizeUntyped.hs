@@ -123,6 +123,18 @@ simpApp env r op' t' es' = go op' t' es'
          | Literal (LBool b) <- unwrap ec
          = if b then et else ee
 
+        go Condition _ [_, et, ee]
+         | et == ee
+         = et
+
+        go Min _ [e1, e2]
+         | e1 == e2
+         = e1
+
+        go Max _ [e1, e2]
+         | e1 == e2
+         = e1
+
         -- A value is converted from 'typeof e1' through 't1' to 't' where
         -- the types are such that we can do the conversion directly
         go I2N t [e]
