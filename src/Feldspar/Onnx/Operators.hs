@@ -47,6 +47,7 @@ import qualified Prelude as P
 import Feldspar
 import Feldspar.Vector hiding (splitShape)
 import qualified Feldspar.Vector as V
+import Feldspar.Range (singletonRange)
 
 import Data.Hash
 
@@ -527,3 +528,17 @@ instance OnnxBounded Double where
 instance (Hashable a, Type a, OnnxBounded a) => OnnxBounded (Data a) where
   onnxMinBound = value onnxMinBound
   onnxMaxBound = value onnxMaxBound
+
+-- | Add range info to one dimensional Pull vector
+setSizePull1 :: Length -> Pull DIM1 a -> Pull DIM1 a
+setSizePull1 s1 (Pull ixf (Z :. e1)) = Pull ixf (Z :. cap (singletonRange s1) e1)
+
+-- | Add range info to two dimensional Pull vector
+setSizePull2 :: Length -> Length -> Pull DIM2 a -> Pull DIM2 a
+setSizePull2 s1 s2 (Pull ixf (Z :. e1 :. e2))
+  = Pull ixf (Z :. cap (singletonRange s1) e1 :. cap (singletonRange s2) e2)
+
+-- | Add range info to three dimensional Pull vector
+setSizePull3 :: Length -> Length -> Length -> Pull DIM3 a -> Pull DIM3 a
+setSizePull3 s1 s2 s3 (Pull ixf (Z :. e1 :. e2 :. e3))
+  = Pull ixf (Z :. cap (singletonRange s1) e1 :. cap (singletonRange s2) e2 :. cap (singletonRange s3) e3)

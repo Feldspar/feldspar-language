@@ -226,8 +226,10 @@ shapeToDim p = TP.dims p `D.index` 0
 
 -- | Read from the weight record
 mkAccess :: TensorInfo -> L.ByteString
-mkAccess ti = vname <> " = sel (Proxy @" <> show (tiField ti) <> ") weights ! (Z :. " <> show (tiIdx ti) <> ")"
+mkAccess ti = vname <> " = " <> setS <> " $ sel (Proxy @" <> show (tiField ti) <> ") weights ! (Z :. " <> show (tiIdx ti) <> ")"
   where vname = mangle $ tiName ti
+        setS = "setSizePull" <> show (length dims) <> L.concat (map (\d -> " " <> show d) dims)
+        dims = D.toList $ tiDims ti
 
 -- | Constuct the C code to read initialized tensors
 mkInitReadFile :: FilePath -> L.ByteString -> [[TensorInfo]] -> L.ByteString
