@@ -59,7 +59,7 @@ import qualified Data.ByteString.Lazy.UTF8 as U
 import qualified Data.ByteString.Lazy.Builder as B
 
 import qualified Data.Foldable as D (toList, foldMap, length, concatMap)
-import qualified Data.Sequence as D (Seq, sortBy, sort, index)
+import qualified Data.Sequence as D (Seq, sortBy, sort, index, partition)
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.List (groupBy, group)
@@ -94,8 +94,9 @@ main = do args <- getArgs
           modelBinary <- L.readFile modelFileName
           let model = either (\s -> error $ "onnxToFeld.main: " ++ s) fst $ messageGet modelBinary
               gr = fromMaybe (error "onnxToFeld.main: No graph in model") $ O.graph model
+              (bInits,sInits) = D.partition (\ t -> product (TP.dims t) > 10) $ G.initializer gr
               proj t = (TP.data_type t, D.length $ TP.dims t)
-              ordInits = D.sortBy (comparing proj) $ G.initializer gr
+              ordInits = D.sortBy (comparing proj) bInits
               initGroups = groupBy (\ x y -> proj x == proj y) $ D.toList ordInits
               iTensorInfo = [ [TI f i ty (TP.dims tp) (fromJust $ TP.name tp)
                                | (tp,i) <- zip tps [0 ..]]
@@ -106,7 +107,7 @@ main = do args <- getArgs
               weightRecTC = fromString $ renderType $ mkStructType $ map toFieldType iTensorInfo
               toFieldType (ti:_) = ("member" ++ show (tiField ti + 1), mkAwLType universal $ tiToType ti)
               toFieldType []     = error "onnxToFeld.toFieldType: Impossible"
-              initSet = S.fromList $ map tiName $ concat iTensorInfo
+              initSet = S.fromList $ map (fromJust . TP.name) $ D.toList $ G.initializer gr
               outputs = D.toList $ G.output gr
               inputs = [p | p <- D.toList $ G.input gr, vipName p `S.notMember` initSet]
 
@@ -119,7 +120,7 @@ main = do args <- getArgs
 
           -- Write the program
           pfile <- openFile progFileName WriteMode
-          L.hPutStr pfile $ mkProgramFile gr iTensorInfo inputs multiUses
+          L.hPutStr pfile $ mkProgramFile gr iTensorInfo sInits inputs multiUses
           hClose pfile
 
           -- Write the init module
@@ -162,10 +163,11 @@ buildValues td =
   error $ "onnxToFeld.buildValues: unsupported element type " ++ U.toString (showElemT td)
 
 -- | Construct a Feldspar program corresponding to the ONNX graph
-mkProgramFile :: G.GraphProto -> [[TensorInfo]] -> [V.ValueInfoProto] -> S.Set Utf8 -> L.ByteString
-mkProgramFile gr initGroups inputs multiUses
+mkProgramFile :: G.GraphProto -> [[TensorInfo]] -> D.Seq TP.TensorProto -> [V.ValueInfoProto] -> S.Set Utf8 -> L.ByteString
+mkProgramFile gr initGroups sInits inputs multiUses
   = L.unlines
-            [ "{-# LANGUAGE DataKinds #-}"
+            [ "{-# LANGUAGE GADTs #-}"
+            , "{-# LANGUAGE DataKinds #-}"
             , "{-# LANGUAGE TypeOperators #-}"
             , "{-# LANGUAGE FlexibleContexts #-}"
             , "{-# LANGUAGE TypeApplications #-}"
@@ -188,7 +190,7 @@ mkProgramFile gr initGroups inputs multiUses
             , ""
             , name <> " " <> L.unwords params <> " = " <> tuplify (map (mangle . vipName) $ D.toList $ G.output gr)
             , "  where "
-              <> L.intercalate "\n        " (accesses ++ "-- Nodes" : D.concatMap (mkNode multiUses tEnv) (G.node gr))
+              <> L.intercalate "\n        " (accesses ++ sBinds ++ "-- Nodes" : D.concatMap (mkNode multiUses tEnv) (G.node gr))
             ]
   where name = mangle $ fromJust $ G.name gr
         params = "(weights :: WeightRec)" : map mkParam inputs
@@ -196,6 +198,7 @@ mkProgramFile gr initGroups inputs multiUses
         tEnv = M.fromList [(fromJust $ TP.name t, t) | t <- D.toList $ G.initializer gr]
         mkParam ti = "(" <> mangle (vipName ti) <> " :: " <> shTy (vipType ti) <> ")"
         shTy (d,t) = "DPull DIM" <> show d <> " " <> showElemT t
+        sBinds = map mkInit $ D.toList sInits
 
 -- | Compute a string representation of the Haskell type of a group of initialized tensors
 --   with the same dimensionality and element type.
@@ -230,6 +233,22 @@ mkAccess ti = vname <> " = " <> setS <> " $ sel (Proxy @" <> show (tiField ti) <
   where vname = mangle $ tiName ti
         setS = "setSizePull" <> show (length dims) <> L.concat (map (\d -> " " <> show d) dims)
         dims = D.toList $ tiDims ti
+
+-- | Initialize a small tensor
+mkInit :: TP.TensorProto -> L.ByteString
+mkInit t = tname <> " = arrToPull " <> ext <> " $ fromList " <> showVList (int2elemT $ TP.data_type t) t
+  where tname = mangle $ fromJust $ TP.name t
+        ext = "(Z" <> L.concat (map (\ d -> " :. " <> show d) $ D.toList $ TP.dims t) <> ")"
+
+-- | Show the data in a TensorProto
+showVList :: TD.DataType -> TP.TensorProto -> L.ByteString
+showVList TD.FLOAT  t = show $ D.toList $ TP.float_data  t
+showVList TD.DOUBLE t = show $ D.toList $ TP.double_data t
+showVList TD.INT32  t = show $ D.toList $ TP.int32_data  t
+showVList TD.UINT64 t = show $ D.toList $ TP.uint64_data t
+showVList TD.INT64  t = show $ D.toList $ TP.int64_data  t
+showVList TD.STRING t = show $ D.toList $ TP.string_data t
+showVList ty        _ = error $ "OnnxToFeld.showVList: Can not handle type " <> show ty
 
 -- | Constuct the C code to read initialized tensors
 mkInitReadFile :: FilePath -> L.ByteString -> [[TensorInfo]] -> L.ByteString
