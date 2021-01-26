@@ -82,6 +82,7 @@ data TensorInfo = TI { tiField :: Int         -- ^ The zero based index of the g
 main :: IO ()
 main = do args <- getArgs
           let [modelFileName] = take 1 args -- First argument is file name
+              shapes = drop 1 args          -- Subsequent arguments give input shapes
               modelBaseName = map noHyphen $ takeBaseName modelFileName
               dataFileName = modelBaseName <.> "data"
               progFileName = modelBaseName <.> "hs"
@@ -120,7 +121,7 @@ main = do args <- getArgs
 
           -- Write the program
           pfile <- openFile progFileName WriteMode
-          L.hPutStr pfile $ mkProgramFile gr iTensorInfo sInits inputs multiUses
+          L.hPutStr pfile $ mkProgramFile gr iTensorInfo sInits inputs multiUses shapes
           hClose pfile
 
           -- Write the init module
@@ -163,8 +164,9 @@ buildValues td =
   error $ "onnxToFeld.buildValues: unsupported element type " ++ U.toString (showElemT td)
 
 -- | Construct a Feldspar program corresponding to the ONNX graph
-mkProgramFile :: G.GraphProto -> [[TensorInfo]] -> D.Seq TP.TensorProto -> [V.ValueInfoProto] -> S.Set Utf8 -> L.ByteString
-mkProgramFile gr initGroups sInits inputs multiUses
+mkProgramFile :: G.GraphProto -> [[TensorInfo]] -> D.Seq TP.TensorProto -> [V.ValueInfoProto] -> S.Set Utf8 -> [String]
+              -> L.ByteString
+mkProgramFile gr initGroups sInits inputs multiUses shapes
   = L.unlines
             [ "{-# LANGUAGE GADTs #-}"
             , "{-# LANGUAGE DataKinds #-}"
@@ -190,15 +192,28 @@ mkProgramFile gr initGroups sInits inputs multiUses
             , ""
             , name <> " " <> L.unwords params <> " = " <> tuplify (map (mangle . vipName) $ D.toList $ G.output gr)
             , "  where "
-              <> L.intercalate "\n        " (accesses ++ sBinds ++ "-- Nodes" : D.concatMap (mkNode multiUses tEnv) (G.node gr))
+              <> L.intercalate "\n        " (accesses ++ sBinds ++ inps ++ "-- Nodes" : D.concatMap (mkNode multiUses tEnv) (G.node gr))
             ]
   where name = mangle $ fromJust $ G.name gr
         params = "(weights :: WeightRec)" : map mkParam inputs
         accesses = map mkAccess $ concat initGroups
         tEnv = M.fromList [(fromJust $ TP.name t, t) | t <- D.toList $ G.initializer gr]
-        mkParam ti = "(" <> mangle (vipName ti) <> " :: " <> shTy (vipType ti) <> ")"
+        mkParam ti = "(" <> mangle (vipName ti) <> "' :: " <> shTy (vipType ti) <> ")"
         shTy (d,t) = "DPull DIM" <> show d <> " " <> showElemT t
         sBinds = map mkInit $ D.toList sInits
+        inps = map showInputShape inputs ++ inpBs
+        inpBs = zipWith mkInputCap inputs $ map Just shapes ++ repeat Nothing
+
+-- | Make a possibly shape contraining input binding
+mkInputCap :: V.ValueInfoProto -> Maybe String -> L.ByteString
+mkInputCap vi msh = mangle (vipName vi) <> " = " <> go msh <> mangle (vipName vi) <> "'"
+  where go Nothing = ""
+        go (Just s) = "setSizePull" <> show (length sh) <> " " <> L.unwords (map show sh) <> " "
+           where sh = read $ "[" <> s <> "]" :: [Int]
+
+-- | Show shape information about an input
+showInputShape :: V.ValueInfoProto -> L.ByteString
+showInputShape vi = "-- " <> utf8 (vipName vi) <> " : " <> (showType $ fromJust $ T.value $ fromJust $ V.type' vi)
 
 -- | Compute a string representation of the Haskell type of a group of initialized tensors
 --   with the same dimensionality and element type.
@@ -465,10 +480,10 @@ showAttrInt a = "AAInt " <> show (fromJust $ A.i a)
 showAttrFloat :: A.AttributeProto -> L.ByteString
 showAttrFloat a = "AAFloat " <> show (fromJust $ A.f a)
 
-showTensorType :: (Integral a, Show b) => Maybe a -> [b] -> L.ByteString
-showTensorType t dims = "Data [" <> t' <> "]" <> " -- " <> L.unwords sh
+showTensorType :: Integral a => Maybe a -> [Maybe TSP.Value] -> L.ByteString
+showTensorType t dims = "Tensor " <> t' <> " " <> L.unwords sh
   where t' = showElemT $ int2elemT t
-        sh = map show dims
+        sh = map showDim dims
 
 int2elemT :: Integral a => Maybe a -> TD.DataType
 int2elemT i = toEnum $ fromIntegral $ fromJust i :: TD.DataType
