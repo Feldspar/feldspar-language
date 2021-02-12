@@ -446,13 +446,18 @@ prType (n :# t)         = show n ++ 'x':prTypeST t
 prType (TupType ts)     = "(" ++ intercalate "," (map prType ts) ++ ")"
 prType (MutType t)      = "M" ++ prType t
 prType (RefType t)      = "R" ++ prType t
-prType (ArrayType _ t)  = "a" ++ prType t
+prType (ArrayType r t)  = "a" ++ prASize r ++ prType t
 prType (MArrType _ t)   = "A" ++ prType t
 prType (ParType t)      = "P" ++ prType t
 prType (ElementsType t) = "e" ++ prType t
 prType (IVarType t)     = "V" ++ prType t
 prType (FunType t1 t2)  = "(" ++ prType t1 ++ "->" ++ prType t2 ++ ")"
 prType (FValType t)     = "F" ++ prType t
+
+-- | Print an array size
+prASize :: Range Length -> String
+prASize r = "[" ++ go r ++ "]"
+  where go (Range l h) = show l ++ ":" ++ show h
 
 -- | Convert an untyped unannotated syntax tree into a @Tree@ of @String@s
 stringTree :: UntypedFeld a -> Tree String
