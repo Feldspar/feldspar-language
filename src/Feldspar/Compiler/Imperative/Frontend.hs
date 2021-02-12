@@ -476,7 +476,7 @@ encodeType = go
     go StringType            = "string"
     go (_ :# t)              = goScalar t
     go (IVarType t)          = "i_" ++ go t
-    go (NativeArray _ _ t)   = "narr_" ++ go t
+    go (NativeArray _ l t)   = "narr" ++ goLen l ++ "_" ++ go t
     go (StructType n _)      = n
     go (ArrayType _ _ t)     = "arr_" ++ go t
     goScalar BoolType        = "bool"
@@ -485,6 +485,8 @@ encodeType = go
     goScalar (NumType s w)   = map toLower (show s) ++ show w
     goScalar (ComplexType t) = "complex_" ++ go t
     goScalar (Pointer t)     = "ptr_" ++ go t
+    goLen Nothing            = ""
+    goLen (Just n)           = show n
 
 -- Almost the inverse of encodeType. Some type encodings are lossy so
 -- they are impossible to recover.
@@ -515,6 +517,9 @@ decodeType = goL []
      where (tt, t') = go t
     go (stripPrefix "narr_"    -> Just t) = (NativeArray Global Nothing tt, t')
      where (tt, t') = go t
+    go (stripPrefix "narr"     -> Just t) = (NativeArray Global (Just $ fromIntegral n) tt, t'')
+     where ( n,  t') = maybe (error "decodeType: malformed NativeArray") id $ decodeLen t
+           (tt, t'') = go t'
     go h@('s':'_':t) = (StructType h' $ zipWith mkMember [1 :: Int ..] ts, t'')
        where mkMember n' tmem = ("member" ++ show n', tmem)
              Just (n, t') = decodeLen t
