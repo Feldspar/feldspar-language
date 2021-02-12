@@ -316,8 +316,8 @@ data CompiledModule = CompiledModule {
 }
 
 -- | Split a module into interface and implemenation.
-splitModule :: Module -> (Module, Module)
-splitModule m = (Module (hdr ++ createProcDecls (entities m)), Module body)
+splitModule :: Options -> Module -> (Module, Module)
+splitModule opts m = (Module (hdr ++ createProcDecls (entities m)), Module body)
   where
     (hdr, body) = partition belongsToHeader (entities m)
     belongsToHeader :: Entity -> Bool
@@ -330,8 +330,13 @@ splitModule m = (Module (hdr ++ createProcDecls (entities m)), Module body)
     createProcDecls :: [Entity] -> [Entity]
     createProcDecls = concatMap defToDecl
     defToDecl :: Entity -> [Entity]
-    defToDecl (Proc n False inp rtype _) = [Proc n False inp rtype Nothing]
+    defToDecl (Proc n False inp rtype _) = [Proc n False inp rtype Nothing] ++ argTypeDefs n inp
     defToDecl _ = []
+    argTypeDefs n inp = if printArgTypeDefs opts then zipWith (mkInpTypeDef n) [1 :: Int ..] inp else []
+    mkInpTypeDef n i Variable{varType = tt}
+        | 1 :# Pointer t@StructType{} <- tt = go  t
+        | otherwise                         = go tt
+      where go u = TypeDef u $ "arg_" ++ show i ++ "_" ++ n ++ "_t"
 
 -- | Translates a module into a compiled module
 compileModule :: Options -> Module -> SplitModule
@@ -344,7 +349,7 @@ compileModule opts mdl
                                       , debugModule = cmdl
                                       }
     }
-  where (hmdl, cmdl) = splitModule mdl
+  where (hmdl, cmdl) = splitModule opts mdl
 
 -- | Compiler core.
 -- Everything should call this function and only do a trivial interface adaptation.
