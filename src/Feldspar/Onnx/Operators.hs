@@ -48,6 +48,7 @@ import Feldspar
 import Feldspar.Vector hiding (splitShape)
 import qualified Feldspar.Vector as V
 import Feldspar.Range (singletonRange)
+import Feldspar.Lattice (universal)
 
 import Data.Hash
 
@@ -542,3 +543,21 @@ setSizePull2 s1 s2 (Pull ixf (Z :. e1 :. e2))
 setSizePull3 :: Length -> Length -> Length -> Pull DIM3 a -> Pull DIM3 a
 setSizePull3 s1 s2 s3 (Pull ixf (Z :. e1 :. e2 :. e3))
   = Pull ixf (Z :. cap (singletonRange s1) e1 :. cap (singletonRange s2) e2 :. cap (singletonRange s3) e3)
+
+-- | Add range info to one dimensinal Manifest vector
+setSizeManifest1 :: Length -> Manifest DIM1 a -> Manifest DIM1 a
+setSizeManifest1 s1 (Manifest arr (Z :. e1))
+  = Manifest (cap (singletonRange s1 :> universal) arr)
+             (Z :. cap (singletonRange s1) e1)
+
+-- | Add range info to two dimensinal Manifest vector
+setSizeManifest2 :: Length -> Length -> Manifest DIM2 a -> Manifest DIM2 a
+setSizeManifest2 s1 s2 (Manifest arr (Z :. e1 :. e2))
+  = Manifest (cap (singletonRange (s1*s2) :> universal) arr)
+             (Z :. cap (singletonRange s1) e1 :. cap (singletonRange s2) e2)
+
+-- | Add range info to three dimensinal Manifest vector
+setSizeManifest3 :: Length -> Length -> Length -> Manifest DIM3 a -> Manifest DIM3 a
+setSizeManifest3 s1 s2 s3 (Manifest arr (Z :. e1 :. e2 :. e3))
+  = Manifest (cap (singletonRange (s1*s2*s3) :> universal) arr)
+             (Z :. cap (singletonRange s1) e1 :. cap (singletonRange s2) e2 :. cap (singletonRange s3) e3)
