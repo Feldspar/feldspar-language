@@ -145,6 +145,7 @@ inTarget t opts = t `elem` (targets . platform $ opts)
 data Options = Options
   { platform          :: Platform -- ^ Target platform information
   , printHeader       :: Bool     -- ^ Whether icompile prints the header.
+  , printArgTypeDefs  :: Bool     -- ^ Whether to print typedefs for argument types
   , useNativeArrays   :: Bool     -- ^ Use C array types
   , useNativeReturns  :: Bool     -- ^ Should the generated function return by value or by
                                   --   reference (fast return)? This option will be ignored for
@@ -164,6 +165,7 @@ defaultOptions
     = Options
     { platform          = c99
     , printHeader       = False
+    , printArgTypeDefs  = False
     , useNativeArrays   = False
     , useNativeReturns  = False
     , safetyLimit       = 2000
