@@ -35,10 +35,11 @@ import Feldspar.Core.UntypedRepresentation
 import Feldspar.Core.ValueInfo (ValueInfo(..), aLit, fromSingletonVI)
 import qualified Data.Bits as B
 import Feldspar.Core.Types (WordN)
+import Data.List (nub)
 
 -- | General simplification. Could in theory be done at earlier stages.
 optimize :: UntypedFeld ValueInfo -> UntypedFeld ValueInfo
-optimize e = deadCodeElim $ simplify M.empty e -- go empty . go empty
+optimize e = deadCodeElim $ propagateTypes $ backpropTypes $ simplify M.empty e -- go empty . go empty
 
 type AExp = UntypedFeld ValueInfo -- ^ Annotated expressions
 type UExp = UntypedFeldF AExp -- ^ Unannotated expressions
@@ -46,7 +47,7 @@ type SM = M.Map VarId AExp -- ^ Associate a let bound variable with its value
 
 simplify :: SM -> AExp -> AExp
 simplify env' (In r e') = maybe (simp env' e') id (fromSingletonVI (typeof $ In r e') r)
-  where simp env (Variable v) = In r $ derefToA env v
+  where simp env (Variable v) = derefToA r env v
         simp env (Lambda v e) = In r $ Lambda v $ simplify env e -- Or use mkLam
         simp _   (Literal l) = In r $ Literal l
         simp env (App Let _ [eRhs, eLam]) = simpLet env (simplify env eRhs) (unwrap eLam)
@@ -189,6 +190,10 @@ simpApp env r op' t' es' = go op' t' es'
          | App EMaterialize _ [eLen, _] <- examine env arr
          = eLen
 
+        -- Put the value info of the length argument of an EMaterialize in the type
+        go EMaterialize (ArrayType _ t)  es@[In (VIWord32 lr) _, _]
+         = In r $ App EMaterialize (ArrayType lr t) es
+
         -- Select from a tuple expression
         go (Sel n) _ [eTup]
          | App Tup _ es <- examine env eTup
@@ -258,11 +263,16 @@ extend env v e = M.insert (varNum v) e env
 deref :: SM -> Var -> UExp
 deref env v = maybe (Variable v) (examine env) $ M.lookup (varNum v) env
 
-derefToA :: SM -> Var -> UExp
-derefToA env v = case M.lookup (varNum v) env of
-                   Just (In _ (Variable v')) -> derefToA env v'
-                   Just e@(In _ ue) | not $ sharable e -> ue
-                   _ -> Variable v
+derefToA :: ValueInfo -> SM -> Var -> AExp
+derefToA r env v = case M.lookup (varNum v) env of
+                     Just (In _ (Variable v')) -> derefToA r env v'
+                     Just e | not $ sharable' e -> e
+                     _ -> In r $ Variable v
+  where sharable' (In _ (App PropSize t [_, In _ (App (Sel _) _ [e'])]))
+          | isArrayType t = sharable e'
+        sharable' e = sharable e
+        isArrayType (ArrayType _ _) = True
+        isArrayType _               = False
 
 examine :: SM -> AExp -> UExp
 examine env (In _ (Variable v)) = deref env v
@@ -357,6 +367,54 @@ mkLet v rhs body = mkLets ([(v,rhs)], body)
 eUnit :: UntypedFeld ValueInfo
 eUnit = aLit $ LTup []
 
+-- | Propagate type information, in particular array bounds, backwards from annotations to program inputs
+backpropTypes :: AExp -> AExp
+backpropTypes = bptop
+  where bptop (In r (App Let t [eRhs, In rb (Lambda v eBody)]))
+              = In r $ App Let t [eRhs, In rb $ Lambda v $ bptop eBody]
+        bptop (In r (Lambda v e)) = In r $ Lambda (refineType v $ bp v e) (bptop e)
+        bptop e = e
+        -- Replace the old type of the variable by the tyep found by propagation
+        refineType v [t] = v{varType = t}
+        refineType v _   = v
+        -- Find types of v implied by PropSize annotations
+        bp v (In _ e) = bpr v e
+        bpr v (App PropSize t [_, e]) = bpt v t e
+        bpr v (App _ _ es) = nub $ concatMap (bp v) es
+        bpr v (Lambda u e) = if v == u then [] else bp v e -- Variables compar only the varNum
+        bpr _ _ = [] -- Variables and literals, not LetFun at this stage
+        -- Propagate a type through an expression
+        bpt v t (In _ (Variable u)) = if v == u then [t] else []
+        bpt v t (In _ (App op _ es)) = bpapp v t op es
+        bpt v _ e = bp v e
+        -- Propagate through an operator application, currently only tuple selection
+        bpapp v t (Sel i) [e] = bpt v (bptup t i $ typeof e) e
+        bpapp v _ _       es  = nub $ concatMap (bp v) es
+        -- Propagate a type through tuple selection
+        bptup t i (TupType ts) = TupType $ take i ts ++ t : drop (i+1) ts -- Replace element at index i
+        bptup _ _ t = error $ "OptimizeUntyped.backpropTypes: not a tuple " ++ show t
+
+-- | Propagate type information, in particular better array bounds
+propagateTypes :: AExp -> AExp
+propagateTypes = goA M.empty
+  where goA env (In r e) = In r $ goR env e
+        goR env (Variable v) = derefU env v
+        goR  _  (Literal l) = Literal l
+        goR env (App Let _ [eRhs, In r (Lambda v eBody)]) = goLet env (goA env eRhs) r v eBody
+        goR env (App Tup _ es) = App Tup (TupType $ map typeof es') es'
+          where es' = map (goA env) es
+        goR env (App op t es) = App op t $ map (goA env) es
+        goR env (Lambda v e) = Lambda v $ goA (extendU env v $ Variable v) e
+        goR _   _ = error $ "OptimizeUntyped.propagateTypes: LetFun not supported"
+        goLet env (In _ ue@(Variable _)) _ v (In _ e) = goR (extendU env v ue) e
+        goLet env eRhs r v e = App Let (typeof e') [simp eRhs, In r $ Lambda v' e']
+          where v' = v{varType = typeof eRhs}
+                e' = goA (extendU env v $ Variable v') e
+        simp (In _ (App PropSize _ [_, e])) = e
+        simp e = e
+        derefU env v = env M.! varNum v
+        extendU env v e = M.insert (varNum v) e env
+
 -- We need to eliminate dead bindings
 
 deadCodeElim :: AExp -> AExp
@@ -368,6 +426,7 @@ deadCodeElim = snd . dceA
         dceU (Literal l) = (S.empty, Literal l)
         dceU (App Let t [eRhs, In r (Lambda v eBody)]) = dcLet t (dceA eRhs) r v $ dceA eBody
         dceU (App Save _ [In _ e]) = dceU e
+        dceU (App PropSize _ [_, In _ e]) = dceU e
         dceU (App op t es) = let (vss,es1) = unzip $ map dceA es
                               in (S.unions vss, App op t es1)
         dceU (Lambda v e) = let (vs,e1) = dceA e
