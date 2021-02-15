@@ -363,6 +363,11 @@ mkMainFile bname hf weightFile weightRecTC outputs inputs noWeightRec useNative 
 mkArgRead :: FilePath -> Bool -> V.ValueInfoProto -> Int -> [L.ByteString]
 mkArgRead bname useNative vip i
                 = [ "  FILE* " <> fname <> " = fopen(argv[" <> show i <> "], \"r\");"
+                  , "  if (" <> fname <> " == NULL) {"
+                  , "    fprintf(stderr, \"Could not open %s for reading.\\n\", argv[" <> show i <> "]);"
+                  , "    exit(1);"
+                  , "  }"
+                  , ""
                   , "  " <> argumentType bname i <> " " <> vname <> ";"
                   , ""
                   , allocReadTensor useNative fname vname n elemT
@@ -431,7 +436,7 @@ staticSize prefix = "(sizeof(" <> prefix <> ") / sizeof(" <> prefix <> "[0]))"
 -- | Generate a call to fscanf reading the tensor dimensions
 mkScanf :: L.ByteString -> [L.ByteString] -> L.ByteString
 mkScanf file vars = "check(fscanf(" <> file <> ", " <> format <> ptrs <> "), " <> show n <> ");"
-  where format = "\" " <> show n <> L.concat (replicate n " %u") <> "\""
+  where format = "\" " <> show n <> L.concat (replicate n " %\" SCNu32 \"") <> "\""
         ptrs = L.concat [", &" <> v | v <- vars]
         n = length vars
 
@@ -457,7 +462,7 @@ printTensor useNative file prefix (n,t)
 -- | Generate code to print the tensor dimensions to a file
 printTensorDims :: L.ByteString -> Int -> [L.ByteString] -> L.ByteString
 printTensorDims file n vars = "  fprintf(" <> file <> ", " <> format <> ", " <> args <> ");\n"
-  where format = "\"" <> show n <> L.concat (replicate n " %u") <> "\\n\""
+  where format = "\"" <> show n <> L.concat (replicate n " %\" PRIu32 \"") <> "\\n\""
         args = L.intercalate ", " vars
 
 -- | Generate code to print the elements of a tensor to a file
