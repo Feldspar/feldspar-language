@@ -8,14 +8,7 @@ void issue128__ex1(uint32_t v0, uint32_t * out)
   v1 = (1 == v0);
   if (v1)
   {
-    if (v1)
-    {
-      *out = 10;
-    }
-    else
-    {
-      *out = 45;
-    }
+    *out = 10;
   }
   else
   {

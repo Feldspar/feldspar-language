@@ -29,14 +29,13 @@ void divConq3(struct awl_signedS32 * v1, struct awl_signedS32 * out)
   uint32_t v4;
   struct awl_i_awl_signedS32 v24 = { 0 };
   struct awl_signedS32 v49 = { 0 };
-  uint32_t len1;
   struct awl_signedS32 v28 = { 0 };
   uint32_t v34;
   struct awl_signedS32 v31 = { 0 };
-  struct ivar e2;
+  struct ivar e1;
   uint32_t v32;
-  uint32_t len3;
-  struct awl_signedS32 e4 = { 0 };
+  uint32_t len2;
+  struct awl_signedS32 e3 = { 0 };
   uint32_t v50;
   
   taskpool_init(4, 4, 4);
@@ -49,18 +48,17 @@ void divConq3(struct awl_signedS32 * v1, struct awl_signedS32 * out)
     ivar_init(&(v24).buffer[v8]);
     spawn4(task0, uint32_t, v8, uint32_t, v3, struct awl_signedS32 *, v1, struct awl_i_awl_signedS32, v24);
   }
-  len1 = (v24).length;
   (v49).buffer = initArray((v49).buffer, (v49).length, sizeof(int32_t), 0);
   (v49).length = 0;
-  for (uint32_t v27 = 0; v27 < len1; v27 += 1)
+  for (uint32_t v27 = 0; v27 < v4; v27 += 1)
   {
     v34 = (v49).length;
-    e2 = (v24).buffer[v27];
-    ivar_get_array_shallow_nontask(&v31, e2, sizeof(int32_t));
+    e1 = (v24).buffer[v27];
+    ivar_get_array_shallow_nontask(&v31, e1, sizeof(int32_t));
     v32 = (v31).length;
-    len3 = (v34 + v32);
-    (v28).buffer = initArray((v28).buffer, (v28).length, sizeof(int32_t), len3);
-    (v28).length = len3;
+    len2 = (v34 + v32);
+    (v28).buffer = initArray((v28).buffer, (v28).length, sizeof(int32_t), len2);
+    (v28).length = len2;
     for (uint32_t v39 = 0; v39 < v34; v39 += 1)
     {
       (v28).buffer[v39] = (v49).buffer[v39];
@@ -69,9 +67,9 @@ void divConq3(struct awl_signedS32 * v1, struct awl_signedS32 * out)
     {
       (v28).buffer[(v43 + v34)] = (v31).buffer[v43];
     }
-    e4 = v49;
+    e3 = v49;
     v49 = v28;
-    v28 = e4;
+    v28 = e3;
   }
   v50 = (v49).length;
   (*out).buffer = initArray((*out).buffer, (*out).length, sizeof(int32_t), v50);
@@ -85,5 +83,5 @@ void divConq3(struct awl_signedS32 * v1, struct awl_signedS32 * out)
   freeArray((v49).buffer);
   freeArray((v28).buffer);
   freeArray((v31).buffer);
-  ivar_destroy(&e2);
+  ivar_destroy(&e1);
 }
