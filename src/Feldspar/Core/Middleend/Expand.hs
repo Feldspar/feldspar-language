@@ -216,6 +216,7 @@ appCost :: [AbsInfo] -> VarMap -> Op -> [UExp] -> Int
 appCost ai vm = go
   where go Mul [In _ (Variable v), In _ (Variable u)]
            | ixAndInv ai v (fst $ vm M.! u) = 1
+        go ShiftLU [In _ (Variable _), In _ (Literal _)] = 1
         go _   _                            = 5
 
 ixAndInv :: [AbsInfo] -> Var -> S.Set Var -> Bool
