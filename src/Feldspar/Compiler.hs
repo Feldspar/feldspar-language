@@ -109,7 +109,7 @@ frontend opts = evalPasses 0
                    . pt BPFromCore (either (Left . fromCoreUT opts) id)
                    . pc FPCreateTasks      (either (Left . createTasks opts) Right)
                    . pc FPUnique           (either (Left . uniqueVars) Right)
-                   . pc FPExpand           (either (Left . expand) Right)
+                   . pc FPExpand           (either (Left . optimize . expand) Right)
                    . pc FPPushLets         (either (Left . pushLets) Right)
                    . pc FPOptimize         (either (Left . optimize) Right)
                    . pc FPSinkLets         (either (Left . sinkLets opts) Right)
