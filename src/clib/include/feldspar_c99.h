@@ -1186,8 +1186,8 @@ static inline double complex signum_fun_complexOf_double(double complex a) {
     if (a == 0)
         return a;
     else {
-        double m = cabsf(a);
-        return crealf(a) / m + cimagf(a) / m * I;
+        double m = cabs(a);
+        return creal(a) / m + cimag(a) / m * I;
     }
 }
 
@@ -1355,7 +1355,7 @@ static inline float complex logBase_fun_complexOf_float(float complex a, float c
 }
 
 static inline double complex logBase_fun_complexOf_double(double complex a, double complex b) {
-    return clogf(b) / clogf(a);
+    return clog(b) / clog(a);
 }
 
 static inline complexOf_int8_t complex_fun_int8_t(int8_t re, int8_t im) {
@@ -1659,7 +1659,7 @@ static inline float complex mkPolar_fun_float(float r, float t) {
 }
 
 static inline double complex mkPolar_fun_double(double r, double t) {
-    return r * cosf(t) + r * sinf(t) * I;
+    return r * cos(t) + r * sin(t) * I;
 }
 
 static inline complexOf_int8_t cis_fun_int8_t(int8_t t) {
@@ -1723,7 +1723,7 @@ static inline float complex cis_fun_float(float t) {
 }
 
 static inline double complex cis_fun_double(double t) {
-    return cosf(t) + sinf(t) * I;
+    return cos(t) + sin(t) * I;
 }
 
 #endif /* FELDSPAR_C99_H */
