@@ -328,6 +328,11 @@ mkMainFile bname hf weightFile weightRecTC outputs inputs noWeightRec useNative 
                 , checkFun
                 , weightRecDecls
                 , "int main(int argc, char** argv) {"
+                , "  if (argc < " <> show (length inputs + 1) <> ") {"
+                , "    fprintf( stderr, \"Too few arguments, %d required.\\n\", " <> show (length inputs) <> ");"
+                , "    exit(1);"
+                , "  }"
+                , ""
                 ]
                 ++ wread ++ concat (zipWith (mkArgRead bname useNative) inputs [1..]) ++
                 [ "  " <> ot <> " " <> ov <> " = {0};"
