@@ -198,29 +198,29 @@ bcZipWith f xs ys = zipWith f (uniBCast ext xs) (uniBCast ext ys)
   where ext = unionExt (extent xs) (extent ys) 
 
 -- | Implementation of ONNX tensor addition
-onnxAdd :: (Num a, ShapelyU sh1 sh2)
-        => Attrs -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
-onnxAdd _ = bcAdd
+onnxAdd :: (Pully vec1, VecShape vec1 ~ sh1, Pully vec2, VecShape vec2 ~ sh2, Num a, ShapelyU sh1 sh2)
+        => Attrs -> vec1 a -> vec2 a -> Pull (UnionShape sh1 sh2) a
+onnxAdd _ xs ys = bcAdd (toPull xs) (toPull ys)
 
 -- | Implementation of ONNX tensor subtraction
-onnxSub :: (Num a, ShapelyU sh1 sh2)
-        => Attrs -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
-onnxSub _ = bcSub
+onnxSub :: (Pully vec1, VecShape vec1 ~ sh1, Pully vec2, VecShape vec2 ~ sh2, Num a, ShapelyU sh1 sh2)
+        => Attrs -> vec1 a -> vec2 a -> Pull (UnionShape sh1 sh2) a
+onnxSub _ xs ys = bcSub (toPull xs) (toPull ys)
 
 -- | Implementation of ONNX tensor multiplication
-onnxMul :: (Num a, ShapelyU sh1 sh2)
-        => Attrs -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
-onnxMul _ = bcMul
+onnxMul :: (Pully vec1, VecShape vec1 ~ sh1, Pully vec2, VecShape vec2 ~ sh2, Num a, ShapelyU sh1 sh2)
+        => Attrs -> vec1 a -> vec2 a -> Pull (UnionShape sh1 sh2) a
+onnxMul _ xs ys = bcMul (toPull xs) (toPull ys)
 
 -- | Implementation of ONNX tensor fractional division
-onnxDivF :: (Fractional a, ShapelyU sh1 sh2)
-         => Attrs -> Pull sh1 a -> Pull sh2 a -> Pull (UnionShape sh1 sh2) a
-onnxDivF _ = bcDivF
+onnxDivF :: (Pully vec1, VecShape vec1 ~ sh1, Pully vec2, VecShape vec2 ~ sh2, Fractional a, ShapelyU sh1 sh2)
+         => Attrs -> vec1 a -> vec2 a -> Pull (UnionShape sh1 sh2) a
+onnxDivF _ xs ys = bcDivF (toPull xs) (toPull ys)
 
 -- | Implementation of ONNX tensor integral division
-onnxDivI :: (Integral a, ShapelyU sh1 sh2)
-         => Attrs -> DPull sh1 a -> DPull sh2 a -> DPull (UnionShape sh1 sh2) a
-onnxDivI _ = bcDivI
+onnxDivI :: (Pully vec1, VecShape vec1 ~ sh1, Pully vec2, VecShape vec2 ~ sh2, Integral a, ShapelyU sh1 sh2)
+         => Attrs -> vec1 (Data a) -> vec2 (Data a) -> DPull (UnionShape sh1 sh2) a
+onnxDivI _ xs ys = bcDivI (toPull xs) (toPull ys)
 
 -- | Elementwise add with broadcasting
 bcAdd :: (Num a, ShapelyU sh1 sh2)
@@ -268,6 +268,15 @@ onnxBatchNormalization attrs xs gamma beta mean var = ys
 --   performance impact than the loss of fusion.
 onnxFlatten :: Syntax a => Attrs -> Pull sh a -> Pull DIM2 a
 onnxFlatten attrs vec = toPull $ store $ flatPush (P.fromIntegral $ getAttr attrs aaInt 1 "axis") $ toPush vec
+
+onnxFlatten' :: (Storable vec, Syntax a) => Attrs -> vec a -> Pull DIM2 a
+onnxFlatten' attrs xs = toPull $ flatMan d $ store xs
+  where d = P.fromIntegral $ getAttr attrs aaInt 1 "axis"
+
+flatMan :: Int -> Manifest sh a -> Manifest DIM2 a
+flatMan d (Manifest arr sh) = Manifest arr sh'
+  where sh' = Z :. P.product ls :. P.product rs
+        (ls,rs) = takeDropShape d sh
 
 -- | Flattening a Push vector to two dimensions
 flatPush :: forall sh a . Int -> Push sh a -> Push DIM2 a
@@ -326,16 +335,18 @@ infixl 5 <!
 Pull ixf ext <! n = Pull (\ (ix :. _) -> ixf ix) (ext :. n)
 
 -- | Implementation of ONNX convolution operator for 2 inputs
-onnxConv_2 :: (Num a, Syntax a)
-           => Attrs -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM4 a
+onnxConv_2 :: (Pully vec1, Pushy vec1, VecShape vec1 ~ DIM4, Pully vec2, VecShape vec2 ~ DIM4, Num a, Syntax a)
+           => Attrs -> vec1 a -> vec2 a -> Pull DIM4 a
 onnxConv_2 attrs xs ws = onnxConv_3 attrs xs ws bs
   where bs = constant (Z :. m) 0
         Z :. m :. _ :. _ :. _ = extent ws
 
 -- | Implementation of ONNX convolution operator for 3 inputs
-onnxConv_3 :: (Num a, Syntax a)
-           => Attrs -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM1 a -> Pull DIM4 a
-onnxConv_3 attrs xs = onnxConvNP (value $ map fromInteger strides) pXs
+onnxConv_3 :: (Pully vec1, Pushy vec1, VecShape vec1 ~ DIM4, Pully vec2, VecShape vec2 ~ DIM4,
+               Pully vec3, VecShape vec3 ~ DIM1, Num a, Syntax a)
+           => Attrs -> vec1 a -> vec2 a -> vec3 a -> Pull DIM4 a
+onnxConv_3 attrs xs = if doPad then onnxConvNP (value $ map fromInteger strides) $ store $ pad dPads 0 xs
+                               else onnxConvNP (value $ map fromInteger strides) xs
   where -- dilations    = getAttr  attrs aaInts [1, 1]    "dilations" -- Currently unused
         -- group        = getAttr  attrs aaInt  1         "group"     -- Currently unused
         -- kernel_shape = getAttrM attrs aaInts           "kernel_shape" -- Currently unused
@@ -344,37 +355,43 @@ onnxConv_3 attrs xs = onnxConvNP (value $ map fromInteger strides) pXs
         strides      = getAttr  attrs aaInts [1,1]     "strides"
         doPad = P.any (P./= 0) pads
         dPads = value $ map fromInteger pads :: Data [Length]
-        pXs = if doPad then toPull $ store $ pad dPads 0 xs else xs
 
 -- | Convolution with no padding
-onnxConvNP :: (Num a, Syntax a)
-           => Data [Length] -> Pull DIM4 a -> Pull DIM4 a -> Pull DIM1 a -> Pull DIM4 a
-onnxConvNP ss xs ws bs = Pull ixf (Z :. nLen :. mLen :. h1 :. w1) `bcAdd` (bs <! 1 <! 1)
+onnxConvNP :: (Pully vec1, VecShape vec1 ~ DIM4, Pully vec2, VecShape vec2 ~ DIM4,
+               Pully vec3, VecShape vec3 ~ DIM1, Num a, Syntax a)
+           => Data [Length] -> vec1 a -> vec2 a -> vec3 a -> Pull DIM4 a
+onnxConvNP ss xs ws bs = Pull ixf (Z :. nLen :. mLen :. h1 :. w1) `bcAdd` (toPull bs <! 1 <! 1)
   where ixf (Z :. n :. m :. y :. x) 
-            = fromZero $ sum3D $ zipWith (*) (xs !# (ZZ :! n :.. (0,c) :.. (y*sY, kH) :.. (x*sX, kW)))
-                                             (ws !# (ZZ :! m :.. (0,c) :.. (0,kH) :.. (0,kH)))
+            = fromZero $ sum3D $ zipWith (*) (xsP !# (ZZ :! n :.. (0,c) :.. (y*sY, kH) :.. (x*sX, kW)))
+                                             (wsP !# (ZZ :! m :.. (0,c) :.. (0,kH) :.. (0,kH)))
         [nLen, c,  h,  w] = P.reverse $ toList $ extent xs
         [mLen, _, kH, kW] = P.reverse $ toList $ extent ws
         (sY,sX) = (ss!0, ss!1)
         h1 = (h - kH) `div` sY + 1
         w1 = (w - kW) `div` sX + 1
+        xsP = toPull xs
+        wsP = toPull ws
 
 -- | Implementation of ONNX global average pooling
-onnxGlobalAveragePool :: Fraction a => Attrs -> DPull DIM4 a -> DPull DIM4 a
-onnxGlobalAveragePool _ vec@(Pull _ (Z :. n :. c :. h :. w)) = Pull ixf' (Z :. n :. c :. 1 :. 1)
+onnxGlobalAveragePool :: (Pully vec, VecShape vec ~ DIM4, Fraction a) => Attrs -> vec (Data a) -> DPull DIM4 a
+onnxGlobalAveragePool _ = globalAveragePool . toPull
+
+-- | Global average pooling of a Pull vector
+globalAveragePool :: Fraction a => DPull DIM4 a -> DPull DIM4 a
+globalAveragePool vec@(Pull _ (Z :. n :. c :. h :. w)) = Pull ixf' (Z :. n :. c :. 1 :. 1)
   where ixf' (Z :. nx :. cx :. _ :. _) = avgF $ vec !# (ZZ :! nx :! cx :.. (0,h) :.. (0,w))
         avgF xs = (fromZero $ sum $ sum xs) / (i2n $ size $ extent xs)
 
 -- | Implementation of ONNX Relu
-onnxRelu :: (Numeric a, Ord a) => Attrs -> DPull sh a -> DPull sh a
-onnxRelu _ = fmap (max 0)
+onnxRelu :: (Pully vec, Numeric a, Ord a) => Attrs -> vec (Data a) -> DPull (VecShape vec) a
+onnxRelu _ = fmap (max 0) . toPull
 
 -- | Implementation of ONNX MaxPool
-onnxMaxPool :: (Numeric a, Ord a, OnnxBounded a) => Attrs -> DPull DIM4 a -> DPull DIM4 a
+onnxMaxPool :: (Pully vec, VecShape vec ~ DIM4, Numeric a, Ord a, OnnxBounded a) => Attrs -> vec (Data a) -> DPull DIM4 a
 onnxMaxPool attrs xs = pool2d max onnxMinBound kernel_shape strides
                      $ toPull $ store
                      $ pad (value $ map fromInteger pads) onnxMinBound
-                     $ xs
+                     $ toPull xs
   where pads         = getAttr  attrs aaInts [0,0,0,0] "pads"
         strides      = getAttr  attrs aaInts [1,1]     "strides"
         kernel_shape = getAttr  attrs aaInts undefined "kernel_shape"
@@ -395,8 +412,13 @@ onnxIdentity :: Attrs -> a -> a
 onnxIdentity _ x = x
 
 -- | Implementation of 3d variant of ONNX Reshape operator
-onnxReshape_d3 :: Type a => Attrs -> DPull sh a -> DPull DIM1 Int64 -> DPull DIM3 a
-onnxReshape_d3 _ (Pull ixf ext) shape = Pull ixf1 ext1
+onnxReshape_d3 :: (Pully vec1, Pully vec2, VecShape vec2 ~ DIM1, Type a)
+               => Attrs -> vec1 (Data a) -> vec2 (Data Int64) -> DPull DIM3 a
+onnxReshape_d3 _ xs shape = reshape_d3 (toPull xs) (toPull shape)
+
+-- | 3d reshape of Pull vectors
+reshape_d3 :: Type a => DPull sh a -> DPull DIM1 Int64 -> DPull DIM3 a
+reshape_d3 (Pull ixf ext) shape = Pull ixf1 ext1
   where lext = P.reverse $ toList ext
         ixf1 = ixf . fromIndex ext . toIndex ext1
         ext1 = Z :. dsize 0 :. dsize 1 :. dsize 2
@@ -406,8 +428,9 @@ onnxReshape_d3 _ (Pull ixf ext) shape = Pull ixf1 ext1
                   where m = i2n $ shape ! (Z :. (value i :: Data Length))
 
 -- | Implementaion of ONNX MatMul operator
-onnxMatMul :: (RealFloat a, Numeric a) => Attrs -> DPull DIM2 a -> DPull DIM2 a -> DPull DIM2 a
-onnxMatMul _ a b = mmT a (transpose b)
+onnxMatMul :: (Pully vec1, VecShape vec1 ~ DIM2, Pully vec2, VecShape vec2 ~ DIM2, RealFloat a, Numeric a)
+           => Attrs -> vec1 (Data a) -> vec2 (Data a) -> DPull DIM2 a
+onnxMatMul _ a b = mmT (toPull a) (transpose $ toPull b)
 
 -- | Padding a multi dimensional vector
 pad :: forall a vec sh . (Syntax a, Num a, Pushy vec,
@@ -543,6 +566,12 @@ setSizePull2 s1 s2 (Pull ixf (Z :. e1 :. e2))
 setSizePull3 :: Length -> Length -> Length -> Pull DIM3 a -> Pull DIM3 a
 setSizePull3 s1 s2 s3 (Pull ixf (Z :. e1 :. e2 :. e3))
   = Pull ixf (Z :. cap (singletonRange s1) e1 :. cap (singletonRange s2) e2 :. cap (singletonRange s3) e3)
+
+-- | Add range info to three dimensional Pull vector
+setSizePull4 :: Length -> Length -> Length -> Length -> Pull DIM4 a -> Pull DIM4 a
+setSizePull4 s1 s2 s3 s4 (Pull ixf (Z :. e1 :. e2 :. e3 :. e4))
+  = Pull ixf (Z :. cap (singletonRange s1) e1 :. cap (singletonRange s2) e2 :. cap (singletonRange s3) e3
+                :. cap (singletonRange s4) e4)
 
 -- | Add range info to one dimensinal Manifest vector
 setSizeManifest1 :: Length -> Manifest DIM1 a -> Manifest DIM1 a
