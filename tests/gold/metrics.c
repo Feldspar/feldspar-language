@@ -41,9 +41,11 @@ void metrics(struct awl_signedS32 * v1, struct awl_signedS32 * v2, struct awl_aw
   uint32_t v10;
   uint32_t v9;
   struct awl_awl_signedS32 v33 = { 0 };
+  struct awl_s_2_2xunsignedS32 v16 = { 0 };
   uint32_t v18;
   struct awl_signedS32 st0 = { 0 };
   struct awl_signedS32 * v14 = NULL;
+  struct awl_signedS32 v36 = { 0 };
   uint32_t v37;
   
   v10 = (*v3).length;
@@ -59,12 +61,13 @@ void metrics(struct awl_signedS32 * v1, struct awl_signedS32 * v2, struct awl_aw
   (v33).length = v10;
   for (uint32_t v13 = 0; v13 < v10; v13 += 1)
   {
-    v18 = min(((*v3).buffer[v13]).length, v9);
+    v16 = (*v3).buffer[v13];
+    v18 = min((v16).length, v9);
     ((v33).buffer[v13]).buffer = initArray(((v33).buffer[v13]).buffer, ((v33).buffer[v13]).length, sizeof(int32_t), v18);
     ((v33).buffer[v13]).length = v18;
     for (uint32_t v24 = 0; v24 < v18; v24 += 1)
     {
-      ((v33).buffer[v13]).buffer[v24] = (*v14).buffer[(((*v3).buffer[v13]).buffer[v24]).member1];
+      ((v33).buffer[v13]).buffer[v24] = (*v14).buffer[((v16).buffer[v24]).member1];
     }
     v14 = &(v33).buffer[v13];
   }
@@ -72,14 +75,17 @@ void metrics(struct awl_signedS32 * v1, struct awl_signedS32 * v2, struct awl_aw
   (*out).length = v10;
   for (uint32_t v34 = 0; v34 < v10; v34 += 1)
   {
-    v37 = ((v33).buffer[v34]).length;
+    v36 = (v33).buffer[v34];
+    v37 = (v36).length;
     ((*out).buffer[v34]).buffer = initArray(((*out).buffer[v34]).buffer, ((*out).buffer[v34]).length, sizeof(int32_t), v37);
     ((*out).buffer[v34]).length = v37;
     for (uint32_t v40 = 0; v40 < v37; v40 += 1)
     {
-      ((*out).buffer[v34]).buffer[v40] = ((v33).buffer[v34]).buffer[v40];
+      ((*out).buffer[v34]).buffer[v40] = (v36).buffer[v40];
     }
   }
   freeArray_awl_signedS32((v33).buffer, (v33).length);
+  freeArray((v16).buffer);
   freeArray((st0).buffer);
+  freeArray((v36).buffer);
 }

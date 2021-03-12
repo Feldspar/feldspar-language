@@ -35,6 +35,15 @@
 -- FIXME: Fix the incomplete patterns.
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
+-- Handle situations where an expression in a loop nest depends on the innermost loop
+-- (so ordinary loop invariant removal does not help) but is invariant with respect to
+-- some outer loop. To this end we expand the value to an array with dimensions as the
+-- inner loops the expression depends on. The (array) expresion can now be floated
+-- out of the inner loops (because of the array expansion) as well as the outer invariant
+-- loop(s).
+-- This transformation is important since the unrestricted inling by the vector library
+-- in combination with the embedding mechanism often creates this kind of loop nests.
+
 module Feldspar.Core.Middleend.Expand (expand) where
 
 import Feldspar.Core.UntypedRepresentation
@@ -84,7 +93,7 @@ expF ai vm e = mdo (s, (bs1,e1)) <- ea aiNew vm e
                    let arrVE = In r $ Variable arrV
                        b = BI {biAbsI = map snd profLoops, biBindIs = bs3, biBind = (arrV, flArr)}
                        refE = In (getAnnotation e) $ App GetIx (typeof e) [arrVE, idxE]
-                   return (s, if null keepLoops || not (sharable e1) || simpleExp ai vm e1
+                   return (s, if null keepLoops || simpleExp ai vm e1
                                  then (bs2, e2) -- We should not float e
                                  else ([b], refE)) -- We float an expanded e in b
 
@@ -147,17 +156,18 @@ eu :: [AbsInfo] -> VarMap -> RExp -> Rename (S.Set Var, ([BindInfo], RExp))
 eu _ vm (Variable v) = let (s,e) = vm M.! v in return (s, ([],e))
 eu _ _ (Literal l) = return (S.empty, ([], Literal l))
 eu ai vm (App Let t [eRhs, In r (Lambda v eBody)])
-  = do (fvsR, bseR) <- expE ai vm eRhs
-       let (bsR, eR) = bseR -- Note [Lazy binding]
-           inline = not (sharable eR) || simpleArrRef eR
-           eR1 = if inline then dropAnnotation eR else Variable v
-           vmB = M.insert v (fvsR, eR1) vm
-           aiB = if inline then ai else AbsI (S.singleton v) : ai
-       (fvsB, bseB) <- expE aiB vmB eBody
-       let (bsB, eB) = bseB
-           eNew = App Let t [eR, In r $ Lambda v eB]
-           bsB1 = if inline then bsB else shiftBIs bsB
-       return (fvsB, (bsR ++ bsB1, if inline then dropAnnotation eB else eNew))
+  = mdo (fvsR, bseR) <- expE ai vm eRhs
+        let (bsR, eR) = bseR -- Note [Lazy binding]
+            tryInline = simpleExp ai vm eR
+            doInline = tryInline && not (null bsB) -- Inline only if we generate any bindings
+            eR1 = if doInline then dropAnnotation eR else Variable v
+            vmB = M.insert v (fvsR, eR1) vm
+            aiB = if tryInline then ai else AbsI (S.singleton v) : ai
+        (fvsB, bseB) <- expE aiB vmB eBody
+        let (bsB, eB) = bseB
+            eNew = App Let t [eR, In r $ Lambda v eB]
+            bsB1 = if tryInline then bsB else shiftBIs bsB
+        return (fvsB, (bsR ++ bsB1, if doInline then dropAnnotation eB else eNew))
 eu ai vm (App op t [eLen, eInit, In r1 (Lambda vIx (In r2 (Lambda vSt eBody)))])
   | op `elem` [ForLoop, Sequential]
   = do (fvsL, bseL) <- expE ai vm eLen
@@ -203,13 +213,11 @@ eu ai vm (Lambda v e)
        return (fvs S.\\ vs, (shiftBIs $ fst bse, Lambda v $ snd bse))
 
 simpleExp :: [AbsInfo] -> VarMap -> UExp -> Bool
-simpleExp ai vm e = simpleArrRef e || expCost ai vm e <= 2
+simpleExp ai vm e = not (goodToShare e) || simpleArrRef e || expCost ai vm e <= 2
 
 expCost :: [AbsInfo] -> VarMap -> UExp -> Int
 expCost ai vm (In _ e) = go e
-  where go (Variable _)  = 0
-        go (Literal _)   = 0
-        go (App op _ es) = appCost ai vm op es
+  where go (App op _ es) = appCost ai vm op es
         go _             = 5
 
 appCost :: [AbsInfo] -> VarMap -> Op -> [UExp] -> Int

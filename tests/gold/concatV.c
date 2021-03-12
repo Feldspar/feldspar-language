@@ -7,6 +7,7 @@ void concatV(struct awl_awl_signedS32 * v1, struct awl_signedS32 * out)
   uint32_t len0;
   struct awl_signedS32 v6 = { 0 };
   uint32_t v11;
+  struct awl_signedS32 v8 = { 0 };
   uint32_t v9;
   uint32_t len1;
   struct awl_signedS32 e2 = { 0 };
@@ -18,7 +19,8 @@ void concatV(struct awl_awl_signedS32 * v1, struct awl_signedS32 * out)
   for (uint32_t v5 = 0; v5 < len0; v5 += 1)
   {
     v11 = (v26).length;
-    v9 = ((*v1).buffer[v5]).length;
+    v8 = (*v1).buffer[v5];
+    v9 = (v8).length;
     len1 = (v11 + v9);
     (v6).buffer = initArray((v6).buffer, (v6).length, sizeof(int32_t), len1);
     (v6).length = len1;
@@ -28,7 +30,7 @@ void concatV(struct awl_awl_signedS32 * v1, struct awl_signedS32 * out)
     }
     for (uint32_t v20 = 0; v20 < v9; v20 += 1)
     {
-      (v6).buffer[(v20 + v11)] = ((*v1).buffer[v5]).buffer[v20];
+      (v6).buffer[(v20 + v11)] = (v8).buffer[v20];
     }
     e2 = v26;
     v26 = v6;
@@ -43,4 +45,5 @@ void concatV(struct awl_awl_signedS32 * v1, struct awl_signedS32 * out)
   }
   freeArray((v26).buffer);
   freeArray((v6).buffer);
+  freeArray((v8).buffer);
 }
