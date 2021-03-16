@@ -203,7 +203,7 @@ mkProgramFile gr initGroups sInits inputs multiUses shapes useNative
   where name = mangle $ fromJust $ G.name gr
         params = if null initGroups then inputPs else "(weights :: WeightRec)" : inputPs
         inputPs = map mkParam inputs
-        accesses = map mkAccess $ concat initGroups
+        accesses = map (mkAccess useNative) $ concat initGroups
         tEnv = M.fromList [(fromJust $ TP.name t, t) | t <- D.toList $ G.initializer gr]
         mkParam ti = "(" <> mangle (vipName ti) <> "' :: " <> shTy (vipType ti) <> ")"
         shTy (d,t) = "Manifest DIM" <> show d <> " (Data " <> showElemT t <> ")"
@@ -214,7 +214,7 @@ mkProgramFile gr initGroups sInits inputs multiUses shapes useNative
 
 -- | Make a possibly shape contraining input binding
 mkInputCap :: V.ValueInfoProto -> Maybe String -> L.ByteString
-mkInputCap vi msh = mangle (vipName vi) <> " = toPull $ " <> go msh <> mangle (vipName vi) <> "'"
+mkInputCap vi msh = mangle (vipName vi) <> " = " <> go msh <> mangle (vipName vi) <> "'"
   where go Nothing = ""
         go (Just s) = "setSizeManifest" <> show (length sh) <> " " <> L.unwords (map show sh) <> " "
            where sh = read $ "[" <> s <> "]" :: [Int]
@@ -251,10 +251,11 @@ shapeToDim :: TP.TensorProto -> Int64
 shapeToDim p = TP.dims p `D.index` 0
 
 -- | Read from the weight record
-mkAccess :: TensorInfo -> L.ByteString
-mkAccess ti = vname <> " = " <> setS <> " $ sel (Proxy @" <> show (tiField ti) <> ") weights ! (Z :. " <> show (tiIdx ti) <> ")"
+mkAccess :: Bool -> TensorInfo -> L.ByteString
+mkAccess useSize ti = vname <> " = " <> setS <> "sel (Proxy @" <> show (tiField ti) <> ") weights ! (Z :. " <> show (tiIdx ti) <> ")"
   where vname = mangle $ tiName ti
-        setS = "setSizePull" <> show (length dims) <> L.concat (map (\d -> " " <> show d) dims)
+        setS | useSize = "setSizePull" <> show (length dims) <> L.concat (map (\d -> " " <> show d) dims) <> " $ "
+             | otherwise = ""
         dims = D.toList $ tiDims ti
 
 -- | Initialize a small tensor
@@ -334,7 +335,7 @@ mkMainFile bname hf weightFile weightRecTC outputs inputs noWeightRec useNative 
                 , "  }"
                 , ""
                 ]
-                ++ wread ++ concat (zipWith (mkArgRead bname useNative) inputs [1..]) ++
+                ++ wread ++ concat (zipWith (mkArgRead ebname noWeightRec useNative) inputs [1..]) ++
                 [ "  " <> ot <> " " <> ov <> " = {0};"
                 , ""
                 , "  " <> functionName <> "(" <> warg <> inArgs <> ", &" <> ov <> ");"
@@ -346,8 +347,9 @@ mkMainFile bname hf weightFile weightRecTC outputs inputs noWeightRec useNative 
                 ]
         (ov, _, oCode) = mkOutput useNative outputs
         inArgs = L.intercalate ", " ["&" <> mangle (vipName v) | v <- inputs]
-        functionName = fromString $ encodeFunctionName bname
-        ot = argumentType bname $ length inputs + 1
+        functionName = fromString ebname
+        ot = argumentType ebname noWeightRec $ length inputs + 1
+        ebname = encodeFunctionName bname
         wread | noWeightRec = []
               | otherwise = ["  weight_rec_t * w = read_constants(\"" <> fromString weightFile <> "\");"
                             , ""
@@ -365,15 +367,15 @@ mkMainFile bname hf weightFile weightRecTC outputs inputs noWeightRec useNative 
                 ]
 
 -- | Generate code to read the argument tensors from file
-mkArgRead :: FilePath -> Bool -> V.ValueInfoProto -> Int -> [L.ByteString]
-mkArgRead bname useNative vip i
+mkArgRead :: FilePath -> Bool -> Bool -> V.ValueInfoProto -> Int -> [L.ByteString]
+mkArgRead bname noWeightRec useNative vip i
                 = [ "  FILE* " <> fname <> " = fopen(argv[" <> show i <> "], \"r\");"
                   , "  if (" <> fname <> " == NULL) {"
                   , "    fprintf(stderr, \"Could not open %s for reading.\\n\", argv[" <> show i <> "]);"
                   , "    exit(1);"
                   , "  }"
                   , ""
-                  , "  " <> argumentType bname i <> " " <> vname <> ";"
+                  , "  " <> argumentType bname noWeightRec i <> " " <> vname <> ";"
                   , ""
                   , allocReadTensor useNative fname vname n elemT
                   , "  fclose(" <> fname <> ");"
@@ -384,8 +386,9 @@ mkArgRead bname useNative vip i
         (n, elemT) = vipType vip
 
 -- | Argument type name
-argumentType :: FilePath -> Int -> L.ByteString
-argumentType bname i = fromString $ "arg_" <> show i <> "_" <> bname <> "_t"
+argumentType :: FilePath -> Bool -> Int -> L.ByteString
+argumentType bname noWeightRec i = fromString $ "arg_" <> show j <> "_" <> bname <> "_t"
+  where j = if noWeightRec then i else i+1
 
 -- | Compute the (Program) Type that corresponds to a tensor
 tiToType :: TensorInfo -> Type

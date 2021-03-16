@@ -263,35 +263,18 @@ onnxBatchNormalization attrs xs gamma beta mean var = ys
         epsilon = value $ P.realToFrac $ getAttr attrs aaFloat 1e-5 "epsilon"
 
 -- | Flatten a tensor to a matrix
---   We use Push vectors for flattening even though fusion is lost since flattening based on
+--   We use Manifest vectors for flattening even though fusion is lost since flattening based on
 --   Pull vectors leads to index expressions containing division and modulus that have a greater
 --   performance impact than the loss of fusion.
-onnxFlatten :: Syntax a => Attrs -> Pull sh a -> Pull DIM2 a
-onnxFlatten attrs vec = toPull $ store $ flatPush (P.fromIntegral $ getAttr attrs aaInt 1 "axis") $ toPush vec
-
-onnxFlatten' :: (Storable vec, Syntax a) => Attrs -> vec a -> Pull DIM2 a
-onnxFlatten' attrs xs = toPull $ flatMan d $ store xs
+onnxFlatten :: (Storable vec, Syntax a) => Attrs -> vec a -> Manifest DIM2 a
+onnxFlatten attrs xs = flatMan d $ store xs
   where d = P.fromIntegral $ getAttr attrs aaInt 1 "axis"
 
+-- | Flatten a Manifest vector to two dimensions by changing its extent
 flatMan :: Int -> Manifest sh a -> Manifest DIM2 a
 flatMan d (Manifest arr sh) = Manifest arr sh'
   where sh' = Z :. P.product ls :. P.product rs
         (ls,rs) = takeDropShape d sh
-
--- | Flattening a Push vector to two dimensions
-flatPush :: forall sh a . Int -> Push sh a -> Push DIM2 a
-flatPush i (Push ixf ext) = Push ixf' $ Z :. P.product ls :. P.product rs
-  where ixf' :: PushK DIM2 a
-        ixf' wf = ixf (\ sh d -> let (ils,irs) = takeDropShape i sh 
-                                  in wf (Z :. idxExp ls ils :. idxExp rs irs) d)
-        (ls,rs) = takeDropShape i ext
-
--- | Linearizing an index where both intex and extent are represented as lists
-idxExp :: [Data Length] -> [Data Length] -> Data Length
-idxExp ext idx = f (P.reverse ext) (P.reverse idx)
-  where f (n:ns) (i:is) = f ns is * n + i
-        f []     []     = 0
-        f _      _      = P.error "Operators.idxExp: extent and index differ in length"
 
 -- | Split a shape
 takeDropShape :: Int -> Shape sh -> ([Data Length], [Data Length])
@@ -301,8 +284,8 @@ takeDropShape i sh = P.splitAt j es
 
 -- | Matrix multiplication of two dimensional temsors
 onnxGemm :: (RealFloat a, Numeric a, Pully vec, VecShape vec ~ DIM2, Pully vec2,
-             UnionShape DIM2 (VecShape vec2) ~ DIM2, Storable vec)
-         => Attrs -> vec (Data a) -> vec (Data a) -> vec2 (Data a) -> DPull DIM2 a
+             UnionShape DIM2 (VecShape vec2) ~ DIM2, Storable vec, Pully vec', Storable vec', VecShape vec' ~ DIM2)
+         => Attrs -> vec (Data a) -> vec' (Data a) -> vec2 (Data a) -> DPull DIM2 a
 onnxGemm attrs vA vB vC = bcZipWith (+) (mmT vAT vBnT) $ toPull vC
   where vA' = if alpha P.== 1.0 then toPull $ store vA else map (* value alpha) $ toPull $ store vA
         vAT = if transA P.== 1 then transpose vA' else vA'
@@ -590,3 +573,10 @@ setSizeManifest3 :: Length -> Length -> Length -> Manifest DIM3 a -> Manifest DI
 setSizeManifest3 s1 s2 s3 (Manifest arr (Z :. e1 :. e2 :. e3))
   = Manifest (cap (singletonRange (s1*s2*s3) :> universal) arr)
              (Z :. cap (singletonRange s1) e1 :. cap (singletonRange s2) e2 :. cap (singletonRange s3) e3)
+
+-- | Add range info to four dimensinal Manifest vector
+setSizeManifest4 :: Length -> Length -> Length -> Length -> Manifest DIM4 a -> Manifest DIM4 a
+setSizeManifest4 s1 s2 s3 s4 (Manifest arr (Z :. e1 :. e2 :. e3 :. e4))
+  = Manifest (cap (singletonRange (s1*s2*s3*s4) :> universal) arr)
+             (Z :. cap (singletonRange s1) e1 :. cap (singletonRange s2) e2 :. cap (singletonRange s3) e3
+                :. cap (singletonRange s4) e4)
