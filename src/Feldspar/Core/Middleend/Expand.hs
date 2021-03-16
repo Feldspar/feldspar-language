@@ -237,8 +237,11 @@ ixAndInv ai v vs = go ai
 
 -- | Check that an expression is a simple array reference that we can inline
 simpleArrRef :: UExp -> Bool
-simpleArrRef (In _ (App GetIx _ [In _ (Variable _), e])) = simpleIdxE e
+simpleArrRef (In _ (App GetIx _ [a, e])) = simpleArrE a && simpleIdxE e
   where simpleIdxE (In _ (Variable _)) = True
         simpleIdxE (In _ (App op _ es)) = op `elem` [Add,Sub,Mul] && all simpleIdxE es
         simpleIdxE _ = False
+        simpleArrE (In _ (Variable _)) = True
+        simpleArrE (In _ (App (Sel _) _ [In _ (Variable _)])) = True
+        simpleArrE _ = False
 simpleArrRef _ = False
