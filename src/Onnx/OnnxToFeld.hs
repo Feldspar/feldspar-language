@@ -26,6 +26,7 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 {-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
@@ -56,7 +57,11 @@ import Text.ProtocolBuffers (Utf8, Int64, messageGet, utf8)
 
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.ByteString.Lazy.UTF8 as U
+#if MIN_VERSION_GLASGOW_HASKELL(8,10,0,0)
+import qualified Data.ByteString.Builder as B
+#else
 import qualified Data.ByteString.Lazy.Builder as B
+#endif
 
 import qualified Data.Foldable as D (toList, foldMap, length, concatMap)
 import qualified Data.Sequence as D (Seq, sortBy, sort, index, partition)
