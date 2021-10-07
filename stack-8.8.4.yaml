@@ -17,7 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-18.13
+resolver: lts-16.12
 
 ghc-options:
     # Somewhere deep inside there is a call to ghc --make, pass -j3 to
@@ -50,9 +50,9 @@ extra-deps:
   [patch-combinators-0.2.2
   ,prelude-edsl-0.3.1
   ,data-hash-0.2.0.1
-  ,tree-view-0.5.1
+  ,tree-view-0.5
   ,plugins-multistage-0.6.3
-  ,protocol-buffers-2.4.17
+  ,protocol-buffers-2.4.13
   ]
 
 # Override default flag values for local packages and extra-deps

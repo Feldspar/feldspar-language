@@ -106,7 +106,7 @@ library
   build-depends:
     array,
     base                        >= 4.13.0  && < 5.9,
-    bytestring                  >= 0.10   && < 0.11,
+    bytestring                  >= 0.10   && < 0.12,
     containers                  >= 0.4    && < 0.7,
     data-default                >= 0.5,
     directory                   >= 1.1,
@@ -114,7 +114,7 @@ library
     ghc,
     ghci,
     ghc-paths,
-    language-c-quote            >= 0.12  && < 0.13,
+    language-c-quote            >= 0.12  && < 0.14,
     mtl                         >= 2.0    && < 2.3,
     QuickCheck                  >= 2.7    && < 3,
     patch-combinators           >= 0.2    && < 0.3,
@@ -130,7 +130,7 @@ library
     tuple                       >= 0.2    && < 0.5,
     monad-par                   >= 0.3.4.5,
     deepseq,
-    random                      >= 1.0    && < 1.2,
+    random                      >= 1.0    && < 1.4,
     data-default                >= 0.5.3  && < 0.8,
     data-hash                   >= 0.2.0.1 && < 100,
     tree-view
@@ -235,7 +235,7 @@ test-suite tutorial
   build-depends:
     feldspar-language,
     base,
-    bytestring         >= 0.9 && < 0.11
+    bytestring         >= 0.9
 
   ghc-options: -threaded -with-rtsopts=-maxN12
 
@@ -265,10 +265,10 @@ test-suite regression
     feldspar-language,
     mtl,
     base,
-    bytestring       >= 0.9 && < 0.11,
+    bytestring       >= 0.9,
     directory,
     filepath,
-    random           >= 1.0    && < 1.2,
+    random           >= 1.0    && < 1.4,
     stringsearch     >= 0.3,
     tasty            >= 0.3,
     tasty-golden     >= 2.3.0.1,
